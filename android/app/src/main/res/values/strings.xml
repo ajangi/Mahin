@@ -110,10 +110,12 @@
     <string name="ttc_logged_opk_dates">تست مثبت/اوج ثبت‌شده: %1$s</string>
     <string name="ttc_logged_egg_white_dates">ترشحات شفاف کش‌دار ثبت‌شده: %1$s</string>
     <string name="ttc_bbt_shift_hint">الگوی افزایش دما از %1$s (تخمینی، نه تشخیص).</string>
+    <string name="ttc_fertility_estimate_safety_note">تخمین است؛ تشخیص یا تضمین بارداری نیست.</string>
     <string name="ttc_fertility_safety_disclaimer">این اطلاعات تخمینی است؛ تضمین بارداری یا روش ضدبارداری نیست. برای تصمیم پزشکی با متخصص مشورت کنید.</string>
     <string name="ttc_bbt_chart_title">نمودار دمای پایه</string>
     <string name="ttc_bbt_chart_empty">هنوز دمای پایه ثبت نشده است.</string>
     <string name="ttc_bbt_chart_a11y">نمودار دمای پایه: %1$s</string>
+    <string name="ttc_bbt_chart_a11y_summary">تعداد %1$s نقطه؛ کمینه %2$s درجه؛ بیشینه %3$s درجه؛ آخرین %4$s درجه در تاریخ %5$s</string>
     <string name="ttc_timeline_title">خط زمان ثبت‌ها</string>
     <string name="ttc_timeline_empty">ثبت TTC در این بازه وجود ندارد.</string>
     <string name="ttc_timeline_bbt">دمای پایه: %1$.2f °C</string>

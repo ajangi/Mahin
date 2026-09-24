@@ -16,6 +16,7 @@ import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
 import java.time.LocalDate
 import java.util.UUID
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -77,7 +78,16 @@ class LogViewModelTest {
                 ),
             )
             val vm = LogViewModel(cycleRepository, ttcRepository, privacyRepository)
+            vm.onDateSelected(PersianCivilDateConverter.toJalali(dayA))
+            awaitUntil {
+                val state = vm.uiState.value
+                state.symptomTags.contains("سردرد")
+            }
             vm.onDateSelected(PersianCivilDateConverter.toJalali(dayB))
+            awaitUntil {
+                val state = vm.uiState.value
+                state.symptomTags.isEmpty() && state.note.isEmpty()
+            }
             assertThat(vm.uiState.value.symptomTags).isEmpty()
             vm.toggleSymptom("نفخ")
             vm.performSave(vm.uiState.value)
@@ -121,6 +131,54 @@ class LogViewModelTest {
             vm.performSave(state)
             assertThat(vm.uiState.value.bbtError).isEqualTo(BbtFieldError.UNPARSEABLE)
             assertThat(database.ttcDayLogDao().getForDate(day)?.bbtCelsius).isEqualTo(36.6)
+        }
+    }
+
+    @Test
+    fun save_withIntercourseOptInOff_preservesStoredIntercourse() {
+        runBlocking {
+            database.cycleProfileDao().upsert(
+                CycleProfileEntity(
+                    reproductiveMode = ReproductiveMode.TRYING_TO_CONCEIVE,
+                    typicalCycleLengthDays = 28,
+                    typicalPeriodLengthDays = 5,
+                    regularity = CycleRegularity.UNKNOWN,
+                    onboardingCompleted = true,
+                    updatedAtEpochMs = 0L,
+                ),
+            )
+            val day = LocalDate.of(2025, 3, 8)
+            database.ttcDayLogDao().upsert(
+                TtcDayLogEntity(
+                    id = "t2",
+                    logDate = day,
+                    bbtCelsius = null,
+                    ovulationTestResult = null,
+                    cervicalMucus = null,
+                    intercourseLogged = true,
+                    intercourseProtected = true,
+                    pregnancyTestResult = null,
+                    updatedAtEpochMs = 0L,
+                ),
+            )
+            val vm = LogViewModel(cycleRepository, ttcRepository, privacyRepository)
+            vm.onDateSelected(PersianCivilDateConverter.toJalali(day))
+            awaitUntil { vm.uiState.value.intercourseLogged }
+            assertThat(vm.uiState.value.intercourseLoggingEnabled).isFalse()
+            vm.performSave(vm.uiState.value.copy(note = "یادداشت"))
+            val stored = database.ttcDayLogDao().getForDate(day)
+            assertThat(stored?.intercourseLogged).isTrue()
+            assertThat(stored?.intercourseProtected).isTrue()
+        }
+    }
+
+    private suspend fun awaitUntil(
+        timeoutMs: Long = 2_000,
+        condition: () -> Boolean,
+    ) {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (!condition() && System.currentTimeMillis() < deadline) {
+            delay(25)
         }
     }
 }

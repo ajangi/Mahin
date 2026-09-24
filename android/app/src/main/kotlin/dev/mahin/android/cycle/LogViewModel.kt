@@ -77,11 +77,7 @@ class LogViewModel
             viewModelScope.launch {
                 ttcPrivacyRepository.observeIntercourseLoggingEnabled().collect { enabled ->
                     _uiState.update { state ->
-                        state.copy(
-                            intercourseLoggingEnabled = enabled,
-                            intercourseLogged = if (enabled) state.intercourseLogged else false,
-                            intercourseProtected = if (enabled) state.intercourseProtected else null,
-                        )
+                        state.copy(intercourseLoggingEnabled = enabled)
                     }
                 }
             }
@@ -217,16 +213,27 @@ class LogViewModel
                 note = state.note.takeIf { it.isNotBlank() },
             )
             if (reproductiveMode == ReproductiveMode.TRYING_TO_CONCEIVE) {
+                val existingTtc = ttcRepository.getTtcLogForDate(date)
+                val intercourseLogged =
+                    if (state.intercourseLoggingEnabled) {
+                        state.intercourseLogged
+                    } else {
+                        existingTtc?.intercourseLogged == true
+                    }
+                val intercourseProtected =
+                    if (state.intercourseLoggingEnabled) {
+                        state.intercourseProtected
+                    } else {
+                        existingTtc?.intercourseProtected
+                    }
                 ttcRepository.upsertTtcDayLog(
                     TtcDayLogInput(
                         logDate = date,
                         bbtCelsius = bbtCelsius,
                         ovulationTestResult = state.ovulationTest,
                         cervicalMucus = state.cervicalMucus,
-                        intercourseLogged =
-                            state.intercourseLoggingEnabled && state.intercourseLogged,
-                        intercourseProtected =
-                            if (state.intercourseLoggingEnabled) state.intercourseProtected else null,
+                        intercourseLogged = intercourseLogged,
+                        intercourseProtected = intercourseProtected,
                         pregnancyTestResult = state.pregnancyTest,
                     ),
                 )

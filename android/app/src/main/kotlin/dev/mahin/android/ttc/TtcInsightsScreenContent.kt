@@ -10,6 +10,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import dev.mahin.android.R
@@ -44,7 +45,8 @@ internal fun TtcInsightsScreenContent(state: TtcInsightsContentState) {
 @Composable
 private fun TtcInsightsLoadedContent(state: TtcInsightsContentState) {
     val insight = state.insight ?: return
-    val chartSummary = BbtChartA11y.summary(state.bbtPoints)
+    val resources = LocalContext.current.resources
+    val chartSummary = BbtChartA11y.summary(resources, state.bbtPoints)
     val disclaimer = stringResource(R.string.ttc_fertility_safety_disclaimer)
     LazyColumn(
         modifier =
@@ -174,6 +176,12 @@ private fun FertilityEstimateCard(insight: FertilityInsightResult) {
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
+            Text(
+                text = stringResource(R.string.ttc_fertility_estimate_safety_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = MahinSpacing.sm),
+            )
         }
     }
 }

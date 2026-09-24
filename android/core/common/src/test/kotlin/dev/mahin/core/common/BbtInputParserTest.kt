@@ -32,4 +32,10 @@ class BbtInputParserTest {
     fun parse_empty_isEmpty() {
         assertThat(BbtInputParser.parse("")).isEqualTo(BbtInputParser.ParseResult.Empty)
     }
+
+    @Test
+    fun parse_nonFinite_isInvalid() {
+        assertThat(BbtInputParser.parse("NaN")).isInstanceOf(BbtInputParser.ParseResult.Invalid::class.java)
+        assertThat(BbtInputParser.parse("Infinity")).isInstanceOf(BbtInputParser.ParseResult.Invalid::class.java)
+    }
 }

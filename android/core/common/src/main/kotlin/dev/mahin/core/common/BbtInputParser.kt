@@ -29,10 +29,11 @@ object BbtInputParser {
         if (trimmed.isEmpty()) return ParseResult.Empty
         val normalized = normalizeToAsciiDecimal(trimmed)
         val value = normalized.toDoubleOrNull() ?: return ParseResult.Invalid(InvalidReason.UNPARSEABLE)
-        if (value < MIN_CELSIUS || value > MAX_CELSIUS) {
-            return ParseResult.Invalid(InvalidReason.OUT_OF_RANGE)
+        return when {
+            !value.isFinite() -> ParseResult.Invalid(InvalidReason.UNPARSEABLE)
+            value < MIN_CELSIUS || value > MAX_CELSIUS -> ParseResult.Invalid(InvalidReason.OUT_OF_RANGE)
+            else -> ParseResult.Valid(value)
         }
-        return ParseResult.Valid(value)
     }
 
     fun normalizeToAsciiDecimal(input: String): String {
@@ -43,7 +44,7 @@ object BbtInputParser {
                     in '0'..'9' -> ch
                     in '\u06F0'..'\u06F9' -> '0' + (ch.code - '\u06F0'.code)
                     in '\u0660'..'\u0669' -> '0' + (ch.code - '\u0660'.code)
-                    ',', '\u060C', '\u066B', '٫' -> '.'
+                    ',', '\u060C', '\u066B' -> '.'
                     else -> ch
                 }
             builder.append(mapped)

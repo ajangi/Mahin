@@ -1,7 +1,10 @@
 package dev.mahin.android.cycle
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -9,8 +12,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import dev.mahin.android.R
 import dev.mahin.android.ttc.TtcIntercourseSectionCallbacks
@@ -137,15 +142,30 @@ private fun TtcIntercourseOptInSection(
         style = mahinTextStyle(MahinTypographyRole.Label),
         modifier = Modifier.padding(top = MahinSpacing.sm),
     )
-    Switch(
-        checked = state.enabled,
-        onCheckedChange = callbacks.onOptInChanged,
-    )
-    Text(
-        text = stringResource(R.string.log_intercourse_opt_in_label),
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
+    val optInLabel = stringResource(R.string.log_intercourse_opt_in_label)
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .toggleable(
+                    value = state.enabled,
+                    onValueChange = callbacks.onOptInChanged,
+                    role = Role.Switch,
+                ),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            text = optInLabel,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f).padding(end = MahinSpacing.sm),
+        )
+        Switch(
+            checked = state.enabled,
+            onCheckedChange = null,
+        )
+    }
     if (state.enabled) {
         FilterChip(
             selected = state.intercourseLogged,

@@ -3,10 +3,13 @@ package dev.mahin.android.ttc
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import dev.mahin.core.database.entity.TtcDayLogEntity
@@ -92,11 +95,12 @@ class TtcInsightsScreenScrollTest {
             }
         }
         composeRule.waitForIdle()
-        val lastItemIndex = 4 + timeline.size
         val lastTimelineIndex = 4 + timeline.lastIndex
         composeRule.onNodeWithTag("ttc_insights_list").performScrollToIndex(lastTimelineIndex)
-        composeRule.onNodeWithText("۳۶٫۶۱", substring = true).assertExists()
-        composeRule.onNodeWithTag("ttc_insights_list").performScrollToIndex(lastItemIndex)
-        composeRule.onNodeWithText(disclaimer, substring = true).assertExists()
+        composeRule.onNodeWithText("۳۶٫۶۱", substring = true).assertIsDisplayed()
+        composeRule
+            .onNodeWithTag("ttc_insights_list")
+            .performScrollToNode(hasText(disclaimer, substring = true))
+        composeRule.onNodeWithText(disclaimer, substring = true).assertIsDisplayed()
     }
 }

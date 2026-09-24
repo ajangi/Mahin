@@ -3,7 +3,7 @@
 **Milestone:** M3  
 **Status:** gatekeeper fixes pushed (draft PR)  
 **Branch:** `cursor/m3-ttc-7762`  
-**Head:** `9e2a84440b5c33ad55bcaedb9e6abab72ca5d964`  
+**Head:** _(update after gatekeeper round 2 push)_  
 **PR:** [#7](https://github.com/ajangi/Mahin/pull/7) (draft)  
 **Next milestone:** M4 — Pregnancy (`prompts/M4.md`)
 
