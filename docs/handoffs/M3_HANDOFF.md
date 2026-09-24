@@ -3,7 +3,7 @@
 **Milestone:** M3  
 **Status:** gatekeeper fixes pushed (draft PR)  
 **Branch:** `cursor/m3-ttc-7762`  
-**Head:** `cd8bcad3fb908552f49046de20da77a353153702`  
+**Head:** `2fb34444cd55a102233ad8dcb9096ac2c793b505`  
 **PR:** [#7](https://github.com/ajangi/Mahin/pull/7) (draft)  
 **Next milestone:** M4 — Pregnancy (`prompts/M4.md`)
 
@@ -39,8 +39,16 @@ Run on 2026-09-24 in Cloud Agent VM (OpenJDK 21, Android SDK 35).
 | `python3 scripts/check_design_tokens.py` | **PASS** |
 | `cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug --no-daemon` | **PASS** — BUILD SUCCESSFUL |
 
-## PR CI
-_(Record workflow for current PR head after push.)_
+## PR CI (`cd8bcad3fb908552f49046de20da77a353153702`)
+| Job | Result |
+|---|---|
+| design-tokens | SUCCESS |
+| openapi | SUCCESS |
+| admin | SUCCESS |
+| backend | SUCCESS |
+| android | SUCCESS |
+
+Workflow: [run 36068296495](https://github.com/ajangi/Mahin/actions/runs/36068296495).
 
 ## Acceptance criteria (M3)
 | Criterion | Status |
