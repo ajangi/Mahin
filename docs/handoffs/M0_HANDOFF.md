@@ -62,7 +62,15 @@ PR #1 job `android` initially failed on `android-actions/setup-android@v3`, whic
 
 **Fix:** `.github/workflows/ci.yml` now uses `android-actions/setup-android@v4.0.4` with `packages: platform-tools`, then installs `platforms;android-35` and `build-tools;34.0.0` / `35.0.0` (matching compileSdk 35 / AGP). Java 21 is unchanged. Gradle still runs `lintDebug ktlintCheck detekt test assembleDebug`.
 
-Confirmed GitHub Actions results will be recorded here after the repaired workflow completes on this PR head.
+Confirmed GitHub Actions on commit `5f00a25ccffbfef9656593746d0ae2d501b0058a` (workflow run [36028775345](https://github.com/ajangi/Mahin/actions/runs/36028775345), 8m4s, 2026-09-24):
+
+| Job | Conclusion |
+|---|---|
+| design-tokens | SUCCESS |
+| openapi | SUCCESS |
+| backend | SUCCESS |
+| admin | SUCCESS |
+| android | SUCCESS |
 
 ## Acceptance criteria
 | Criterion | Status |
@@ -72,7 +80,7 @@ Confirmed GitHub Actions results will be recorded here after the repaired workfl
 | Backend modular monolith skeleton | Met |
 | Admin skeleton | Met |
 | Docker local dependencies | Met (`docker-compose.yml`; Docker was not available in this agent VM) |
-| CI | GitHub Android job blocked by obsolete `tools` package; repair in progress |
+| CI | Met — GitHub Actions `ci` all 5 jobs SUCCESS on `5f00a25` (run 36028775345) |
 | Env configuration | Met (`.env.example`, `application.yml`, `local.properties.example`) |
 | Lint/format/static analysis | Wired (ktlint, detekt, Android lint, tsc, Redocly) |
 | Test harnesses | Met |
