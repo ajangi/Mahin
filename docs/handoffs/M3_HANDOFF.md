@@ -3,12 +3,13 @@
 **Milestone:** M3  
 **Status:** gatekeeper fixes pushed (draft PR)  
 **Branch:** `cursor/m3-ttc-7762`  
-**Head:** _(update after gatekeeper round 2 push)_  
+**Head:** `cd8bcad3fb908552f49046de20da77a353153702`  
 **PR:** [#7](https://github.com/ajangi/Mahin/pull/7) (draft)  
 **Next milestone:** M4 — Pregnancy (`prompts/M4.md`)
 
 ## Gatekeeper follow-up (PR #7)
-Addressed blocking review on branch `cursor/m3-ttc-7762` (see commit after `2549aa0`).
+- Round 1: medical narrowing, BBT parser, date load, intercourse opt-in, scroll (post `2549aa0`).
+- Round 2: Persian BBT chart a11y summary, preserve intercourse when opt-in off, UX/a11y nits.
 
 ## Implemented scope
 - **Mode transition:** Cycle ↔ TTC on Today; history preserved.
@@ -38,16 +39,8 @@ Run on 2026-09-24 in Cloud Agent VM (OpenJDK 21, Android SDK 35).
 | `python3 scripts/check_design_tokens.py` | **PASS** |
 | `cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug --no-daemon` | **PASS** — BUILD SUCCESSFUL |
 
-## PR CI (gatekeeper fix `9e2a844`)
-| Job | Result |
-|---|---|
-| design-tokens | SUCCESS |
-| openapi | SUCCESS |
-| admin | SUCCESS |
-| backend | SUCCESS |
-| android | SUCCESS |
-
-Workflow: [run 36064864550](https://github.com/ajangi/Mahin/actions/runs/36064864550) on `cursor/m3-ttc-7762` @ `9e2a844`.
+## PR CI
+_(Record workflow for current PR head after push.)_
 
 ## Acceptance criteria (M3)
 | Criterion | Status |
