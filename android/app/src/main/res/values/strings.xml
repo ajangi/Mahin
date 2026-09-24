@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ماهین</string>
+    <string name="foundation_subtitle">زیرساخت مهندسی ماهین. این صفحه رابط محصول نیست.</string>
+    <string name="foundation_privacy">داده‌های سلامت در این نسخه ذخیره یا ارسال نمی‌شوند.</string>
+    <string name="foundation_tokens_note">رنگ‌ها از توکن‌های ماهین می‌آیند، نه از رنگ‌های پراکندهٔ ویژگی.</string>
+</resources>

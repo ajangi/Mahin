@@ -1,0 +1,69 @@
+# Local infrastructure only. Does not start production services.
+# Usage: docker compose up -d
+# Required later for backend integration tests that need real Postgres/Redis/MinIO.
+
+name: mahin-local
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: mahin
+      POSTGRES_USER: mahin
+      POSTGRES_PASSWORD: changeme
+    ports:
+      - "5432:5432"
+    volumes:
+      - mahin_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mahin -d mahin"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: miniochangeme
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - mahin_minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_started
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      mc alias set local http://minio:9000 minio miniochangeme;
+      mc mb --ignore-existing local/mahin-media;
+      mc anonymous set none local/mahin-media;
+      exit 0;
+      "
+
+volumes:
+  mahin_pg_data:
+  mahin_minio_data:

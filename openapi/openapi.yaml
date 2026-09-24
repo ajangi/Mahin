@@ -1,0 +1,275 @@
+openapi: 3.1.0
+info:
+  title: Mahin API
+  version: 0.0.1
+  description: |
+    Versioned HTTP contract for Mahin (`/v1`).
+
+    This M0 skeleton establishes conventions only. It does not expose raw
+    reproductive-health payloads, medical advice, or production CDN URLs.
+
+    Sensitive health fields must never appear in access logs, traces, or
+    analytics. See `docs/API_CONVENTIONS.md` and `docs/PRIVACY_ENGINEERING.md`.
+  contact:
+    name: Mahin engineering
+servers:
+  - url: http://localhost:8080
+    description: Local
+tags:
+  - name: Meta
+  - name: Media
+  - name: Content
+paths:
+  /actuator/health:
+    get:
+      tags: [Meta]
+      operationId: health
+      summary: Liveness/readiness style health check (no user data)
+      responses:
+        "200":
+          description: Service is up
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+  /v1/meta:
+    get:
+      tags: [Meta]
+      operationId: getMeta
+      summary: API metadata and non-sensitive runtime identity
+      responses:
+        "200":
+          description: Metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MetaResponse"
+  /v1/media/assets/{assetId}:
+    get:
+      tags: [Media]
+      operationId: getMediaAsset
+      summary: CMS media metadata (not raw bytes)
+      description: |
+        Returns governed media metadata. Feature clients must not hard-code
+        production CDN hosts. `publicUrl` is derived at runtime from
+        `storageKey` + configured public base.
+      parameters:
+        - $ref: "#/components/parameters/AssetId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: Media asset metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaAsset"
+        "404":
+          description: Unknown asset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/content/articles/{articleId}:
+    get:
+      tags: [Content]
+      operationId: getContentArticle
+      summary: Educational article envelope (no invented medical body)
+      parameters:
+        - name: articleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Article envelope
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentArticle"
+        "404":
+          description: Unknown article
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  parameters:
+    AssetId:
+      name: assetId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 128
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          example: UP
+    MetaResponse:
+      type: object
+      required: [apiVersion, environment, product]
+      properties:
+        apiVersion:
+          type: string
+          example: "0.0.1"
+        environment:
+          type: string
+          example: local
+        product:
+          type: string
+          example: mahin
+    MediaApprovalStatus:
+      type: string
+      enum: [draft, in_review, approved, published, retired, rejected]
+    MediaFamily:
+      type: string
+      enum:
+        - pregnancy_development
+        - pregnancy_size
+        - cycle_education
+        - symptom_icon
+        - editorial
+        - motion
+        - ui_core
+        - non_medical_placeholder
+    MediaAsset:
+      type: object
+      required:
+        - id
+        - storageKey
+        - family
+        - version
+        - locale
+        - approvalStatus
+        - medicalGoverned
+        - altText
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        storageKey:
+          type: string
+          description: Stable object-storage key. Never a user-data URL.
+          example: placeholders/non-medical/foundation-mark/v1
+        family:
+          $ref: "#/components/schemas/MediaFamily"
+        version:
+          type: integer
+          minimum: 1
+        locale:
+          type: string
+          example: fa-IR
+        publicUrl:
+          type: string
+          format: uri
+          description: Derived from configured MEDIA_PUBLIC_BASE_URL + storageKey.
+        medicalGoverned:
+          type: boolean
+        approvalStatus:
+          $ref: "#/components/schemas/MediaApprovalStatus"
+        sourceReferences:
+          type: array
+          items:
+            type: string
+        reviewer:
+          type: string
+          nullable: true
+        reviewedAt:
+          type: string
+          format: date-time
+          nullable: true
+        altText:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        supersededBy:
+          type: string
+          format: uuid
+          nullable: true
+    ContentArticle:
+      type: object
+      required:
+        - id
+        - slug
+        - locale
+        - title
+        - status
+        - contentVersion
+        - medicalRiskLevel
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        locale:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+          nullable: true
+        body:
+          type: string
+          nullable: true
+          description: Must be empty unless CMS-published and medically governed.
+        contentType:
+          type: string
+        lifeStage:
+          type: string
+          nullable: true
+        medicalRiskLevel:
+          type: string
+          enum: [none, general_education, contact_clinician, urgent]
+        status:
+          type: string
+          enum: [draft, review, approved, published, retired]
+        contentVersion:
+          type: integer
+        sourceReferences:
+          type: array
+          items:
+            type: string
+        clinicalReviewer:
+          type: string
+          nullable: true
+        clinicalReviewedAt:
+          type: string
+          format: date-time
+          nullable: true
+    ErrorResponse:
+      type: object
+      required: [code, message, requestId]
+      properties:
+        code:
+          type: string
+          example: media_not_found
+        message:
+          type: string
+          description: Safe, non-sensitive operator message.
+        requestId:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+          description: Must never include health payloads or free text notes.

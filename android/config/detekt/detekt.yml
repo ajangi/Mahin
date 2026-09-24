@@ -1,0 +1,39 @@
+buildUponDefaultConfig: true
+config:
+  warningsAsErrors:
+    active: false
+complexity:
+  LongMethod:
+    active: true
+    threshold: 80
+  TooManyFunctions:
+    active: false
+naming:
+  FunctionNaming:
+    active: true
+    ignoreAnnotated: ['Composable']
+  MatchingDeclarationName:
+    active: true
+style:
+  MagicNumber:
+    active: false
+  WildcardImport:
+    active: true
+  MaxLineLength:
+    active: true
+    maxLineLength: 140
+    excludeCommentStatements: true
+  ReturnCount:
+    active: true
+    max: 4
+  UnusedPrivateMember:
+    active: true
+    ignoreAnnotated: ['Preview']
+comments:
+  UndocumentedPublicClass:
+    active: false
+  UndocumentedPublicFunction:
+    active: false
+potential-bugs:
+  UnsafeCallOnNullableType:
+    active: true

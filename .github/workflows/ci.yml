@@ -1,0 +1,102 @@
+name: ci
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tokens:
+    name: design-tokens
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check frozen design tokens
+        run: python3 scripts/check_design_tokens.py
+
+  openapi:
+    name: openapi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Lint OpenAPI
+        run: npx --yes @redocly/cli@1.34.2 lint openapi/openapi.yaml --config redocly.yaml
+
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+          cache-dependency-path: backend/gradle/wrapper/gradle-wrapper.properties
+      - name: Ktlint, Detekt, test
+        working-directory: backend
+        run: ./gradlew ktlintCheck detekt test --stacktrace --no-daemon
+      - name: Upload backend reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-reports
+          path: |
+            backend/build/reports/**
+            backend/build/test-results/**
+          if-no-files-found: ignore
+
+  admin:
+    name: admin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: admin/package-lock.json
+      - name: Install, test, build
+        working-directory: admin
+        run: |
+          npm ci
+          npm test
+          npm run build
+
+  android:
+    name: android
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+          cache-dependency-path: android/gradle/wrapper/gradle-wrapper.properties
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Accept licenses
+        run: yes | sdkmanager --licenses || true
+      - name: Lint, unit tests, assemble debug
+        working-directory: android
+        run: ./gradlew lintDebug ktlintCheck detekt test assembleDebug --stacktrace --no-daemon
+      - name: Upload Android reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-reports
+          path: |
+            android/**/build/reports/**
+            android/**/build/outputs/apk/**
+          if-no-files-found: ignore

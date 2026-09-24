@@ -1,0 +1,26 @@
+package dev.mahin.core.model
+
+object MahinTokenHex {
+    const val LIGHT_BRAND_PRIMARY = "#6E355D"
+    const val LIGHT_BRAND_PRIMARY_PRESSED = "#512544"
+    const val LIGHT_BRAND_PRIMARY_SOFT = "#C9A7BC"
+    const val LIGHT_SURFACE_BACKGROUND = "#FCF9F7"
+    const val LIGHT_SURFACE_DEFAULT = "#FFFFFF"
+    const val LIGHT_SURFACE_SECONDARY = "#F4EFED"
+    const val LIGHT_TEXT_PRIMARY = "#252126"
+    const val LIGHT_TEXT_SECONDARY = "#716970"
+    const val LIGHT_HEALTH_PERIOD = "#C94F62"
+    const val LIGHT_HEALTH_FERTILITY = "#3B8F91"
+    const val LIGHT_HEALTH_OVULATION = "#277276"
+    const val LIGHT_HEALTH_PREGNANCY = "#E99A73"
+    const val LIGHT_STATUS_POSITIVE = "#47856A"
+    const val LIGHT_STATUS_WARNING = "#D8913D"
+    const val LIGHT_STATUS_CRITICAL = "#B83A45"
+
+    const val DARK_SURFACE_BACKGROUND = "#171417"
+    const val DARK_SURFACE_DEFAULT = "#211D21"
+    const val DARK_SURFACE_ELEVATED = "#2A252A"
+    const val DARK_BRAND_PRIMARY = "#D2A5C3"
+    const val DARK_TEXT_PRIMARY = "#F7F2F5"
+    const val DARK_TEXT_SECONDARY = "#BEB4BB"
+}

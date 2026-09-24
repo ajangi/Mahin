@@ -1,0 +1,93 @@
+:root {
+  --brand-primary: #6e355d;
+  --brand-primary-pressed: #512544;
+  --brand-primary-soft: #c9a7bc;
+  --surface-background: #fcf9f7;
+  --surface-default: #ffffff;
+  --surface-secondary: #f4efed;
+  --text-primary: #252126;
+  --text-secondary: #716970;
+  --health-period: #c94f62;
+  --health-fertility: #3b8f91;
+  --health-ovulation: #277276;
+  --health-pregnancy: #e99a73;
+  --status-positive: #47856a;
+  --status-warning: #d8913d;
+  --status-critical: #b83a45;
+  font-family: "Vazirmatn", "Segoe UI", Tahoma, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+  background: var(--surface-background);
+  color: var(--text-primary);
+}
+
+body {
+  direction: rtl;
+}
+
+.shell {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+.brand {
+  color: var(--brand-primary);
+  font-size: 2rem;
+  margin: 0 0 8px;
+}
+
+.muted {
+  color: var(--text-secondary);
+}
+
+nav {
+  display: flex;
+  gap: 12px;
+  margin: 24px 0;
+}
+
+nav button {
+  background: var(--surface-default);
+  color: var(--text-primary);
+  border: 1px solid var(--brand-primary-soft);
+  border-radius: 12px;
+  padding: 10px 16px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+nav button[aria-current="page"] {
+  background: var(--brand-primary);
+  color: #fff;
+}
+
+.card {
+  background: var(--surface-default);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 1px 0 rgba(37, 33, 38, 0.06);
+}
+
+.token-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--surface-secondary);
+}
