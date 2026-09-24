@@ -1,9 +1,12 @@
 # M0 Handoff — Repository & Engineering Foundation
 
 **Milestone:** M0  
-**Status:** implemented, awaiting review  
+**Status:** accepted and merged  
+**Merged:** 2026-09-24 as squash-merge `b9013a2528a77b8d7e9528a09c39aee03c74ac92` of [PR #1](https://github.com/ajangi/Mahin/pull/1)  
+**Master CI:** all 5 jobs SUCCESS — [run 36031280012](https://github.com/ajangi/Mahin/actions/runs/36031280012)  
+**Gate:** acceptance was recorded on PR #1 (own-account cannot formally APPROVE).  
 **Next milestone:** M1 — Design System, RTL & Calendar Foundation (`prompts/M1.md`)  
-**Do not start M1 until this handoff is accepted and merged.**
+**A fresh agent will implement M1. This follow-up is docs-only; do not start M1 here.**
 
 ## Implemented scope
 - Monorepo: `android/`, `backend/`, `admin/`, `openapi/`, `design/`, `docs/`, `docker-compose.yml`, `.github/workflows/ci.yml`
@@ -72,6 +75,8 @@ Confirmed GitHub Actions on commit `5f00a25ccffbfef9656593746d0ae2d501b0058a` (w
 | admin | SUCCESS |
 | android | SUCCESS |
 
+Master `ci` after merge, commit `b9013a2528a77b8d7e9528a09c39aee03c74ac92` (workflow run [36031280012](https://github.com/ajangi/Mahin/actions/runs/36031280012), 2026-09-24): all 5 jobs SUCCESS (`design-tokens`, `openapi`, `backend`, `admin`, `android`).
+
 ## Acceptance criteria
 | Criterion | Status |
 |---|---|
@@ -80,7 +85,7 @@ Confirmed GitHub Actions on commit `5f00a25ccffbfef9656593746d0ae2d501b0058a` (w
 | Backend modular monolith skeleton | Met |
 | Admin skeleton | Met |
 | Docker local dependencies | Met (`docker-compose.yml`; Docker was not available in this agent VM) |
-| CI | Met — GitHub Actions `ci` all 5 jobs SUCCESS on `5f00a25` (run 36028775345) |
+| CI | Met — PR `ci` all 5 jobs SUCCESS on `5f00a25` (run 36028775345); master `ci` all 5 jobs SUCCESS on `b9013a2` (run 36031280012) |
 | Env configuration | Met (`.env.example`, `application.yml`, `local.properties.example`) |
 | Lint/format/static analysis | Wired (ktlint, detekt, Android lint, tsc, Redocly) |
 | Test harnesses | Met |
@@ -117,3 +122,5 @@ Confirmed GitHub Actions on commit `5f00a25ccffbfef9656593746d0ae2d501b0058a` (w
 
 ## Next milestone
 **M1 only** — Design System, RTL & Calendar Foundation (`prompts/M1.md`).
+
+M0 is accepted and merged. A **fresh agent** will implement M1. Do not start M1 in this docs-only follow-up.
