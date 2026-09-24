@@ -5,7 +5,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
-import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -13,9 +12,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 
 @Immutable
 data class MahinExtendedColors(
@@ -88,33 +84,13 @@ private val mahinShapes =
         extraLarge = RoundedCornerShape(MahinRadius.xl),
     )
 
-/**
- * Typography roles are wired to platform defaults in M0.
- * M1 vendors the licensed Persian family selected in ADR 0004.
- */
-private val mahinTypography =
-    Typography(
-        displayLarge =
-            TextStyle(
-                fontSize = 40.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MahinLightColors.textPrimary,
-            ),
-        headlineLarge = TextStyle(fontSize = 28.sp, fontWeight = FontWeight.SemiBold),
-        titleLarge = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Medium),
-        titleMedium = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Medium),
-        bodyLarge = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Normal),
-        bodyMedium = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Normal),
-        labelLarge = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
-        labelSmall = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium),
-    )
-
 @Composable
 fun MahinTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
     val scheme = if (darkTheme) darkScheme() else lightScheme()
+    val typography = mahinTypography(scheme.onBackground)
     val extended =
         if (darkTheme) {
             MahinExtendedColors(
@@ -144,7 +120,7 @@ fun MahinTheme(
     CompositionLocalProvider(LocalMahinExtendedColors provides extended) {
         MaterialTheme(
             colorScheme = scheme,
-            typography = mahinTypography,
+            typography = typography,
             shapes = mahinShapes,
             content = content,
         )

@@ -8,7 +8,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import dagger.hilt.android.AndroidEntryPoint
-import dev.mahin.android.foundation.FoundationScreen
+import dev.mahin.android.shell.MahinAppShell
 import dev.mahin.core.designsystem.MahinTheme
 
 @AndroidEntryPoint
@@ -19,7 +19,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 MahinTheme {
-                    FoundationScreen()
+                    MahinAppShell()
                 }
             }
         }

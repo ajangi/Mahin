@@ -1,7 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">ماهین</string>
-    <string name="foundation_subtitle">زیرساخت مهندسی ماهین. این صفحه رابط محصول نیست.</string>
-    <string name="foundation_privacy">داده‌های سلامت در این نسخه ذخیره یا ارسال نمی‌شوند.</string>
-    <string name="foundation_tokens_note">رنگ‌ها از توکن‌های ماهین می‌آیند، نه از رنگ‌های پراکندهٔ ویژگی.</string>
+    <string name="nav_today">امروز</string>
+    <string name="nav_calendar">تقویم</string>
+    <string name="nav_showcase">نمایش</string>
+    <string name="today_title">امروز</string>
+    <string name="today_subtitle">این صفحهٔ نمایشی M1 است؛ ردیابی چرخه در M2 اضافه می‌شود.</string>
+    <string name="today_numeric_sample">نمونهٔ عدد: %1$s</string>
+    <string name="today_empty_title">هنوز ثبت روزانه‌ای ندارید</string>
+    <string name="today_empty_body">پس از M2 می‌توانید علائم و پریود را اینجا ببینید.</string>
+    <string name="calendar_demo_title">تقویم جلالی</string>
+    <string name="calendar_demo_body">تاریخ را برای ورودی انتخاب کنید. ذخیرهٔ داخلی همیشه میلادی ISO است.</string>
+    <string name="calendar_demo_selection">انتخاب‌شده: %1$s/%2$s/%3$s</string>
+    <string name="showcase_title">اجزای طراحی</string>
+    <string name="showcase_body">نمونهٔ دکمه، بارگذاری و خطا — بدون محتوای پزشکی.</string>
+    <string name="showcase_primary_action">اقدام اصلی</string>
+    <string name="showcase_retry_count">تلاش‌های مجدد: %1$d</string>
 </resources>

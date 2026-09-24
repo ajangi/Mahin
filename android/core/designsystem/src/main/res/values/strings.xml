@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ds_empty_title">هنوز چیزی اینجا نیست</string>
+    <string name="ds_empty_body">وقتی داده‌ای ثبت شود، این بخش پر می‌شود.</string>
+    <string name="ds_loading_message">در حال بارگذاری…</string>
+    <string name="ds_error_title">مشکلی پیش آمد</string>
+    <string name="ds_error_body">لطفاً دوباره تلاش کنید.</string>
+    <string name="ds_retry">تلاش دوباره</string>
+    <string name="ds_date_picker_title">انتخاب تاریخ</string>
+    <string name="ds_date_picker_confirm">تأیید</string>
+    <string name="ds_date_picker_cancel">انصراف</string>
+    <string name="ds_date_picker_prev_month">ماه قبل</string>
+    <string name="ds_date_picker_next_month">ماه بعد</string>
+    <string name="ds_date_picker_gregorian_detail">میلادی: %1$s</string>
+    <string name="ds_weekday_sat">ش</string>
+    <string name="ds_weekday_sun">ی</string>
+    <string name="ds_weekday_mon">د</string>
+    <string name="ds_weekday_tue">س</string>
+    <string name="ds_weekday_wed">چ</string>
+    <string name="ds_weekday_thu">پ</string>
+    <string name="ds_weekday_fri">ج</string>
+    <string-array name="ds_jalali_month_names">
+        <item>فروردین</item>
+        <item>اردیبهشت</item>
+        <item>خرداد</item>
+        <item>تیر</item>
+        <item>مرداد</item>
+        <item>شهریور</item>
+        <item>مهر</item>
+        <item>آبان</item>
+        <item>آذر</item>
+        <item>دی</item>
+        <item>بهمن</item>
+        <item>اسفند</item>
+    </string-array>
+</resources>

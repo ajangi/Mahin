@@ -1,7 +1,7 @@
 # ADR 0004 — Persian UI typeface
 
 ## Status
-Accepted selection; **files not vendored in M0**
+Accepted; **OFL files vendored in M1** (`android/core/designsystem`)
 
 ## Context
 `docs/DESIGN_SYSTEM.md` requires a licensed, repository-safe Persian UI typeface selected by ADR. Agents must not download/commit fonts without verified redistribution rights.
