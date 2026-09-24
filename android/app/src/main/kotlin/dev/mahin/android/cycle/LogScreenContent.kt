@@ -49,6 +49,8 @@ internal fun LogScreenContent(
                 form =
                     TtcLogFormState(
                         bbtInput = state.bbtInput,
+                        bbtError = state.bbtError,
+                        intercourseLoggingEnabled = state.intercourseLoggingEnabled,
                         ovulationTest = state.ovulationTest,
                         cervicalMucus = state.cervicalMucus,
                         intercourseLogged = state.intercourseLogged,

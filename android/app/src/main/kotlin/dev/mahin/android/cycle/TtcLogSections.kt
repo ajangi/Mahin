@@ -6,12 +6,15 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import dev.mahin.android.R
+import dev.mahin.android.ttc.TtcIntercourseSectionCallbacks
+import dev.mahin.android.ttc.TtcIntercourseSectionState
 import dev.mahin.core.designsystem.MahinSpacing
 import dev.mahin.core.designsystem.MahinTypographyRole
 import dev.mahin.core.designsystem.mahinTextStyle
@@ -35,14 +38,22 @@ fun TtcLogSections(
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-    TtcBbtField(form.bbtInput, callbacks.onBbtChange)
+    TtcBbtField(form.bbtInput, form.bbtError, callbacks.onBbtChange)
     TtcOpkSection(form.ovulationTest, callbacks.onOvulationTestSelected)
     TtcMucusSection(form.cervicalMucus, callbacks.onCervicalMucusSelected)
-    TtcIntercourseSection(
-        intercourseLogged = form.intercourseLogged,
-        intercourseProtected = form.intercourseProtected,
-        onIntercourseToggle = callbacks.onIntercourseToggle,
-        onIntercourseProtectedSelected = callbacks.onIntercourseProtectedSelected,
+    TtcIntercourseOptInSection(
+        state =
+            TtcIntercourseSectionState(
+                enabled = form.intercourseLoggingEnabled,
+                intercourseLogged = form.intercourseLogged,
+                intercourseProtected = form.intercourseProtected,
+            ),
+        callbacks =
+            TtcIntercourseSectionCallbacks(
+                onOptInChanged = callbacks.onIntercourseOptInChanged,
+                onIntercourseToggle = callbacks.onIntercourseToggle,
+                onIntercourseProtectedSelected = callbacks.onIntercourseProtectedSelected,
+            ),
     )
     TtcPregnancyTestSection(form.pregnancyTest, callbacks.onPregnancyTestSelected)
 }
@@ -50,6 +61,7 @@ fun TtcLogSections(
 @Composable
 private fun TtcBbtField(
     bbtInput: String,
+    bbtError: BbtFieldError?,
     onBbtChange: (String) -> Unit,
 ) {
     OutlinedTextField(
@@ -57,6 +69,14 @@ private fun TtcBbtField(
         onValueChange = onBbtChange,
         label = { Text(stringResource(R.string.log_bbt_label)) },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        isError = bbtError != null,
+        supportingText = {
+            when (bbtError) {
+                BbtFieldError.UNPARSEABLE -> Text(stringResource(R.string.log_bbt_error_unparseable))
+                BbtFieldError.OUT_OF_RANGE -> Text(stringResource(R.string.log_bbt_error_range))
+                null -> Unit
+            }
+        },
         modifier = Modifier.fillMaxWidth(),
     )
 }
@@ -108,41 +128,50 @@ private fun TtcMucusSection(
 }
 
 @Composable
-private fun TtcIntercourseSection(
-    intercourseLogged: Boolean,
-    intercourseProtected: Boolean?,
-    onIntercourseToggle: () -> Unit,
-    onIntercourseProtectedSelected: (Boolean?) -> Unit,
+private fun TtcIntercourseOptInSection(
+    state: TtcIntercourseSectionState,
+    callbacks: TtcIntercourseSectionCallbacks,
 ) {
     Text(
         text = stringResource(R.string.log_intercourse_section),
         style = mahinTextStyle(MahinTypographyRole.Label),
         modifier = Modifier.padding(top = MahinSpacing.sm),
     )
-    FilterChip(
-        selected = intercourseLogged,
-        onClick = onIntercourseToggle,
-        label = { Text(stringResource(R.string.log_intercourse_toggle)) },
+    Switch(
+        checked = state.enabled,
+        onCheckedChange = callbacks.onOptInChanged,
     )
-    if (intercourseLogged) {
+    Text(
+        text = stringResource(R.string.log_intercourse_opt_in_label),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    if (state.enabled) {
         FilterChip(
-            selected = intercourseProtected == true,
-            onClick = { onIntercourseProtectedSelected(true) },
-            label = { Text(stringResource(R.string.ttc_intercourse_protected)) },
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = MahinSpacing.xxs),
+            selected = state.intercourseLogged,
+            onClick = callbacks.onIntercourseToggle,
+            label = { Text(stringResource(R.string.log_intercourse_toggle)) },
         )
-        FilterChip(
-            selected = intercourseProtected == false,
-            onClick = { onIntercourseProtectedSelected(false) },
-            label = { Text(stringResource(R.string.ttc_intercourse_unprotected)) },
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = MahinSpacing.xxs),
-        )
+        if (state.intercourseLogged) {
+            FilterChip(
+                selected = state.intercourseProtected == true,
+                onClick = { callbacks.onIntercourseProtectedSelected(true) },
+                label = { Text(stringResource(R.string.ttc_intercourse_protected)) },
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = MahinSpacing.xxs),
+            )
+            FilterChip(
+                selected = state.intercourseProtected == false,
+                onClick = { callbacks.onIntercourseProtectedSelected(false) },
+                label = { Text(stringResource(R.string.ttc_intercourse_unprotected)) },
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = MahinSpacing.xxs),
+            )
+        }
     }
 }
 
@@ -186,6 +215,7 @@ private fun mucusLabel(type: CervicalMucusType): String =
         CervicalMucusType.CREAMY -> stringResource(R.string.mucus_creamy)
         CervicalMucusType.WATERY -> stringResource(R.string.mucus_watery)
         CervicalMucusType.EGG_WHITE -> stringResource(R.string.mucus_egg_white)
+        CervicalMucusType.OTHER -> stringResource(R.string.mucus_other)
     }
 
 @Composable

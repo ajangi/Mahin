@@ -1,77 +1,76 @@
 # M3 Handoff — Trying to Conceive (TTC)
 
 **Milestone:** M3  
-**Status:** ready for review (draft PR)  
+**Status:** gatekeeper fixes pushed (draft PR)  
 **Branch:** `cursor/m3-ttc-7762`  
+**PR:** [#7](https://github.com/ajangi/Mahin/pull/7) (draft)  
 **Next milestone:** M4 — Pregnancy (`prompts/M4.md`)
 
-## Implemented scope
-- **Mode transition:** Cycle ↔ TTC via `ReproductiveModeCard` on Today; profile `reproductiveMode` updated without deleting cycle history.
-- **Persistence:** Room **v3** table `ttc_day_log` (BBT, OPK, cervical mucus, intercourse flags, pregnancy test) with `MIGRATION_2_3`.
-- **Logging:** TTC sections on Log tab when mode is `TRYING_TO_CONCEIVE`; loads/saves per selected Jalali day.
-- **Insights tab:** «باروری» bottom-nav entry in TTC mode — fertility estimate card (safety copy), Canvas BBT chart, weighted `LazyColumn` timeline (scroll-safe).
-- **Domain:** `FertilityInsightEngineV1` combines `CyclePredictionEngineV1` output with logged signals (OPK surge, BBT shift heuristic, egg-white mucus dates).
-- **Tests:** `FertilityInsightEngineV1Test`, migration `2→3`, `TtcInsightsScreenScrollTest`, updated `MahinDatabaseBootstrapTest`.
+## Gatekeeper follow-up (PR #7)
+Addressed blocking review on branch `cursor/m3-ttc-7762` (see commit after `2549aa0`).
 
-## Notable files / modules
+## Implemented scope
+- **Mode transition:** Cycle ↔ TTC on Today; history preserved.
+- **Room v3:** `ttc_day_log` + `MIGRATION_2_3`.
+- **Logging:** BBT (with `BbtInputParser`), OPK, mucus (incl. OTHER), pregnancy tests; intercourse only after **DataStore opt-in** (default off).
+- **Insights:** Single `LazyColumn` UI, loading state, calendar-day refresh, `prediction.fertileWindow` unchanged; logged signals as facts for current cycle only (`FertilityInsightEngineV1` v2).
+- **Log screen:** Full per-date load (daily + period + TTC), stale-load guard, BBT validation, chip deselect, empty TTC row delete.
+
+## Notable files
 | Area | Path |
 |---|---|
-| Room v3 / migration | `android/core/database/MahinMigrations.kt`, `entity/TtcDayLogEntity.kt`, `schemas/.../3.json` |
-| TTC repository | `android/core/database/ttc/TtcTrackingRepository.kt` |
-| Fertility engine | `android/domain/fertility/FertilityInsightEngineV1.kt` |
-| UI | `android/app/.../ttc/*`, `cycle/TtcLogSections.kt`, `cycle/ReproductiveModeCard.kt` |
-| Shell / nav | `MahinAppShell.kt`, `MahinTopLevelDestination.forMode` |
+| BBT parser | `android/core/common/BbtInputParser.kt` |
+| Intercourse opt-in | `android/core/datastore/TtcPrivacyPreferencesRepository.kt` |
+| Fertility engine v2 | `android/domain/fertility/FertilityInsightEngineV1.kt` |
+| Insights UI | `android/app/.../ttc/TtcInsightsScreenContent.kt` |
 | ADR | `docs/adr/0010-m3-ttc-schema.md` |
 
 ## Migrations
-- **Android Room:** `2 → 3` (`MIGRATION_2_3`) — adds `ttc_day_log`; prior tables unchanged.
-- **Backend Flyway:** unchanged.
+- **Android Room:** `2 → 3` additive only (`ttc_day_log`).
 
-## ADRs
-| ADR | Notes |
-|---|---|
-| 0010 | **New** — M3 TTC schema, insight engine placement |
+## Commands and results (local, post gatekeeper fixes)
 
-## Commands and results
-
-Run on 2026-09-24 in Cloud Agent VM (OpenJDK 21, Android SDK 35; `android/local.properties` not committed).
+Run on 2026-09-24 in Cloud Agent VM (OpenJDK 21, Android SDK 35).
 
 | Command | Result |
 |---|---|
 | `python3 scripts/check_design_tokens.py` | **PASS** |
 | `cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug --no-daemon` | **PASS** — BUILD SUCCESSFUL |
 
-Debug APK: `android/app/build/outputs/apk/debug/app-debug.apk` (`versionName` `0.0.4-m3`).
+## PR CI (pre-push baseline on `2549aa0`)
+| Job | Result |
+|---|---|
+| design-tokens | SUCCESS — [run 36054037590](https://github.com/ajangi/Mahin/actions/runs/36054037590) |
+| openapi | SUCCESS |
+| admin | SUCCESS |
+| backend | SUCCESS |
+| android | SUCCESS |
 
-## Acceptance criteria (M3 / PRD)
+Re-run CI after pushing gatekeeper commit and update this table.
+
+## Acceptance criteria (M3)
 | Criterion | Status |
 |---|---|
-| TTC transition / goal mode | Met |
-| BBT logging + chart | Met |
-| OPK logging + timeline | Met |
-| Cervical mucus logging | Met |
-| Intercourse logging | Met (TTC mode; private, not in analytics) |
-| Pregnancy-test logging | Met |
+| TTC transition | Met |
+| BBT / OPK / mucus / pregnancy-test logging | Met |
+| Intercourse logging (explicit opt-in) | Met (DataStore toggle; default off) |
 | TTC timeline/charts | Met |
-| Fertility estimate UX + safety language | Met |
-| Preserve M2 behavior / migrations | Met |
-| Lazy-list scroll regression | Met (`TtcInsightsScreenScrollTest`) |
+| Fertility estimate + safety language (no narrowing) | Met |
+| Preserve M2 / migrations | Met |
+| Scroll regression (large font) | Met — `TtcInsightsScreenScrollTest` |
 
 ## Known limitations
-- Single `ttc_day_log` row per day (not normalized per PRD entity list); adequate for local M3, may split for sync later.
-- Fertility insight narrowing is heuristic; does not replace clinical interpretation.
-- TTC educational CMS content and reminders deferred (M5+ / content milestone).
-- Cycle comparison view and configurable TTC reminders not implemented in M3 UI.
-- Roborazzi goldens not added for new screens.
+- BBT rise pattern text is descriptive only; not clinically validated.
+- TTC educational CMS content and reminders deferred.
+- Single `ttc_day_log` row per day (may split for sync later).
 
 ## Unresolved questions
-1. Whether to require explicit opt-in for intercourse logging outside TTC mode (currently hidden unless TTC).
-2. Persist `FertilityInsightResult` snapshots vs recompute-only (currently recompute-only, same as cycle predictions).
+1. **Clinical review:** Should any future UX narrow or shift fertile-window display using OPK/BBT/mucus signals? (Deferred; ADR 0010 records need for review before such behavior.)
+2. Persist fertility insight snapshots vs recompute-only (still recompute-only).
+3. Whether intercourse opt-in should be surfaced outside TTC mode (currently available whenever TTC log sections show).
 
 ## Deferred
-- M4: Pregnancy mode onboarding and module.
-- M5: Sync/outbox for TTC entities.
-- Rich reminders and educational TTC articles from CMS.
+- M4 pregnancy mode; M5 sync; CMS TTC education.
 
 ## Next milestone
 **M4 only** — Pregnancy (`prompts/M4.md`).

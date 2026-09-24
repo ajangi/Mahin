@@ -49,11 +49,26 @@ class MahinDatabaseMigrationTest {
                 ) VALUES (1, 'CYCLE_TRACKING', 28, 5, 'UNKNOWN', 1, 0)
                 """.trimIndent(),
             )
+            execSQL(
+                """
+                INSERT INTO daily_log (
+                    id, logDate, moodTags, symptomTags, painSeverity, note, updatedAtEpochMs
+                ) VALUES ('d1', '2025-01-01', '', 'سردرد', NULL, NULL, 0)
+                """.trimIndent(),
+            )
             close()
         }
         val migrated = helper.runMigrationsAndValidate(TEST_DB, 3, true, MIGRATION_1_2, MIGRATION_2_3)
         migrated.query("SELECT name FROM sqlite_master WHERE type='table' AND name='ttc_day_log'").use { cursor ->
             assertThat(cursor.moveToFirst()).isTrue()
+        }
+        migrated.query("SELECT reproductiveMode FROM cycle_profile WHERE id = 1").use { cursor ->
+            assertThat(cursor.moveToFirst()).isTrue()
+            assertThat(cursor.getString(0)).isEqualTo("CYCLE_TRACKING")
+        }
+        migrated.query("SELECT symptomTags FROM daily_log WHERE id = 'd1'").use { cursor ->
+            assertThat(cursor.moveToFirst()).isTrue()
+            assertThat(cursor.getString(0)).isEqualTo("سردرد")
         }
         migrated.close()
     }

@@ -41,6 +41,9 @@ class TtcTrackingRepository
 
         suspend fun getTtcLogForDate(date: LocalDate): TtcDayLogEntity? = ttcDao.getForDate(date)
 
+        suspend fun getReproductiveMode(): ReproductiveMode =
+            profileDao.getProfile()?.reproductiveMode ?: ReproductiveMode.CYCLE_TRACKING
+
         suspend fun getTtcLogsInRange(
             start: LocalDate,
             end: LocalDate,
@@ -54,7 +57,12 @@ class TtcTrackingRepository
                     input.cervicalMucus != null ||
                     input.intercourseLogged ||
                     input.pregnancyTestResult != null
-            if (!hasAnySignal && existing == null) return
+            if (!hasAnySignal) {
+                if (existing != null) {
+                    ttcDao.deleteByDate(input.logDate)
+                }
+                return
+            }
             val id = existing?.id ?: UUID.randomUUID().toString()
             ttcDao.upsert(
                 TtcDayLogEntity(

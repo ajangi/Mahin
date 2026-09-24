@@ -7,4 +7,5 @@ enum class CervicalMucusType {
     CREAMY,
     WATERY,
     EGG_WHITE,
+    OTHER,
 }

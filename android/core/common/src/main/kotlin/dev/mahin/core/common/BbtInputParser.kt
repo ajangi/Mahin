@@ -1,0 +1,53 @@
+package dev.mahin.core.common
+
+/**
+ * Normalizes locale-specific decimal input for BBT entry. Range check is input sanity only, not medical.
+ */
+object BbtInputParser {
+    const val MIN_CELSIUS: Double = 35.0
+    const val MAX_CELSIUS: Double = 42.0
+
+    sealed interface ParseResult {
+        data object Empty : ParseResult
+
+        data class Valid(
+            val celsius: Double,
+        ) : ParseResult
+
+        data class Invalid(
+            val reason: InvalidReason,
+        ) : ParseResult
+    }
+
+    enum class InvalidReason {
+        UNPARSEABLE,
+        OUT_OF_RANGE,
+    }
+
+    fun parse(raw: String): ParseResult {
+        val trimmed = raw.trim()
+        if (trimmed.isEmpty()) return ParseResult.Empty
+        val normalized = normalizeToAsciiDecimal(trimmed)
+        val value = normalized.toDoubleOrNull() ?: return ParseResult.Invalid(InvalidReason.UNPARSEABLE)
+        if (value < MIN_CELSIUS || value > MAX_CELSIUS) {
+            return ParseResult.Invalid(InvalidReason.OUT_OF_RANGE)
+        }
+        return ParseResult.Valid(value)
+    }
+
+    fun normalizeToAsciiDecimal(input: String): String {
+        val builder = StringBuilder(input.length)
+        for (ch in input) {
+            val mapped =
+                when (ch) {
+                    in '0'..'9' -> ch
+                    in '\u06F0'..'\u06F9' -> '0' + (ch.code - '\u06F0'.code)
+                    in '\u0660'..'\u0669' -> '0' + (ch.code - '\u0660'.code)
+                    ',', '\u060C', '\u066B', '٫' -> '.'
+                    else -> ch
+                }
+            builder.append(mapped)
+        }
+        return builder.toString()
+    }
+}

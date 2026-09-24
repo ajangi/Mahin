@@ -1,15 +1,16 @@
 package dev.mahin.domain.fertility
 
+import dev.mahin.core.model.CervicalMucusType
+import dev.mahin.core.model.OvulationTestResult
 import dev.mahin.domain.cycle.CyclePredictionResult
-import dev.mahin.domain.cycle.DateRangeEstimate
 import java.time.LocalDate
 
 /**
- * Combines calendar-method cycle estimates with user-logged TTC signals.
- * Outputs are indicative only — not contraception or diagnosis.
+ * Surfaces cycle estimates unchanged and lists user-logged TTC signals for the current cycle only.
+ * Does not narrow prediction windows or infer medical conclusions.
  */
 object FertilityInsightEngineV1 {
-    const val ALGORITHM_VERSION: String = "fertility-insight-v1"
+    const val ALGORITHM_VERSION: String = "fertility-insight-v2"
     private const val BBT_SHIFT_DELTA_CELSIUS = 0.2
     private const val BBT_BASELINE_DAYS = 6
     private const val BBT_HIGH_DAYS = 3
@@ -17,31 +18,26 @@ object FertilityInsightEngineV1 {
     fun buildInsight(
         prediction: CyclePredictionResult,
         signals: List<TtcSignalDay>,
-        @Suppress("UNUSED_PARAMETER") today: LocalDate,
+        currentCycleStart: LocalDate?,
     ): FertilityInsightResult {
-        val sorted = signals.sortedBy { it.date }
+        val cycleSignals =
+            if (currentCycleStart != null) {
+                signals.filter { !it.date.isBefore(currentCycleStart) }
+            } else {
+                emptyList()
+            }
+        val sorted = cycleSignals.sortedBy { it.date }
         val surgeDates =
             sorted
                 .filter { day ->
-                    day.ovulationTestResult == "PEAK" || day.ovulationTestResult == "POSITIVE"
+                    day.ovulationTestResult == OvulationTestResult.POSITIVE ||
+                        day.ovulationTestResult == OvulationTestResult.PEAK
                 }.map { it.date }
         val eggWhiteDates =
             sorted
-                .filter { it.cervicalMucus == "EGG_WHITE" }
+                .filter { it.cervicalMucus == CervicalMucusType.EGG_WHITE }
                 .map { it.date }
         val bbtShift = detectBbtShift(sorted)
-
-        val fertile = prediction.fertileWindow
-        val aligned =
-            fertile != null &&
-                surgeDates.any { date -> !date.isBefore(fertile.earliest) && !date.isAfter(fertile.latest) }
-
-        val highlighted =
-            when {
-                fertile == null -> null
-                surgeDates.isEmpty() && bbtShift == null -> fertile
-                else -> narrowWindow(fertile, surgeDates, bbtShift, eggWhiteDates)
-            }
 
         return FertilityInsightResult(
             algorithmVersion = ALGORITHM_VERSION,
@@ -49,9 +45,18 @@ object FertilityInsightEngineV1 {
             ovulationTestSurgeDates = surgeDates,
             bbtShiftSuggestedDate = bbtShift,
             fertileEggWhiteDates = eggWhiteDates,
-            signalAlignedWithEstimate = aligned,
-            highlightedFertileWindow = highlighted,
         )
+    }
+
+    fun currentCycleStart(
+        prediction: CyclePredictionResult,
+        today: LocalDate,
+        periodAnchorStart: LocalDate?,
+    ): LocalDate? {
+        periodAnchorStart?.let { return it }
+        val cycleDay = prediction.cycleDay ?: return null
+        if (cycleDay < 1) return null
+        return today.minusDays((cycleDay - 1).toLong())
     }
 
     private fun detectBbtShift(sorted: List<TtcSignalDay>): LocalDate? {
@@ -72,21 +77,5 @@ object FertilityInsightEngineV1 {
             }
         }
         return null
-    }
-
-    private fun narrowWindow(
-        base: DateRangeEstimate,
-        surgeDates: List<LocalDate>,
-        bbtShift: LocalDate?,
-        eggWhiteDates: List<LocalDate>,
-    ): DateRangeEstimate {
-        val anchors = surgeDates + listOfNotNull(bbtShift) + eggWhiteDates
-        if (anchors.isEmpty()) return base
-        val earliest = anchors.minOrNull() ?: base.earliest
-        val latest = anchors.maxOrNull() ?: base.latest
-        val narrowedEarliest = maxOf(base.earliest, earliest.minusDays(1))
-        val narrowedLatest = minOf(base.latest, latest.plusDays(1))
-        if (narrowedEarliest.isAfter(narrowedLatest)) return base
-        return DateRangeEstimate(earliest = narrowedEarliest, latest = narrowedLatest)
     }
 }

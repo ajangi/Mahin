@@ -1,6 +1,8 @@
 package dev.mahin.domain.fertility
 
 import com.google.common.truth.Truth.assertThat
+import dev.mahin.core.model.CervicalMucusType
+import dev.mahin.core.model.OvulationTestResult
 import dev.mahin.domain.cycle.CyclePredictionResult
 import dev.mahin.domain.cycle.DateRangeEstimate
 import dev.mahin.domain.cycle.PredictionConfidence
@@ -14,11 +16,11 @@ class FertilityInsightEngineV1Test {
             latest = LocalDate.of(2025, 3, 16),
         )
 
-    private fun prediction(): CyclePredictionResult =
+    private fun prediction(cycleDay: Int = 12): CyclePredictionResult =
         CyclePredictionResult(
             algorithmVersion = "cycle-prediction-v1",
             confidence = PredictionConfidence.MEDIUM,
-            cycleDay = 12,
+            cycleDay = cycleDay,
             nextPeriod = null,
             fertileWindow = fertileWindow,
             estimatedOvulation = DateRangeEstimate(LocalDate.of(2025, 3, 14), LocalDate.of(2025, 3, 15)),
@@ -26,40 +28,69 @@ class FertilityInsightEngineV1Test {
         )
 
     @Test
-    fun opkPeakInsideFertileWindow_marksAligned() {
-        val signals =
-            listOf(
-                TtcSignalDay(
-                    date = LocalDate.of(2025, 3, 13),
-                    bbtCelsius = null,
-                    ovulationTestResult = "PEAK",
-                    cervicalMucus = null,
-                    intercourseLogged = false,
-                    pregnancyTestResult = null,
-                ),
+    fun buildInsight_doesNotNarrowFertileWindow() {
+        val today = LocalDate.of(2025, 3, 13)
+        val cycleStart = today.minusDays(11)
+        val priorCycleOpk =
+            TtcSignalDay(
+                date = cycleStart.minusDays(10),
+                bbtCelsius = null,
+                ovulationTestResult = OvulationTestResult.PEAK,
+                cervicalMucus = null,
+                intercourseLogged = false,
+                pregnancyTestResult = null,
+            )
+        val currentOpk =
+            TtcSignalDay(
+                date = today,
+                bbtCelsius = null,
+                ovulationTestResult = OvulationTestResult.POSITIVE,
+                cervicalMucus = CervicalMucusType.EGG_WHITE,
+                intercourseLogged = false,
+                pregnancyTestResult = null,
             )
         val result =
             FertilityInsightEngineV1.buildInsight(
                 prediction = prediction(),
-                signals = signals,
-                today = LocalDate.of(2025, 3, 13),
+                signals = listOf(priorCycleOpk, currentOpk),
+                currentCycleStart = cycleStart,
             )
-        assertThat(result.signalAlignedWithEstimate).isTrue()
-        assertThat(result.ovulationTestSurgeDates).containsExactly(LocalDate.of(2025, 3, 13))
+        assertThat(result.cyclePrediction.fertileWindow).isEqualTo(fertileWindow)
+        assertThat(result.ovulationTestSurgeDates).containsExactly(today)
+        assertThat(result.fertileEggWhiteDates).containsExactly(today)
     }
 
     @Test
-    fun bbtShift_detectedAfterBaseline() {
-        val start = LocalDate.of(2025, 3, 1)
+    fun buildInsight_excludesSignalsBeforeCurrentCycleStart() {
+        val today = LocalDate.of(2025, 3, 20)
+        val cycleStart = LocalDate.of(2025, 3, 1)
+        val oldSignal =
+            TtcSignalDay(
+                date = LocalDate.of(2025, 2, 15),
+                bbtCelsius = null,
+                ovulationTestResult = OvulationTestResult.PEAK,
+                cervicalMucus = null,
+                intercourseLogged = false,
+                pregnancyTestResult = null,
+            )
+        val result =
+            FertilityInsightEngineV1.buildInsight(
+                prediction = prediction(cycleDay = 20),
+                signals = listOf(oldSignal),
+                currentCycleStart = cycleStart,
+            )
+        assertThat(result.ovulationTestSurgeDates).isEmpty()
+    }
+
+    @Test
+    fun bbtShift_detectedOnlyInCurrentCycleSegment() {
+        val cycleStart = LocalDate.of(2025, 3, 1)
         val signals =
             (0 until 9).map { offset ->
-                val temp =
-                    when {
-                        offset < 6 -> 36.4
-                        else -> 36.7
-                    }
+                val date = cycleStart.plusDays(offset.toLong())
+                val temp = if (offset < 6) 36.4 else 36.7
                 TtcSignalDay(
-                    date = start.plusDays(offset.toLong()),
+                    date = date,
                     bbtCelsius = temp,
                     ovulationTestResult = null,
                     cervicalMucus = null,
@@ -71,36 +102,20 @@ class FertilityInsightEngineV1Test {
             FertilityInsightEngineV1.buildInsight(
                 prediction = prediction(),
                 signals = signals,
-                today = start.plusDays(8),
+                currentCycleStart = cycleStart,
             )
-        assertThat(result.bbtShiftSuggestedDate).isEqualTo(start.plusDays(6))
+        assertThat(result.bbtShiftSuggestedDate).isEqualTo(cycleStart.plusDays(6))
     }
 
     @Test
-    fun insufficientPrediction_stillReturnsSignalsWithoutHighlight() {
-        val insufficient =
-            prediction().copy(
-                fertileWindow = null,
-                confidence = PredictionConfidence.INSUFFICIENT_DATA,
+    fun currentCycleStart_usesOpenPeriodAnchorWhenProvided() {
+        val anchor = LocalDate.of(2025, 2, 1)
+        val start =
+            FertilityInsightEngineV1.currentCycleStart(
+                prediction = prediction(cycleDay = 5),
+                today = LocalDate.of(2025, 2, 10),
+                periodAnchorStart = anchor,
             )
-        val signals =
-            listOf(
-                TtcSignalDay(
-                    date = LocalDate.of(2025, 3, 1),
-                    bbtCelsius = null,
-                    ovulationTestResult = "POSITIVE",
-                    cervicalMucus = "EGG_WHITE",
-                    intercourseLogged = true,
-                    pregnancyTestResult = null,
-                ),
-            )
-        val result =
-            FertilityInsightEngineV1.buildInsight(
-                prediction = insufficient,
-                signals = signals,
-                today = LocalDate.of(2025, 3, 1),
-            )
-        assertThat(result.highlightedFertileWindow).isNull()
-        assertThat(result.fertileEggWhiteDates).isNotEmpty()
+        assertThat(start).isEqualTo(anchor)
     }
 }

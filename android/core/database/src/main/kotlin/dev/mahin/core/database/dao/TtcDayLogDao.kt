@@ -27,4 +27,7 @@ interface TtcDayLogDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: TtcDayLogEntity)
+
+    @Query("DELETE FROM ttc_day_log WHERE logDate = :date")
+    suspend fun deleteByDate(date: LocalDate)
 }

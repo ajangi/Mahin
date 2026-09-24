@@ -51,6 +51,9 @@ dependencies {
     testImplementation(libs.truth)
     testImplementation(project(":core:testing"))
     testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.room.runtime)
+    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.androidx.compose.ui.test.junit4)
     testImplementation(libs.androidx.compose.ui.test.manifest)
 }

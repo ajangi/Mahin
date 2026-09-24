@@ -19,6 +19,7 @@ fun LogScreen(
                 onBbtChange = viewModel::onBbtChange,
                 onOvulationTestSelected = viewModel::onOvulationTestSelected,
                 onCervicalMucusSelected = viewModel::onCervicalMucusSelected,
+                onIntercourseOptInChanged = viewModel::setIntercourseLoggingEnabled,
                 onIntercourseToggle = viewModel::toggleIntercourse,
                 onIntercourseProtectedSelected = viewModel::onIntercourseProtectedSelected,
                 onPregnancyTestSelected = viewModel::onPregnancyTestSelected,

@@ -11,19 +11,28 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
+data class ShellNavigationState(
+    val profileLoaded: Boolean = false,
+    val reproductiveMode: ReproductiveMode = ReproductiveMode.CYCLE_TRACKING,
+)
+
 @HiltViewModel
 class MahinAppShellViewModel
     @Inject
     constructor(
         ttcRepository: TtcTrackingRepository,
     ) : ViewModel() {
-        val reproductiveMode: StateFlow<ReproductiveMode> =
+        val navigationState: StateFlow<ShellNavigationState> =
             ttcRepository
                 .observeProfile()
-                .map { profile -> profile?.reproductiveMode ?: ReproductiveMode.CYCLE_TRACKING }
-                .stateIn(
+                .map { profile ->
+                    ShellNavigationState(
+                        profileLoaded = true,
+                        reproductiveMode = profile?.reproductiveMode ?: ReproductiveMode.CYCLE_TRACKING,
+                    )
+                }.stateIn(
                     scope = viewModelScope,
                     started = SharingStarted.WhileSubscribed(5_000),
-                    initialValue = ReproductiveMode.CYCLE_TRACKING,
+                    initialValue = ShellNavigationState(profileLoaded = false),
                 )
     }

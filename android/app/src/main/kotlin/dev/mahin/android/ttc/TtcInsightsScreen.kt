@@ -13,9 +13,15 @@ fun TtcInsightsScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     TtcInsightsScreenContent(
-        insight = state.insight,
-        timeline = state.timeline,
-        bbtPoints = state.bbtPoints,
-        modifier = modifier,
+        state =
+            TtcInsightsContentState(
+                isLoading = state.isLoading,
+                isTtcMode = state.isTtcMode,
+                intercourseLoggingEnabled = state.intercourseLoggingEnabled,
+                insight = state.insight,
+                timeline = state.timeline,
+                bbtPoints = state.bbtPoints,
+                modifier = modifier,
+            ),
     )
 }

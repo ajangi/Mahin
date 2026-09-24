@@ -1,8 +1,13 @@
 package dev.mahin.android.ttc
 
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import dev.mahin.core.database.entity.TtcDayLogEntity
 import dev.mahin.core.designsystem.MahinTheme
@@ -27,7 +32,7 @@ class TtcInsightsScreenScrollTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun ttcInsightsScreen_withTimeline_composesWithoutCrash() {
+    fun ttcInsightsScreen_largeFontScale_showsLastTimelineRowAndDisclaimer() {
         val prediction =
             CyclePredictionResult(
                 algorithmVersion = "cycle-prediction-v1",
@@ -49,8 +54,6 @@ class TtcInsightsScreenScrollTest {
                 ovulationTestSurgeDates = emptyList(),
                 bbtShiftSuggestedDate = null,
                 fertileEggWhiteDates = emptyList(),
-                signalAlignedWithEstimate = false,
-                highlightedFertileWindow = prediction.fertileWindow,
             )
         val timeline =
             (0 until 12).map { index ->
@@ -66,17 +69,34 @@ class TtcInsightsScreenScrollTest {
                     updatedAtEpochMs = 0L,
                 )
             }
+        val disclaimer =
+            "این اطلاعات تخمینی است؛ تضمین بارداری یا روش ضدبارداری نیست. برای تصمیم پزشکی با متخصص مشورت کنید."
         composeRule.setContent {
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+            CompositionLocalProvider(
+                LocalLayoutDirection provides LayoutDirection.Rtl,
+                LocalDensity provides Density(density = 1f, fontScale = 2f),
+            ) {
                 MahinTheme {
                     TtcInsightsScreenContent(
-                        insight = insight,
-                        timeline = timeline,
-                        bbtPoints = timeline.mapNotNull { BbtChartPoint(it.logDate, it.bbtCelsius!!) },
+                        state =
+                            TtcInsightsContentState(
+                                isLoading = false,
+                                isTtcMode = true,
+                                intercourseLoggingEnabled = false,
+                                insight = insight,
+                                timeline = timeline,
+                                bbtPoints = timeline.mapNotNull { BbtChartPoint(it.logDate, it.bbtCelsius!!) },
+                            ),
                     )
                 }
             }
         }
         composeRule.waitForIdle()
+        val lastItemIndex = 4 + timeline.size
+        val lastTimelineIndex = 4 + timeline.lastIndex
+        composeRule.onNodeWithTag("ttc_insights_list").performScrollToIndex(lastTimelineIndex)
+        composeRule.onNodeWithText("۳۶٫۶۱", substring = true).assertExists()
+        composeRule.onNodeWithTag("ttc_insights_list").performScrollToIndex(lastItemIndex)
+        composeRule.onNodeWithText(disclaimer, substring = true).assertExists()
     }
 }

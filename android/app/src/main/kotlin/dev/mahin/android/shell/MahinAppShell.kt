@@ -32,9 +32,16 @@ fun MahinAppShell(
     shellViewModel: MahinAppShellViewModel = hiltViewModel(),
 ) {
     val navController = rememberNavController()
-    val reproductiveMode by shellViewModel.reproductiveMode.collectAsStateWithLifecycle()
-    val isTtcMode = reproductiveMode == ReproductiveMode.TRYING_TO_CONCEIVE
-    val destinations = MahinTopLevelDestination.forMode(isTtcMode)
+    val shellState by shellViewModel.navigationState.collectAsStateWithLifecycle()
+    val isTtcMode =
+        shellState.profileLoaded &&
+            shellState.reproductiveMode == ReproductiveMode.TRYING_TO_CONCEIVE
+    val destinations =
+        if (!shellState.profileLoaded) {
+            MahinTopLevelDestination.forMode(isTtcMode = false)
+        } else {
+            MahinTopLevelDestination.forMode(isTtcMode)
+        }
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
