@@ -84,10 +84,21 @@ jobs:
           java-version: "21"
           cache: gradle
           cache-dependency-path: android/gradle/wrapper/gradle-wrapper.properties
+      # v3 defaults to the obsolete `tools` package, which Google no longer
+      # serves (`Failed to find package 'tools'`). v4 installs cmdline-tools
+      # and accepts licenses; we request only packages that exist today.
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-      - name: Accept licenses
-        run: yes | sdkmanager --licenses || true
+        uses: android-actions/setup-android@v4.0.4
+        with:
+          packages: platform-tools
+      - name: Install Android platforms and build-tools
+        run: |
+          sdkmanager --install \
+            "platforms;android-35" \
+            "build-tools;35.0.0" \
+            "build-tools;34.0.0"
+      - name: Point Gradle at the SDK
+        run: echo "sdk.dir=${ANDROID_HOME}" > android/local.properties
       - name: Lint, unit tests, assemble debug
         working-directory: android
         run: ./gradlew lintDebug ktlintCheck detekt test assembleDebug --stacktrace --no-daemon

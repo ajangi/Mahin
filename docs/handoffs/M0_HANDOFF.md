@@ -56,7 +56,13 @@ Run on 2026-09-24 in the Cloud Agent VM (Ubuntu, OpenJDK 21.0.10, Android SDK 35
 | `cd admin && npm test && npm run build` | **PASS** — Vitest 2 tests; Vite production build wrote `admin/dist/` |
 | `cd android && ./gradlew ktlintCheck detekt test lintDebug assembleDebug --no-daemon` | **PASS** — BUILD SUCCESSFUL in 1m 11s for test/lint/assemble; ktlintCheck later **PASS**; **50** Android unit tests, 0 failures, 0 errors; debug APK `android/app/build/outputs/apk/debug/app-debug.apk` (12 882 235 bytes) |
 
-CI workflow `.github/workflows/ci.yml` runs the same jobs on GitHub-hosted runners.
+### GitHub Actions
+
+PR #1 job `android` initially failed on `android-actions/setup-android@v3`, which still invoked `sdkmanager tools`. Google no longer serves that package (`Failed to find package 'tools'`).
+
+**Fix:** `.github/workflows/ci.yml` now uses `android-actions/setup-android@v4.0.4` with `packages: platform-tools`, then installs `platforms;android-35` and `build-tools;34.0.0` / `35.0.0` (matching compileSdk 35 / AGP). Java 21 is unchanged. Gradle still runs `lintDebug ktlintCheck detekt test assembleDebug`.
+
+Confirmed GitHub Actions results will be recorded here after the repaired workflow completes on this PR head.
 
 ## Acceptance criteria
 | Criterion | Status |
@@ -66,7 +72,7 @@ CI workflow `.github/workflows/ci.yml` runs the same jobs on GitHub-hosted runne
 | Backend modular monolith skeleton | Met |
 | Admin skeleton | Met |
 | Docker local dependencies | Met (`docker-compose.yml`; Docker was not available in this agent VM) |
-| CI | Met |
+| CI | GitHub Android job blocked by obsolete `tools` package; repair in progress |
 | Env configuration | Met (`.env.example`, `application.yml`, `local.properties.example`) |
 | Lint/format/static analysis | Wired (ktlint, detekt, Android lint, tsc, Redocly) |
 | Test harnesses | Met |
