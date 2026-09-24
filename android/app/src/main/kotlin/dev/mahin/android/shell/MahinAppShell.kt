@@ -10,6 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -21,11 +23,25 @@ import dev.mahin.android.cycle.HistoryScreen
 import dev.mahin.android.cycle.LogScreen
 import dev.mahin.android.cycle.TodayScreen
 import dev.mahin.android.navigation.MahinTopLevelDestination
+import dev.mahin.android.ttc.TtcInsightsScreen
+import dev.mahin.core.model.ReproductiveMode
 
 @Composable
-fun MahinAppShell(modifier: Modifier = Modifier) {
+fun MahinAppShell(
+    modifier: Modifier = Modifier,
+    shellViewModel: MahinAppShellViewModel = hiltViewModel(),
+) {
     val navController = rememberNavController()
-    val destinations = MahinTopLevelDestination.entries
+    val shellState by shellViewModel.navigationState.collectAsStateWithLifecycle()
+    val isTtcMode =
+        shellState.profileLoaded &&
+            shellState.reproductiveMode == ReproductiveMode.TRYING_TO_CONCEIVE
+    val destinations =
+        if (!shellState.profileLoaded) {
+            MahinTopLevelDestination.forMode(isTtcMode = false)
+        } else {
+            MahinTopLevelDestination.forMode(isTtcMode)
+        }
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
@@ -67,6 +83,7 @@ fun MahinAppShell(modifier: Modifier = Modifier) {
             composable(MahinTopLevelDestination.Today.route) { TodayScreen() }
             composable(MahinTopLevelDestination.Calendar.route) { CycleCalendarScreen() }
             composable(MahinTopLevelDestination.Log.route) { LogScreen() }
+            composable(MahinTopLevelDestination.TtcInsights.route) { TtcInsightsScreen() }
             composable(MahinTopLevelDestination.History.route) { HistoryScreen() }
         }
     }

@@ -10,6 +10,9 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PeriodDayDao {
+    @Query("SELECT * FROM period_day WHERE logDate = :date LIMIT 1")
+    suspend fun getForDate(date: LocalDate): PeriodDayEntity?
+
     @Query("SELECT * FROM period_day WHERE logDate BETWEEN :start AND :end")
     fun observeRange(
         start: LocalDate,

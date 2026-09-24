@@ -5,6 +5,7 @@
     <string name="nav_calendar">تقویم</string>
     <string name="nav_log">ثبت</string>
     <string name="nav_history">تاریخچه</string>
+    <string name="nav_ttc_insights">باروری</string>
 
     <string name="today_title">امروز</string>
     <string name="today_subtitle">خلاصهٔ چرخه و ثبت‌های امروز</string>
@@ -65,6 +66,63 @@
     <string name="confidence_high">بالا</string>
 
     <string name="prediction_disclaimer">پیش‌بینی‌ها تخمین هستند؛ روش ضدبارداری نیستند و تشخیص پزشکی جایگزین نمی‌شوند.</string>
+    <string name="today_ttc_hint">برای ثبت BBT، تست تخمک‌گذاری و سایر نشانه‌ها به تب «ثبت» یا «باروری» بروید.</string>
+
+    <string name="mode_settings_title">هدف ردیابی</string>
+    <string name="mode_settings_body">تغییر حالت، تاریخچهٔ چرخه را حفظ می‌کند.</string>
+
+    <string name="log_ttc_section">ثبت‌های قصد بارداری</string>
+    <string name="log_ttc_privacy_note">این اطلاعات خصوصی است و در اعلان‌ها یا تحلیل‌ها نمایش داده نمی‌شود.</string>
+    <string name="log_bbt_label">دمای پایه (°C)</string>
+    <string name="log_bbt_error_unparseable">عدد دما را با ارقام لاتین یا فارسی وارد کنید.</string>
+    <string name="log_bbt_error_range">مقدار باید بین ۳۵ و ۴۲ درجهٔ سانتی‌گراد باشد.</string>
+    <string name="log_intercourse_opt_in_label">ثبت روابط جنسی (فعال‌سازی صریح)</string>
+    <string name="log_opk_section">تست تخمک‌گذاری (OPK)</string>
+    <string name="log_mucus_section">ترشحات دهانهٔ رحم</string>
+    <string name="log_intercourse_section">روابط جنسی (اختیاری)</string>
+    <string name="log_intercourse_toggle">روابط ثبت شد</string>
+    <string name="log_pregnancy_test_section">تست بارداری</string>
+
+    <string name="opk_negative">منفی</string>
+    <string name="opk_positive">مثبت</string>
+    <string name="opk_peak">اوج</string>
+    <string name="opk_unclear">نامشخص</string>
+
+    <string name="mucus_dry">خشک</string>
+    <string name="mucus_sticky">چسبناک</string>
+    <string name="mucus_creamy">کرمی</string>
+    <string name="mucus_watery">آبکی</string>
+    <string name="mucus_egg_white">شفافِ کش‌دار</string>
+    <string name="mucus_other">غیرمعمول / سایر</string>
+
+    <string name="pregnancy_test_negative">منفی</string>
+    <string name="pregnancy_test_positive">مثبت</string>
+    <string name="pregnancy_test_unclear">نامشخص</string>
+
+    <string name="ttc_intercourse_protected">با محافظت</string>
+    <string name="ttc_intercourse_unprotected">بدون محافظت</string>
+    <string name="ttc_intercourse_unspecified">ثبت بدون جزئیات محافظت</string>
+
+    <string name="ttc_insights_title">نمای باروری</string>
+    <string name="ttc_insights_empty_title">حالت قصد بارداری فعال نیست</string>
+    <string name="ttc_insights_empty_body">از تب «امروز» هدف خود را به «قصد بارداری» تغییر دهید.</string>
+    <string name="ttc_fertility_estimate_title">تخمین پنجرهٔ باروری</string>
+    <string name="ttc_logged_opk_dates">تست مثبت/اوج ثبت‌شده: %1$s</string>
+    <string name="ttc_logged_egg_white_dates">ترشحات شفاف کش‌دار ثبت‌شده: %1$s</string>
+    <string name="ttc_bbt_shift_hint">الگوی افزایش دما از %1$s (تخمینی، نه تشخیص).</string>
+    <string name="ttc_fertility_estimate_safety_note">تخمین است؛ تشخیص یا تضمین بارداری نیست.</string>
+    <string name="ttc_fertility_safety_disclaimer">این اطلاعات تخمینی است؛ تضمین بارداری یا روش ضدبارداری نیست. برای تصمیم پزشکی با متخصص مشورت کنید.</string>
+    <string name="ttc_bbt_chart_title">نمودار دمای پایه</string>
+    <string name="ttc_bbt_chart_empty">هنوز دمای پایه ثبت نشده است.</string>
+    <string name="ttc_bbt_chart_a11y">نمودار دمای پایه: %1$s</string>
+    <string name="ttc_bbt_chart_a11y_summary">تعداد %1$s نقطه؛ کمینه %2$s درجه؛ بیشینه %3$s درجه؛ آخرین %4$s درجه در تاریخ %5$s</string>
+    <string name="ttc_timeline_title">خط زمان ثبت‌ها</string>
+    <string name="ttc_timeline_empty">ثبت TTC در این بازه وجود ندارد.</string>
+    <string name="ttc_timeline_bbt">دمای پایه: %1$.2f °C</string>
+    <string name="ttc_timeline_opk">تست تخمک‌گذاری: %1$s</string>
+    <string name="ttc_timeline_mucus">ترشحات: %1$s</string>
+    <string name="ttc_timeline_intercourse">روابط: %1$s</string>
+    <string name="ttc_timeline_pregnancy_test">تست بارداری: %1$s</string>
 
     <string name="flow_spotting">لکه‌بینی</string>
     <string name="flow_light">سبک</string>

@@ -63,3 +63,26 @@ val MIGRATION_1_2 =
             db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_daily_log_logDate ON daily_log(logDate)")
         }
     }
+
+val MIGRATION_2_3 =
+    object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS ttc_day_log (
+                    id TEXT NOT NULL,
+                    logDate TEXT NOT NULL,
+                    bbtCelsius REAL,
+                    ovulationTestResult TEXT,
+                    cervicalMucus TEXT,
+                    intercourseLogged INTEGER NOT NULL,
+                    intercourseProtected INTEGER,
+                    pregnancyTestResult TEXT,
+                    updatedAtEpochMs INTEGER NOT NULL,
+                    PRIMARY KEY(id)
+                )
+                """.trimIndent(),
+            )
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_ttc_day_log_logDate ON ttc_day_log(logDate)")
+        }
+    }

@@ -22,6 +22,7 @@ data class CycleDashboard(
     val prediction: CyclePredictionResult,
     val todayLog: DailyLogEntity?,
     val onPeriodToday: Boolean,
+    val openPeriodStart: LocalDate?,
 )
 
 @Singleton
@@ -42,6 +43,7 @@ class CycleTrackingRepository
                 dailyLogDao.observeForDate(today),
             ) { profile, periods, todayLog ->
                 val prediction = buildPrediction(today, profile, periods)
+                val (openStart, _) = CyclePeriodMapper.openPeriod(periods)
                 val onPeriod =
                     periods.any { record ->
                         !today.isBefore(record.startDate) &&
@@ -52,6 +54,7 @@ class CycleTrackingRepository
                     prediction = prediction,
                     todayLog = todayLog,
                     onPeriodToday = onPeriod,
+                    openPeriodStart = openStart,
                 )
             }
 
@@ -161,6 +164,10 @@ class CycleTrackingRepository
         }
 
         suspend fun getAllPeriods(): List<PeriodRecordEntity> = periodDao.getAll()
+
+        suspend fun getDailyLogForDate(date: LocalDate): DailyLogEntity? = dailyLogDao.getForDate(date)
+
+        suspend fun getPeriodDayForDate(date: LocalDate): PeriodDayEntity? = periodDayDao.getForDate(date)
 
         private fun buildPrediction(
             today: LocalDate,
