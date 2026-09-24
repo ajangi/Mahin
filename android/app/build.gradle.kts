@@ -11,7 +11,7 @@ android {
         // See docs/adr/0003-android-application-id.md
         applicationId = "dev.mahin.android"
         versionCode = 1
-        versionName = "0.0.1-m0"
+        versionName = "0.0.2-m1"
     }
 }
 
@@ -40,10 +40,23 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.compose.material.icons)
     implementation(libs.hilt.android)
     implementation(libs.kotlinx.coroutines.android)
 
     testImplementation(libs.junit)
     testImplementation(libs.truth)
     testImplementation(project(":core:testing"))
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(libs.androidx.compose.ui.test.manifest)
+}
+
+tasks.withType<Test>().configureEach {
+    if (name == "testReleaseUnitTest") {
+        filter {
+            excludeTestsMatching("dev.mahin.android.demo.CalendarDemoScreenScrollTest")
+        }
+    }
 }
