@@ -12,6 +12,7 @@ import com.github.takahirom.roborazzi.captureRoboImage
 import dev.mahin.core.datetime.JalaliDate
 import dev.mahin.core.designsystem.component.MahinEmptyState
 import dev.mahin.core.designsystem.component.MahinJalaliDatePicker
+import dev.mahin.core.designsystem.component.MahinLoadingState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -48,6 +49,18 @@ class MahinDesignSystemScreenshotTest {
                         onDateSelected = {},
                         modifier = Modifier.fillMaxSize(),
                     )
+                }
+            }
+        }
+        composeRule.onRoot().captureRoboImage()
+    }
+
+    @Test
+    fun loadingStateRtlLight() {
+        composeRule.setContent {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                MahinTheme(darkTheme = false) {
+                    MahinLoadingState(modifier = Modifier.fillMaxSize())
                 }
             }
         }

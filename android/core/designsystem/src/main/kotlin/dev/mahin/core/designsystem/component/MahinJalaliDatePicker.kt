@@ -8,9 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
@@ -182,23 +179,32 @@ private fun JalaliMonthGrid(
                 add(JalaliDate(visibleYear, visibleMonth, day))
             }
         }
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(7),
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(MahinSpacing.xxs),
         verticalArrangement = Arrangement.spacedBy(MahinSpacing.xxs),
-        userScrollEnabled = false,
     ) {
-        items(cells) { date ->
-            if (date == null) {
-                Box(modifier = Modifier.aspectRatio(1f))
-            } else {
-                JalaliDayCell(
-                    date = date,
-                    selected = date == selectedDate,
-                    onClick = { onDateSelected(date) },
-                    converter = converter,
-                )
+        cells.chunked(7).forEach { week ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(MahinSpacing.xxs),
+            ) {
+                week.forEach { date ->
+                    Box(modifier = Modifier.weight(1f)) {
+                        if (date == null) {
+                            Box(modifier = Modifier.fillMaxWidth().aspectRatio(1f))
+                        } else {
+                            JalaliDayCell(
+                                date = date,
+                                selected = date == selectedDate,
+                                onClick = { onDateSelected(date) },
+                                converter = converter,
+                            )
+                        }
+                    }
+                }
+                repeat(7 - week.size) {
+                    Box(modifier = Modifier.weight(1f).aspectRatio(1f))
+                }
             }
         }
     }
@@ -232,11 +238,14 @@ private fun JalaliDayCell(
     onClick: () -> Unit,
     converter: CivilDateConverter,
 ) {
+    val monthNames = stringArrayResource(R.array.ds_jalali_month_names)
+    val monthName = monthNames[date.month - 1]
     val dayLabel = PersianDigits.format(date.day)
     val description =
-        remember(date) {
+        remember(date, monthName) {
             val g = converter.toGregorian(date)
-            "${date.year}-${date.month}-${date.day} / $g"
+            "${PersianDigits.format(date.day)} $monthName ${PersianDigits.format(date.year)} — " +
+                PersianDigits.format(g.format(DateTimeFormatter.ISO_LOCAL_DATE))
         }
     val backgroundColor =
         if (selected) {
@@ -254,7 +263,9 @@ private fun JalaliDayCell(
     Surface(
         modifier =
             Modifier
+                .fillMaxWidth()
                 .aspectRatio(1f)
+                .mahinMinimumTouchTarget()
                 .clip(RoundedCornerShape(MahinRadius.sm))
                 .semantics {
                     role = Role.Button
