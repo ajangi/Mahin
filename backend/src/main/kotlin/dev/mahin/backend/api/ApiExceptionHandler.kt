@@ -35,7 +35,7 @@ class ApiExceptionHandler {
         request: HttpServletRequest,
     ): ResponseEntity<ErrorResponse> {
         val requestId = request.getHeader("X-Request-Id") ?: "unknown"
-        logger.error("Unhandled error path={}", request.requestURI)
+        logger.error("Unhandled error path={} type={}", request.requestURI, ex.javaClass.simpleName)
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
             ErrorResponse(
                 code = "internal_error",

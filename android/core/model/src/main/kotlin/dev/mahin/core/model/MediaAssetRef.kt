@@ -37,7 +37,8 @@ data class MediaAssetRef(
     val heightPx: Int? = null,
 ) {
     val isAuthoritativeProductionContent: Boolean
-        get() = !medicalGoverned ||
-            approvalStatus == MediaApprovalStatus.APPROVED ||
-            approvalStatus == MediaApprovalStatus.PUBLISHED
+        get() =
+            !medicalGoverned ||
+                approvalStatus == MediaApprovalStatus.APPROVED ||
+                approvalStatus == MediaApprovalStatus.PUBLISHED
 }

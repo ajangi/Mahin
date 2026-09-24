@@ -1,7 +1,3 @@
-buildUponDefaultConfig: true
-config:
-  warningsAsErrors:
-    active: false
 complexity:
   LongMethod:
     active: true

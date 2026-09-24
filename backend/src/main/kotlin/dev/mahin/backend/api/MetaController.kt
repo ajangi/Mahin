@@ -10,8 +10,9 @@ class MetaController(
     @Value("\${mahin.environment}") private val environment: String,
 ) {
     @GetMapping("/v1/meta")
-    fun meta(): MetaResponse = MetaResponse(
-        apiVersion = apiVersion,
-        environment = environment,
-    )
+    fun meta(): MetaResponse =
+        MetaResponse(
+            apiVersion = apiVersion,
+            environment = environment,
+        )
 }

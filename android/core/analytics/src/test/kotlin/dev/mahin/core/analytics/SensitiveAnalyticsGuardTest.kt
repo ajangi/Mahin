@@ -6,9 +6,10 @@ import org.junit.Test
 class SensitiveAnalyticsGuardTest {
     @Test
     fun acceptsApprovedEventWithSafeProps() {
-        val event = SensitiveAnalyticsGuard.sanitize(
-            AnalyticsEvent("onboarding_completed", mapOf("mode" to "CYCLE_TRACKING")),
-        )
+        val event =
+            SensitiveAnalyticsGuard.sanitize(
+                AnalyticsEvent("onboarding_completed", mapOf("mode" to "CYCLE_TRACKING")),
+            )
         assertThat(event.properties).containsEntry("mode", "CYCLE_TRACKING")
     }
 

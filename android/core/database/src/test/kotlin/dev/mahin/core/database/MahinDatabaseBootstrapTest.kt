@@ -5,10 +5,9 @@ import org.junit.Test
 
 class MahinDatabaseBootstrapTest {
     @Test
-    fun schemaVersionStartsAtOne() {
-        val annotation = MahinDatabase::class.java.getAnnotation(androidx.room.Database::class.java)
-        assertThat(annotation).isNotNull()
-        assertThat(annotation!!.version).isEqualTo(1)
-        assertThat(annotation.exportSchema).isTrue()
+    fun schemaVersionStartsAtOneAndExports() {
+        assertThat(MahinDatabase.VERSION).isEqualTo(1)
+        assertThat(MahinDatabase.EXPORTS_SCHEMA).isTrue()
+        assertThat(DatabaseEncryptionMode.UNENCRYPTED_BOOTSTRAP).isNotNull()
     }
 }

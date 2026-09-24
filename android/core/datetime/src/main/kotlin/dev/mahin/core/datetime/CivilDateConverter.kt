@@ -8,5 +8,6 @@ import java.time.LocalDate
  */
 interface CivilDateConverter {
     fun toJalali(isoDate: LocalDate): JalaliDate
+
     fun toGregorian(jalaliDate: JalaliDate): LocalDate
 }

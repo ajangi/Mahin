@@ -9,27 +9,30 @@ import dev.mahin.core.datastore.NotificationPrivacyMode
 object DiscreetNotificationCopy {
     const val DEFAULT_FA: String = "یادآوری شما آماده است"
 
-    fun resolve(mode: NotificationPrivacyMode, descriptiveFa: String?): String {
-        return when (mode) {
+    fun resolve(
+        mode: NotificationPrivacyMode,
+        descriptiveFa: String?,
+    ): String =
+        when (mode) {
             NotificationPrivacyMode.OFF -> ""
             NotificationPrivacyMode.DISCREET -> DEFAULT_FA
             NotificationPrivacyMode.DESCRIPTIVE -> descriptiveFa?.takeIf { it.isNotBlank() } ?: DEFAULT_FA
         }
-    }
 
     fun containsSensitiveLeak(text: String): Boolean {
         val normalized = text.lowercase()
-        val forbidden = listOf(
-            "پریود",
-            "باردار",
-            "تخمک",
-            "نزدیکی",
-            "بی‌بی‌چک",
-            "period",
-            "pregnan",
-            "ovulat",
-            "sex",
-        )
+        val forbidden =
+            listOf(
+                "پریود",
+                "باردار",
+                "تخمک",
+                "نزدیکی",
+                "بی‌بی‌چک",
+                "period",
+                "pregnan",
+                "ovulat",
+                "sex",
+            )
         return forbidden.any { normalized.contains(it) }
     }
 }

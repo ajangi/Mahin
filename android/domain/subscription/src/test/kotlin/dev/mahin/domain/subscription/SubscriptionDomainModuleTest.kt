@@ -6,6 +6,6 @@ import org.junit.Test
 class SubscriptionDomainModuleTest {
     @Test
     fun moduleExists() {
-        assertThat(SubscriptionDomainModule.java.simpleName).isEqualTo("SubscriptionDomainModule")
+        assertThat(SubscriptionDomainModule::class.simpleName).isEqualTo("SubscriptionDomainModule")
     }
 }

@@ -24,31 +24,33 @@ class MahinTokenHexTest {
 class MediaAssetRefTest {
     @Test
     fun unapprovedMedicalAssetIsNotAuthoritative() {
-        val asset = MediaAssetRef(
-            id = "00000000-0000-0000-0000-000000000001",
-            storageKey = "pregnancy/fetal-development/week-18/v1",
-            family = MediaFamily.PREGNANCY_DEVELOPMENT,
-            version = 1,
-            locale = "fa-IR",
-            medicalGoverned = true,
-            approvalStatus = MediaApprovalStatus.DRAFT,
-            altText = "placeholder",
-        )
+        val asset =
+            MediaAssetRef(
+                id = "00000000-0000-0000-0000-000000000001",
+                storageKey = "pregnancy/fetal-development/week-18/v1",
+                family = MediaFamily.PREGNANCY_DEVELOPMENT,
+                version = 1,
+                locale = "fa-IR",
+                medicalGoverned = true,
+                approvalStatus = MediaApprovalStatus.DRAFT,
+                altText = "placeholder",
+            )
         assertThat(asset.isAuthoritativeProductionContent).isFalse()
     }
 
     @Test
     fun nonMedicalPlaceholderCanRender() {
-        val asset = MediaAssetRef(
-            id = "00000000-0000-0000-0000-000000000002",
-            storageKey = "placeholders/non-medical/foundation-mark/v1",
-            family = MediaFamily.NON_MEDICAL_PLACEHOLDER,
-            version = 1,
-            locale = "fa-IR",
-            medicalGoverned = false,
-            approvalStatus = MediaApprovalStatus.DRAFT,
-            altText = "decorative",
-        )
+        val asset =
+            MediaAssetRef(
+                id = "00000000-0000-0000-0000-000000000002",
+                storageKey = "placeholders/non-medical/foundation-mark/v1",
+                family = MediaFamily.NON_MEDICAL_PLACEHOLDER,
+                version = 1,
+                locale = "fa-IR",
+                medicalGoverned = false,
+                approvalStatus = MediaApprovalStatus.DRAFT,
+                altText = "decorative",
+            )
         assertThat(asset.isAuthoritativeProductionContent).isTrue()
     }
 }

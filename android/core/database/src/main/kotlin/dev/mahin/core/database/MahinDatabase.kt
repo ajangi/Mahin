@@ -5,11 +5,16 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [AppMetaEntity::class],
-    version = 1,
+    version = MahinDatabase.VERSION,
     exportSchema = true,
 )
 abstract class MahinDatabase : RoomDatabase() {
     abstract fun appMetaDao(): AppMetaDao
+
+    companion object {
+        const val VERSION: Int = 1
+        const val EXPORTS_SCHEMA: Boolean = true
+    }
 }
 
 interface MahinDatabaseProvider {

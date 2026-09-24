@@ -12,11 +12,13 @@ data class SyncMutation(
 
 interface SyncOutbox {
     suspend fun enqueue(mutation: SyncMutation)
+
     suspend fun pending(): List<SyncMutation>
 }
 
 class InMemorySyncOutbox : SyncOutbox {
     private val items = mutableListOf<SyncMutation>()
+
     override suspend fun enqueue(mutation: SyncMutation) {
         items += mutation
     }

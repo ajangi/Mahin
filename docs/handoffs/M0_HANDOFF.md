@@ -45,7 +45,18 @@
 | 0008 | Canonical Gregorian persistence |
 
 ## Commands and results
-Recorded after local validation in this agent run (see below). CI workflow: `.github/workflows/ci.yml`.
+
+Run on 2026-09-24 in the Cloud Agent VM (Ubuntu, OpenJDK 21.0.10, Android SDK 35, Node 22). Docker was **not** installed; backend tests used in-memory H2.
+
+| Command | Result |
+|---|---|
+| `python3 scripts/check_design_tokens.py` | **PASS** — “Design tokens match DESIGN_SYSTEM.md frozen baseline.” |
+| `npx @redocly/cli@1.34.2 lint openapi/openapi.yaml --config redocly.yaml` | **PASS** — “Your API description is valid.” |
+| `cd backend && ./gradlew ktlintCheck detekt test --no-daemon` | **PASS** — BUILD SUCCESSFUL; **9** tests, 0 failures, 0 errors |
+| `cd admin && npm test && npm run build` | **PASS** — Vitest 2 tests; Vite production build wrote `admin/dist/` |
+| `cd android && ./gradlew ktlintCheck detekt test lintDebug assembleDebug --no-daemon` | **PASS** — BUILD SUCCESSFUL in 1m 11s for test/lint/assemble; ktlintCheck later **PASS**; **50** Android unit tests, 0 failures, 0 errors; debug APK `android/app/build/outputs/apk/debug/app-debug.apk` (12 882 235 bytes) |
+
+CI workflow `.github/workflows/ci.yml` runs the same jobs on GitHub-hosted runners.
 
 ## Acceptance criteria
 | Criterion | Status |

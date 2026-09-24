@@ -1,4 +1,3 @@
-buildUponDefaultConfig: true
 complexity:
   LongMethod:
     threshold: 80

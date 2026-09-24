@@ -6,6 +6,6 @@ import org.junit.Test
 class FertilityDomainModuleTest {
     @Test
     fun moduleExists() {
-        assertThat(FertilityDomainModule.java.simpleName).isEqualTo("FertilityDomainModule")
+        assertThat(FertilityDomainModule::class.simpleName).isEqualTo("FertilityDomainModule")
     }
 }

@@ -1,18 +1,36 @@
 package dev.mahin.backend.content
 
+import com.fasterxml.jackson.annotation.JsonProperty
+
 enum class MedicalRiskLevel {
-    none,
-    general_education,
-    contact_clinician,
-    urgent,
+    @JsonProperty("none")
+    NONE,
+
+    @JsonProperty("general_education")
+    GENERAL_EDUCATION,
+
+    @JsonProperty("contact_clinician")
+    CONTACT_CLINICIAN,
+
+    @JsonProperty("urgent")
+    URGENT,
 }
 
 enum class ContentStatus {
-    draft,
-    review,
-    approved,
-    published,
-    retired,
+    @JsonProperty("draft")
+    DRAFT,
+
+    @JsonProperty("review")
+    REVIEW,
+
+    @JsonProperty("approved")
+    APPROVED,
+
+    @JsonProperty("published")
+    PUBLISHED,
+
+    @JsonProperty("retired")
+    RETIRED,
 }
 
 data class ContentArticleResponse(

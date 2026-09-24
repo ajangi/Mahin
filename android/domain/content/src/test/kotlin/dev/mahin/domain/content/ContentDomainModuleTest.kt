@@ -6,6 +6,6 @@ import org.junit.Test
 class ContentDomainModuleTest {
     @Test
     fun moduleExists() {
-        assertThat(ContentDomainModule.java.simpleName).isEqualTo("ContentDomainModule")
+        assertThat(ContentDomainModule::class.simpleName).isEqualTo("ContentDomainModule")
     }
 }

@@ -10,10 +10,12 @@ interface DeviceKeyMaterial {
 
 interface AppLockGateway {
     val isLockEnabled: Boolean
+
     fun shouldHideRecentsPreview(): Boolean
 }
 
 object DisabledAppLockGateway : AppLockGateway {
     override val isLockEnabled: Boolean = false
+
     override fun shouldHideRecentsPreview(): Boolean = false
 }

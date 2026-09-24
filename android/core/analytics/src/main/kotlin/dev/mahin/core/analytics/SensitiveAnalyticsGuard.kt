@@ -7,21 +7,22 @@ import dev.mahin.core.common.SensitiveLogRedactor
  * funnels only; properties cannot carry raw health values.
  */
 object SensitiveAnalyticsGuard {
-    private val allowedEvents = setOf(
-        "onboarding_started",
-        "onboarding_completed",
-        "calendar_opened",
-        "log_category_opened",
-        "log_saved",
-        "prediction_explanation_opened",
-        "pregnancy_week_opened",
-        "appointment_created",
-        "article_opened",
-        "paywall_viewed",
-        "subscription_started",
-        "sync_failed",
-        "foundation_opened",
-    )
+    private val allowedEvents =
+        setOf(
+            "onboarding_started",
+            "onboarding_completed",
+            "calendar_opened",
+            "log_category_opened",
+            "log_saved",
+            "prediction_explanation_opened",
+            "pregnancy_week_opened",
+            "appointment_created",
+            "article_opened",
+            "paywall_viewed",
+            "subscription_started",
+            "sync_failed",
+            "foundation_opened",
+        )
 
     fun sanitize(event: AnalyticsEvent): AnalyticsEvent {
         require(event.name in allowedEvents) {

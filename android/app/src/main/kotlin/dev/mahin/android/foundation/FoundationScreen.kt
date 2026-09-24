@@ -24,11 +24,12 @@ import dev.mahin.core.designsystem.MahinThemeTokens
 fun FoundationScreen() {
     val colors = MahinThemeTokens.extendedColors
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(MahinSpacing.lg)
-            .semantics { contentDescription = "mahin_foundation" },
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(MahinSpacing.lg)
+                .semantics { contentDescription = "mahin_foundation" },
         verticalArrangement = Arrangement.spacedBy(MahinSpacing.md),
     ) {
         Text(

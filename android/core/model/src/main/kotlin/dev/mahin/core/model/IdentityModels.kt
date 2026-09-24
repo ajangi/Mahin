@@ -3,7 +3,9 @@ package dev.mahin.core.model
 import java.util.UUID
 
 @JvmInline
-value class LocalUserId(val value: UUID)
+value class LocalUserId(
+    val value: UUID,
+)
 
 data class GuestIdentity(
     val localUserId: LocalUserId,
@@ -19,4 +21,6 @@ enum class InstallationState {
  * Product analytics must use a pseudonymous ID separable from medical record IDs.
  */
 @JvmInline
-value class AnalyticsInstallationId(val value: UUID)
+value class AnalyticsInstallationId(
+    val value: UUID,
+)
