@@ -1,15 +1,29 @@
 # M3 Handoff — Trying to Conceive (TTC)
 
 **Milestone:** M3  
-**Status:** gatekeeper fixes pushed (draft PR)  
-**Branch:** `cursor/m3-ttc-7762`  
-**Head:** `2fb34444cd55a102233ad8dcb9096ac2c793b505`  
-**PR:** [#7](https://github.com/ajangi/Mahin/pull/7) (draft)  
-**Next milestone:** M4 — Pregnancy (`prompts/M4.md`)
+**Status:** accepted and merged  
+**Merged:** 2026-09-24 as squash-merge `af2710734444311b6a94a8332b27b260289bf5df` of [PR #7](https://github.com/ajangi/Mahin/pull/7)  
+**PR CI:** all 5 jobs SUCCESS — [run 36070722189](https://github.com/ajangi/Mahin/actions/runs/36070722189) (PR head `89f56bf`)  
+**Master CI:** push to `master` at `af2710734444311b6a94a8332b27b260289bf5df` — [run 36071985443](https://github.com/ajangi/Mahin/actions/runs/36071985443)  
+**Head (code):** `cd8bcad3fb908552f49046de20da77a353153702` (gatekeeper round 2 fixes)  
+**Head (PR):** `89f56bf4cd55a102233ad8dcb9096ac2c793b505` (final PR tip before squash-merge)  
+**Next milestone:** M4 — Pregnancy (`prompts/M4.md`)  
+**A fresh agent will implement M4. This follow-up is docs-only (+ two tiny nits); do not start M4 here.**
 
-## Gatekeeper follow-up (PR #7)
-- Round 1: medical narrowing, BBT parser, date load, intercourse opt-in, scroll (post `2549aa0`).
-- Round 2: Persian BBT chart a11y summary, preserve intercourse when opt-in off, UX/a11y nits.
+### Gatekeeper review (PR #7)
+1. **Round 1 (BLOCK @ `2549aa0`):** Removed invented fertile-window narrowing; BBT Persian parser + validation; per-date log load; intercourse DataStore opt-in; single scrollable insights layout — addressed in `9e2a844` and follow-ups.
+2. **Round 2 (@ `2a5c211`, verified then BLOCK):** Persian BBT chart a11y summary; preserve intercourse rows when opt-in off; estimate-card safety line; parser/scroll/test nits — `cd8bcad3fb908552f49046de20da77a353153702` ([CI 36068296495](https://github.com/ajangi/Mahin/actions/runs/36068296495)).
+3. **Round 3 (accept @ `89f56bf`):** All blockers cleared; non-blocking follow-ups (Persian `٫` in chart a11y, `awaitUntil` timeout failure) captured in [docs PR](https://github.com/ajangi/Mahin/pull/7) post-merge docs branch.
+
+### Master CI job results (run 36071985443)
+
+| Job | Result |
+|---|---|
+| design-tokens | SUCCESS |
+| openapi | SUCCESS |
+| admin | SUCCESS |
+| backend | SUCCESS |
+| android | SUCCESS |
 
 ## Implemented scope
 - **Mode transition:** Cycle ↔ TTC on Today; history preserved.
@@ -30,25 +44,12 @@
 ## Migrations
 - **Android Room:** `2 → 3` additive only (`ttc_day_log`).
 
-## Commands and results (local, post gatekeeper fixes)
-
-Run on 2026-09-24 in Cloud Agent VM (OpenJDK 21, Android SDK 35).
+## Commands and results (local, acceptance docs follow-up)
 
 | Command | Result |
 |---|---|
 | `python3 scripts/check_design_tokens.py` | **PASS** |
 | `cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug --no-daemon` | **PASS** — BUILD SUCCESSFUL |
-
-## PR CI (`cd8bcad3fb908552f49046de20da77a353153702`)
-| Job | Result |
-|---|---|
-| design-tokens | SUCCESS |
-| openapi | SUCCESS |
-| admin | SUCCESS |
-| backend | SUCCESS |
-| android | SUCCESS |
-
-Workflow: [run 36068296495](https://github.com/ajangi/Mahin/actions/runs/36068296495).
 
 ## Acceptance criteria (M3)
 | Criterion | Status |
