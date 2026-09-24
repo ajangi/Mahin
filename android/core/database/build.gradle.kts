@@ -6,13 +6,26 @@ plugins {
 
 android {
     namespace = "dev.mahin.core.database"
+    sourceSets {
+        getByName("test") {
+            assets.srcDir("$projectDir/schemas")
+        }
+    }
 }
 
 dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:model"))
     implementation(project(":core:datetime"))
+    implementation(project(":core:security"))
+    implementation(project(":domain:cycle"))
+    implementation(libs.kotlinx.coroutines.core)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.sqlite)
+    implementation(libs.sqlcipher.android)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
+    testImplementation(libs.androidx.room.testing)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
 }

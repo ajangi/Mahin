@@ -16,9 +16,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import dev.mahin.android.demo.CalendarDemoScreen
-import dev.mahin.android.demo.DesignSystemShowcaseScreen
-import dev.mahin.android.demo.TodayPlaceholderScreen
+import dev.mahin.android.cycle.CycleCalendarScreen
+import dev.mahin.android.cycle.HistoryScreen
+import dev.mahin.android.cycle.LogScreen
+import dev.mahin.android.cycle.TodayScreen
 import dev.mahin.android.navigation.MahinTopLevelDestination
 
 @Composable
@@ -63,9 +64,10 @@ fun MahinAppShell(modifier: Modifier = Modifier) {
             startDestination = MahinTopLevelDestination.Today.route,
             modifier = Modifier.padding(innerPadding),
         ) {
-            composable(MahinTopLevelDestination.Today.route) { TodayPlaceholderScreen() }
-            composable(MahinTopLevelDestination.Calendar.route) { CalendarDemoScreen() }
-            composable(MahinTopLevelDestination.Showcase.route) { DesignSystemShowcaseScreen() }
+            composable(MahinTopLevelDestination.Today.route) { TodayScreen() }
+            composable(MahinTopLevelDestination.Calendar.route) { CycleCalendarScreen() }
+            composable(MahinTopLevelDestination.Log.route) { LogScreen() }
+            composable(MahinTopLevelDestination.History.route) { HistoryScreen() }
         }
     }
 }
