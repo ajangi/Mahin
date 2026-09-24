@@ -1,9 +1,13 @@
 # M1 Handoff — Design System, RTL & Calendar Foundation
 
 **Milestone:** M1  
-**Status:** implemented, awaiting review  
+**Status:** accepted and merged  
+**Merged:** 2026-09-24 as squash-merge `6e41d4379e3a832ff0866d3c732541cf19fca65a` of [PR #3](https://github.com/ajangi/Mahin/pull/3)  
+**PR CI:** all 5 jobs SUCCESS — [run 36036885885](https://github.com/ajangi/Mahin/actions/runs/36036885885) (head `548d8d3`)  
+**Master CI:** push to `master` at `6e41d4379e3a832ff0866d3c732541cf19fca65a` — [run 36038489189](https://github.com/ajangi/Mahin/actions/runs/36038489189) (fill job table when the run completes; expected all 5 jobs SUCCESS)  
+**Gate:** acceptance was recorded on PR #3 (own-account cannot formally APPROVE).  
 **Next milestone:** M2 — Local-First Cycle Tracking (`prompts/M2.md`)  
-**Do not start M2 until this handoff is accepted and merged.**
+**A fresh agent will implement M2. This follow-up is docs-only; do not start M2 here.**
 
 ## Implemented scope
 - **Design tokens & theme:** Vazirmatn (OFL) wired into `MahinTheme`; `mahinTextStyle(MahinTypographyRole)`; extended health/status colors unchanged from M0.
@@ -85,4 +89,4 @@ Android JVM unit tests (all modules, after full `test` task): **62** (+3 scroll/
 - M9: app lock / screenshot blocking for sensitive screens.
 
 ## Next milestone
-**M2 only** — Local-First Cycle Tracking (`prompts/M2.md`).
+M1 is accepted and merged. A **fresh agent** will implement **M2 only** — Local-First Cycle Tracking (`prompts/M2.md`). Do not start M2 in this docs-only follow-up.
