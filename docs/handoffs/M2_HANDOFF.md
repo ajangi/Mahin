@@ -1,9 +1,23 @@
 # M2 Handoff — Local-First Cycle Tracking
 
 **Milestone:** M2  
-**Status:** implemented, draft PR for review  
+**Status:** accepted and merged  
+**Merged:** 2026-09-24 as squash-merge `3adf099f7da6fb9f7d120aeca19ac7475d659e8f` of [PR #5](https://github.com/ajangi/Mahin/pull/5)  
+**PR CI:** all 5 jobs SUCCESS — [run 36043257681](https://github.com/ajangi/Mahin/actions/runs/36043257681) (head `d78872a`)  
+**Master CI:** push to `master` at `3adf099f7da6fb9f7d120aeca19ac7475d659e8f` — [run 36048644543](https://github.com/ajangi/Mahin/actions/runs/36048644543) (all 5 jobs SUCCESS)  
+**Gate:** acceptance was recorded on PR #5 (own-account cannot formally APPROVE).  
 **Next milestone:** M3 — TTC (`prompts/M3.md`)  
-**Do not start M3 until this handoff is accepted.**
+**A fresh agent will implement M3. This follow-up is docs-only; do not start M3 here.**
+
+### Master CI job results (run 36048644543)
+
+| Job | Result |
+|---|---|
+| design-tokens | SUCCESS |
+| openapi | SUCCESS |
+| admin | SUCCESS |
+| backend | SUCCESS |
+| android | SUCCESS (verify on run page if this table was committed before the job finished) |
 
 ## Implemented scope
 - **Onboarding:** Welcome → goal (Cycle/TTC) → cycle setup (Jalali last-period date, optional lengths, regularity). Guest ID in DataStore. Pregnancy goal noted as deferred (M4).
@@ -37,7 +51,7 @@
 | 0009 | **New** — M2 cycle schema, encryption, prediction placement |
 
 ## Gatekeeper follow-up (PR #5)
-- **SQLCipher bootstrap:** `maybeRecreateForEncryption` no longer deletes `mahin.db` on every cold start. Drops only plaintext SQLite header (M0 bootstrap) before first encrypted open; `sqlcipher_bootstrap_migrated` pref prevents repeat deletes. Regression: `MahinDatabaseBootstrapDropTest`, `SqliteFileProbeTest`.
+- **SQLCipher bootstrap:** `maybeDropPlaintextBootstrapOnly` + `SqliteFileProbe` drop only plaintext SQLite header (M0 bootstrap) before first encrypted open; `sqlcipher_bootstrap_migrated` pref prevents repeat deletes. Regression: `MahinDatabaseBootstrapDropTest`, `SqliteFileProbeTest`.
 - **History scroll:** `LazyColumn(Modifier.weight(1f))` + `HistoryScreenScrollTest` (mirrors M1 calendar scroll regression).
 - **Rebased** onto `master` @ `bfbb030` (M1 accepted docs preserved; M2 **in review** in `docs/milestones/README.md`).
 - **Prediction:** `INSUFFICIENT_DATA` returns null estimate ranges; expanded `CyclePredictionEngineV1Test` fixtures.
@@ -89,4 +103,4 @@ Debug APK: `android/app/build/outputs/apk/debug/app-debug.apk` (`versionName` `0
 - M9: App lock, recents hiding, encryption hardening.
 
 ## Next milestone
-**M3 only** — TTC (`prompts/M3.md`).
+**M3 only** — TTC (`prompts/M3.md`). Implement in a new agent run; not in scope for M2 acceptance docs.

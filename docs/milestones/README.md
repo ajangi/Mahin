@@ -4,5 +4,6 @@ Cloud Agents update one milestone at a time. Do not pre-mark future milestones c
 
 - M0 — Repository & Engineering Foundation — **complete**
 - M1 — Design System, RTL & Calendar Foundation — **complete**
-- M2 — Local-First Cycle Tracking — **in review**
-- M3–M12 — pending
+- M2 — Local-First Cycle Tracking — **complete**
+- M3 — TTC — **pending** (next)
+- M4–M12 — pending
