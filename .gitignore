@@ -1,0 +1,65 @@
+# Secrets — never commit
+.env
+.env.local
+.env.*.local
+*.jks
+*.keystore
+*.p12
+*.pem
+google-services.json
+local.properties
+secrets.properties
+**/src/main/resources/application-prod.yml
+**/src/main/resources/application-production.yml
+
+# Gradle
+.gradle/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Android
+*.apk
+*.aab
+*.ap_
+*.dex
+captures/
+.cxx/
+.externalNativeBuild/
+*.hprof
+lint-results*.xml
+lint-results*.html
+/android/app/release/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+.vscode/
+.fleet/
+
+# Node / admin
+node_modules/
+dist/
+coverage/
+admin/dist/
+admin/.vite/
+
+# OS / misc
+.DS_Store
+Thumbs.db
+*.log
+*.swp
+*~
+
+# Kotlin
+.kotlin/
+
+# Test output
+**/out/
+**/test-results/
+**/reports/
+!docs/**/reports/

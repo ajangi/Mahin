@@ -1,0 +1,16 @@
+complexity:
+  LongMethod:
+    threshold: 80
+  TooManyFunctions:
+    active: false
+style:
+  MagicNumber:
+    active: false
+  WildcardImport:
+    active: true
+  MaxLineLength:
+    maxLineLength: 140
+    excludeCommentStatements: true
+naming:
+  FunctionNaming:
+    active: true
