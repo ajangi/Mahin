@@ -36,9 +36,16 @@
 | 0008 | Unchanged — ISO `LocalDate` persistence |
 | 0009 | **New** — M2 cycle schema, encryption, prediction placement |
 
+## Gatekeeper follow-up (PR #5)
+- **SQLCipher bootstrap:** `maybeRecreateForEncryption` no longer deletes `mahin.db` on every cold start. Drops only plaintext SQLite header (M0 bootstrap) before first encrypted open; `sqlcipher_bootstrap_migrated` pref prevents repeat deletes. Regression: `MahinDatabaseBootstrapDropTest`, `SqliteFileProbeTest`.
+- **History scroll:** `LazyColumn(Modifier.weight(1f))` + `HistoryScreenScrollTest` (mirrors M1 calendar scroll regression).
+- **Rebased** onto `master` @ `bfbb030` (M1 accepted docs preserved; M2 **in review** in `docs/milestones/README.md`).
+- **Prediction:** `INSUFFICIENT_DATA` returns null estimate ranges; expanded `CyclePredictionEngineV1Test` fixtures.
+- **Keystore:** passphrase write uses `commit()` with check.
+
 ## Commands and results
 
-Run on 2026-09-24 in Cloud Agent VM (Ubuntu, OpenJDK 21, Android SDK 35 at `~/Android/Sdk`; `android/local.properties` not committed).
+Run on 2026-09-24 (gatekeeper re-run) in Cloud Agent VM (Ubuntu, OpenJDK 21, Android SDK 35; `android/local.properties` not committed).
 
 | Command | Result |
 |---|---|

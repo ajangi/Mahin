@@ -66,12 +66,17 @@ object CyclePredictionEngineV1 {
             )
 
         val confidence = confidenceLevel(cycleLengths.size, input.regularity, variability)
-        val insufficientReason =
-            if (confidence == PredictionConfidence.INSUFFICIENT_DATA) {
-                "need_more_completed_cycles"
-            } else {
-                null
-            }
+        if (confidence == PredictionConfidence.INSUFFICIENT_DATA) {
+            return CyclePredictionResult(
+                algorithmVersion = algorithmVersion,
+                confidence = confidence,
+                cycleDay = cycleDay,
+                nextPeriod = null,
+                fertileWindow = null,
+                estimatedOvulation = null,
+                insufficientDataReason = "need_more_completed_cycles",
+            )
+        }
 
         return CyclePredictionResult(
             algorithmVersion = algorithmVersion,
@@ -80,7 +85,7 @@ object CyclePredictionEngineV1 {
             nextPeriod = nextPeriod,
             fertileWindow = fertile,
             estimatedOvulation = ovulation,
-            insufficientDataReason = insufficientReason,
+            insufficientDataReason = null,
         )
     }
 

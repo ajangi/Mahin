@@ -45,7 +45,12 @@ class KeystoreDeviceKeyMaterial
                 bytes.joinToString(separator = "") { byte ->
                     "%02x".format(byte.toInt() and 0xff)
                 }
-            prefs.edit().putString(PASSPHRASE_KEY, encoded).apply()
+            val committed =
+                prefs
+                    .edit()
+                    .putString(PASSPHRASE_KEY, encoded)
+                    .commit()
+            check(committed) { "Failed to persist database passphrase" }
             return encoded.toByteArray(Charsets.UTF_8)
         }
 

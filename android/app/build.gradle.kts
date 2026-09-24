@@ -59,6 +59,7 @@ tasks.withType<Test>().configureEach {
     if (name == "testReleaseUnitTest") {
         filter {
             excludeTestsMatching("dev.mahin.android.demo.CalendarDemoScreenScrollTest")
+            excludeTestsMatching("dev.mahin.android.cycle.HistoryScreenScrollTest")
         }
     }
 }

@@ -9,6 +9,9 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 object MahinDatabaseFactory {
     const val DATABASE_NAME: String = "mahin.db"
 
+    private const val BOOTSTRAP_PREFS: String = "mahin_db_bootstrap"
+    private const val KEY_SQLCIPHER_MIGRATED: String = "sqlcipher_bootstrap_migrated"
+
     private var sqlCipherLoaded: Boolean = false
 
     private fun loadSqlCipherNativeLibrary() {
@@ -23,7 +26,7 @@ object MahinDatabaseFactory {
         encryptionMode: DatabaseEncryptionMode,
     ): MahinDatabase {
         val appContext = context.applicationContext
-        maybeRecreateForEncryption(appContext, encryptionMode)
+        maybeDropPlaintextBootstrapOnly(appContext, encryptionMode)
         val builder =
             Room
                 .databaseBuilder(appContext, MahinDatabase::class.java, DATABASE_NAME)
@@ -38,26 +41,49 @@ object MahinDatabaseFactory {
                 // M0 bootstrap only; health tables must not be written in this mode.
             }
         }
-        return builder.build()
+        val database = builder.build()
+        if (encryptionMode == DatabaseEncryptionMode.KEYSTORE_SQLCIPHER) {
+            database.openHelper.writableDatabase.close()
+            markSqlCipherBootstrapComplete(appContext)
+        }
+        return database
     }
 
     /**
-     * M0 shipped an unencrypted v1 file with only app_meta. M2 enables SQLCipher before
-     * health rows exist by deleting the bootstrap file (app_meta is non-sensitive).
+     * One-time: remove M0 plaintext `app_meta`-only file before first SQLCipher open.
+     * Never deletes an existing encrypted database or after [KEY_SQLCIPHER_MIGRATED] is set.
      */
-    private fun maybeRecreateForEncryption(
+    internal fun maybeDropPlaintextBootstrapOnly(
         context: Context,
         encryptionMode: DatabaseEncryptionMode,
     ) {
         if (encryptionMode != DatabaseEncryptionMode.KEYSTORE_SQLCIPHER) return
+        val prefs = context.getSharedPreferences(BOOTSTRAP_PREFS, Context.MODE_PRIVATE)
+        if (prefs.getBoolean(KEY_SQLCIPHER_MIGRATED, false)) return
+
         val dbFile = context.getDatabasePath(DATABASE_NAME)
         if (!dbFile.exists()) return
-        val journal = File(dbFile.parent, "$DATABASE_NAME-journal")
-        val wal = File(dbFile.parent, "$DATABASE_NAME-wal")
-        val shm = File(dbFile.parent, "$DATABASE_NAME-shm")
+        if (!SqliteFileProbe.isPlaintextSqliteDatabase(dbFile)) return
+
+        deleteDatabaseFiles(dbFile)
+    }
+
+    internal fun markSqlCipherBootstrapComplete(context: Context) {
+        context
+            .getSharedPreferences(BOOTSTRAP_PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(KEY_SQLCIPHER_MIGRATED, true)
+            .commit()
+    }
+
+    private fun deleteDatabaseFiles(dbFile: File) {
+        val parent = dbFile.parentFile
+        val baseName = dbFile.name
         dbFile.delete()
-        journal.delete()
-        wal.delete()
-        shm.delete()
+        parent?.let { dir ->
+            File(dir, "$baseName-journal").delete()
+            File(dir, "$baseName-wal").delete()
+            File(dir, "$baseName-shm").delete()
+        }
     }
 }
