@@ -7,18 +7,20 @@
 
 ## Implemented scope
 - **Design tokens & theme:** Vazirmatn (OFL) wired into `MahinTheme`; `mahinTextStyle(MahinTypographyRole)`; extended health/status colors unchanged from M0.
-- **Components:** `MahinPrimaryButton`, `MahinTextButton`, `MahinEmptyState`, `MahinLoadingState`, `MahinErrorState`, `MahinJalaliDatePicker` (Saturday-first grid, Persian digits, optional Gregorian detail).
-- **Accessibility:** 48dp minimum touch targets (`mahinMinimumTouchTarget`), semantics on picker days and loading live region.
+- **Components:** `MahinPrimaryButton`, `MahinTextButton`, `MahinEmptyState`, `MahinLoadingState`, `MahinErrorState`, `MahinJalaliDatePicker` (Saturday-first **non-lazy** 7-column grid, Persian digits, optional Gregorian detail).
+- **Accessibility:** 48dp minimum touch targets (`mahinMinimumTouchTarget`) on picker day cells and controls; Persian-digit TalkBack labels on days; loading live region.
 - **Datetime boundary:** `PersianCivilDateConverter`, `JalaliCalendar`, `PersianDigits`; ADR 0008 persistence policy unchanged.
 - **Navigation shell:** Bottom `NavigationBar` + `NavHost` with M1 demo destinations (امروز / تقویم / نمایش) — not product cycle tracking.
 - **RTL:** `MainActivity` continues `LocalLayoutDirection.Rtl`; auto-mirrored nav icons for month controls.
-- **Screenshot tests:** Roborazzi goldens for empty state and Jalali picker (`:core:designsystem`).
+- **Screenshot tests:** Roborazzi goldens for empty, loading, and Jalali picker (`:core:designsystem`).
+- **Gatekeeper fix (PR #3):** Replaced `LazyVerticalGrid` in `MahinJalaliDatePicker` with a bounded `Column`/`Row` grid so `CalendarDemoScreen`’s `verticalScroll` no longer triggers infinite-height measurement. Regression: `CalendarDemoScreenScrollTest` (app, debug unit tests) + `MahinJalaliDatePickerScrollTest` (designsystem, all variants).
 - **Removed:** M0 `FoundationScreen` (replaced by shell).
 
 ## Notable files / modules
 | Area | Path |
 |---|---|
-| Typography / fonts | `android/core/designsystem/src/main/res/font/`, `MahinTypography.kt`, `fonts/OFL.txt` |
+| Typography / fonts | `android/core/designsystem/src/main/res/font/`, `MahinTypography.kt`, `android/core/designsystem/fonts/OFL.txt` (OFL cannot live inside `res/font/`) |
+| Scroll regression tests | `android/app/.../CalendarDemoScreenScrollTest.kt`, `core/designsystem/.../MahinJalaliDatePickerScrollTest.kt` |
 | Components | `android/core/designsystem/.../component/` |
 | Converter | `android/core/datetime/PersianCivilDateConverter.kt`, `JalaliCalendarMath.kt` |
 | App shell | `android/app/.../shell/MahinAppShell.kt`, `demo/*`, `navigation/MahinTopLevelDestination.kt` |
@@ -38,19 +40,17 @@ No new ADR (Roborazzi follows `docs/TESTING_STRATEGY.md`).
 
 ## Commands and results
 
-Run on 2026-09-24 in the Cloud Agent VM (Ubuntu, OpenJDK 21, Android SDK 35 installed at `~/Android/Sdk`, Node 22).
+Run on 2026-09-24 (gatekeeper re-run) in the Cloud Agent VM (Ubuntu, OpenJDK 21, Android SDK 35 at `~/Android/Sdk`).
 
 | Command | Result |
 |---|---|
 | `python3 scripts/check_design_tokens.py` | **PASS** |
-| `cd backend && ./gradlew ktlintCheck detekt test --no-daemon` | **PASS** — BUILD SUCCESSFUL; 9 tests |
-| `cd admin && npm ci && npm test && npm run build` | **PASS** — Vitest 2 tests; Vite build OK |
 | `cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug --no-daemon` | **PASS** — BUILD SUCCESSFUL |
-| `cd android && ./gradlew :core:designsystem:recordRoborazziDebug --no-daemon` | **PASS** — goldens under `src/test/screenshots/` |
+| `cd android && ./gradlew :core:designsystem:recordRoborazziDebug --no-daemon` | **PASS** — 3 goldens (empty, picker, loading) |
 
-Debug APK: `android/app/build/outputs/apk/debug/app-debug.apk` (~20.3 MB, `versionName` `0.0.2-m1`).
+Debug APK: `android/app/build/outputs/apk/debug/app-debug.apk` (`versionName` `0.0.2-m1`).
 
-Android JVM unit tests (all modules, after full `test` task): **59** (M0 was 50; +9 from datetime/designsystem).
+Android JVM unit tests (all modules, after full `test` task): **62** (+3 scroll/regression tests; `CalendarDemoScreenScrollTest` runs on `testDebugUnitTest` only — release Robolectric manifest lacks `ComponentActivity` for the app module).
 
 ## Acceptance criteria
 | Criterion | Status |
@@ -62,7 +62,7 @@ Android JVM unit tests (all modules, after full `test` task): **59** (M0 was 50;
 | Jalali/Gregorian converter boundary | Met |
 | Persian/Jalali date picker | Met |
 | Accessibility foundations | Met (touch targets, semantics, live region on loading) |
-| Screenshot tests | Met (Roborazzi, 2 goldens) |
+| Screenshot tests | Met (Roborazzi, 3 goldens) |
 | Empty/loading/error components | Met |
 | Preserve M0 migrations/behavior | Met |
 | No M2+ feature scope | Met |
