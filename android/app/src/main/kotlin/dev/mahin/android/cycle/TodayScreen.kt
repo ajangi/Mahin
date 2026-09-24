@@ -22,6 +22,7 @@ import dev.mahin.core.designsystem.MahinSpacing
 import dev.mahin.core.designsystem.MahinTypographyRole
 import dev.mahin.core.designsystem.component.MahinEmptyState
 import dev.mahin.core.designsystem.mahinTextStyle
+import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.domain.cycle.CyclePredictionResult
 import dev.mahin.domain.cycle.PredictionConfidence
 
@@ -62,6 +63,19 @@ fun TodayScreen(
             Text(
                 text = stringResource(R.string.today_has_daily_log),
                 style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(top = MahinSpacing.sm),
+            )
+        }
+        Spacer(modifier = Modifier.height(MahinSpacing.md))
+        ReproductiveModeCard(
+            currentMode = state.reproductiveMode,
+            onModeSelected = viewModel::onReproductiveModeSelected,
+        )
+        if (state.reproductiveMode == ReproductiveMode.TRYING_TO_CONCEIVE) {
+            Text(
+                text = stringResource(R.string.today_ttc_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = MahinSpacing.sm),
             )
         }

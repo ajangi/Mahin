@@ -1,8 +1,11 @@
 package dev.mahin.core.database
 
 import androidx.room.TypeConverter
+import dev.mahin.core.model.CervicalMucusType
 import dev.mahin.core.model.CycleRegularity
+import dev.mahin.core.model.OvulationTestResult
 import dev.mahin.core.model.PeriodFlowLevel
+import dev.mahin.core.model.PregnancyTestResult
 import dev.mahin.core.model.ReproductiveMode
 import java.time.LocalDate
 
@@ -30,4 +33,22 @@ class MahinRoomConverters {
 
     @TypeConverter
     fun stringToFlowLevel(value: String?): PeriodFlowLevel? = value?.let { PeriodFlowLevel.valueOf(it) }
+
+    @TypeConverter
+    fun ovulationTestToString(value: OvulationTestResult?): String? = value?.name
+
+    @TypeConverter
+    fun stringToOvulationTest(value: String?): OvulationTestResult? = value?.let { OvulationTestResult.valueOf(it) }
+
+    @TypeConverter
+    fun cervicalMucusToString(value: CervicalMucusType?): String? = value?.name
+
+    @TypeConverter
+    fun stringToCervicalMucus(value: String?): CervicalMucusType? = value?.let { CervicalMucusType.valueOf(it) }
+
+    @TypeConverter
+    fun pregnancyTestToString(value: PregnancyTestResult?): String? = value?.name
+
+    @TypeConverter
+    fun stringToPregnancyTest(value: String?): PregnancyTestResult? = value?.let { PregnancyTestResult.valueOf(it) }
 }

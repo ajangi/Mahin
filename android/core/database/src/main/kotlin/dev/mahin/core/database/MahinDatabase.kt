@@ -7,10 +7,12 @@ import dev.mahin.core.database.dao.CycleProfileDao
 import dev.mahin.core.database.dao.DailyLogDao
 import dev.mahin.core.database.dao.PeriodDayDao
 import dev.mahin.core.database.dao.PeriodRecordDao
+import dev.mahin.core.database.dao.TtcDayLogDao
 import dev.mahin.core.database.entity.CycleProfileEntity
 import dev.mahin.core.database.entity.DailyLogEntity
 import dev.mahin.core.database.entity.PeriodDayEntity
 import dev.mahin.core.database.entity.PeriodRecordEntity
+import dev.mahin.core.database.entity.TtcDayLogEntity
 
 @Database(
     entities = [
@@ -19,6 +21,7 @@ import dev.mahin.core.database.entity.PeriodRecordEntity
         PeriodRecordEntity::class,
         PeriodDayEntity::class,
         DailyLogEntity::class,
+        TtcDayLogEntity::class,
     ],
     version = MahinDatabase.VERSION,
     exportSchema = true,
@@ -35,8 +38,10 @@ abstract class MahinDatabase : RoomDatabase() {
 
     abstract fun dailyLogDao(): DailyLogDao
 
+    abstract fun ttcDayLogDao(): TtcDayLogDao
+
     companion object {
-        const val VERSION: Int = 2
+        const val VERSION: Int = 3
         const val EXPORTS_SCHEMA: Boolean = true
     }
 }
