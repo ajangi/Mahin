@@ -22,7 +22,7 @@ class BbtChartA11yTest {
             )
         val summary = BbtChartA11y.summary(context.resources, points)
         assertThat(summary).contains("۲")
-        assertThat(summary).contains("۳۶.۶۱")
+        assertThat(summary).contains("۳۶٫۶۱")
         assertThat(summary).doesNotContain("celsius")
         assertThat(summary).doesNotContain("count=")
     }

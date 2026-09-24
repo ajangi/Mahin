@@ -35,5 +35,6 @@ object BbtChartA11y {
         )
     }
 
-    internal fun formatCelsius(value: Double): String = PersianDigits.format(String.format(Locale.US, "%.2f", value))
+    internal fun formatCelsius(value: Double): String =
+        PersianDigits.format(String.format(Locale.US, "%.2f", value)).replace('.', '\u066B')
 }
