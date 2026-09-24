@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -48,6 +49,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+@Suppress("LongParameterList")
 @Composable
 fun MahinJalaliDatePicker(
     selectedDate: JalaliDate?,
@@ -55,6 +57,7 @@ fun MahinJalaliDatePicker(
     modifier: Modifier = Modifier,
     converter: CivilDateConverter = PersianCivilDateConverter,
     initialVisibleMonth: JalaliDate = selectedDate ?: converter.toJalali(LocalDate.now()),
+    dayBackgroundColor: (LocalDate) -> Color? = { null },
 ) {
     var visibleYear by remember(initialVisibleMonth) { mutableStateOf(initialVisibleMonth.year) }
     var visibleMonth by remember(initialVisibleMonth) { mutableStateOf(initialVisibleMonth.month) }
@@ -91,6 +94,7 @@ fun MahinJalaliDatePicker(
             selectedDate = selectedDate,
             onDateSelected = onDateSelected,
             converter = converter,
+            dayBackgroundColor = dayBackgroundColor,
         )
         JalaliGregorianDetailLine(selectedDate = selectedDate, converter = converter)
     }
@@ -161,6 +165,7 @@ private fun JalaliWeekdayHeaderRow() {
     }
 }
 
+@Suppress("LongParameterList")
 @Composable
 private fun JalaliMonthGrid(
     visibleYear: Int,
@@ -168,6 +173,7 @@ private fun JalaliMonthGrid(
     selectedDate: JalaliDate?,
     onDateSelected: (JalaliDate) -> Unit,
     converter: CivilDateConverter,
+    dayBackgroundColor: (LocalDate) -> Color?,
 ) {
     val daysInMonth = JalaliCalendar.daysInMonth(visibleYear, visibleMonth)
     val firstGregorian = converter.toGregorian(JalaliDate(visibleYear, visibleMonth, 1))
@@ -198,6 +204,7 @@ private fun JalaliMonthGrid(
                                 selected = date == selectedDate,
                                 onClick = { onDateSelected(date) },
                                 converter = converter,
+                                markerColor = dayBackgroundColor(converter.toGregorian(date)),
                             )
                         }
                     }
@@ -237,6 +244,7 @@ private fun JalaliDayCell(
     selected: Boolean,
     onClick: () -> Unit,
     converter: CivilDateConverter,
+    markerColor: Color? = null,
 ) {
     val monthNames = stringArrayResource(R.array.ds_jalali_month_names)
     val monthName = monthNames[date.month - 1]
@@ -251,7 +259,7 @@ private fun JalaliDayCell(
         if (selected) {
             MaterialTheme.colorScheme.primary
         } else {
-            MaterialTheme.colorScheme.surface
+            markerColor ?: MaterialTheme.colorScheme.surface
         }
     val contentColor =
         if (selected) {

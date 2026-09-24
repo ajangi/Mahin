@@ -6,6 +6,6 @@ import org.junit.Test
 class CycleDomainModuleTest {
     @Test
     fun algorithmVersionIsExplicit() {
-        assertThat(CycleDomainModule.ALGORITHM_VERSION_PLACEHOLDER).isEqualTo("unspecified")
+        assertThat(CycleDomainModule.PREDICTION_ALGORITHM_VERSION).isEqualTo("cycle-prediction-v1")
     }
 }
