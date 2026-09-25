@@ -1,9 +1,9 @@
 # M4 Handoff — Pregnancy
 
 **Milestone:** M4  
-**Status:** draft PR (gatekeeper fixes in progress)  
+**Status:** draft PR (gatekeeper fixes pushed; CI pending on tip)  
 **Branch:** `cursor/m4-pregnancy-9ad5`  
-**Head:** _(set to tip SHA after push — do not invent)_  
+**Head:** `9868e09081b03f8ac84d34f50efb569ed088c68a`  
 **PR:** [#9](https://github.com/ajangi/Mahin/pull/9) (draft)  
 **Next milestone:** M5 — Sync (`prompts/M5.md`)
 
@@ -45,12 +45,12 @@
 
 | Command | Result |
 |---|---|
-| `python3 scripts/check_design_tokens.py` | _(run after push)_ |
-| `cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug --no-daemon` | _(run after push)_ |
+| `python3 scripts/check_design_tokens.py` | PASS |
+| `cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug --no-daemon` | PASS (local; lint retried once after analyzer flake on unit-test sources) |
 
 ## PR CI
 
-Pending on tip SHA after gatekeeper push — record run id and per-job results here once all 5 jobs succeed (do not cite runs for older SHAs).
+Pending on head `9868e09081b03f8ac84d34f50efb569ed088c68a` — workflow run [36079046608](https://github.com/ajangi/Mahin/actions/runs/36079046608) (in progress at handoff update). Record per-job results here only after all 5 jobs succeed on that SHA (do not cite runs for older SHAs such as `9faddb22` / `2a2d75f8`).
 
 ## Acceptance criteria (M4)
 | Criterion | Status |
