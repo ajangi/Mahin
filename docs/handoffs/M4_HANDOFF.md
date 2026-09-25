@@ -3,7 +3,7 @@
 **Milestone:** M4  
 **Status:** draft PR (gatekeeper fixes pushed; CI pending on tip)  
 **Branch:** `cursor/m4-pregnancy-9ad5`  
-**Head:** `9868e09081b03f8ac84d34f50efb569ed088c68a`  
+**Head:** `793545cd71e2201b51bb13b7ede452d2587f2354`  
 **PR:** [#9](https://github.com/ajangi/Mahin/pull/9) (draft)  
 **Next milestone:** M5 — Sync (`prompts/M5.md`)
 
@@ -50,7 +50,7 @@
 
 ## PR CI
 
-Pending on head `9868e09081b03f8ac84d34f50efb569ed088c68a` — workflow run [36079046608](https://github.com/ajangi/Mahin/actions/runs/36079046608) (in progress at handoff update). Record per-job results here only after all 5 jobs succeed on that SHA (do not cite runs for older SHAs such as `9faddb22` / `2a2d75f8`).
+Pending on head `793545cd71e2201b51bb13b7ede452d2587f2354` — workflow run [36079087675](https://github.com/ajangi/Mahin/actions/runs/36079087675) (in progress at handoff update). Record per-job results here only after all 5 jobs succeed on that SHA (do not cite runs for older SHAs such as `9faddb22` / `2a2d75f8`).
 
 ## Acceptance criteria (M4)
 | Criterion | Status |
