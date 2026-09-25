@@ -23,10 +23,13 @@ Design tokens are centralized in `:core:designsystem` and `design/tokens.json`. 
 `backend/` is a Spring Boot 3 modular monolith (ADR 0002). Packages:
 
 - `api` — HTTP envelope, errors
+- `auth` / `identity` — email/password accounts, guest mapping, JWT sessions
+- `sync` — outbox mutations, revisions, idempotency, conflict resolution
+- `device` — installation/session registry
 - `media` — CMS media metadata + public URL factory
 - `content` — article envelope without medical body
-- `privacy` — access log without query/body
-- `persistence` — Flyway-backed bootstrap schema
+- `privacy` — access log without query/body; deletion/export job foundations
+- `persistence` — Flyway-backed schema (V2 identity/sync in M5)
 
 Local profile (`application-local.yml`) targets Dockerized Postgres. Tests use H2 in PostgreSQL mode.
 
@@ -36,7 +39,7 @@ Local profile (`application-local.yml`) targets Dockerized Postgres. Tests use H
 Clients receive `storageKey` + metadata. `publicUrl` is derived from `MEDIA_PUBLIC_BASE_URL`. Feature code must not hard-code production CDN hosts. Medical-governed assets require approval before authoritative display.
 
 ## Identity & sync
-Guest local UUID first. Account adapters and outbox sync are interfaces in M0 (`:core:sync`, `:domain:account`) and are implemented in M5.
+Guest local UUID first (`POST /v1/identity/guest` maps `localUserId` → server `guestInstallationId`). Optional email/password accounts issue JWT access tokens and hashed refresh tokens. Outbox push/pull is implemented server-side in M5 (`docs/SYNC_SPEC.md`); Android worker wiring remains a later milestone.
 
 ## Observability
 Health/info actuators only. Request logs record method, path, status, request id — never bodies or health query strings.
