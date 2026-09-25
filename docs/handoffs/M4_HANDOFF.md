@@ -4,6 +4,7 @@
 **Status:** draft PR (gatekeeper fixes on branch; CI pending on branch tip)  
 **Branch:** `cursor/m4-pregnancy-9ad5`  
 **Head:** `9868e09081b03f8ac84d34f50efb569ed088c68a` (gatekeeper implementation; GitHub API verified)  
+**Branch tip:** `3b8fbc75fd3cb9a6476be479289ad578403866d8` (doc-only after Head; GitHub API verified)  
 **PR:** [#9](https://github.com/ajangi/Mahin/pull/9) (draft)  
 **Next milestone:** M5 — Sync (`prompts/M5.md`)
 
@@ -50,7 +51,7 @@
 
 ## PR CI
 
-Workflow [36079938599](https://github.com/ajangi/Mahin/actions/runs/36079938599) for head `e449e6dd57435155c148f852c0095ac7658077bd` (GitHub API verified).
+Workflow [36080067475](https://github.com/ajangi/Mahin/actions/runs/36080067475) for head `3b8fbc75fd3cb9a6476be479289ad578403866d8` (GitHub API verified).
 
 | Job | Status |
 |---|---|
