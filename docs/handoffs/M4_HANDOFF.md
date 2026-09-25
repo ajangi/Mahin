@@ -1,9 +1,10 @@
 # M4 Handoff — Pregnancy
 
 **Milestone:** M4  
-**Status:** draft PR (gatekeeper fixes pushed; CI pending on tip)  
+**Status:** draft PR (gatekeeper fixes on branch; CI pending on branch tip)  
 **Branch:** `cursor/m4-pregnancy-9ad5`  
-**Head:** `793545cd71e2201b51bb13b7ede452d2587f2354`  
+**Head:** `9868e09081b03f8ac84d34f50efb569ed088c68a` (gatekeeper implementation; GitHub API verified)  
+**Branch tip:** `b91d01aa0669c59d67494f2b4964712819f6fb3d` (doc-only after Head; GitHub API verified)  
 **PR:** [#9](https://github.com/ajangi/Mahin/pull/9) (draft)  
 **Next milestone:** M5 — Sync (`prompts/M5.md`)
 
@@ -50,7 +51,19 @@
 
 ## PR CI
 
-Pending on head `793545cd71e2201b51bb13b7ede452d2587f2354` — workflow run [36079087675](https://github.com/ajangi/Mahin/actions/runs/36079087675) (in progress at handoff update). Record per-job results here only after all 5 jobs succeed on that SHA (do not cite runs for older SHAs such as `9faddb22` / `2a2d75f8`).
+Workflow [36079652367](https://github.com/ajangi/Mahin/actions/runs/36079652367) for head `b91d01aa0669c59d67494f2b4964712819f6fb3d` (GitHub API verified).
+
+| Job | Status |
+|---|---|
+| design-tokens | success |
+| admin | success |
+| openapi | in progress |
+| backend | in progress |
+| android | in progress |
+
+Overall: **pending** — do not mark SUCCESS until all five jobs succeed on that SHA.
+
+Superseded: run [36079149161](https://github.com/ajangi/Mahin/actions/runs/36079149161) targeted orphaned tip `bd18bf0…` (android was in progress when tip advanced). Do not cite cancelled/orphan runs (e.g. 36079087675 @ `5118fe44…`) or non-existent SHAs (e.g. `793545cd…`).
 
 ## Acceptance criteria (M4)
 | Criterion | Status |
