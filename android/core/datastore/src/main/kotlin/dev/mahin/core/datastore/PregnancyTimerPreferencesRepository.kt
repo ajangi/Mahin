@@ -90,4 +90,9 @@ class PregnancyTimerPreferencesRepository
                 }
             }
         }
+
+        suspend fun clearAllActiveTimers() {
+            setActiveKickSession(null, null)
+            setActiveContractionTimer(null, null, null)
+        }
     }

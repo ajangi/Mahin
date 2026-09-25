@@ -78,6 +78,7 @@ class PregnancyHubScreenScrollTest {
                                 newAppointmentJalali = JalaliDate(1403, 10, 1),
                                 selectedOutcome = null,
                                 wantsSupportContent = false,
+                                suppressCelebratoryNotifications = false,
                             ),
                         actions =
                             PregnancyHubActions(

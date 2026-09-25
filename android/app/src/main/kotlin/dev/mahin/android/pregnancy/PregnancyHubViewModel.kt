@@ -52,6 +52,7 @@ data class PregnancyHubUiState(
     val newAppointmentJalali: JalaliDate = PersianCivilDateConverter.toJalali(LocalDate.now()),
     val selectedOutcome: PregnancyOutcome? = null,
     val wantsSupportContent: Boolean = false,
+    val suppressCelebratoryNotifications: Boolean = false,
 )
 
 @HiltViewModel
@@ -96,6 +97,15 @@ class PregnancyHubViewModel
                                 asOfDate = LocalDate.now(),
                             )
                         }
+                    val kickSessionId =
+                        repository.validateKickTimerSession(kickTimer.sessionId, pregnancy?.id)
+                    val (contractionSessionId, openContractionEventId) =
+                        repository.validateContractionTimerSession(
+                            sessionId = contractionTimer.sessionId,
+                            openEventId = contractionTimer.openEventId,
+                            activePregnancyId = pregnancy?.id,
+                        )
+                    val suppressCelebratory = repository.shouldSuppressCelebratoryNotifications()
                     _uiState.update {
                         it.copy(
                             isLoading = false,
@@ -103,13 +113,14 @@ class PregnancyHubViewModel
                             postTransition = postTransition,
                             activePregnancy = pregnancy,
                             status = status,
-                            kickSessionId = kickTimer.sessionId,
-                            contractionSessionId = contractionTimer.sessionId,
-                            openContractionEventId = contractionTimer.openEventId,
+                            kickSessionId = kickSessionId,
+                            contractionSessionId = contractionSessionId,
+                            openContractionEventId = openContractionEventId,
                             appointments = appointments,
+                            suppressCelebratoryNotifications = suppressCelebratory,
                         )
                     }
-                    viewModelScope.launch { refreshKickCount(kickTimer.sessionId) }
+                    viewModelScope.launch { refreshKickCount(kickSessionId) }
                     restartTicker(kickTimer, contractionTimer)
                 }
             }

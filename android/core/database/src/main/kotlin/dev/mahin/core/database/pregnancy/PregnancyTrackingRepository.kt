@@ -10,6 +10,7 @@ import dev.mahin.core.database.entity.PregnancyAppointmentEntity
 import dev.mahin.core.database.entity.PregnancyDatingRevisionEntity
 import dev.mahin.core.database.entity.PregnancyDayLogEntity
 import dev.mahin.core.database.entity.PregnancyRecordEntity
+import dev.mahin.core.datastore.PregnancyTimerPreferencesRepository
 import dev.mahin.core.model.PregnancyAppointmentType
 import dev.mahin.core.model.PregnancyOutcome
 import dev.mahin.core.model.ReproductiveMode
@@ -46,6 +47,7 @@ class PregnancyTrackingRepository
     @Inject
     constructor(
         database: MahinDatabase,
+        private val timerPreferences: PregnancyTimerPreferencesRepository,
     ) {
         private val profileDao = database.cycleProfileDao()
         private val pregnancyDao = database.pregnancyRecordDao()
@@ -102,6 +104,7 @@ class PregnancyTrackingRepository
             clinicalEddDate: LocalDate?,
             datingReason: String?,
         ): PregnancyRecordEntity {
+            timerPreferences.clearAllActiveTimers()
             val now = System.currentTimeMillis()
             val dating = PregnancyDatingEngineV1.resolveDating(lmpDate, clinicalEddDate)
             val id = UUID.randomUUID().toString()
@@ -189,6 +192,7 @@ class PregnancyTrackingRepository
                 ),
             )
             updateReproductiveMode(ReproductiveMode.POST_PREGNANCY_TRANSITION)
+            timerPreferences.clearAllActiveTimers()
         }
 
         suspend fun resumeTracking(mode: ReproductiveMode) {
@@ -277,6 +281,42 @@ class PregnancyTrackingRepository
         }
 
         suspend fun kickCount(sessionId: String): Int = kickEventDao.countForSession(sessionId)
+
+        suspend fun findKickSession(sessionId: String): KickSessionEntity? = kickSessionDao.getById(sessionId)
+
+        suspend fun findContractionSession(sessionId: String): ContractionSessionEntity? =
+            contractionSessionDao.getById(sessionId)
+
+        suspend fun validateKickTimerSession(
+            sessionId: String?,
+            activePregnancyId: String?,
+        ): String? {
+            if (sessionId == null) return null
+            val valid =
+                activePregnancyId != null &&
+                    kickSessionDao.getById(sessionId)?.pregnancyId == activePregnancyId
+            if (!valid) {
+                timerPreferences.setActiveKickSession(null, null)
+                return null
+            }
+            return sessionId
+        }
+
+        suspend fun validateContractionTimerSession(
+            sessionId: String?,
+            openEventId: String?,
+            activePregnancyId: String?,
+        ): Pair<String?, String?> {
+            if (sessionId == null) return null to null
+            val valid =
+                activePregnancyId != null &&
+                    contractionSessionDao.getById(sessionId)?.pregnancyId == activePregnancyId
+            if (!valid) {
+                timerPreferences.setActiveContractionTimer(null, null, null)
+                return null to null
+            }
+            return sessionId to openEventId
+        }
 
         suspend fun startContractionSession(pregnancyId: String): ContractionSessionEntity {
             val now = System.currentTimeMillis()

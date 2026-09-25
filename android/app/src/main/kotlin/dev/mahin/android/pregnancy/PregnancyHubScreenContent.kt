@@ -46,6 +46,7 @@ data class PregnancyHubContentState(
     val newAppointmentJalali: dev.mahin.core.datetime.JalaliDate,
     val selectedOutcome: PregnancyOutcome?,
     val wantsSupportContent: Boolean,
+    val suppressCelebratoryNotifications: Boolean,
 )
 
 data class PregnancyAppointmentListItem(
@@ -129,8 +130,10 @@ private fun ActivePregnancyHub(
         item {
             PregnancyStatusCard(status = status)
         }
-        item {
-            WeekPlaceholderCard(weekNumber = status.displayWeekNumber)
+        if (!state.suppressCelebratoryNotifications) {
+            item {
+                WeekPlaceholderCard(weekNumber = status.displayWeekNumber)
+            }
         }
         item {
             KickCounterSection(state = state, actions = actions)

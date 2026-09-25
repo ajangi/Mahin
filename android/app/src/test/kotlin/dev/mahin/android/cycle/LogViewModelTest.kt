@@ -11,6 +11,7 @@ import dev.mahin.core.database.entity.DailyLogEntity
 import dev.mahin.core.database.entity.TtcDayLogEntity
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
 import dev.mahin.core.database.ttc.TtcTrackingRepository
+import dev.mahin.core.datastore.PregnancyTimerPreferencesRepository
 import dev.mahin.core.datastore.TtcPrivacyPreferencesRepository
 import dev.mahin.core.datetime.PersianCivilDateConverter
 import dev.mahin.core.model.CycleRegularity
@@ -46,7 +47,7 @@ class LogViewModelTest {
                 .build()
         cycleRepository = CycleTrackingRepository(database)
         ttcRepository = TtcTrackingRepository(database)
-        pregnancyRepository = PregnancyTrackingRepository(database)
+        pregnancyRepository = PregnancyTrackingRepository(database, PregnancyTimerPreferencesRepository(context))
         privacyRepository = TtcPrivacyPreferencesRepository(context)
     }
 

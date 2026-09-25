@@ -3,6 +3,7 @@ package dev.mahin.android.cycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.mahin.android.pregnancy.PregnancyFormatters
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.pregnancy.PregnancyDayLogInput
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
@@ -347,7 +348,8 @@ class LogViewModel
                                     ?.split(",")
                                     ?.filter { it.isNotBlank() }
                                     ?.toSet() ?: emptySet(),
-                            pregnancyWeightInput = pregnancyLog?.weightKg?.toString() ?: "",
+                            pregnancyWeightInput =
+                                pregnancyLog?.weightKg?.let { PregnancyFormatters.formatDecimal(it) } ?: "",
                             pregnancyWeightError = null,
                             pregnancyBpSystolicInput = pregnancyLog?.bpSystolic?.toString() ?: "",
                             pregnancyBpDiastolicInput = pregnancyLog?.bpDiastolic?.toString() ?: "",

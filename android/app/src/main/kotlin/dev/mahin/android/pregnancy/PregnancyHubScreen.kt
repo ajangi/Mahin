@@ -46,6 +46,7 @@ fun PregnancyHubScreen(
                 newAppointmentJalali = state.newAppointmentJalali,
                 selectedOutcome = state.selectedOutcome,
                 wantsSupportContent = state.wantsSupportContent,
+                suppressCelebratoryNotifications = state.suppressCelebratoryNotifications,
             ),
         actions =
             PregnancyHubActions(

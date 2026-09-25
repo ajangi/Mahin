@@ -17,6 +17,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mahin.core.database.cycle.CycleOnboardingInput
 import dev.mahin.core.datetime.JalaliDate
 import dev.mahin.core.datetime.PersianCivilDateConverter
+import dev.mahin.core.datetime.PregnancyClinicalEddInput
 import dev.mahin.core.designsystem.MahinSpacing
 import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
@@ -81,16 +82,20 @@ fun OnboardingFlow(
                                 isSaving = saving,
                             ),
                         onLmpChange = { lmpJalali = it },
-                        onIncludeClinicalToggle = { includeClinicalEdd = !includeClinicalEdd },
+                        onIncludeClinicalToggle = {
+                            if (!includeClinicalEdd) {
+                                clinicalEddJalali = PregnancyClinicalEddInput.defaultClinicalEddJalali()
+                            }
+                            includeClinicalEdd = !includeClinicalEdd
+                        },
                         onClinicalEddChange = { clinicalEddJalali = it },
                         onFinish = {
                             val lmp = PersianCivilDateConverter.toGregorian(lmpJalali)
                             val clinical =
-                                if (includeClinicalEdd) {
-                                    PersianCivilDateConverter.toGregorian(clinicalEddJalali ?: lmpJalali)
-                                } else {
-                                    null
-                                }
+                                PregnancyClinicalEddInput.resolveClinicalEddGregorian(
+                                    includeClinical = includeClinicalEdd,
+                                    selectedClinicalJalali = clinicalEddJalali,
+                                )
                             viewModel.finishPregnancyOnboarding(
                                 lmpDate = lmp,
                                 clinicalEddDate = clinical,

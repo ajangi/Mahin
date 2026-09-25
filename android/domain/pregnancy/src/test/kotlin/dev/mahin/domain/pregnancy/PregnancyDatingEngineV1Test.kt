@@ -2,6 +2,7 @@ package dev.mahin.domain.pregnancy
 
 import com.google.common.truth.Truth.assertThat
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import org.junit.Test
 
 class PregnancyDatingEngineV1Test {
@@ -28,6 +29,17 @@ class PregnancyDatingEngineV1Test {
         assertThat(ga.totalDays).isEqualTo(14)
         assertThat(ga.weeks).isEqualTo(2)
         assertThat(ga.days).isEqualTo(0)
+    }
+
+    @Test
+    fun gestationalAge_fromClinicalEdd_usesDaysRemaining() {
+        val lmp = LocalDate.of(2025, 1, 1)
+        val clinical = LocalDate.of(2025, 10, 20)
+        val dating = PregnancyDatingEngineV1.resolveDating(lmp, clinical)
+        val asOf = LocalDate.of(2025, 7, 1)
+        val ga = PregnancyDatingEngineV1.gestationalAge(dating, asOf)
+        assertThat(dating.datingSource.name).isEqualTo("CLINICAL_OR_ULTRASOUND")
+        assertThat(ga.totalDays).isEqualTo((280 - ChronoUnit.DAYS.between(asOf, clinical)).toInt())
     }
 
     @Test

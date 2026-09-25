@@ -11,10 +11,10 @@ import androidx.compose.ui.res.stringResource
 import dev.mahin.android.R
 import dev.mahin.core.datetime.JalaliDate
 import dev.mahin.core.datetime.PersianCivilDateConverter
+import dev.mahin.core.datetime.PregnancyClinicalEddInput
 import dev.mahin.core.designsystem.MahinSpacing
 import dev.mahin.core.designsystem.component.MahinJalaliDatePicker
 import dev.mahin.core.designsystem.component.MahinPrimaryButton
-import java.time.LocalDate
 
 @Suppress("LongParameterList")
 @Composable
@@ -53,7 +53,8 @@ fun OnboardingPregnancySetupScreen(
                     .padding(vertical = MahinSpacing.sm),
         )
         if (form.includeClinicalEdd) {
-            val clinical = form.clinicalEddJalali ?: PersianCivilDateConverter.toJalali(LocalDate.now().plusMonths(7))
+            val clinical =
+                form.clinicalEddJalali ?: PregnancyClinicalEddInput.defaultClinicalEddJalali()
             MahinJalaliDatePicker(
                 selectedDate = clinical,
                 onDateSelected = onClinicalEddChange,

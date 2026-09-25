@@ -1,10 +1,17 @@
 # M4 Handoff — Pregnancy
 
 **Milestone:** M4  
-**Status:** draft PR  
+**Status:** draft PR (gatekeeper fixes in progress)  
 **Branch:** `cursor/m4-pregnancy-9ad5`  
-**Head:** `2a2d75fc8e8b0e8c0e8b0e8c0e8b0e8c0e8b0e8c`
+**Head:** _(set to tip SHA after push — do not invent)_  
+**PR:** [#9](https://github.com/ajangi/Mahin/pull/9) (draft)  
 **Next milestone:** M5 — Sync (`prompts/M5.md`)
+
+## Gatekeeper follow-up (PR #9)
+- Clinical EDD: never fall back to LMP when clinical toggle is on; default picker date persisted via `PregnancyClinicalEddInput`.
+- Timer DataStore cleared on `startPregnancy` / `recordOutcome`; stale session ids rejected on hub restore.
+- `PregnancyStartSheet` scroll + scroll test at fontScale 2f.
+- Notification preview pipeline wired (`MahinNotificationPreviewPipeline`); M5 scheduler call site documented.
 
 ## Implemented scope
 - **Onboarding & dating:** Pregnancy goal in onboarding + Today start sheet; LMP and optional clinical EDD; `PregnancyDatingEngineV1` (280-day LMP estimate; clinical EDD supersedes display).
@@ -15,17 +22,17 @@
 - **Kick counter:** Session start/stop, tap-to-count, DataStore timer persistence + Room history.
 - **Contraction timer:** Session + start/stop contraction events, DataStore persistence.
 - **Outcome flow:** Birth, loss, termination, ended/unspecified; optional support content flag.
-- **Notification suppression:** `PregnancyNotificationSuppression` + `suppressCelebratoryNotifications` on sensitive outcomes.
+- **Notification suppression:** `PregnancyNotificationSuppression` + `MahinNotificationPreviewPipeline` + `suppressCelebratoryNotifications` on sensitive outcomes.
 - **M2/M3 preserved:** Cycle/TTC paths unchanged; SQLCipher bootstrap unchanged.
 
 ## Notable files
 | Area | Path |
 |---|---|
+| Clinical EDD input | `android/core/datetime/PregnancyClinicalEddInput.kt` |
 | Dating engine | `android/domain/pregnancy/PregnancyDatingEngineV1.kt` |
 | Room v4 / repo | `android/core/database/pregnancy/PregnancyTrackingRepository.kt`, `MIGRATION_3_4` |
-| Parsers | `WeightInputParser.kt`, `BloodPressureInputParser.kt` |
+| Notification gate | `android/core/notifications/MahinNotificationPreviewPipeline.kt` |
 | Hub UI | `android/app/.../pregnancy/PregnancyHubScreenContent.kt` |
-| Timer prefs | `PregnancyTimerPreferencesRepository.kt` |
 | ADR | `docs/adr/0011-m4-pregnancy-dating-schema.md` |
 
 ## Migrations
@@ -34,12 +41,16 @@
 ## ADRs
 - **0011** — M4 pregnancy dating conventions (280-day LMP, clinical EDD override, trimester UX boundaries flagged for clinical review).
 
-## Commands and results (local)
+## Commands and results (local, gatekeeper pass)
 
 | Command | Result |
 |---|---|
-| `python3 scripts/check_design_tokens.py` | **PASS** |
-| `cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug --no-daemon` | **PASS** — BUILD SUCCESSFUL |
+| `python3 scripts/check_design_tokens.py` | _(run after push)_ |
+| `cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug --no-daemon` | _(run after push)_ |
+
+## PR CI
+
+Pending on tip SHA after gatekeeper push — record run id and per-job results here once all 5 jobs succeed (do not cite runs for older SHAs).
 
 ## Acceptance criteria (M4)
 | Criterion | Status |
@@ -54,7 +65,7 @@
 | Outcome flow | Met |
 | Sensitive outcome notification suppression | Met |
 | Preserve M2/M3 / migrations | Met |
-| Scroll regression (large font) | Met — `PregnancyHubScreenScrollTest` (debug; release excluded like TTC scroll) |
+| Scroll regression (large font) | Met — hub + start sheet (debug) |
 
 ## Known limitations
 - Week-by-week text is placeholder only; CMS/API deferred (M6+).
