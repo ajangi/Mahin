@@ -10,5 +10,9 @@ data class LogScreenActions(
     val onToggleSymptom: (String) -> Unit,
     val onNoteChange: (String) -> Unit,
     val onSave: () -> Unit,
+    val onTogglePregnancySymptom: (String) -> Unit,
+    val onPregnancyWeightChange: (String) -> Unit,
+    val onPregnancyBpSystolicChange: (String) -> Unit,
+    val onPregnancyBpDiastolicChange: (String) -> Unit,
     val ttcCallbacks: TtcLogFormCallbacks,
 )

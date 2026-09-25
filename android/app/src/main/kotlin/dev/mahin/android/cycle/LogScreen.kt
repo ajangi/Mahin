@@ -34,6 +34,10 @@ fun LogScreen(
                 onToggleSymptom = viewModel::toggleSymptom,
                 onNoteChange = viewModel::onNoteChange,
                 onSave = viewModel::save,
+                onTogglePregnancySymptom = viewModel::togglePregnancySymptom,
+                onPregnancyWeightChange = viewModel::onPregnancyWeightChange,
+                onPregnancyBpSystolicChange = viewModel::onPregnancyBpSystolicChange,
+                onPregnancyBpDiastolicChange = viewModel::onPregnancyBpDiastolicChange,
                 ttcCallbacks = ttcCallbacks,
             )
         }

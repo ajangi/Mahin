@@ -1,14 +1,10 @@
 package dev.mahin.android.cycle
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,6 +14,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mahin.android.R
+import dev.mahin.android.pregnancy.PregnancyStartSheet
+import dev.mahin.android.pregnancy.PregnancyTodayCard
 import dev.mahin.core.designsystem.MahinSpacing
 import dev.mahin.core.designsystem.MahinTypographyRole
 import dev.mahin.core.designsystem.component.MahinEmptyState
@@ -27,68 +25,120 @@ import dev.mahin.domain.cycle.CyclePredictionResult
 import dev.mahin.domain.cycle.PredictionConfidence
 
 @Composable
+@Suppress("LongMethod")
 fun TodayScreen(
     modifier: Modifier = Modifier,
     viewModel: TodayViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    Column(
+    PregnancyStartSheet(
+        visible = state.showPregnancyStartSheet,
+        onDismiss = viewModel::dismissPregnancyStartSheet,
+        onConfirm = viewModel::confirmPregnancyStart,
+    )
+    LazyColumn(
         modifier =
             modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
                 .padding(MahinSpacing.md),
     ) {
-        Text(
-            text = stringResource(R.string.today_title),
-            style = mahinTextStyle(MahinTypographyRole.TitleLarge),
-        )
+        item {
+            Text(
+                text = stringResource(R.string.today_title),
+                style = mahinTextStyle(MahinTypographyRole.TitleLarge),
+            )
+        }
+        if (state.modeChangeBlockedMessage) {
+            item {
+                Text(
+                    text = stringResource(R.string.pregnancy_active_block_mode_change),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = MahinSpacing.sm),
+                )
+            }
+        }
         val dashboard = state.dashboard
         if (dashboard == null) {
-            MahinEmptyState(
-                title = stringResource(R.string.today_empty_title),
-                body = stringResource(R.string.today_empty_body),
-            )
-            return@Column
+            item {
+                MahinEmptyState(
+                    title = stringResource(R.string.today_empty_title),
+                    body = stringResource(R.string.today_empty_body),
+                )
+            }
+        } else if (state.reproductiveMode == ReproductiveMode.PREGNANT) {
+            val pregnancyStatus = state.pregnancyStatus
+            if (pregnancyStatus != null) {
+                item {
+                    PregnancyTodayCard(
+                        status = pregnancyStatus,
+                        modifier = Modifier.padding(vertical = MahinSpacing.sm),
+                    )
+                }
+                item {
+                    Text(
+                        text = stringResource(R.string.pregnancy_mode_active_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        } else {
+            item {
+                TodayPredictionCard(prediction = dashboard.prediction)
+            }
+            if (dashboard.onPeriodToday) {
+                item {
+                    Text(
+                        text = stringResource(R.string.today_on_period),
+                        style = mahinTextStyle(MahinTypographyRole.Label),
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+            if (dashboard.todayLog != null) {
+                item {
+                    Text(
+                        text = stringResource(R.string.today_has_daily_log),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = MahinSpacing.sm),
+                    )
+                }
+            }
         }
-        TodayPredictionCard(prediction = dashboard.prediction)
-        if (dashboard.onPeriodToday) {
-            Text(
-                text = stringResource(R.string.today_on_period),
-                style = mahinTextStyle(MahinTypographyRole.Label),
-                color = MaterialTheme.colorScheme.primary,
+        item {
+            Spacer(modifier = Modifier.height(MahinSpacing.md))
+        }
+        item {
+            ReproductiveModeCard(
+                currentMode = state.reproductiveMode,
+                hasActivePregnancy = state.hasActivePregnancy,
+                onModeSelected = viewModel::onReproductiveModeSelected,
             )
         }
-        if (dashboard.todayLog != null) {
-            Text(
-                text = stringResource(R.string.today_has_daily_log),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = MahinSpacing.sm),
-            )
-        }
-        Spacer(modifier = Modifier.height(MahinSpacing.md))
-        ReproductiveModeCard(
-            currentMode = state.reproductiveMode,
-            onModeSelected = viewModel::onReproductiveModeSelected,
-        )
         if (state.reproductiveMode == ReproductiveMode.TRYING_TO_CONCEIVE) {
-            Text(
-                text = stringResource(R.string.today_ttc_hint),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = MahinSpacing.sm),
-            )
+            item {
+                Text(
+                    text = stringResource(R.string.today_ttc_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = MahinSpacing.sm),
+                )
+            }
         }
     }
 }
 
 @Composable
 private fun TodayPredictionCard(prediction: CyclePredictionResult) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    androidx.compose.material3.Card(
+        colors =
+            androidx.compose.material3.CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            ),
         modifier = Modifier.padding(vertical = MahinSpacing.sm),
     ) {
-        Column(modifier = Modifier.padding(MahinSpacing.md)) {
+        androidx.compose.foundation.layout.Column(modifier = Modifier.padding(MahinSpacing.md)) {
             prediction.cycleDay?.let { day ->
                 Text(
                     text = stringResource(R.string.today_cycle_day, day),

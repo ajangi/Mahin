@@ -11,7 +11,7 @@ android {
         // See docs/adr/0003-android-application-id.md
         applicationId = "dev.mahin.android"
         versionCode = 1
-        versionName = "0.0.4-m3"
+        versionName = "0.0.5-m4"
     }
 }
 
@@ -64,6 +64,7 @@ tasks.withType<Test>().configureEach {
             excludeTestsMatching("dev.mahin.android.demo.CalendarDemoScreenScrollTest")
             excludeTestsMatching("dev.mahin.android.cycle.HistoryScreenScrollTest")
             excludeTestsMatching("dev.mahin.android.ttc.TtcInsightsScreenScrollTest")
+            excludeTestsMatching("dev.mahin.android.pregnancy.PregnancyHubScreenScrollTest")
         }
     }
 }

@@ -4,11 +4,13 @@ import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.EditNote
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.ShowChart
 import androidx.compose.material.icons.outlined.Today
 import androidx.compose.ui.graphics.vector.ImageVector
 import dev.mahin.android.R
+import dev.mahin.core.model.ReproductiveMode
 
 enum class MahinTopLevelDestination(
     val route: String,
@@ -20,14 +22,17 @@ enum class MahinTopLevelDestination(
     Log("log", R.string.nav_log, Icons.Outlined.EditNote),
     History("history", R.string.nav_history, Icons.Outlined.History),
     TtcInsights("ttc_insights", R.string.nav_ttc_insights, Icons.Outlined.ShowChart),
+    PregnancyHub("pregnancy_hub", R.string.nav_pregnancy_hub, Icons.Outlined.FavoriteBorder),
     ;
 
     companion object {
-        fun forMode(isTtcMode: Boolean): List<MahinTopLevelDestination> =
-            if (isTtcMode) {
-                listOf(Today, Calendar, Log, TtcInsights, History)
-            } else {
-                listOf(Today, Calendar, Log, History)
+        fun forMode(mode: ReproductiveMode): List<MahinTopLevelDestination> =
+            when (mode) {
+                ReproductiveMode.TRYING_TO_CONCEIVE ->
+                    listOf(Today, Calendar, Log, TtcInsights, History)
+                ReproductiveMode.PREGNANT ->
+                    listOf(Today, Calendar, Log, PregnancyHub, History)
+                else -> listOf(Today, Calendar, Log, History)
             }
     }
 }

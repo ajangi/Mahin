@@ -3,8 +3,9 @@ package dev.mahin.android.cycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dev.mahin.core.common.BbtInputParser
 import dev.mahin.core.database.cycle.CycleTrackingRepository
+import dev.mahin.core.database.pregnancy.PregnancyDayLogInput
+import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
 import dev.mahin.core.database.ttc.TtcDayLogInput
 import dev.mahin.core.database.ttc.TtcTrackingRepository
 import dev.mahin.core.datastore.TtcPrivacyPreferencesRepository
@@ -47,6 +48,14 @@ data class LogUiState(
     val intercourseLogged: Boolean = false,
     val intercourseProtected: Boolean? = null,
     val pregnancyTest: PregnancyTestResult? = null,
+    val pregnancySymptomTags: Set<String> = emptySet(),
+    val pregnancyWeightInput: String = "",
+    val pregnancyWeightError: WeightBpFieldError? = null,
+    val pregnancyBpSystolicInput: String = "",
+    val pregnancyBpDiastolicInput: String = "",
+    val pregnancyBpError: WeightBpFieldError? = null,
+    val pregnancyAvailableSymptoms: List<String> =
+        listOf("تهوع", "خستگی", "سردرد", "درد کمر", "ورم"),
     val saving: Boolean = false,
     val saved: Boolean = false,
     val availableSymptoms: List<String> =
@@ -59,6 +68,7 @@ class LogViewModel
     constructor(
         private val repository: CycleTrackingRepository,
         private val ttcRepository: TtcTrackingRepository,
+        private val pregnancyRepository: PregnancyTrackingRepository,
         private val ttcPrivacyRepository: TtcPrivacyPreferencesRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(LogUiState())
@@ -153,6 +163,30 @@ class LogViewModel
             }
         }
 
+        fun togglePregnancySymptom(tag: String) {
+            _uiState.update { state ->
+                val next =
+                    if (state.pregnancySymptomTags.contains(tag)) {
+                        state.pregnancySymptomTags - tag
+                    } else {
+                        state.pregnancySymptomTags + tag
+                    }
+                state.copy(pregnancySymptomTags = next, saved = false)
+            }
+        }
+
+        fun onPregnancyWeightChange(value: String) {
+            _uiState.update { it.copy(pregnancyWeightInput = value, pregnancyWeightError = null, saved = false) }
+        }
+
+        fun onPregnancyBpSystolicChange(value: String) {
+            _uiState.update { it.copy(pregnancyBpSystolicInput = value, pregnancyBpError = null, saved = false) }
+        }
+
+        fun onPregnancyBpDiastolicChange(value: String) {
+            _uiState.update { it.copy(pregnancyBpDiastolicInput = value, pregnancyBpError = null, saved = false) }
+        }
+
         fun setIntercourseLoggingEnabled(enabled: Boolean) {
             viewModelScope.launch {
                 ttcPrivacyRepository.setIntercourseLoggingEnabled(enabled)
@@ -165,25 +199,41 @@ class LogViewModel
             }
         }
 
+        @Suppress("LongMethod")
         internal suspend fun performSave(state: LogUiState) {
             val date = state.converter.toGregorian(state.selectedJalali)
             _uiState.update { it.copy(saving = true, bbtError = null) }
             val reproductiveMode = ttcRepository.getReproductiveMode()
             var bbtCelsius: Double? = null
+            var weightKg: Double? = null
+            var bpSystolic: Int? = null
+            var bpDiastolic: Int? = null
             if (reproductiveMode == ReproductiveMode.TRYING_TO_CONCEIVE) {
-                when (val parsed = BbtInputParser.parse(state.bbtInput)) {
-                    is BbtInputParser.ParseResult.Empty -> bbtCelsius = null
-                    is BbtInputParser.ParseResult.Valid -> bbtCelsius = parsed.celsius
-                    is BbtInputParser.ParseResult.Invalid -> {
-                        val error =
-                            when (parsed.reason) {
-                                BbtInputParser.InvalidReason.UNPARSEABLE -> BbtFieldError.UNPARSEABLE
-                                BbtInputParser.InvalidReason.OUT_OF_RANGE -> BbtFieldError.OUT_OF_RANGE
-                            }
-                        _uiState.update { it.copy(saving = false, bbtError = error) }
-                        return
-                    }
+                val (parsedBbt, bbtError) = LogInputValidators.parseBbt(state.bbtInput)
+                if (bbtError != null) {
+                    _uiState.update { it.copy(saving = false, bbtError = bbtError) }
+                    return
                 }
+                bbtCelsius = parsedBbt
+            }
+            if (reproductiveMode == ReproductiveMode.PREGNANT) {
+                val (parsedWeight, weightError) = LogInputValidators.parseWeight(state.pregnancyWeightInput)
+                if (weightError != null) {
+                    _uiState.update { it.copy(saving = false, pregnancyWeightError = weightError) }
+                    return
+                }
+                weightKg = parsedWeight
+                val (bpPair, bpError) =
+                    LogInputValidators.parseBloodPressure(
+                        state.pregnancyBpSystolicInput,
+                        state.pregnancyBpDiastolicInput,
+                    )
+                if (bpError != null) {
+                    _uiState.update { it.copy(saving = false, pregnancyBpError = bpError) }
+                    return
+                }
+                bpSystolic = bpPair?.first
+                bpDiastolic = bpPair?.second
             }
             if (state.loggingPeriod) {
                 val existing =
@@ -238,6 +288,18 @@ class LogViewModel
                     ),
                 )
             }
+            if (reproductiveMode == ReproductiveMode.PREGNANT) {
+                pregnancyRepository.upsertPregnancyDayLog(
+                    PregnancyDayLogInput(
+                        logDate = date,
+                        symptomTags = state.pregnancySymptomTags,
+                        weightKg = weightKg,
+                        bpSystolic = bpSystolic,
+                        bpDiastolic = bpDiastolic,
+                        note = state.note.takeIf { it.isNotBlank() },
+                    ),
+                )
+            }
             _uiState.update { it.copy(saving = false, saved = true) }
         }
 
@@ -251,6 +313,7 @@ class LogViewModel
                     val daily = repository.getDailyLogForDate(date)
                     val periodDay = repository.getPeriodDayForDate(date)
                     val ttc = ttcRepository.getTtcLogForDate(date)
+                    val pregnancyLog = pregnancyRepository.getPregnancyDayLogForDate(date)
                     if (generation != loadGeneration) return@launch
                     val symptoms =
                         daily
@@ -278,6 +341,17 @@ class LogViewModel
                             intercourseLogged = ttc?.intercourseLogged == true,
                             intercourseProtected = ttc?.intercourseProtected,
                             pregnancyTest = ttc?.pregnancyTestResult,
+                            pregnancySymptomTags =
+                                pregnancyLog
+                                    ?.symptomTags
+                                    ?.split(",")
+                                    ?.filter { it.isNotBlank() }
+                                    ?.toSet() ?: emptySet(),
+                            pregnancyWeightInput = pregnancyLog?.weightKg?.toString() ?: "",
+                            pregnancyWeightError = null,
+                            pregnancyBpSystolicInput = pregnancyLog?.bpSystolic?.toString() ?: "",
+                            pregnancyBpDiastolicInput = pregnancyLog?.bpDiastolic?.toString() ?: "",
+                            pregnancyBpError = null,
                             saved = false,
                         )
                     }
