@@ -4,7 +4,6 @@
 **Status:** draft PR (gatekeeper fixes on branch; CI pending on branch tip)  
 **Branch:** `cursor/m4-pregnancy-9ad5`  
 **Head:** `9868e09081b03f8ac84d34f50efb569ed088c68a` (gatekeeper implementation; GitHub API verified)  
-**Branch tip:** `66efb549927fe899d9ef5122fa40b16724bdc77a` (doc-only after Head; GitHub API verified)  
 **PR:** [#9](https://github.com/ajangi/Mahin/pull/9) (draft)  
 **Next milestone:** M5 — Sync (`prompts/M5.md`)
 
@@ -51,7 +50,7 @@
 
 ## PR CI
 
-Workflow [36079773130](https://github.com/ajangi/Mahin/actions/runs/36079773130) for head `66efb549927fe899d9ef5122fa40b16724bdc77a` (GitHub API verified).
+Workflow [36079938599](https://github.com/ajangi/Mahin/actions/runs/36079938599) for head `e449e6dd57435155c148f852c0095ac7658077bd` (GitHub API verified).
 
 | Job | Status |
 |---|---|
@@ -91,4 +90,7 @@ Do not cite cancelled/orphan runs (e.g. [36079149161](https://github.com/ajangi/
 2. Should post-outcome support content opt-in sync to a future CMS preference?
 
 ## Deferred
-- M5 sync, M6 CMS week content, appointment notification scheduling.
+- M5 sync; M6 pregnancy weekly content API; production notification scheduling.
+
+## Next milestone
+**M5 only** — Sync (`prompts/M5.md`).
