@@ -3,7 +3,7 @@
 **Milestone:** M4  
 **Status:** draft PR  
 **Branch:** `cursor/m4-pregnancy-9ad5`  
-**Head:** _(updated at push)_  
+**Head:** `2468535fc6e96d11476beba8bdfb4d41a14e5656`
 **Next milestone:** M5 — Sync (`prompts/M5.md`)
 
 ## Implemented scope
