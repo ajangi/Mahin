@@ -6,14 +6,14 @@
 **PR CI:** all 5 jobs SUCCESS — [run 36070722189](https://github.com/ajangi/Mahin/actions/runs/36070722189) (PR head `89f56bf`)  
 **Master CI:** push to `master` at `af2710734444311b6a94a8332b27b260289bf5df` — [run 36071985443](https://github.com/ajangi/Mahin/actions/runs/36071985443)  
 **Head (code):** `cd8bcad3fb908552f49046de20da77a353153702` (gatekeeper round 2 fixes)  
-**Head (PR):** `89f56bf4cd55a102233ad8dcb9096ac2c793b505` (final PR tip before squash-merge)  
+**Head (PR):** `89f56bfdeb33d436cec510f1c61336a98130da93` (final PR tip before squash-merge)  
 **Next milestone:** M4 — Pregnancy (`prompts/M4.md`)  
 **A fresh agent will implement M4. This follow-up is docs-only (+ two tiny nits); do not start M4 here.**
 
 ### Gatekeeper review (PR #7)
 1. **Round 1 (BLOCK @ `2549aa0`):** Removed invented fertile-window narrowing; BBT Persian parser + validation; per-date log load; intercourse DataStore opt-in; single scrollable insights layout — addressed in `9e2a844` and follow-ups.
 2. **Round 2 (@ `2a5c211`, verified then BLOCK):** Persian BBT chart a11y summary; preserve intercourse rows when opt-in off; estimate-card safety line; parser/scroll/test nits — `cd8bcad3fb908552f49046de20da77a353153702` ([CI 36068296495](https://github.com/ajangi/Mahin/actions/runs/36068296495)).
-3. **Round 3 (accept @ `89f56bf`):** All blockers cleared; non-blocking follow-ups (Persian `٫` in chart a11y, `awaitUntil` timeout failure) captured in [docs PR](https://github.com/ajangi/Mahin/pull/7) post-merge docs branch.
+3. **Round 3 (accept @ `89f56bf`):** All blockers cleared; non-blocking follow-ups (Persian `٫` in chart a11y, `awaitUntil` timeout failure) captured in [docs PR #8](https://github.com/ajangi/Mahin/pull/8) post-merge docs branch.
 
 ### Master CI job results (run 36071985443)
 

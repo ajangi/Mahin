@@ -47,11 +47,10 @@ fun OnboardingGoalScreen(
             selected = selectedMode == ReproductiveMode.TRYING_TO_CONCEIVE,
             onClick = { onModeSelected(ReproductiveMode.TRYING_TO_CONCEIVE) },
         )
-        Text(
-            text = stringResource(R.string.onboarding_goal_pregnancy_deferred),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = MahinSpacing.sm),
+        GoalChip(
+            label = stringResource(R.string.onboarding_goal_pregnancy),
+            selected = selectedMode == ReproductiveMode.PREGNANT,
+            onClick = { onModeSelected(ReproductiveMode.PREGNANT) },
         )
         Spacer(modifier = Modifier.height(MahinSpacing.lg))
         MahinPrimaryButton(

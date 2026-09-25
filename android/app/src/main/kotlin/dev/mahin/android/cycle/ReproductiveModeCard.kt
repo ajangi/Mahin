@@ -19,6 +19,7 @@ import dev.mahin.core.model.ReproductiveMode
 @Composable
 fun ReproductiveModeCard(
     currentMode: ReproductiveMode,
+    hasActivePregnancy: Boolean,
     onModeSelected: (ReproductiveMode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -46,6 +47,15 @@ fun ReproductiveModeCard(
                 selected = currentMode == ReproductiveMode.TRYING_TO_CONCEIVE,
                 onClick = { onModeSelected(ReproductiveMode.TRYING_TO_CONCEIVE) },
                 label = { Text(stringResource(R.string.onboarding_goal_ttc)) },
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = MahinSpacing.xs),
+            )
+            FilterChip(
+                selected = currentMode == ReproductiveMode.PREGNANT || hasActivePregnancy,
+                onClick = { onModeSelected(ReproductiveMode.PREGNANT) },
+                label = { Text(stringResource(R.string.onboarding_goal_pregnancy)) },
                 modifier =
                     Modifier
                         .fillMaxWidth()

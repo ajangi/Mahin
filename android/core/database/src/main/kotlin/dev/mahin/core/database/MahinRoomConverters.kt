@@ -5,6 +5,9 @@ import dev.mahin.core.model.CervicalMucusType
 import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.OvulationTestResult
 import dev.mahin.core.model.PeriodFlowLevel
+import dev.mahin.core.model.PregnancyAppointmentType
+import dev.mahin.core.model.PregnancyDatingSource
+import dev.mahin.core.model.PregnancyOutcome
 import dev.mahin.core.model.PregnancyTestResult
 import dev.mahin.core.model.ReproductiveMode
 import java.time.LocalDate
@@ -51,4 +54,24 @@ class MahinRoomConverters {
 
     @TypeConverter
     fun stringToPregnancyTest(value: String?): PregnancyTestResult? = value?.let { PregnancyTestResult.valueOf(it) }
+
+    @TypeConverter
+    fun pregnancyDatingSourceToString(value: PregnancyDatingSource?): String? = value?.name
+
+    @TypeConverter
+    fun stringToPregnancyDatingSource(value: String?): PregnancyDatingSource? =
+        value?.let { PregnancyDatingSource.valueOf(it) }
+
+    @TypeConverter
+    fun pregnancyOutcomeToString(value: PregnancyOutcome?): String? = value?.name
+
+    @TypeConverter
+    fun stringToPregnancyOutcome(value: String?): PregnancyOutcome? = value?.let { PregnancyOutcome.valueOf(it) }
+
+    @TypeConverter
+    fun pregnancyAppointmentTypeToString(value: PregnancyAppointmentType?): String? = value?.name
+
+    @TypeConverter
+    fun stringToPregnancyAppointmentType(value: String?): PregnancyAppointmentType? =
+        value?.let { PregnancyAppointmentType.valueOf(it) }
 }

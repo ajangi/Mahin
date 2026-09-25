@@ -23,6 +23,7 @@ import dev.mahin.android.cycle.HistoryScreen
 import dev.mahin.android.cycle.LogScreen
 import dev.mahin.android.cycle.TodayScreen
 import dev.mahin.android.navigation.MahinTopLevelDestination
+import dev.mahin.android.pregnancy.PregnancyHubScreen
 import dev.mahin.android.ttc.TtcInsightsScreen
 import dev.mahin.core.model.ReproductiveMode
 
@@ -33,14 +34,11 @@ fun MahinAppShell(
 ) {
     val navController = rememberNavController()
     val shellState by shellViewModel.navigationState.collectAsStateWithLifecycle()
-    val isTtcMode =
-        shellState.profileLoaded &&
-            shellState.reproductiveMode == ReproductiveMode.TRYING_TO_CONCEIVE
     val destinations =
         if (!shellState.profileLoaded) {
-            MahinTopLevelDestination.forMode(isTtcMode = false)
+            MahinTopLevelDestination.forMode(ReproductiveMode.CYCLE_TRACKING)
         } else {
-            MahinTopLevelDestination.forMode(isTtcMode)
+            MahinTopLevelDestination.forMode(shellState.reproductiveMode)
         }
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
@@ -84,6 +82,7 @@ fun MahinAppShell(
             composable(MahinTopLevelDestination.Calendar.route) { CycleCalendarScreen() }
             composable(MahinTopLevelDestination.Log.route) { LogScreen() }
             composable(MahinTopLevelDestination.TtcInsights.route) { TtcInsightsScreen() }
+            composable(MahinTopLevelDestination.PregnancyHub.route) { PregnancyHubScreen() }
             composable(MahinTopLevelDestination.History.route) { HistoryScreen() }
         }
     }

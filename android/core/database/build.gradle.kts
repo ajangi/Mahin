@@ -19,6 +19,8 @@ dependencies {
     implementation(project(":core:datetime"))
     implementation(project(":core:security"))
     implementation(project(":domain:cycle"))
+    implementation(project(":domain:pregnancy"))
+    implementation(project(":core:datastore"))
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.sqlite)

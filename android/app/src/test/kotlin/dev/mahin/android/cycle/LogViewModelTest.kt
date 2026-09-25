@@ -9,7 +9,9 @@ import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.entity.CycleProfileEntity
 import dev.mahin.core.database.entity.DailyLogEntity
 import dev.mahin.core.database.entity.TtcDayLogEntity
+import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
 import dev.mahin.core.database.ttc.TtcTrackingRepository
+import dev.mahin.core.datastore.PregnancyTimerPreferencesRepository
 import dev.mahin.core.datastore.TtcPrivacyPreferencesRepository
 import dev.mahin.core.datetime.PersianCivilDateConverter
 import dev.mahin.core.model.CycleRegularity
@@ -32,6 +34,7 @@ class LogViewModelTest {
     private lateinit var database: MahinDatabase
     private lateinit var cycleRepository: CycleTrackingRepository
     private lateinit var ttcRepository: TtcTrackingRepository
+    private lateinit var pregnancyRepository: PregnancyTrackingRepository
     private lateinit var privacyRepository: TtcPrivacyPreferencesRepository
 
     @Before
@@ -44,6 +47,7 @@ class LogViewModelTest {
                 .build()
         cycleRepository = CycleTrackingRepository(database)
         ttcRepository = TtcTrackingRepository(database)
+        pregnancyRepository = PregnancyTrackingRepository(database, PregnancyTimerPreferencesRepository(context))
         privacyRepository = TtcPrivacyPreferencesRepository(context)
     }
 
@@ -78,7 +82,7 @@ class LogViewModelTest {
                     updatedAtEpochMs = 0L,
                 ),
             )
-            val vm = LogViewModel(cycleRepository, ttcRepository, privacyRepository)
+            val vm = LogViewModel(cycleRepository, ttcRepository, pregnancyRepository, privacyRepository)
             vm.onDateSelected(PersianCivilDateConverter.toJalali(dayA))
             awaitUntil {
                 val state = vm.uiState.value
@@ -126,7 +130,7 @@ class LogViewModelTest {
                     updatedAtEpochMs = 0L,
                 ),
             )
-            val vm = LogViewModel(cycleRepository, ttcRepository, privacyRepository)
+            val vm = LogViewModel(cycleRepository, ttcRepository, pregnancyRepository, privacyRepository)
             vm.onDateSelected(PersianCivilDateConverter.toJalali(day))
             val state = vm.uiState.value.copy(bbtInput = "۳۶٫abc")
             vm.performSave(state)
@@ -162,7 +166,7 @@ class LogViewModelTest {
                     updatedAtEpochMs = 0L,
                 ),
             )
-            val vm = LogViewModel(cycleRepository, ttcRepository, privacyRepository)
+            val vm = LogViewModel(cycleRepository, ttcRepository, pregnancyRepository, privacyRepository)
             vm.onDateSelected(PersianCivilDateConverter.toJalali(day))
             awaitUntil { vm.uiState.value.intercourseLogged }
             assertThat(vm.uiState.value.intercourseLoggingEnabled).isFalse()
