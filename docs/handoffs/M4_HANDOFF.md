@@ -1,18 +1,32 @@
 # M4 Handoff — Pregnancy
 
 **Milestone:** M4  
-**Status:** draft PR (gatekeeper fixes on branch; CI pending on branch tip)  
-**Branch:** `cursor/m4-pregnancy-9ad5`  
-**Head:** `9868e09081b03f8ac84d34f50efb569ed088c68a` (gatekeeper implementation; GitHub API verified)  
-**Branch tip:** `3b8fbc75fd3cb9a6476be479289ad578403866d8` (doc-only after Head; GitHub API verified)  
-**PR:** [#9](https://github.com/ajangi/Mahin/pull/9) (draft)  
-**Next milestone:** M5 — Sync (`prompts/M5.md`)
+**Status:** accepted and merged  
+**Merged:** 2026-09-25 as squash-merge `c2cb0cdcf406496b6758a9af2172d0de9d7300f8` of [PR #9](https://github.com/ajangi/Mahin/pull/9)  
+**PR CI:** all 5 jobs SUCCESS — [run 36080115253](https://github.com/ajangi/Mahin/actions/runs/36080115253) (PR head `b8a45eec069d7222984ef0d82bbecd6df125bc8b`)  
+**Master CI:** push to `master` at `c2cb0cdcf406496b6758a9af2172d0de9d7300f8` — [run 36132755322](https://github.com/ajangi/Mahin/actions/runs/36132755322)  
+**Head (gatekeeper code):** `9868e09081b03f8ac84d34f50efb569ed088c68a`  
+**Head (PR):** `b8a45eec069d7222984ef0d82bbecd6df125bc8b` (final PR tip before squash-merge)  
+**Next milestone:** M5 — Sync (`prompts/M5.md`)  
+**A fresh agent will implement M5. This acceptance update is docs-only; do not start M5 here.**
 
-## Gatekeeper follow-up (PR #9)
-- Clinical EDD: never fall back to LMP when clinical toggle is on; default picker date persisted via `PregnancyClinicalEddInput`.
+### Gatekeeper review (PR #9)
+- Clinical EDD: `PregnancyClinicalEddInput` default (+7 months); no LMP fallback when clinical is enabled.
 - Timer DataStore cleared on `startPregnancy` / `recordOutcome`; stale session ids rejected on hub restore.
 - `PregnancyStartSheet` scroll + scroll test at fontScale 2f.
-- Notification preview pipeline wired (`MahinNotificationPreviewPipeline`); M5 scheduler call site documented.
+- Notification preview pipeline (`MahinNotificationPreviewPipeline`); M5 scheduler call site documented.
+
+### Master CI job results (run 36132755322)
+
+| Job | Result |
+|---|---|
+| design-tokens | SUCCESS |
+| admin | SUCCESS |
+| openapi | SUCCESS |
+| backend | SUCCESS |
+| android | in progress (at acceptance docs update) |
+
+Overall master CI: **pending** until android completes — do not mark master SUCCESS until all five jobs succeed on `c2cb0cdcf406496b6758a9af2172d0de9d7300f8`.
 
 ## Implemented scope
 - **Onboarding & dating:** Pregnancy goal in onboarding + Today start sheet; LMP and optional clinical EDD; `PregnancyDatingEngineV1` (280-day LMP estimate; clinical EDD supersedes display).
@@ -49,21 +63,15 @@
 | `python3 scripts/check_design_tokens.py` | PASS |
 | `cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug --no-daemon` | PASS (local; lint retried once after analyzer flake on unit-test sources) |
 
-## PR CI
+## PR CI (final, run 36080115253)
 
-Workflow [36080067475](https://github.com/ajangi/Mahin/actions/runs/36080067475) for head `3b8fbc75fd3cb9a6476be479289ad578403866d8` (GitHub API verified).
-
-| Job | Status |
+| Job | Result |
 |---|---|
-| design-tokens | pending (queued at last check) |
-| admin | pending |
-| openapi | pending |
-| backend | pending |
-| android | pending |
-
-Overall: **pending** — do not mark SUCCESS until all five jobs succeed on that SHA.
-
-Do not cite cancelled/orphan runs (e.g. [36079149161](https://github.com/ajangi/Mahin/actions/runs/36079149161) @ `bd18bf0…`, [36079087675](https://github.com/ajangi/Mahin/actions/runs/36079087675) @ `5118fe44…`) or non-existent SHAs (e.g. `793545cd71e2201b51bb13b7ede452d2587f2354` — GitHub API 422).
+| design-tokens | SUCCESS |
+| admin | SUCCESS |
+| openapi | SUCCESS |
+| backend | SUCCESS |
+| android | SUCCESS |
 
 ## Acceptance criteria (M4)
 | Criterion | Status |
