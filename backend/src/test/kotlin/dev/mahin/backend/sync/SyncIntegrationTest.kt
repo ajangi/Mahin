@@ -97,6 +97,7 @@ class SyncIntegrationTest(
                 "password" to "secure-password-12",
                 "platform" to "android",
                 "localUserId" to localUserId.toString(),
+                "guestRefreshToken" to guest.refreshToken,
             )
         val registerResponse =
             mockMvc
@@ -163,6 +164,45 @@ class SyncIntegrationTest(
         assert(payload == 2)
     }
 
+    @Test
+    fun staleDeleteConflictsWithoutRemovingNewerUpsert() {
+        val localUserId = UUID.randomUUID()
+        val guest = bootstrapGuest(localUserId)
+        val entityId = UUID.randomUUID()
+        pushMutation(
+            guest.accessToken,
+            entityId,
+            Instant.parse("2026-05-10T00:00:00Z"),
+            "upsert-${UUID.randomUUID()}",
+            """{"v":2}""",
+        )
+        val conflict =
+            pushDelete(
+                guest.accessToken,
+                entityId,
+                Instant.parse("2026-05-09T00:00:00Z"),
+                "delete-${UUID.randomUUID()}",
+            )
+        assertJsonPath(conflict, "$.results[0].status").isEqualTo("conflict")
+        assertJsonPath(conflict, "$.results[0].conflictCode").isEqualTo("updated_at_stale")
+
+        val pull =
+            mockMvc
+                .get("/v1/sync/changes?afterRevision=0") {
+                    header(HttpHeaders.AUTHORIZATION, "Bearer ${guest.accessToken}")
+                }.andReturn()
+                .response.contentAsString
+        assert(
+            objectMapper
+                .readTree(pull)
+                .get("changes")
+                .get(0)
+                .get("payload")
+                .get("v")
+                .asInt() == 2,
+        )
+    }
+
     private fun bootstrapGuest(localUserId: UUID): GuestSession {
         val body =
             mapOf(
@@ -181,8 +221,39 @@ class SyncIntegrationTest(
         val tree = objectMapper.readTree(response)
         return GuestSession(
             accessToken = tree.get("accessToken").asText(),
+            refreshToken = tree.get("refreshToken").asText(),
             guestInstallationId = UUID.fromString(tree.get("guestInstallationId").asText()),
         )
+    }
+
+    private fun pushDelete(
+        accessToken: String,
+        entityId: UUID,
+        updatedAt: Instant,
+        idempotencyKey: String,
+    ): String {
+        val body =
+            mapOf(
+                "mutations" to
+                    listOf(
+                        mapOf(
+                            "entityType" to "period_record",
+                            "entityId" to entityId.toString(),
+                            "operation" to "DELETE",
+                            "updatedAt" to updatedAt.toString(),
+                            "idempotencyKey" to idempotencyKey,
+                        ),
+                    ),
+            )
+        return mockMvc
+            .post("/v1/sync/mutations") {
+                contentType = MediaType.APPLICATION_JSON
+                header(HttpHeaders.AUTHORIZATION, "Bearer $accessToken")
+                content = objectMapper.writeValueAsString(body)
+            }.andExpect {
+                status { isOk() }
+            }.andReturn()
+            .response.contentAsString
     }
 
     private fun pushMutation(
@@ -241,6 +312,7 @@ class SyncIntegrationTest(
 
     private data class GuestSession(
         val accessToken: String,
+        val refreshToken: String,
         val guestInstallationId: UUID,
     )
 }

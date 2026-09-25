@@ -13,6 +13,7 @@ class IdentityService(
     private val guestInstallationRepository: GuestInstallationRepository,
     private val authTokenService: AuthTokenService,
     private val guestConversionService: GuestConversionService,
+    private val guestProofService: GuestProofService,
 ) {
     @Transactional
     fun bootstrapGuest(request: GuestBootstrapRequest): GuestBootstrapResponse {
@@ -38,7 +39,15 @@ class IdentityService(
     }
 
     fun convertGuest(
-        localUserId: UUID,
+        request: ConvertGuestRequest,
         userId: UUID,
-    ): ConvertGuestResponse = guestConversionService.convertGuestToUser(localUserId, userId)
+    ): ConvertGuestResponse {
+        guestProofService.requireGuestProof(
+            expectedLocalUserId = request.localUserId,
+            guestAccessToken = request.guestAccessToken,
+            guestRefreshToken = request.guestRefreshToken,
+            linkingUserId = userId,
+        )
+        return guestConversionService.convertGuestToUser(request.localUserId, userId)
+    }
 }

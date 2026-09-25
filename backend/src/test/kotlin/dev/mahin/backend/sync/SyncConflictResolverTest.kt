@@ -37,7 +37,7 @@ class SyncConflictResolverTest {
     }
 
     @Test
-    fun deleteAlwaysAppliesOverExisting() {
+    fun deleteAppliesWhenNewerThanExisting() {
         val result =
             SyncConflictResolver.resolve(
                 mutation(operation = SyncMutationOperation.DELETE, updatedAt = base.plusSeconds(20)),
@@ -50,6 +50,23 @@ class SyncConflictResolverTest {
                     ),
             )
         assertThat(result.decision).isEqualTo(SyncApplyDecision.APPLY)
+    }
+
+    @Test
+    fun staleDeleteKeepsNewerExistingRow() {
+        val result =
+            SyncConflictResolver.resolve(
+                mutation(operation = SyncMutationOperation.DELETE, updatedAt = base),
+                existing =
+                    ExistingSyncEntity(
+                        serverRevision = 2,
+                        updatedAt = base.plusSeconds(10),
+                        deletedAt = null,
+                        payloadJson = """{"v":2}""",
+                    ),
+            )
+        assertThat(result.decision).isEqualTo(SyncApplyDecision.KEEP_EXISTING)
+        assertThat(result.conflictCode).isEqualTo("updated_at_stale")
     }
 
     @Test

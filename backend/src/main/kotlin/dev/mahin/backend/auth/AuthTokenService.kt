@@ -74,6 +74,21 @@ class AuthTokenService(
         }
     }
 
+    @Suppress("ThrowsCount")
+    fun resolveGuestInstallationFromRefreshToken(refreshToken: String): UUID {
+        val hash = hashToken(refreshToken)
+        val stored =
+            refreshTokenRepository.findByTokenHashAndRevokedAtIsNull(hash)
+                ?: throw AuthException("invalid_refresh_token")
+        if (stored.expiresAt.isBefore(Instant.now())) {
+            throw AuthException("refresh_expired")
+        }
+        val guestId =
+            stored.guestInstallationId
+                ?: throw AuthException("invalid_refresh_token")
+        return guestId
+    }
+
     @Transactional
     fun revoke(refreshToken: String) {
         val hash = hashToken(refreshToken)

@@ -603,10 +603,17 @@ components:
     ConvertGuestRequest:
       type: object
       required: [localUserId]
+      description: Requires guest proof via guestAccessToken or guestRefreshToken (possession of the installation).
       properties:
         localUserId:
           type: string
           format: uuid
+        guestAccessToken:
+          type: string
+          nullable: true
+        guestRefreshToken:
+          type: string
+          nullable: true
     ConvertGuestResponse:
       type: object
       required: [userId, guestInstallationId, migratedEntityCount]
@@ -639,6 +646,14 @@ components:
           format: uuid
           nullable: true
           description: When set, guest rows are migrated transactionally during registration.
+        guestAccessToken:
+          type: string
+          nullable: true
+          description: Required with localUserId unless guestRefreshToken is provided.
+        guestRefreshToken:
+          type: string
+          nullable: true
+          description: Required with localUserId unless guestAccessToken is provided.
     LoginRequest:
       type: object
       required: [email, password, platform]

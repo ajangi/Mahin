@@ -1,15 +1,16 @@
 # M5 Handoff — Backend Identity & Sync
 
 **Milestone:** M5  
-**Status:** ready for review (PR)  
+**Status:** ready for review (PR #11 gatekeeper fixes)  
 **Branch:** `cursor/m5-backend-identity-sync-d224`  
+**Head:** (updated on push after gatekeeper review)  
 **Base:** `61ece89e46a4959f53aabe7463e8fa7947e2bb14` (M4 accepted)  
 **Next milestone:** M6 — CMS & Evidence-Governed Content (`prompts/M6.md`)
 
 ## Implemented scope
 - **Guest identity mapping:** `POST /v1/identity/guest` registers/resumes server `guestInstallationId` for client `localUserId` (Android `GuestIdentity` UUID).
 - **Account auth:** email/password register, login, refresh rotation, logout; optional `localUserId` on register for transactional guest conversion.
-- **Guest conversion:** `POST /v1/identity/convert-guest` (authenticated user) migrates sync rows without changing client `entityId` values.
+- **Guest conversion:** `POST /v1/identity/convert-guest` and register-with-`localUserId` require **guest proof** (`guestAccessToken` or `guestRefreshToken`) matching `localUserId`; blocks cross-user hijack. Collisions on `(entityType, entityId)` merge via `SyncConflictResolver` (no silent guest row delete).
 - **Outbox sync API:** `POST /v1/sync/mutations` (idempotency per owner + key), `GET /v1/sync/changes` (revision cursor).
 - **Conflict handling:** `SyncConflictResolver` — tombstones beat stale upserts; otherwise LWW on `updatedAt` with explicit `conflict` results (no silent discard).
 - **Session/device management:** device row per token issuance; `GET /v1/devices`, `POST /v1/devices/{id}/heartbeat`.
@@ -42,7 +43,7 @@
 |---|---|
 | `python3 scripts/check_design_tokens.py` | PASS |
 | `npx @redocly/cli@1.34.2 lint openapi/openapi.yaml --config redocly.yaml` | PASS |
-| `cd backend && ./gradlew ktlintCheck detekt test --no-daemon` | PASS — 16 tests, 0 failures |
+| `cd backend && ./gradlew ktlintCheck detekt test --no-daemon` | PASS — 22 tests, 0 failures (post gatekeeper) |
 
 ## Acceptance criteria (M5)
 | Criterion | Status |

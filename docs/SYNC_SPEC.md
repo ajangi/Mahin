@@ -21,4 +21,5 @@ M0 provides `:core:sync` (`SyncMutation`, `SyncOutbox`) so later milestones do n
 - **Push:** `POST /v1/sync/mutations` with per-mutation `idempotencyKey` (8–128 chars). Retries with the same key and fingerprint return the original result; mismatched reuse returns `conflict` / `idempotency_key_reuse`.
 - **Pull:** `GET /v1/sync/changes?afterRevision=&limit=` returns monotonic `serverRevision` ordering per owner.
 - **Conflicts:** deterministic resolver (`SyncConflictResolver` on server; mirror policy in Android M5+). Tombstones win over stale upserts; otherwise last-write-wins on `updatedAt` without silently discarding newer server rows.
-- **Guest conversion:** transactional migration preserves client `entityId` UUIDs (`POST /v1/identity/convert-guest` or `localUserId` on register).
+- **Guest conversion:** transactional migration preserves client `entityId` UUIDs (`POST /v1/identity/convert-guest` or `localUserId` on register). Requires **guest proof** (guest access or refresh token) matching `localUserId`. Colliding `(entityType, entityId)` rows are merged via `SyncConflictResolver` (no silent delete).
+- **DELETE conflicts:** stale deletes (`updatedAt` older than the existing row) return `updated_at_stale` and keep the newer row.

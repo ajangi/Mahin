@@ -22,6 +22,6 @@ class IdentityController(
         @Valid @RequestBody request: ConvertGuestRequest,
     ): ConvertGuestResponse {
         val user = currentRegisteredUser()
-        return identityService.convertGuest(request.localUserId, user.userId)
+        return identityService.convertGuest(request, user.userId)
     }
 }

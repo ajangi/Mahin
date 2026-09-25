@@ -3,6 +3,7 @@ package dev.mahin.backend.auth
 import dev.mahin.backend.auth.persistence.UserAccountEntity
 import dev.mahin.backend.auth.persistence.UserAccountRepository
 import dev.mahin.backend.identity.GuestConversionService
+import dev.mahin.backend.identity.GuestProofService
 import java.time.Instant
 import java.util.UUID
 import org.springframework.http.HttpStatus
@@ -17,12 +18,24 @@ class AuthService(
     private val passwordEncoder: PasswordEncoder,
     private val authTokenService: AuthTokenService,
     private val guestConversionService: GuestConversionService,
+    private val guestProofService: GuestProofService,
 ) {
     @Transactional
     fun register(request: RegisterRequest): AuthTokenResponse {
         val normalizedEmail = request.email.trim().lowercase()
         if (userAccountRepository.existsByEmailIgnoreCase(normalizedEmail)) {
             throw ResponseStatusException(HttpStatus.CONFLICT, "email_taken")
+        }
+        if (request.localUserId != null) {
+            val guest =
+                guestProofService.requireGuestProof(
+                    expectedLocalUserId = request.localUserId,
+                    guestAccessToken = request.guestAccessToken,
+                    guestRefreshToken = request.guestRefreshToken,
+                )
+            if (guest.linkedUserId != null) {
+                throw ResponseStatusException(HttpStatus.CONFLICT, "guest_already_linked")
+            }
         }
         val now = Instant.now()
         val user =

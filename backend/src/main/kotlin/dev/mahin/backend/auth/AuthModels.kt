@@ -11,6 +11,8 @@ data class RegisterRequest(
     @field:NotBlank @field:Size(max = 32) val platform: String,
     val appVersion: String? = null,
     val localUserId: java.util.UUID? = null,
+    val guestAccessToken: String? = null,
+    val guestRefreshToken: String? = null,
 )
 
 data class LoginRequest(

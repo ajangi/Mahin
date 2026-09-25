@@ -51,6 +51,9 @@ object SyncConflictResolver {
             }
         }
         if (incoming.operation == SyncMutationOperation.DELETE) {
+            if (incoming.updatedAt.isBefore(existing.updatedAt)) {
+                return SyncApplyResult(SyncApplyDecision.KEEP_EXISTING, "updated_at_stale")
+            }
             return SyncApplyResult(SyncApplyDecision.APPLY)
         }
         if (incoming.updatedAt.isAfter(existing.updatedAt)) {

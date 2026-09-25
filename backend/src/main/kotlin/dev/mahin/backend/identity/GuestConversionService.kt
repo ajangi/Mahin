@@ -3,6 +3,12 @@ package dev.mahin.backend.identity
 import dev.mahin.backend.device.persistence.DeviceInstallationRepository
 import dev.mahin.backend.identity.persistence.GuestInstallationEntity
 import dev.mahin.backend.identity.persistence.GuestInstallationRepository
+import dev.mahin.backend.sync.ExistingSyncEntity
+import dev.mahin.backend.sync.SyncApplyDecision
+import dev.mahin.backend.sync.SyncConflictResolver
+import dev.mahin.backend.sync.SyncMutationInput
+import dev.mahin.backend.sync.SyncMutationOperation
+import dev.mahin.backend.sync.persistence.SyncEntityRecordEntity
 import dev.mahin.backend.sync.persistence.SyncEntityRecordRepository
 import dev.mahin.backend.sync.persistence.SyncOwnerStateEntity
 import dev.mahin.backend.sync.persistence.SyncOwnerStateRepository
@@ -50,25 +56,107 @@ class GuestConversionService(
         guest: GuestInstallationEntity,
         userId: UUID,
     ): Int {
+        val userKey = "user:$userId"
         val records = syncEntityRecordRepository.findGuestChangesAfter(guest.id, 0)
-        records.forEach { record ->
+        records.forEach { guestRecord ->
             val existing =
                 syncEntityRecordRepository.findByOwnerUserIdAndEntityTypeAndEntityId(
                     userId,
-                    record.entityType,
-                    record.entityId,
+                    guestRecord.entityType,
+                    guestRecord.entityId,
                 )
             if (existing == null) {
-                record.ownerUserId = userId
-                record.guestInstallationId = null
-                record.ownerScopeKey = "user:$userId"
-                syncEntityRecordRepository.save(record)
+                assignRecordToUser(guestRecord, userId, userKey)
+                syncEntityRecordRepository.save(guestRecord)
             } else {
-                syncEntityRecordRepository.delete(record)
+                mergeCollision(guestRecord, existing, userId, userKey)
             }
         }
         return records.size
     }
+
+    private fun mergeCollision(
+        guestRecord: SyncEntityRecordEntity,
+        userRecord: SyncEntityRecordEntity,
+        userId: UUID,
+        userKey: String,
+    ) {
+        val incoming = guestRecord.toMutationInput()
+        val resolution =
+            SyncConflictResolver.resolve(
+                incoming,
+                userRecord.toExistingEntity(),
+            )
+        if (resolution.decision == SyncApplyDecision.APPLY) {
+            applyGuestWin(guestRecord, userRecord, userId, userKey)
+            syncEntityRecordRepository.delete(guestRecord)
+        } else {
+            syncEntityRecordRepository.delete(guestRecord)
+        }
+    }
+
+    private fun applyGuestWin(
+        guestRecord: SyncEntityRecordEntity,
+        userRecord: SyncEntityRecordEntity,
+        userId: UUID,
+        userKey: String,
+    ) {
+        userRecord.serverRevision = allocateRevision(userKey)
+        userRecord.clientRevision = guestRecord.clientRevision
+        userRecord.updatedAt = guestRecord.updatedAt
+        userRecord.deletedAt = guestRecord.deletedAt
+        userRecord.payloadJson = guestRecord.payloadJson
+        userRecord.ownerUserId = userId
+        userRecord.guestInstallationId = null
+        userRecord.ownerScopeKey = userKey
+        syncEntityRecordRepository.save(userRecord)
+    }
+
+    private fun assignRecordToUser(
+        record: SyncEntityRecordEntity,
+        userId: UUID,
+        userKey: String,
+    ) {
+        record.ownerUserId = userId
+        record.guestInstallationId = null
+        record.ownerScopeKey = userKey
+    }
+
+    private fun allocateRevision(ownerKey: String): Long {
+        val state =
+            syncOwnerStateRepository.findForUpdate(ownerKey)
+                ?: SyncOwnerStateEntity(ownerKey = ownerKey, nextServerRevision = 1)
+        val revision = state.nextServerRevision
+        state.nextServerRevision = revision + 1
+        syncOwnerStateRepository.save(state)
+        return revision
+    }
+
+    private fun SyncEntityRecordEntity.toMutationInput(): SyncMutationInput {
+        val operation =
+            if (deletedAt != null) {
+                SyncMutationOperation.DELETE
+            } else {
+                SyncMutationOperation.UPSERT
+            }
+        val mutationUpdatedAt = deletedAt ?: updatedAt
+        return SyncMutationInput(
+            entityType = entityType,
+            entityId = entityId,
+            operation = operation,
+            clientRevision = clientRevision,
+            updatedAt = mutationUpdatedAt,
+            payloadJson = payloadJson,
+        )
+    }
+
+    private fun SyncEntityRecordEntity.toExistingEntity(): ExistingSyncEntity =
+        ExistingSyncEntity(
+            serverRevision = serverRevision,
+            updatedAt = updatedAt,
+            deletedAt = deletedAt,
+            payloadJson = payloadJson,
+        )
 
     private fun migrateDevices(
         guestInstallationId: UUID,

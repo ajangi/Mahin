@@ -11,7 +11,7 @@ Mahin is guest/local-first. M2–M4 persist health entities on-device only. M5 m
 - **Guest mapping:** stable server `guest_installation` row per client `localUserId` (Android `GuestIdentity`).
 - **Auth:** email + password (Iran-friendly adapter baseline); HS256 JWT access tokens; opaque refresh tokens stored as SHA-256 hashes; BCrypt password hashes.
 - **Sync model:** generic typed rows (`entityType` + client `entityId` UUID + JSON payload + tombstone `deletedAt`) with per-owner monotonic `serverRevision`, idempotency table keyed by `(ownerKey, idempotencyKey)`, and pure Kotlin `SyncConflictResolver` (LWW on `updatedAt`, tombstone wins).
-- **Conversion:** transactional reassignment of sync rows from guest scope to `user:{userId}`; preserve `entityId`.
+- **Conversion:** requires guest access or refresh token proving `localUserId`; transactional reassignment of sync rows from guest scope to `user:{userId}`; preserve `entityId`; collisions resolved with `SyncConflictResolver`.
 - **Privacy foundations:** `deletion_request` and `export_job` tables + queue endpoints; workers and legal flows deferred.
 - **Security baseline:** Spring Security stateless JWT filter, in-memory rate limit on `/v1/auth` and `/v1/identity`, privacy access log unchanged (no bodies).
 

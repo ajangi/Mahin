@@ -23,6 +23,8 @@ data class GuestBootstrapResponse(
 
 data class ConvertGuestRequest(
     @field:NotNull val localUserId: UUID,
+    val guestAccessToken: String? = null,
+    val guestRefreshToken: String? = null,
 )
 
 data class ConvertGuestResponse(
