@@ -3,7 +3,7 @@
 **Milestone:** M5  
 **Status:** ready for review (PR #11 gatekeeper fixes)  
 **Branch:** `cursor/m5-backend-identity-sync-d224`  
-**Head:** (updated on push after gatekeeper review)  
+**Head:** `2011f36` (gatekeeper fixes)  
 **Base:** `61ece89e46a4959f53aabe7463e8fa7947e2bb14` (M4 accepted)  
 **Next milestone:** M6 — CMS & Evidence-Governed Content (`prompts/M6.md`)
 
