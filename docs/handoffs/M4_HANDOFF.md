@@ -4,7 +4,7 @@
 **Status:** draft PR (gatekeeper fixes on branch; CI pending on branch tip)  
 **Branch:** `cursor/m4-pregnancy-9ad5`  
 **Head:** `9868e09081b03f8ac84d34f50efb569ed088c68a` (gatekeeper implementation; GitHub API verified)  
-**Branch tip:** `b91d01aa0669c59d67494f2b4964712819f6fb3d` (doc-only after Head; GitHub API verified)  
+**Branch tip:** `66efb549927fe899d9ef5122fa40b16724bdc77a` (doc-only after Head; GitHub API verified)  
 **PR:** [#9](https://github.com/ajangi/Mahin/pull/9) (draft)  
 **Next milestone:** M5 — Sync (`prompts/M5.md`)
 
@@ -51,19 +51,19 @@
 
 ## PR CI
 
-Workflow [36079652367](https://github.com/ajangi/Mahin/actions/runs/36079652367) for head `b91d01aa0669c59d67494f2b4964712819f6fb3d` (GitHub API verified).
+Workflow [36079773130](https://github.com/ajangi/Mahin/actions/runs/36079773130) for head `66efb549927fe899d9ef5122fa40b16724bdc77a` (GitHub API verified).
 
 | Job | Status |
 |---|---|
-| design-tokens | success |
-| admin | success |
-| openapi | in progress |
-| backend | in progress |
-| android | in progress |
+| design-tokens | pending (queued at last check) |
+| admin | pending |
+| openapi | pending |
+| backend | pending |
+| android | pending |
 
 Overall: **pending** — do not mark SUCCESS until all five jobs succeed on that SHA.
 
-Superseded: run [36079149161](https://github.com/ajangi/Mahin/actions/runs/36079149161) targeted orphaned tip `bd18bf0…` (android was in progress when tip advanced). Do not cite cancelled/orphan runs (e.g. 36079087675 @ `5118fe44…`) or non-existent SHAs (e.g. `793545cd…`).
+Do not cite cancelled/orphan runs (e.g. [36079149161](https://github.com/ajangi/Mahin/actions/runs/36079149161) @ `bd18bf0…`, [36079087675](https://github.com/ajangi/Mahin/actions/runs/36079087675) @ `5118fe44…`) or non-existent SHAs (e.g. `793545cd71e2201b51bb13b7ede452d2587f2354` — GitHub API 422).
 
 ## Acceptance criteria (M4)
 | Criterion | Status |
@@ -91,7 +91,4 @@ Superseded: run [36079149161](https://github.com/ajangi/Mahin/actions/runs/36079
 2. Should post-outcome support content opt-in sync to a future CMS preference?
 
 ## Deferred
-- M5 sync; M6 pregnancy weekly content API; production notification scheduling.
-
-## Next milestone
-**M5 only** — Sync (`prompts/M5.md`).
+- M5 sync, M6 CMS week content, appointment notification scheduling.
