@@ -15,6 +15,7 @@ dependencies {
     implementation(project(":core:datastore"))
     implementation(project(":core:network"))
     implementation(project(":core:database"))
+    implementation(project(":core:security"))
     implementation(project(":domain:subscription"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.play.billing.ktx)
