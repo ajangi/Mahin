@@ -37,6 +37,12 @@ class SecurityConfig(
                     .permitAll()
                     .requestMatchers("/v1/media/**")
                     .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/v1/content/bookmarks")
+                    .hasAuthority(JwtAuthenticationFilter.ROLE_USER)
+                    .requestMatchers(HttpMethod.POST, "/v1/content/bookmarks/**")
+                    .hasAuthority(JwtAuthenticationFilter.ROLE_USER)
+                    .requestMatchers(HttpMethod.DELETE, "/v1/content/bookmarks/**")
+                    .hasAuthority(JwtAuthenticationFilter.ROLE_USER)
                     .requestMatchers(
                         HttpMethod.GET,
                         "/v1/content/**",
@@ -45,12 +51,6 @@ class SecurityConfig(
                     .permitAll()
                     .requestMatchers("/v1/admin/**")
                     .hasAuthority(JwtAuthenticationFilter.ROLE_CMS)
-                    .requestMatchers(HttpMethod.POST, "/v1/content/bookmarks/**")
-                    .hasAuthority(JwtAuthenticationFilter.ROLE_USER)
-                    .requestMatchers(HttpMethod.DELETE, "/v1/content/bookmarks/**")
-                    .hasAuthority(JwtAuthenticationFilter.ROLE_USER)
-                    .requestMatchers(HttpMethod.GET, "/v1/content/bookmarks")
-                    .hasAuthority(JwtAuthenticationFilter.ROLE_USER)
                     .requestMatchers(HttpMethod.POST, "/v1/identity/guest")
                     .permitAll()
                     .requestMatchers(

@@ -106,6 +106,7 @@ class ContentAdminService(
                 ResponseStatusException(HttpStatus.NOT_FOUND, "document_not_found")
             }
         val actor = currentCmsStaff()
+        ContentWorkflowTransitions.requireLegal(document, version, action)
         when (action) {
             ContentWorkflowAction.SUBMIT_MEDICAL_REVIEW -> {
                 version.status = "review"
@@ -117,7 +118,6 @@ class ContentAdminService(
                 request.nextReviewDueAt?.let {
                     version.nextReviewDueAt = Instant.parse(it)
                 }
-                version.reviewStage = ReviewStage.EDITORIAL.name.lowercase()
             }
             ContentWorkflowAction.SUBMIT_EDITORIAL_REVIEW -> {
                 version.status = "review"
@@ -237,14 +237,17 @@ class ContentAdminService(
         document: ContentDocumentEntity,
         version: ContentVersionEntity,
     ) {
-        if (version.status != "approved" && version.status != "published") {
-            throw ResponseStatusException(HttpStatus.CONFLICT, "publish_requires_approved")
-        }
         val risk = ContentMapper.parseMedicalRiskLevel(version.medicalRiskLevel)
         if (ContentWorkflowPolicy.requiresClinicalReviewBeforePublish(risk) &&
             version.clinicalReviewedAt == null
         ) {
             throw ResponseStatusException(HttpStatus.CONFLICT, "clinical_review_required")
+        }
+        if (risk != MedicalRiskLevel.NONE) {
+            val linkedSources = versionSourceRepository.findByVersionId(version.id)
+            if (linkedSources.isEmpty()) {
+                throw ResponseStatusException(HttpStatus.CONFLICT, "sources_required")
+            }
         }
         version.status = "published"
         version.effectiveFrom = Instant.now()
@@ -275,6 +278,7 @@ class ContentAdminService(
                     documentId = document.id,
                     versionNumber = versionNumber,
                     title = request.title,
+                    searchIndexText = ContentSearchIndex.build(request.title, request.summary),
                     summary = request.summary,
                     bodyRichtext = request.bodyRichtext,
                     contentType = request.contentType,

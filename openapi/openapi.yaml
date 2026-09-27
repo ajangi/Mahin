@@ -104,6 +104,35 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /v1/content/articles/by-slug/{slug}:
+    get:
+      tags: [Content]
+      operationId: getContentArticleBySlug
+      summary: Fetch a published article by slug and locale
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: locale
+          in: query
+          schema:
+            type: string
+            default: fa-IR
+      responses:
+        "200":
+          description: Published article
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentArticle"
+        "404":
+          description: Not published or unknown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /v1/content/catalog-status:
     get:
       tags: [Content]
@@ -145,6 +174,7 @@ paths:
     get:
       tags: [Content]
       operationId: listPregnancyWeeks
+      summary: List gestational weeks with published pregnancy-week content
       parameters:
         - name: locale
           in: query
@@ -162,6 +192,7 @@ paths:
     get:
       tags: [Content]
       operationId: getPregnancyWeekContent
+      summary: Published pregnancy-week educational bundle (CMS-governed)
       parameters:
         - name: week
           in: path
@@ -192,6 +223,7 @@ paths:
     get:
       tags: [Content]
       operationId: listContentBookmarks
+      summary: List bookmarked published articles for the authenticated user
       security:
         - bearerAuth: []
       responses:
@@ -205,6 +237,7 @@ paths:
     post:
       tags: [Content]
       operationId: addContentBookmark
+      summary: Bookmark a published article (registered user)
       security:
         - bearerAuth: []
       parameters:
@@ -220,6 +253,7 @@ paths:
     delete:
       tags: [Content]
       operationId: removeContentBookmark
+      summary: Remove a content bookmark (registered user)
       security:
         - bearerAuth: []
       parameters:
@@ -254,6 +288,7 @@ paths:
     post:
       tags: [Admin]
       operationId: createContentDocument
+      summary: Create a new content document with initial draft version
       security:
         - bearerAuth: []
       requestBody:
@@ -273,6 +308,7 @@ paths:
     post:
       tags: [Admin]
       operationId: createContentRevision
+      summary: Append a new draft version to an existing document
       security:
         - bearerAuth: []
       parameters:
@@ -295,10 +331,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdminContentVersion"
+  /v1/admin/content/versions/{versionId}:
+    get:
+      tags: [Admin]
+      operationId: getAdminContentVersion
+      summary: Fetch a content version for CMS review (any status)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: versionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Version details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminContentVersion"
   /v1/admin/content/versions/{versionId}/workflow/{action}:
     post:
       tags: [Admin]
       operationId: contentWorkflowTransition
+      summary: Apply a governed workflow transition to a content version
       security:
         - bearerAuth: []
       parameters:
@@ -325,10 +383,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdminContentVersion"
+  /v1/admin/content/documents/{documentId}/audit:
+    get:
+      tags: [Admin]
+      operationId: getContentDocumentAudit
+      summary: Audit trail for a content document
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Audit events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentAuditList"
   /v1/admin/content/freshness:
     get:
       tags: [Admin]
       operationId: contentFreshnessDashboard
+      summary: Content freshness dashboard (overdue review, stale sources, withdrawals)
       security:
         - bearerAuth: []
       responses:
@@ -338,10 +418,35 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ContentFreshnessDashboard"
+  /v1/admin/staff:
+    post:
+      tags: [Admin]
+      operationId: createCmsStaff
+      summary: Create CMS staff (super admin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCmsStaffRequest"
+      responses:
+        "200":
+          description: Staff created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  staffId:
+                    type: string
+                    format: uuid
   /v1/admin/content/sources:
     get:
       tags: [Admin]
       operationId: listContentSources
+      summary: List evidence source references
       security:
         - bearerAuth: []
       responses:
@@ -356,6 +461,7 @@ paths:
     post:
       tags: [Admin]
       operationId: createContentSource
+      summary: Create an evidence source reference
       security:
         - bearerAuth: []
       requestBody:
@@ -936,6 +1042,47 @@ components:
           type: string
         detail:
           type: string
+    ContentAuditList:
+      type: object
+      required: [events]
+      properties:
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentAuditEvent"
+    ContentAuditEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        action:
+          type: string
+        actorEmail:
+          type: string
+        documentId:
+          type: string
+          format: uuid
+        versionId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+    CreateCmsStaffRequest:
+      type: object
+      required: [email, password, displayName, roles]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        displayName:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
     ContentArticle:
       type: object
       required:

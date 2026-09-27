@@ -21,6 +21,8 @@ class ContentVersionEntity(
     var versionNumber: Int = 1,
     @Column(name = "title", nullable = false, length = 500)
     var title: String = "",
+    @Column(name = "search_index_text", length = 2500)
+    var searchIndexText: String? = null,
     @Column(name = "summary", length = 2000)
     var summary: String? = null,
     @Column(name = "body_richtext", columnDefinition = "TEXT")

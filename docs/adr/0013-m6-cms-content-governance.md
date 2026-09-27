@@ -7,7 +7,7 @@ Accepted (M6)
 Mahin educational content must be sourced, versioned, clinically reviewed, publishable, and withdrawable without an Android release. M0–M5 shipped API envelopes and admin skeleton only. The PRD requires CMS roles, audit history, pregnancy weekly delivery, Learn/search/bookmarks, and remote cache invalidation.
 
 ## Decision
-- **Staff identity separate from app users:** `cms_staff` + role rows; admin JWTs use claim `mahin_typ=cms` with `mahin_roles[]`. App user/guest JWTs unchanged.
+- **Staff identity separate from app users:** `cms_staff` + role rows; admin JWTs use claim `mahin_typ=cms` with `mahin_cms_roles[]`. App user/guest JWTs unchanged.
 - **Versioned documents:** `content_document` (slug/locale) with append-only `content_version` rows; publish points `published_version_id` at an approved version.
 - **Workflow:** `draft → review (medical|editorial stage) → approved → published → retired`. High `medical_risk_level` requires `clinical_reviewed_at` before publish.
 - **Sources:** normalized `content_source` linked to versions; freshness dashboard uses `next_review_due_at` and source `last_checked_at`.

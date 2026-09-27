@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -29,8 +30,11 @@ class ContentCachePreferencesRepository
             dataStore.edit { it[PUBLICATION_REVISION] = revision }
         }
 
+        /** Clears remote article payload cache only; local bookmark ids are preserved. */
         suspend fun clearCachedArticles() {
-            dataStore.edit { it.remove(BOOKMARK_IDS) }
+            dataStore.edit { prefs ->
+                prefs.remove(CACHED_ARTICLES_JSON)
+            }
         }
 
         suspend fun localBookmarkIds(): Set<String> = dataStore.data.map { it[BOOKMARK_IDS] ?: emptySet() }.first()
@@ -50,5 +54,6 @@ class ContentCachePreferencesRepository
         companion object {
             private val PUBLICATION_REVISION = longPreferencesKey("publication_revision")
             private val BOOKMARK_IDS = stringSetPreferencesKey("local_bookmark_ids")
+            private val CACHED_ARTICLES_JSON = stringPreferencesKey("cached_articles_json")
         }
     }

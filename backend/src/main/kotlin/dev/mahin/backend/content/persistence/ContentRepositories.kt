@@ -33,8 +33,7 @@ interface ContentVersionRepository : JpaRepository<ContentVersionEntity, UUID> {
           AND (:lifeStage IS NULL OR v.lifeStage = :lifeStage)
           AND (
             :query IS NULL OR
-            LOWER(v.title) LIKE LOWER(CONCAT('%', :query, '%')) OR
-            LOWER(v.summary) LIKE LOWER(CONCAT('%', :query, '%'))
+            LOWER(v.searchIndexText) LIKE LOWER(CONCAT('%', :query, '%'))
           )
         ORDER BY v.title ASC
         """,

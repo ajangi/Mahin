@@ -29,6 +29,7 @@
 
 ## Migrations
 - **V3__cms_content.sql** — CMS tables, catalog revision, bookmarks, envelope fixture; `app_meta.schema_bootstrap` → `m6`.
+- **V4__content_search_index.sql** — `search_index_text` for Persian-normalized search matching.
 
 ## ADRs
 - **0013** — M6 CMS & evidence-governed content architecture.
@@ -37,10 +38,12 @@
 | Command | Result |
 |---|---|
 | `python3 scripts/check_design_tokens.py` | PASS |
-| `npx @redocly/cli@1.34.2 lint openapi/openapi.yaml --config redocly.yaml` | PASS |
-| `cd backend && ./gradlew ktlintCheck detekt test --no-daemon` | PASS — 25 tests |
+| `npx @redocly/cli@1.34.2 lint openapi/openapi.yaml --config redocly.yaml` | PASS (after gatekeeper: summaries + missing admin/content paths) |
+| `cd backend && ./gradlew ktlintCheck detekt test --no-daemon` | PASS — 26 tests (incl. sources_required, draft public 404) |
 | `cd admin && npm ci && npm test && npm run build` | PASS |
 | `cd android && ./gradlew lintDebug ktlintCheck detekt testDebugUnitTest assembleDebug --no-daemon` | PASS (local SDK) |
+
+**PR #13 initial head (`c6421b4`):** OpenAPI CI failed (missing `summary` on several operations). Fixed on subsequent commits on `cursor/m6-cms-content-e47b`.
 
 ## Acceptance criteria (M6)
 | Criterion | Status |

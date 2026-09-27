@@ -48,6 +48,7 @@ class CmsPublishingIntegrationTest(
 
     @Test
     fun publishAndWithdrawBumpsCatalogRevision() {
+        val sourceId = createSource(editorToken)
         val createBody =
             mapOf(
                 "slug" to "fixture-${UUID.randomUUID()}",
@@ -59,6 +60,7 @@ class CmsPublishingIntegrationTest(
                 "lifeStage" to "pregnancy",
                 "medicalRiskLevel" to "general_education",
                 "tags" to listOf("fixture"),
+                "sourceIds" to listOf(sourceId),
             )
         val created =
             mockMvc
@@ -93,9 +95,7 @@ class CmsPublishingIntegrationTest(
         workflow(versionId, "retire", editorToken)
 
         mockMvc.get("/v1/content/articles/$documentId").andExpect {
-            status { isOk() }
-            jsonPath("$.withdrawn") { value(true) }
-            jsonPath("$.body") { doesNotExist() }
+            status { isNotFound() }
         }
 
         val revisionAfter =
@@ -105,6 +105,57 @@ class CmsPublishingIntegrationTest(
                 .response.contentAsString
         val revAfter = objectMapper.readTree(revisionAfter).get("publicationRevision").asLong()
         assert(revAfter > revBefore)
+    }
+
+    @Test
+    fun publishRequiresSourcesForNonNoneRisk() {
+        val createBody =
+            mapOf(
+                "slug" to "no-source-${UUID.randomUUID()}",
+                "locale" to "fa-IR",
+                "title" to "بدون منبع",
+                "summary" to "fixture",
+                "bodyRichtext" to "non-medical fixture",
+                "contentType" to "article",
+                "medicalRiskLevel" to "general_education",
+            )
+        val created =
+            mockMvc
+                .post("/v1/admin/content/documents") {
+                    header(HttpHeaders.AUTHORIZATION, "Bearer $editorToken")
+                    contentType = MediaType.APPLICATION_JSON
+                    content = objectMapper.writeValueAsString(createBody)
+                }.andExpect { status { isOk() } }
+                .andReturn()
+                .response.contentAsString
+        val versionId = objectMapper.readTree(created).get("versionId").asText()
+        workflow(versionId, "submit_medical_review", editorToken)
+        workflow(versionId, "approve_medical", medicalToken, mapOf("clinicalReviewer" to "dr.test@mahin.test"))
+        workflow(versionId, "approve_editorial", editorToken)
+        mockMvc
+            .post("/v1/admin/content/versions/$versionId/workflow/publish") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $editorToken")
+                contentType = MediaType.APPLICATION_JSON
+                content = "{}"
+            }.andExpect { status { isConflict() } }
+    }
+
+    private fun createSource(token: String): String {
+        val body =
+            mapOf(
+                "citationKey" to "fixture-${UUID.randomUUID()}",
+                "title" to "منبع آزمون غیرپزشکی",
+            )
+        val response =
+            mockMvc
+                .post("/v1/admin/content/sources") {
+                    header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                    contentType = MediaType.APPLICATION_JSON
+                    content = objectMapper.writeValueAsString(body)
+                }.andExpect { status { isOk() } }
+                .andReturn()
+                .response.contentAsString
+        return objectMapper.readTree(response).get("id").asText()
     }
 
     private fun login(email: String): String {

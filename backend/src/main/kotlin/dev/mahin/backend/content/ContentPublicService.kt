@@ -31,14 +31,21 @@ class ContentPublicService(
             documentRepository.findById(articleId).orElseThrow {
                 ResponseStatusException(HttpStatus.NOT_FOUND, "article_not_found")
             }
+        return mapPublishedArticle(document)
+    }
+
+    private fun mapPublishedArticle(document: ContentDocumentEntity): ContentArticleResponse {
         val publishedVersionId = document.publishedVersionId
         if (publishedVersionId == null || document.withdrawnAt != null) {
-            return envelopeOrDraft(document)
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "article_not_found")
         }
         val version =
             versionRepository.findById(publishedVersionId).orElseThrow {
                 ResponseStatusException(HttpStatus.NOT_FOUND, "article_not_found")
             }
+        if (version.status != "published") {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "article_not_found")
+        }
         return mapArticle(document, version, includeBody = true)
     }
 
@@ -151,14 +158,6 @@ class ContentPublicService(
                 )
             }
         return ContentBookmarkListResponse(summaries)
-    }
-
-    private fun envelopeOrDraft(document: ContentDocumentEntity): ContentArticleResponse {
-        val latest =
-            versionRepository.findTopByDocumentIdOrderByVersionNumberDesc(document.id).orElseThrow {
-                ResponseStatusException(HttpStatus.NOT_FOUND, "article_not_found")
-            }
-        return mapArticle(document, latest, includeBody = false)
     }
 
     private fun mapArticle(
