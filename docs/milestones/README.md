@@ -8,5 +8,5 @@ Cloud Agents update one milestone at a time. Do not pre-mark future milestones c
 - M3 — TTC — **complete**
 - M4 — Pregnancy — **complete**
 - M5 — Backend Identity & Sync — **complete**
-- M6 — implemented (see `M6.md` handoff)
+- M6 — CMS & Evidence-Governed Content — **complete**
 - M7–M12 — pending (M7 next)

@@ -1,9 +1,32 @@
 # M6 Handoff — CMS & Evidence-Governed Content
 
 **Milestone:** M6  
-**Status:** ready for review (draft PR)  
-**Base:** `867c3d02e4e4038f05c6ef674a52719180568bbb`  
-**Next milestone:** M7 — Notifications (`prompts/M7.md`)
+**Status:** accepted and merged  
+**Merged:** 2026-09-27 as squash-merge `bef38830613f5812407efd29b5f37b4ee7a30767` of [PR #13](https://github.com/ajangi/Mahin/pull/13)  
+**ACCEPT head:** `5fc7a95a3b839e9ab85c28c5177cf031e6366a41` (final PR tip before squash-merge)  
+**PR CI:** all 5 jobs SUCCESS — [run 36322033825](https://github.com/ajangi/Mahin/actions/runs/36322033825) (PR tip `0cbbe33`)  
+**Master CI:** push to `master` at `bef38830613f5812407efd29b5f37b4ee7a30767` — [run 36324624583](https://github.com/ajangi/Mahin/actions/runs/36324624583)  
+**Next milestone:** M7 — Notifications (`prompts/M7.md`)  
+**A fresh agent will implement M7. This acceptance update is docs-only; do not start M7 here.**
+
+### Gatekeeper review (PR #13)
+- OpenAPI: operation summaries and missing admin/content paths documented.
+- Public content: draft/unpublished documents return 404 (no metadata leak).
+- Bookmark routes ordered before public `GET /v1/content/**` permitAll.
+- Workflow illegal transitions → `409`; `sources_required` on publish for non-`none` risk.
+- Android catalog invalidation preserves local bookmark ids.
+
+### Master CI job results (run 36324624583)
+
+| Job | Result |
+|---|---|
+| design-tokens | SUCCESS |
+| admin | SUCCESS |
+| openapi | SUCCESS |
+| backend | SUCCESS |
+| android | SUCCESS |
+
+Overall master CI: **SUCCESS** on `bef38830613f5812407efd29b5f37b4ee7a30767` — [run 36324624583](https://github.com/ajangi/Mahin/actions/runs/36324624583).
 
 ## Implemented scope
 - **CMS staff & roles:** `cms_staff` / `cms_staff_role`; JWT `mahin_typ=cms` with role authorities; `/v1/admin/auth/login`.
@@ -18,7 +41,7 @@
 ## Notable files
 | Area | Path |
 |---|---|
-| Flyway V3 | `backend/src/main/resources/db/migration/V3__cms_content.sql` |
+| Flyway V3/V4 | `backend/src/main/resources/db/migration/V3__cms_content.sql`, `V4__content_search_index.sql` |
 | CMS packages | `backend/src/main/kotlin/dev/mahin/backend/cms/` |
 | Content services | `backend/src/main/kotlin/dev/mahin/backend/content/` |
 | OpenAPI | `openapi/openapi.yaml` |
@@ -34,20 +57,14 @@
 ## ADRs
 - **0013** — M6 CMS & evidence-governed content architecture.
 
-## Commands and results (local, Cloud Agent VM)
+## Commands and results (PR #13 / local)
 | Command | Result |
 |---|---|
 | `python3 scripts/check_design_tokens.py` | PASS |
-| `npx @redocly/cli@1.34.2 lint openapi/openapi.yaml --config redocly.yaml` | PASS (after gatekeeper: summaries + missing admin/content paths) |
-| `cd backend && ./gradlew ktlintCheck detekt test --no-daemon` | PASS — 26 tests (incl. sources_required, draft public 404) |
+| `npx @redocly/cli@1.34.2 lint openapi/openapi.yaml --config redocly.yaml` | PASS |
+| `cd backend && ./gradlew ktlintCheck detekt test --no-daemon` | PASS — 26 tests |
 | `cd admin && npm ci && npm test && npm run build` | PASS |
-| `cd android && ./gradlew lintDebug ktlintCheck detekt testDebugUnitTest assembleDebug --no-daemon` | PASS (local SDK) |
-
-**PR #13 initial head (`c6421b4`):** OpenAPI CI failed (missing `summary` on several operations). Fixed on subsequent commits on `cursor/m6-cms-content-e47b`.
-
-**PR #13 gatekeeper fix (`b4b2f5b`):** all 5 CI jobs SUCCESS — [run 36321262748](https://github.com/ajangi/Mahin/actions/runs/36321262748).  
-**PR #13 tip (`0cbbe33`, docs-only):** all 5 CI jobs SUCCESS — [run 36322033825](https://github.com/ajangi/Mahin/actions/runs/36322033825).  
-**PR #13 tip (`0cbbe33`, docs-only):** all 5 CI jobs SUCCESS — [run 36322033825](https://github.com/ajangi/Mahin/actions/runs/36322033825).
+| `cd android && ./gradlew lintDebug ktlintCheck detekt testDebugUnitTest assembleDebug --no-daemon` | PASS |
 
 ## Acceptance criteria (M6)
 | Criterion | Status |
