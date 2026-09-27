@@ -4,12 +4,13 @@ import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.entity.DailyLogEntity
 import dev.mahin.core.database.entity.PeriodRecordEntity
 import dev.mahin.core.security.AppLockGateway
+import dev.mahin.domain.subscription.EntitlementRules
 import dev.mahin.domain.subscription.ExportDailyLogRow
 import dev.mahin.domain.subscription.ExportPeriodRow
 import dev.mahin.domain.subscription.LocalHealthExport
 import dev.mahin.domain.subscription.LocalHealthExportBuilder
 import dev.mahin.domain.subscription.PremiumFeature
-import dev.mahin.domain.subscription.EntitlementRules
+import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.first
@@ -47,10 +48,12 @@ class HealthExportService
                 )
             val periods = cycleTrackingRepository.observePeriods().first()
             val logs =
-                cycleTrackingRepository.observeDailyLogs(
-                    start = java.time.LocalDate.now().minusYears(2),
-                    end = java.time.LocalDate.now(),
-                ).first()
+                cycleTrackingRepository
+                    .observeDailyLogs(
+                        start = LocalDate.now().minusYears(2),
+                        end = LocalDate.now(),
+                    )
+                    .first()
             val export =
                 LocalHealthExportBuilder.build(
                     periods = periods.map { it.toExportRow() },
@@ -71,8 +74,16 @@ class HealthExportService
         private fun DailyLogEntity.toExportRow(): ExportDailyLogRow =
             ExportDailyLogRow(
                 logDate = logDate,
-                moodTags = moodTags.split(',').map { it.trim() }.filter { it.isNotEmpty() },
-                symptomTags = symptomTags.split(',').map { it.trim() }.filter { it.isNotEmpty() },
+                moodTags =
+                    moodTags
+                        .split(',')
+                        .map { it.trim() }
+                        .filter { it.isNotEmpty() },
+                symptomTags =
+                    symptomTags
+                        .split(',')
+                        .map { it.trim() }
+                        .filter { it.isNotEmpty() },
                 painSeverity = painSeverity,
                 hasNote = !note.isNullOrBlank(),
             )
