@@ -77,8 +77,7 @@ object CycleInsightsEngineV1 {
         return sorted
             .zip(sorted.drop(1)) { current, next ->
                 ChronoUnit.DAYS.between(current.startDate, next.startDate).toInt()
-            }
-            .filter { it in 15..60 }
+            }.filter { it in 15..60 }
     }
 
     private fun derivePeriodLengths(periods: List<CycleInsightsPeriod>): List<Int> =
