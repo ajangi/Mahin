@@ -16,9 +16,7 @@ object CycleInsightsEngineV1 {
             input.recentLogs
                 .sortedByDescending { it.logDate }
                 .take(14)
-                .flatMap { log ->
-                    log.symptomTags.map { tag -> "${log.logDate}: $tag" }
-                }
+                .flatMap { log -> log.symptomTags.map { tag -> "${log.logDate}: $tag" } }
                 .take(10)
 
         val premium =
@@ -63,8 +61,9 @@ object CycleInsightsEngineV1 {
             symptomCounts.entries
                 .sortedByDescending { it.value }
                 .take(3)
-                .map { (tag, count) ->
-                    "«$tag» در ${count} روز از بازه اخیر ثبت شده است؛ ممکن است هم‌زمانی باشد، نه علت قطعی."
+                .map { entry ->
+                    "«${entry.key}» در ${entry.value} روز از بازه اخیر ثبت شده است؛ " +
+                        "ممکن است هم‌زمانی باشد، نه علت قطعی."
                 }
         return CyclePremiumInsights(
             cycleLengthTrendLabelFa = trend,
@@ -75,9 +74,11 @@ object CycleInsightsEngineV1 {
     private fun deriveCycleLengths(periods: List<CycleInsightsPeriod>): List<Int> {
         val sorted = periods.sortedBy { it.startDate }
         if (sorted.size < 2) return emptyList()
-        return sorted.zip(sorted.drop(1)) { current, next ->
-            ChronoUnit.DAYS.between(current.startDate, next.startDate).toInt()
-        }.filter { it in 15..60 }
+        return sorted
+            .zip(sorted.drop(1)) { current, next ->
+                ChronoUnit.DAYS.between(current.startDate, next.startDate).toInt()
+            }
+            .filter { it in 15..60 }
     }
 
     private fun derivePeriodLengths(periods: List<CycleInsightsPeriod>): List<Int> =

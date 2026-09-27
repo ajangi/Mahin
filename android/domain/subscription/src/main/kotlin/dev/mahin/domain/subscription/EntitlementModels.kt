@@ -1,7 +1,5 @@
 package dev.mahin.domain.subscription
 
-import java.time.Instant
-
 enum class EntitlementTier {
     FREE,
     PREMIUM_MONTHLY,

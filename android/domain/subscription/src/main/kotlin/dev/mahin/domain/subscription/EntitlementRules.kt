@@ -27,7 +27,11 @@ object EntitlementRules {
         localPlay: EntitlementSnapshot?,
         server: EntitlementSnapshot?,
     ): EntitlementSnapshot {
-        val candidates = listOfNotNull(localPlay, server).filter { hasPremiumAccess(it) || it.tier == EntitlementTier.FREE }
+        val candidates =
+            listOfNotNull(localPlay, server).filter { snapshot ->
+                hasPremiumAccess(snapshot) ||
+                    snapshot.tier == EntitlementTier.FREE
+            }
         if (candidates.isEmpty()) {
             return EntitlementSnapshot(EntitlementTier.FREE, null, EntitlementSource.LOCAL_DEFAULT, null)
         }
