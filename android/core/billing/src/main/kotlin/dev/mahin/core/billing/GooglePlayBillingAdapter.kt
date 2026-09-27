@@ -80,7 +80,7 @@ class GooglePlayBillingAdapter
                     .setProductList(productList)
                     .build()
             val result = billingClient.queryProductDetails(params)
-            val details = result.productDetailsList
+            val details = result.productDetailsList.orEmpty()
             productDetailsById = details.associateBy { it.productId }
             val offers =
                 details.map { detail ->
@@ -193,15 +193,17 @@ class GooglePlayBillingAdapter
         }
 
         private suspend fun BillingClient.connectAwait(): Boolean =
-            suspendCoroutine { cont ->
+            suspendCancellableCoroutine { cont ->
                 startConnection(
                     object : BillingClientStateListener {
                         override fun onBillingSetupFinished(billingResult: BillingResult) {
-                            cont.resume(billingResult.responseCode == BillingClient.BillingResponseCode.OK)
+                            if (cont.isActive) {
+                                cont.resume(billingResult.responseCode == BillingClient.BillingResponseCode.OK)
+                            }
                         }
 
                         override fun onBillingServiceDisconnected() {
-                            if (cont.context.isActive) {
+                            if (cont.isActive) {
                                 cont.resume(false)
                             }
                         }
