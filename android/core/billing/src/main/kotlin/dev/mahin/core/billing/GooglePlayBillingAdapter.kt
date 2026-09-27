@@ -19,6 +19,7 @@ import dev.mahin.domain.subscription.EntitlementTier
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.coroutines.resume
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -132,13 +133,13 @@ class GooglePlayBillingAdapter
             return suspendCancellableCoroutine { cont ->
                 pendingPurchaseContinuation = { receipt ->
                     if (cont.isActive) {
-                        cont.resumeWith(Result.success(receipt))
+                        cont.resume(receipt)
                     }
                 }
                 val launchResult = billingClient.launchBillingFlow(activity, flowParams)
                 if (launchResult.responseCode != BillingClient.BillingResponseCode.OK) {
                     pendingPurchaseContinuation = null
-                    cont.resumeWith(Result.success(null))
+                    cont.resume(null)
                 }
             }
         }
@@ -197,7 +198,7 @@ class GooglePlayBillingAdapter
 
                 fun tryResume(value: Boolean) {
                     if (resumed.compareAndSet(false, true) && cont.isActive) {
-                        cont.resumeWith(Result.success(value))
+                        cont.resume(value)
                     }
                 }
                 startConnection(
