@@ -36,6 +36,7 @@ dependencies {
     implementation(project(":domain:content"))
     implementation(project(":domain:account"))
     implementation(project(":domain:subscription"))
+    implementation(project(":domain:reminders"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -46,6 +47,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.compose.material.icons)
     implementation(libs.hilt.android)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
     implementation(libs.kotlinx.coroutines.android)
 
     testImplementation(libs.junit)

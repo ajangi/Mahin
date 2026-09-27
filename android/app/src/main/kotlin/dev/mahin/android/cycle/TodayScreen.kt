@@ -7,13 +7,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mahin.android.R
+import dev.mahin.android.notifications.NotificationSettingsScreen
 import dev.mahin.android.pregnancy.PregnancyStartSheet
 import dev.mahin.android.pregnancy.PregnancyTodayCard
 import dev.mahin.core.designsystem.MahinSpacing
@@ -31,6 +36,11 @@ fun TodayScreen(
     viewModel: TodayViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var showNotificationSettings by rememberSaveable { mutableStateOf(false) }
+    if (showNotificationSettings) {
+        NotificationSettingsScreen(onNavigateUp = { showNotificationSettings = false })
+        return
+    }
     PregnancyStartSheet(
         visible = state.showPregnancyStartSheet,
         onDismiss = viewModel::dismissPregnancyStartSheet,
@@ -108,6 +118,11 @@ fun TodayScreen(
         }
         item {
             Spacer(modifier = Modifier.height(MahinSpacing.md))
+        }
+        item {
+            TextButton(onClick = { showNotificationSettings = true }) {
+                Text(stringResource(R.string.notification_settings_entry))
+            }
         }
         item {
             ReproductiveModeCard(

@@ -26,4 +26,10 @@ class DeviceInstallationEntity(
     var registeredAt: Instant,
     @Column(name = "last_seen_at", nullable = false)
     var lastSeenAt: Instant,
+    @Column(name = "push_provider", length = 32)
+    var pushProvider: String? = null,
+    @Column(name = "push_token_hash", length = 64)
+    var pushTokenHash: String? = null,
+    @Column(name = "push_token_updated_at")
+    var pushTokenUpdatedAt: Instant? = null,
 )

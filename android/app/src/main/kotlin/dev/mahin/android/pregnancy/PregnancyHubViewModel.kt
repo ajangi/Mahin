@@ -11,14 +11,17 @@ import dev.mahin.core.database.pregnancy.PregnancyAppointmentInput
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
 import dev.mahin.core.datastore.ContractionTimerSnapshot
 import dev.mahin.core.datastore.KickTimerSnapshot
+import dev.mahin.core.datastore.NotificationPreferencesRepository
 import dev.mahin.core.datastore.PregnancyTimerPreferencesRepository
 import dev.mahin.core.datetime.JalaliDate
 import dev.mahin.core.datetime.PersianCivilDateConverter
 import dev.mahin.core.model.PregnancyAppointmentType
 import dev.mahin.core.model.PregnancyOutcome
 import dev.mahin.core.model.ReproductiveMode
+import dev.mahin.core.notifications.ReminderCoordinator
 import dev.mahin.domain.pregnancy.PregnancyDatingEngineV1
 import dev.mahin.domain.pregnancy.PregnancyStatusSnapshot
+import dev.mahin.domain.reminders.ReminderCategory
 import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
@@ -28,6 +31,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -65,6 +69,8 @@ class PregnancyHubViewModel
         private val repository: PregnancyTrackingRepository,
         private val timerPreferences: PregnancyTimerPreferencesRepository,
         private val contentRepository: ContentRepository,
+        private val notificationPreferencesRepository: NotificationPreferencesRepository,
+        private val reminderCoordinator: ReminderCoordinator,
         savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
         private var lastFetchedWeek: Int? = null
@@ -165,6 +171,10 @@ class PregnancyHubViewModel
                 if (title.isEmpty()) return@launch
                 val date = PersianCivilDateConverter.toGregorian(state.newAppointmentJalali)
                 val epochMs = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                val appointmentRemindersEnabled =
+                    notificationPreferencesRepository
+                        .observeCategoryEnabled(ReminderCategory.APPOINTMENT)
+                        .first()
                 repository.upsertAppointment(
                     PregnancyAppointmentInput(
                         id = null,
@@ -175,9 +185,10 @@ class PregnancyHubViewModel
                         location = null,
                         clinicianName = null,
                         note = null,
-                        reminderEnabled = false,
+                        reminderEnabled = appointmentRemindersEnabled,
                     ),
                 )
+                reminderCoordinator.requestRefresh()
                 _uiState.update { it.copy(newAppointmentTitle = "") }
             }
         }

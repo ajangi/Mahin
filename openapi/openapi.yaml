@@ -8,6 +8,8 @@ info:
     M5 adds identity, auth, device sessions, and outbox sync endpoints.
     M6 adds CMS admin workflows, governed content delivery, search, bookmarks,
     pregnancy-week API, and catalog revision for remote withdrawal/cache invalidation.
+    M7 adds device push-token registration (hashed at rest) for future campaign push;
+    reminder delivery remains on-device via WorkManager in the Android app.
     Sync payloads are opaque structured JSON and must not be logged.
     This contract does not expose invented medical advice or production CDN URLs.
 
@@ -687,6 +689,67 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DeviceSessionResponse"
+        "404":
+          description: Device not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/devices/{deviceId}/push-token:
+    put:
+      tags: [Devices]
+      operationId: registerDevicePushToken
+      summary: Register or replace a push provider token for this device (stored hashed)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterPushTokenRequest"
+      responses:
+        "200":
+          description: Token registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushTokenRegistrationResponse"
+        "400":
+          description: Invalid token or provider
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Device not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      tags: [Devices]
+      operationId: clearDevicePushToken
+      summary: Clear registered push token for this device
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Token cleared
         "404":
           description: Device not found
           content:
@@ -1442,6 +1505,28 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/DeviceSessionResponse"
+    RegisterPushTokenRequest:
+      type: object
+      required: [provider, token]
+      properties:
+        provider:
+          type: string
+          description: Push vendor identifier (e.g. fcm)
+        token:
+          type: string
+          description: Opaque provider token; stored hashed server-side only
+    PushTokenRegistrationResponse:
+      type: object
+      required: [deviceId, provider, registeredAt]
+      properties:
+        deviceId:
+          type: string
+          format: uuid
+        provider:
+          type: string
+        registeredAt:
+          type: string
+          format: date-time
     DeletionRequestResponse:
       type: object
       required: [id, status, requestedAt]
