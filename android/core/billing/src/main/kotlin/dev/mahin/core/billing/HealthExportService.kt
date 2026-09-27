@@ -46,12 +46,14 @@ class HealthExportService
                     entitlement,
                     PremiumFeature.EXPORT_EXTENDED_LAYOUT,
                 )
+            val today = LocalDate.now()
             val periods = cycleTrackingRepository.observePeriods().first()
             val logs =
-                cycleTrackingRepository.observeDailyLogs(
-                    start = LocalDate.now().minusYears(2),
-                    end = LocalDate.now(),
-                ).first()
+                cycleTrackingRepository
+                    .observeDailyLogs(
+                        start = today.minusYears(2),
+                        end = today,
+                    ).first()
             val export =
                 LocalHealthExportBuilder.build(
                     periods = periods.map { it.toExportRow() },
