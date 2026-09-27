@@ -213,4 +213,24 @@
     <string name="pregnancy_appointment_type_vaccination">واکسن</string>
     <string name="pregnancy_appointment_type_custom">سایر</string>
     <string name="pregnancy_hub_safety_disclaimer">اطلاعات این بخش جایگزین مراقبت پزشکی نیست. در صورت نگرانی با متخصص مشورت کنید.</string>
+
+    <string name="notification_settings_entry">تنظیمات یادآوری و حریم اعلان</string>
+    <string name="notification_settings_title">یادآوری‌ها</string>
+    <string name="notification_settings_back">بازگشت</string>
+    <string name="notification_privacy_heading">حریم اعلان</string>
+    <string name="notification_privacy_body">متن پیش‌فرض روی قفل صفحه محرمانه است و از پریود، بارداری یا جزئیات دارو نام نمی‌برد.</string>
+    <string name="notification_mode_discreet">محترمانه</string>
+    <string name="notification_mode_descriptive">توضیحی</string>
+    <string name="notification_mode_off">بدون اعلان</string>
+    <string name="notification_categories_heading">دسته‌های یادآوری</string>
+    <string name="notification_cat_period_upcoming">پیش‌بینی رویداد</string>
+    <string name="notification_cat_period_upcoming_body">یک روز قبل از شروع بازهٔ تخمینی پریود بعدی.</string>
+    <string name="notification_cat_period_logging">پیگیری ثبت</string>
+    <string name="notification_cat_period_logging_body">اگر پریود شروع شده و ثبت نکرده‌اید، یادآوری ملایم.</string>
+    <string name="notification_cat_ttc_logging">ثبت باروری</string>
+    <string name="notification_cat_ttc_logging_body">یادآوری برای ثبت در حالت باروری.</string>
+    <string name="notification_cat_pregnancy_weekly">هفتگی بارداری</string>
+    <string name="notification_cat_pregnancy_weekly_body">یادآوری هفتهٔ جدید (بدون متن پزشکی).</string>
+    <string name="notification_cat_appointment">قرار ملاقات</string>
+    <string name="notification_cat_appointment_body">یادآوری برای قرارهایی که یادآوری آن‌ها را فعال کرده‌اید.</string>
 </resources>
