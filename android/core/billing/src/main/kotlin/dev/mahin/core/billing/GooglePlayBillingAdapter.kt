@@ -16,9 +16,9 @@ import com.android.billingclient.api.queryProductDetails
 import com.android.billingclient.api.queryPurchasesAsync
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.mahin.domain.subscription.EntitlementTier
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.coroutines.resume
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -132,13 +132,13 @@ class GooglePlayBillingAdapter
             return suspendCancellableCoroutine { cont ->
                 pendingPurchaseContinuation = { receipt ->
                     if (cont.isActive) {
-                        cont.resume(receipt)
+                        cont.resumeWith(Result.success(receipt))
                     }
                 }
                 val launchResult = billingClient.launchBillingFlow(activity, flowParams)
                 if (launchResult.responseCode != BillingClient.BillingResponseCode.OK) {
                     pendingPurchaseContinuation = null
-                    cont.resume(null)
+                    cont.resumeWith(Result.success(null))
                 }
             }
         }
@@ -193,18 +193,20 @@ class GooglePlayBillingAdapter
 
         private suspend fun BillingClient.connectAwait(): Boolean =
             suspendCancellableCoroutine { cont ->
+                val resumed = AtomicBoolean(false)
+                fun tryResume(value: Boolean) {
+                    if (resumed.compareAndSet(false, true) && cont.isActive) {
+                        cont.resumeWith(Result.success(value))
+                    }
+                }
                 startConnection(
                     object : BillingClientStateListener {
                         override fun onBillingSetupFinished(billingResult: BillingResult) {
-                            if (cont.isActive) {
-                                cont.resume(billingResult.responseCode == BillingClient.BillingResponseCode.OK)
-                            }
+                            tryResume(billingResult.responseCode == BillingClient.BillingResponseCode.OK)
                         }
 
                         override fun onBillingServiceDisconnected() {
-                            if (cont.isActive) {
-                                cont.resume(false)
-                            }
+                            tryResume(false)
                         }
                     },
                 )
