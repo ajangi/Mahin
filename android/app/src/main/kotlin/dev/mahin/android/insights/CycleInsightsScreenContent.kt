@@ -92,8 +92,14 @@ internal fun CycleInsightsScreenContent(
 @Composable
 private fun FreeInsightsSection(insights: CycleInsightsResult) {
     Card {
-        Column(modifier = Modifier.padding(MahinSpacing.md), verticalArrangement = Arrangement.spacedBy(MahinSpacing.sm)) {
-            Text(text = stringResource(R.string.cycle_insights_free_heading), style = MaterialTheme.typography.titleMedium)
+        Column(
+            modifier = Modifier.padding(MahinSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(MahinSpacing.sm),
+        ) {
+            Text(
+                text = stringResource(R.string.cycle_insights_free_heading),
+                style = MaterialTheme.typography.titleMedium,
+            )
             insights.cycleLengthDays?.let { range ->
                 Text(stringResource(R.string.cycle_insights_cycle_length_range, range.first, range.last))
             }
