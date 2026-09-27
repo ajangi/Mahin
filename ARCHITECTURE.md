@@ -27,7 +27,7 @@ Design tokens are centralized in `:core:designsystem` and `design/tokens.json`. 
 - `sync` — outbox mutations, revisions, idempotency, conflict resolution
 - `device` — installation/session registry
 - `media` — CMS media metadata + public URL factory
-- `content` — article envelope without medical body
+- `content` / `cms` — governed articles, admin workflow, catalog revision (M6)
 - `privacy` — access log without query/body; deletion/export job foundations
 - `persistence` — Flyway-backed schema (V2 identity/sync in M5)
 

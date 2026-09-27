@@ -23,7 +23,7 @@ class JwtService(
 
     fun issueAccessToken(subject: MahinAuthSubject): String {
         val now = Instant.now()
-        val claims =
+        val builder =
             JWTClaimsSet
                 .Builder()
                 .subject(subjectTokenId(subject))
@@ -31,7 +31,11 @@ class JwtService(
                 .claim(CLAIM_DEVICE, subject.deviceId.toString())
                 .issueTime(Date.from(now))
                 .expirationTime(Date.from(now.plusSeconds(accessTtlSeconds)))
-                .build()
+        if (subject is MahinAuthSubject.CmsStaff) {
+            builder.claim(CLAIM_CMS_ROLES, subject.roles.toList())
+            builder.claim(CLAIM_CMS_EMAIL, subject.email)
+        }
+        val claims = builder.build()
         val signed = SignedJWT(JWSHeader(JWSAlgorithm.HS256), claims)
         signed.sign(signer)
         return signed.serialize()
@@ -61,6 +65,16 @@ class JwtService(
                         guestInstallationId = UUID.fromString(claims.subject),
                         deviceId = deviceId,
                     )
+                TYPE_CMS -> {
+                    val roles = claims.getStringListClaim(CLAIM_CMS_ROLES)?.toSet() ?: emptySet()
+                    val email = claims.getStringClaim(CLAIM_CMS_EMAIL) ?: ""
+                    MahinAuthSubject.CmsStaff(
+                        staffId = UUID.fromString(claims.subject),
+                        email = email,
+                        roles = roles,
+                        deviceId = deviceId,
+                    )
+                }
                 else -> null
             }
         } catch (_: JOSEException) {
@@ -74,18 +88,23 @@ class JwtService(
         when (subject) {
             is MahinAuthSubject.RegisteredUser -> subject.userId.toString()
             is MahinAuthSubject.GuestInstallation -> subject.guestInstallationId.toString()
+            is MahinAuthSubject.CmsStaff -> subject.staffId.toString()
         }
 
     private fun subjectType(subject: MahinAuthSubject): String =
         when (subject) {
             is MahinAuthSubject.RegisteredUser -> TYPE_USER
             is MahinAuthSubject.GuestInstallation -> TYPE_GUEST
+            is MahinAuthSubject.CmsStaff -> TYPE_CMS
         }
 
     companion object {
         private const val CLAIM_TYPE = "mahin_typ"
         private const val CLAIM_DEVICE = "mahin_dev"
+        private const val CLAIM_CMS_ROLES = "mahin_cms_roles"
+        private const val CLAIM_CMS_EMAIL = "mahin_cms_email"
         private const val TYPE_USER = "user"
         private const val TYPE_GUEST = "guest"
+        private const val TYPE_CMS = "cms"
     }
 }

@@ -20,4 +20,17 @@ sealed interface MahinAuthSubject {
     ) : MahinAuthSubject {
         override fun ownerKey(): String = "guest:$guestInstallationId"
     }
+
+    data class CmsStaff(
+        val staffId: UUID,
+        val email: String,
+        val roles: Set<String>,
+        override val deviceId: UUID = STAFF_DEVICE_ID,
+    ) : MahinAuthSubject {
+        override fun ownerKey(): String = "cms:$staffId"
+
+        companion object {
+            val STAFF_DEVICE_ID: UUID = UUID.fromString("00000000-0000-0000-0000-000000000001")
+        }
+    }
 }

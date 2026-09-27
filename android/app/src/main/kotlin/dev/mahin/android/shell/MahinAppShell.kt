@@ -22,6 +22,7 @@ import dev.mahin.android.cycle.CycleCalendarScreen
 import dev.mahin.android.cycle.HistoryScreen
 import dev.mahin.android.cycle.LogScreen
 import dev.mahin.android.cycle.TodayScreen
+import dev.mahin.android.learn.LearnScreen
 import dev.mahin.android.navigation.MahinTopLevelDestination
 import dev.mahin.android.pregnancy.PregnancyHubScreen
 import dev.mahin.android.ttc.TtcInsightsScreen
@@ -84,6 +85,7 @@ fun MahinAppShell(
             composable(MahinTopLevelDestination.TtcInsights.route) { TtcInsightsScreen() }
             composable(MahinTopLevelDestination.PregnancyHub.route) { PregnancyHubScreen() }
             composable(MahinTopLevelDestination.History.route) { HistoryScreen() }
+            composable(MahinTopLevelDestination.Learn.route) { LearnScreen() }
         }
     }
 }

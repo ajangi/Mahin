@@ -47,6 +47,8 @@ fun PregnancyHubScreen(
                 selectedOutcome = state.selectedOutcome,
                 wantsSupportContent = state.wantsSupportContent,
                 suppressCelebratoryNotifications = state.suppressCelebratoryNotifications,
+                weeklyCmsTitle = state.weeklyCmsTitle,
+                weeklyCmsSummary = state.weeklyCmsSummary,
             ),
         actions =
             PregnancyHubActions(

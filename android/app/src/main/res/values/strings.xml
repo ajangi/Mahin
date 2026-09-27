@@ -137,6 +137,14 @@
     <string name="today_numeric_sample">نمونهٔ عدد: %1$s</string>
 
     <string name="nav_pregnancy_hub">بارداری</string>
+    <string name="nav_learn">آموزش</string>
+    <string name="learn_title">آموزش</string>
+    <string name="learn_disclaimer">محتوای آموزشی از CMS تأییدشده می‌آید؛ این صفحه متن پزشکی تولید نمی‌کند.</string>
+    <string name="learn_search_label">جستجو</string>
+    <string name="learn_search_action">جستجو</string>
+    <string name="learn_offline_title">آفلاین یا بدون پاسخ سرور</string>
+    <string name="learn_offline_body">وقتی اتصال برقرار شود، مقالات منتشرشده از سرور بارگذاری می‌شوند.</string>
+    <string name="learn_bookmark_toggle">ذخیره</string>
     <string name="onboarding_goal_pregnancy">باردار هستم</string>
     <string name="onboarding_pregnancy_setup_title">شروع پیگیری بارداری</string>
     <string name="onboarding_pregnancy_setup_body">تاریخ اولین روز آخرین پریود (LMP) برای تخمین سن بارداری لازم است. این تخمین پزشکی نیست.</string>

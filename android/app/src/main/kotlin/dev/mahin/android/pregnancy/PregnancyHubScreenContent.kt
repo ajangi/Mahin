@@ -47,6 +47,8 @@ data class PregnancyHubContentState(
     val selectedOutcome: PregnancyOutcome?,
     val wantsSupportContent: Boolean,
     val suppressCelebratoryNotifications: Boolean,
+    val weeklyCmsTitle: String? = null,
+    val weeklyCmsSummary: String? = null,
 )
 
 data class PregnancyAppointmentListItem(
@@ -132,7 +134,11 @@ private fun ActivePregnancyHub(
         }
         if (!state.suppressCelebratoryNotifications) {
             item {
-                WeekPlaceholderCard(weekNumber = status.displayWeekNumber)
+                WeekPlaceholderCard(
+                    weekNumber = status.displayWeekNumber,
+                    cmsTitle = state.weeklyCmsTitle,
+                    cmsSummary = state.weeklyCmsSummary,
+                )
             }
         }
         item {
@@ -200,7 +206,11 @@ private fun PregnancyStatusCard(status: PregnancyStatusSnapshot) {
 }
 
 @Composable
-private fun WeekPlaceholderCard(weekNumber: Int) {
+private fun WeekPlaceholderCard(
+    weekNumber: Int,
+    cmsTitle: String? = null,
+    cmsSummary: String? = null,
+) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(MahinSpacing.md)) {
             Text(
@@ -211,15 +221,25 @@ private fun WeekPlaceholderCard(weekNumber: Int) {
                     ),
                 style = mahinTextStyle(MahinTypographyRole.Label),
             )
-            Text(
-                text = stringResource(R.string.pregnancy_week_placeholder_fetal),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Text(
-                text = stringResource(R.string.pregnancy_week_placeholder_maternal),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = MahinSpacing.xs),
-            )
+            if (cmsSummary != null) {
+                cmsTitle?.let {
+                    Text(text = it, style = MaterialTheme.typography.titleSmall)
+                }
+                Text(
+                    text = cmsSummary,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            } else {
+                Text(
+                    text = stringResource(R.string.pregnancy_week_placeholder_fetal),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = stringResource(R.string.pregnancy_week_placeholder_maternal),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = MahinSpacing.xs),
+                )
+            }
         }
     }
 }

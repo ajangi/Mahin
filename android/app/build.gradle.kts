@@ -28,6 +28,7 @@ dependencies {
     implementation(project(":core:security"))
     implementation(project(":core:analytics"))
     implementation(project(":core:sync"))
+    implementation(project(":core:content"))
     implementation(project(":core:notifications"))
     implementation(project(":domain:cycle"))
     implementation(project(":domain:fertility"))
