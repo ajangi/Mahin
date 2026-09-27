@@ -48,12 +48,10 @@ class HealthExportService
                 )
             val periods = cycleTrackingRepository.observePeriods().first()
             val logs =
-                cycleTrackingRepository
-                    .observeDailyLogs(
-                        start = LocalDate.now().minusYears(2),
-                        end = LocalDate.now(),
-                    )
-                    .first()
+                cycleTrackingRepository.observeDailyLogs(
+                    start = LocalDate.now().minusYears(2),
+                    end = LocalDate.now(),
+                ).first()
             val export =
                 LocalHealthExportBuilder.build(
                     periods = periods.map { it.toExportRow() },

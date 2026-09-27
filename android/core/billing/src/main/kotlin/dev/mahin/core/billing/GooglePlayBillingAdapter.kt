@@ -194,6 +194,7 @@ class GooglePlayBillingAdapter
         private suspend fun BillingClient.connectAwait(): Boolean =
             suspendCancellableCoroutine { cont ->
                 val resumed = AtomicBoolean(false)
+
                 fun tryResume(value: Boolean) {
                     if (resumed.compareAndSet(false, true) && cont.isActive) {
                         cont.resumeWith(Result.success(value))
