@@ -11,4 +11,6 @@
 - No PII/health bodies in access logs
 - Object storage keys, not baked-in production CDN hosts, identify media
 
-M0 exposes `/actuator/health`, `/v1/meta`, `/v1/media/assets/{id}`, `/v1/content/articles/{id}` as contract fixtures only.
+Public fixtures: `/actuator/health`, `/v1/meta`, `/v1/media/assets/{id}`, `/v1/content/articles/{id}`.
+
+M5 (backend): guest bootstrap (`POST /v1/identity/guest`), email/password auth, guest conversion, device sessions, sync push/pull (`/v1/sync/*`), and privacy job foundations (`/v1/privacy/*`). Bearer JWT for protected routes; refresh tokens are opaque and stored hashed server-side.

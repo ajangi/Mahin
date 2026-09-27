@@ -5,8 +5,9 @@ info:
   description: |
     Versioned HTTP contract for Mahin (`/v1`).
 
-    This M0 skeleton establishes conventions only. It does not expose raw
-    reproductive-health payloads, medical advice, or production CDN URLs.
+    M5 adds identity, auth, device sessions, and outbox sync endpoints.
+    Sync payloads are opaque structured JSON and must not be logged.
+    This contract does not expose invented medical advice or production CDN URLs.
 
     Sensitive health fields must never appear in access logs, traces, or
     analytics. See `docs/API_CONVENTIONS.md` and `docs/PRIVACY_ENGINEERING.md`.
@@ -20,6 +21,11 @@ tags:
   - name: Meta
   - name: Media
   - name: Content
+  - name: Auth
+  - name: Identity
+  - name: Sync
+  - name: Devices
+  - name: Privacy
 paths:
   /actuator/health:
     get:
@@ -95,7 +101,283 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /v1/identity/guest:
+    post:
+      tags: [Identity]
+      operationId: bootstrapGuest
+      summary: Register or resume a guest installation (maps local user UUID)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GuestBootstrapRequest"
+      responses:
+        "200":
+          description: Guest session tokens
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuestBootstrapResponse"
+  /v1/identity/convert-guest:
+    post:
+      tags: [Identity]
+      operationId: convertGuest
+      summary: Link a guest installation to the authenticated registered user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConvertGuestRequest"
+      responses:
+        "200":
+          description: Guest data migrated to the account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConvertGuestResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/auth/register:
+    post:
+      tags: [Auth]
+      operationId: registerAccount
+      summary: Create a registered account (optional guest conversion via localUserId)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "200":
+          description: Auth tokens
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthTokenResponse"
+        "409":
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/auth/login:
+    post:
+      tags: [Auth]
+      operationId: login
+      summary: Authenticate with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Auth tokens
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthTokenResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/auth/refresh:
+    post:
+      tags: [Auth]
+      operationId: refreshTokens
+      summary: Rotate refresh token and issue a new access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "200":
+          description: Auth tokens
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthTokenResponse"
+  /v1/auth/logout:
+    post:
+      tags: [Auth]
+      operationId: logout
+      summary: Revoke a refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogoutRequest"
+      responses:
+        "200":
+          description: Logged out
+  /v1/sync/mutations:
+    post:
+      tags: [Sync]
+      operationId: pushSyncMutations
+      summary: Apply outbox mutations (idempotent per owner + Idempotency-Key)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncMutationRequest"
+      responses:
+        "200":
+          description: Per-mutation results (applied or conflict)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncMutationResponse"
+  /v1/sync/changes:
+    get:
+      tags: [Sync]
+      operationId: pullSyncChanges
+      summary: Pull entity changes after a server revision cursor
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: afterRevision
+          in: query
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 100
+      responses:
+        "200":
+          description: Ordered change feed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncChangesResponse"
+  /v1/devices:
+    get:
+      tags: [Devices]
+      operationId: listDevices
+      summary: List device installations for the current guest or user session
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Devices
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceListResponse"
+  /v1/devices/{deviceId}/heartbeat:
+    post:
+      tags: [Devices]
+      operationId: deviceHeartbeat
+      summary: Update last-seen timestamp for the calling device
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Updated device
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceSessionResponse"
+        "404":
+          description: Device not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/privacy/deletion-requests:
+    post:
+      tags: [Privacy]
+      operationId: requestAccountDeletion
+      summary: Queue an account deletion request (foundations only in M5)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Deletion request accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletionRequestResponse"
+  /v1/privacy/export-jobs:
+    post:
+      tags: [Privacy]
+      operationId: requestDataExport
+      summary: Queue a user data export job (foundations only in M5)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Export job queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExportJobResponse"
+  /v1/privacy/export-jobs/{jobId}:
+    get:
+      tags: [Privacy]
+      operationId: getExportJob
+      summary: Poll export job status
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Export job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExportJobResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   parameters:
     AssetId:
       name: assetId
@@ -274,3 +556,318 @@ components:
           type: object
           additionalProperties: true
           description: Must never include health payloads or free text notes.
+    GuestBootstrapRequest:
+      type: object
+      required: [localUserId, platform]
+      properties:
+        localUserId:
+          type: string
+          format: uuid
+          description: Client-generated installation identity (see Android GuestIdentity).
+        platform:
+          type: string
+          example: android
+        appVersion:
+          type: string
+          nullable: true
+    GuestBootstrapResponse:
+      type: object
+      required:
+        - guestInstallationId
+        - localUserId
+        - accessToken
+        - refreshToken
+        - tokenType
+        - expiresInSeconds
+        - deviceId
+      properties:
+        guestInstallationId:
+          type: string
+          format: uuid
+        localUserId:
+          type: string
+          format: uuid
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+          example: Bearer
+        expiresInSeconds:
+          type: integer
+          format: int64
+        deviceId:
+          type: string
+          format: uuid
+    ConvertGuestRequest:
+      type: object
+      required: [localUserId]
+      description: Requires guest proof via guestAccessToken or guestRefreshToken (possession of the installation).
+      properties:
+        localUserId:
+          type: string
+          format: uuid
+        guestAccessToken:
+          type: string
+          nullable: true
+        guestRefreshToken:
+          type: string
+          nullable: true
+    ConvertGuestResponse:
+      type: object
+      required: [userId, guestInstallationId, migratedEntityCount]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        guestInstallationId:
+          type: string
+          format: uuid
+        migratedEntityCount:
+          type: integer
+    RegisterRequest:
+      type: object
+      required: [email, password, platform]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 12
+        platform:
+          type: string
+        appVersion:
+          type: string
+          nullable: true
+        localUserId:
+          type: string
+          format: uuid
+          nullable: true
+          description: When set, guest rows are migrated transactionally during registration.
+        guestAccessToken:
+          type: string
+          nullable: true
+          description: Required with localUserId unless guestRefreshToken is provided.
+        guestRefreshToken:
+          type: string
+          nullable: true
+          description: Required with localUserId unless guestAccessToken is provided.
+    LoginRequest:
+      type: object
+      required: [email, password, platform]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        platform:
+          type: string
+        appVersion:
+          type: string
+          nullable: true
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+    LogoutRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+    AuthTokenResponse:
+      type: object
+      required: [accessToken, refreshToken, tokenType, expiresInSeconds, deviceId]
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+        expiresInSeconds:
+          type: integer
+          format: int64
+        userId:
+          type: string
+          format: uuid
+          nullable: true
+        guestInstallationId:
+          type: string
+          format: uuid
+          nullable: true
+        deviceId:
+          type: string
+          format: uuid
+    SyncMutationOperation:
+      type: string
+      enum: [UPSERT, DELETE]
+    SyncMutationRequest:
+      type: object
+      required: [mutations]
+      properties:
+        mutations:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/SyncMutationItem"
+    SyncMutationItem:
+      type: object
+      required: [entityType, entityId, operation, updatedAt, idempotencyKey]
+      properties:
+        entityType:
+          type: string
+          description: Typed entity name (e.g. period_record). Payload schema is client-versioned.
+        entityId:
+          type: string
+          format: uuid
+        operation:
+          $ref: "#/components/schemas/SyncMutationOperation"
+        clientRevision:
+          type: integer
+          format: int64
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+        payload:
+          type: object
+          additionalProperties: true
+          description: Opaque structured JSON; must not be logged server-side.
+        idempotencyKey:
+          type: string
+          minLength: 8
+          maxLength: 128
+    SyncMutationResultItem:
+      type: object
+      required: [entityType, entityId, status]
+      properties:
+        entityType:
+          type: string
+        entityId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [applied, conflict]
+        serverRevision:
+          type: integer
+          format: int64
+          nullable: true
+        conflictCode:
+          type: string
+          nullable: true
+    SyncMutationResponse:
+      type: object
+      required: [results, latestServerRevision]
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/SyncMutationResultItem"
+        latestServerRevision:
+          type: integer
+          format: int64
+    SyncChangeItem:
+      type: object
+      required: [entityType, entityId, serverRevision, updatedAt]
+      properties:
+        entityType:
+          type: string
+        entityId:
+          type: string
+          format: uuid
+        serverRevision:
+          type: integer
+          format: int64
+        clientRevision:
+          type: integer
+          format: int64
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        payload:
+          type: object
+          additionalProperties: true
+          nullable: true
+    SyncChangesResponse:
+      type: object
+      required: [changes, latestServerRevision, hasMore]
+      properties:
+        changes:
+          type: array
+          items:
+            $ref: "#/components/schemas/SyncChangeItem"
+        latestServerRevision:
+          type: integer
+          format: int64
+        hasMore:
+          type: boolean
+    DeviceSessionResponse:
+      type: object
+      required: [deviceId, platform, registeredAt, lastSeenAt]
+      properties:
+        deviceId:
+          type: string
+          format: uuid
+        platform:
+          type: string
+        appVersion:
+          type: string
+          nullable: true
+        registeredAt:
+          type: string
+          format: date-time
+        lastSeenAt:
+          type: string
+          format: date-time
+    DeviceListResponse:
+      type: object
+      required: [devices]
+      properties:
+        devices:
+          type: array
+          items:
+            $ref: "#/components/schemas/DeviceSessionResponse"
+    DeletionRequestResponse:
+      type: object
+      required: [id, status, requestedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+        requestedAt:
+          type: string
+          format: date-time
+        scheduledAt:
+          type: string
+          format: date-time
+          nullable: true
+    ExportJobResponse:
+      type: object
+      required: [id, status, requestedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+        requestedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
