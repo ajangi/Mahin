@@ -45,6 +45,8 @@
 
 **PR #13 initial head (`c6421b4`):** OpenAPI CI failed (missing `summary` on several operations). Fixed on subsequent commits on `cursor/m6-cms-content-e47b`.
 
+**PR #13 gatekeeper fix head (`b4b2f5b`):** all 5 CI jobs SUCCESS — [run 36321262748](https://github.com/ajangi/Mahin/actions/runs/36321262748).
+
 ## Acceptance criteria (M6)
 | Criterion | Status |
 |---|---|
