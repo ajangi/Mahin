@@ -13,12 +13,9 @@ class ContentEnvelopeTest(
     @Autowired val mockMvc: MockMvc,
 ) {
     @Test
-    fun envelopeHasNoMedicalBody() {
+    fun draftEnvelopeIsNotPublic() {
         mockMvc.get("/v1/content/articles/22222222-2222-2222-2222-222222222222").andExpect {
-            status { isOk() }
-            jsonPath("$.body") { doesNotExist() }
-            jsonPath("$.medicalRiskLevel") { value("none") }
-            jsonPath("$.status") { value("draft") }
+            status { isNotFound() }
         }
     }
 }

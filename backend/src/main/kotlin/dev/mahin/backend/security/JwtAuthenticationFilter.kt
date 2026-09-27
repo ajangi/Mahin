@@ -24,16 +24,25 @@ class JwtAuthenticationFilter(
             val token = header.removePrefix(BEARER_PREFIX).trim()
             val subject = jwtService.parseAccessToken(token)
             if (subject != null) {
-                val role =
+                val authorities =
                     when (subject) {
-                        is MahinAuthSubject.RegisteredUser -> ROLE_USER
-                        is MahinAuthSubject.GuestInstallation -> ROLE_GUEST
+                        is MahinAuthSubject.RegisteredUser ->
+                            listOf(SimpleGrantedAuthority(ROLE_USER))
+                        is MahinAuthSubject.GuestInstallation ->
+                            listOf(SimpleGrantedAuthority(ROLE_GUEST))
+                        is MahinAuthSubject.CmsStaff -> {
+                            val cmsRoles =
+                                subject.roles.map { role ->
+                                    SimpleGrantedAuthority("ROLE_CMS_$role")
+                                }
+                            listOf(SimpleGrantedAuthority(ROLE_CMS)) + cmsRoles
+                        }
                     }
                 val authentication =
                     UsernamePasswordAuthenticationToken(
                         subject,
                         null,
-                        listOf(SimpleGrantedAuthority(role)),
+                        authorities,
                     )
                 SecurityContextHolder.getContext().authentication = authentication
             }
@@ -45,5 +54,6 @@ class JwtAuthenticationFilter(
         private const val BEARER_PREFIX = "Bearer "
         const val ROLE_USER = "ROLE_USER"
         const val ROLE_GUEST = "ROLE_GUEST"
+        const val ROLE_CMS = "ROLE_CMS"
     }
 }

@@ -49,6 +49,7 @@ class GuestProofService(
         return guest
     }
 
+    @Suppress("ThrowsCount")
     private fun guestInstallationIdFromAccessToken(guestAccessToken: String): UUID {
         val subject =
             jwtService.parseAccessToken(guestAccessToken)
@@ -56,6 +57,8 @@ class GuestProofService(
         return when (subject) {
             is MahinAuthSubject.GuestInstallation -> subject.guestInstallationId
             is MahinAuthSubject.RegisteredUser ->
+                throw ResponseStatusException(HttpStatus.FORBIDDEN, "guest_proof_invalid")
+            is MahinAuthSubject.CmsStaff ->
                 throw ResponseStatusException(HttpStatus.FORBIDDEN, "guest_proof_invalid")
         }
     }

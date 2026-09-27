@@ -9,7 +9,7 @@ plugins {
 }
 
 group = "dev.mahin"
-version = "0.0.1-m5"
+version = "0.0.1-m6"
 
 java {
     toolchain {

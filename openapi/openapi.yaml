@@ -6,6 +6,8 @@ info:
     Versioned HTTP contract for Mahin (`/v1`).
 
     M5 adds identity, auth, device sessions, and outbox sync endpoints.
+    M6 adds CMS admin workflows, governed content delivery, search, bookmarks,
+    pregnancy-week API, and catalog revision for remote withdrawal/cache invalidation.
     Sync payloads are opaque structured JSON and must not be logged.
     This contract does not expose invented medical advice or production CDN URLs.
 
@@ -26,6 +28,7 @@ tags:
   - name: Sync
   - name: Devices
   - name: Privacy
+  - name: Admin
 paths:
   /actuator/health:
     get:
@@ -101,6 +104,379 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /v1/content/articles/by-slug/{slug}:
+    get:
+      tags: [Content]
+      operationId: getContentArticleBySlug
+      summary: Fetch a published article by slug and locale
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: locale
+          in: query
+          schema:
+            type: string
+            default: fa-IR
+      responses:
+        "200":
+          description: Published article
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentArticle"
+        "404":
+          description: Not published or unknown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/content/catalog-status:
+    get:
+      tags: [Content]
+      operationId: getContentCatalogStatus
+      summary: Monotonic publication revision for client cache invalidation
+      responses:
+        "200":
+          description: Catalog revision
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentCatalogStatus"
+  /v1/content/search:
+    get:
+      tags: [Content]
+      operationId: searchContent
+      summary: Search published educational articles (Persian-normalized server-side)
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: locale
+          in: query
+          schema:
+            type: string
+        - name: lifeStage
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Search hits
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentSearchResponse"
+  /v1/content/pregnancy/weeks:
+    get:
+      tags: [Content]
+      operationId: listPregnancyWeeks
+      summary: List gestational weeks with published pregnancy-week content
+      parameters:
+        - name: locale
+          in: query
+          schema:
+            type: string
+            default: fa-IR
+      responses:
+        "200":
+          description: Published pregnancy weeks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PregnancyWeekListResponse"
+  /v1/content/pregnancy/weeks/{week}:
+    get:
+      tags: [Content]
+      operationId: getPregnancyWeekContent
+      summary: Published pregnancy-week educational bundle (CMS-governed)
+      parameters:
+        - name: week
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 42
+        - name: locale
+          in: query
+          schema:
+            type: string
+            default: fa-IR
+      responses:
+        "200":
+          description: Published week bundle
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentArticle"
+        "404":
+          description: Week not published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/content/bookmarks:
+    get:
+      tags: [Content]
+      operationId: listContentBookmarks
+      summary: List bookmarked published articles for the authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Bookmarked articles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentBookmarkListResponse"
+  /v1/content/bookmarks/{documentId}:
+    post:
+      tags: [Content]
+      operationId: addContentBookmark
+      summary: Bookmark a published article (registered user)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Bookmark saved
+    delete:
+      tags: [Content]
+      operationId: removeContentBookmark
+      summary: Remove a content bookmark (registered user)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Bookmark removed
+  /v1/admin/auth/login:
+    post:
+      tags: [Admin]
+      operationId: adminLogin
+      summary: CMS staff login (separate from app user auth)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminLoginRequest"
+      responses:
+        "200":
+          description: CMS access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAuthTokenResponse"
+  /v1/admin/content/documents:
+    post:
+      tags: [Admin]
+      operationId: createContentDocument
+      summary: Create a new content document with initial draft version
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContentDocumentRequest"
+      responses:
+        "200":
+          description: Created document version
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminContentVersion"
+  /v1/admin/content/documents/{documentId}/versions:
+    post:
+      tags: [Admin]
+      operationId: createContentRevision
+      summary: Append a new draft version to an existing document
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContentDocumentRequest"
+      responses:
+        "200":
+          description: New version
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminContentVersion"
+  /v1/admin/content/versions/{versionId}:
+    get:
+      tags: [Admin]
+      operationId: getAdminContentVersion
+      summary: Fetch a content version for CMS review (any status)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: versionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Version details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminContentVersion"
+  /v1/admin/content/versions/{versionId}/workflow/{action}:
+    post:
+      tags: [Admin]
+      operationId: contentWorkflowTransition
+      summary: Apply a governed workflow transition to a content version
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: versionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkflowTransitionRequest"
+      responses:
+        "200":
+          description: Updated version
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminContentVersion"
+  /v1/admin/content/documents/{documentId}/audit:
+    get:
+      tags: [Admin]
+      operationId: getContentDocumentAudit
+      summary: Audit trail for a content document
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Audit events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentAuditList"
+  /v1/admin/content/freshness:
+    get:
+      tags: [Admin]
+      operationId: contentFreshnessDashboard
+      summary: Content freshness dashboard (overdue review, stale sources, withdrawals)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Freshness dashboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentFreshnessDashboard"
+  /v1/admin/staff:
+    post:
+      tags: [Admin]
+      operationId: createCmsStaff
+      summary: Create CMS staff (super admin only)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCmsStaffRequest"
+      responses:
+        "200":
+          description: Staff created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  staffId:
+                    type: string
+                    format: uuid
+  /v1/admin/content/sources:
+    get:
+      tags: [Admin]
+      operationId: listContentSources
+      summary: List evidence source references
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Sources
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContentSource"
+    post:
+      tags: [Admin]
+      operationId: createContentSource
+      summary: Create an evidence source reference
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContentSourceRequest"
+      responses:
+        "200":
+          description: Created source
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentSource"
   /v1/identity/guest:
     post:
       tags: [Identity]
@@ -489,6 +865,224 @@ components:
           type: string
           format: uuid
           nullable: true
+    ContentCatalogStatus:
+      type: object
+      required: [publicationRevision, updatedAt]
+      properties:
+        publicationRevision:
+          type: integer
+          format: int64
+        updatedAt:
+          type: string
+          format: date-time
+    ContentSearchResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentArticleSummary"
+    ContentArticleSummary:
+      type: object
+      required: [id, slug, locale, title, contentType]
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        locale:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+          nullable: true
+        lifeStage:
+          type: string
+          nullable: true
+        contentType:
+          type: string
+        gestationalWeek:
+          type: integer
+          nullable: true
+    ContentBookmarkListResponse:
+      type: object
+      required: [bookmarks]
+      properties:
+        bookmarks:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentArticleSummary"
+    PregnancyWeekListResponse:
+      type: object
+      required: [locale, weeks]
+      properties:
+        locale:
+          type: string
+        weeks:
+          type: array
+          items:
+            type: integer
+    AdminLoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+    AdminAuthTokenResponse:
+      type: object
+      required: [accessToken, tokenType, expiresInSeconds, roles]
+      properties:
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+        expiresInSeconds:
+          type: integer
+        roles:
+          type: array
+          items:
+            type: string
+    CreateContentDocumentRequest:
+      type: object
+      required: [slug, title, contentType]
+      properties:
+        slug:
+          type: string
+        locale:
+          type: string
+          default: fa-IR
+        title:
+          type: string
+        summary:
+          type: string
+        bodyRichtext:
+          type: string
+        contentType:
+          type: string
+        lifeStage:
+          type: string
+        gestationalWeek:
+          type: integer
+        tags:
+          type: array
+          items:
+            type: string
+        medicalRiskLevel:
+          type: string
+        sourceIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+    AdminContentVersion:
+      type: object
+      properties:
+        documentId:
+          type: string
+          format: uuid
+        versionId:
+          type: string
+          format: uuid
+        status:
+          type: string
+        published:
+          type: boolean
+    WorkflowTransitionRequest:
+      type: object
+      properties:
+        clinicalReviewer:
+          type: string
+        nextReviewDueAt:
+          type: string
+          format: date-time
+    ContentSource:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        citationKey:
+          type: string
+        title:
+          type: string
+    CreateContentSourceRequest:
+      type: object
+      required: [citationKey, title]
+      properties:
+        citationKey:
+          type: string
+        title:
+          type: string
+        url:
+          type: string
+    ContentFreshnessDashboard:
+      type: object
+      properties:
+        overdueClinicalReview:
+          type: array
+          items:
+            $ref: "#/components/schemas/FreshnessItem"
+        staleSources:
+          type: array
+          items:
+            $ref: "#/components/schemas/FreshnessItem"
+        recentlyWithdrawn:
+          type: array
+          items:
+            $ref: "#/components/schemas/FreshnessItem"
+    FreshnessItem:
+      type: object
+      properties:
+        title:
+          type: string
+        detail:
+          type: string
+    ContentAuditList:
+      type: object
+      required: [events]
+      properties:
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentAuditEvent"
+    ContentAuditEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        action:
+          type: string
+        actorEmail:
+          type: string
+        documentId:
+          type: string
+          format: uuid
+        versionId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+    CreateCmsStaffRequest:
+      type: object
+      required: [email, password, displayName, roles]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        displayName:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
     ContentArticle:
       type: object
       required:
@@ -521,6 +1115,13 @@ components:
         lifeStage:
           type: string
           nullable: true
+        gestationalWeek:
+          type: integer
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
         medicalRiskLevel:
           type: string
           enum: [none, general_education, contact_clinician, urgent]
@@ -540,6 +1141,8 @@ components:
           type: string
           format: date-time
           nullable: true
+        withdrawn:
+          type: boolean
     ErrorResponse:
       type: object
       required: [code, message, requestId]

@@ -19,6 +19,7 @@ class DeviceService(
                     deviceInstallationRepository.findAllByOwnerUserId(subject.userId)
                 is MahinAuthSubject.GuestInstallation ->
                     deviceInstallationRepository.findAllByGuestInstallationId(subject.guestInstallationId)
+                is MahinAuthSubject.CmsStaff -> emptyList()
             }
         return DeviceListResponse(
             devices =
@@ -45,6 +46,7 @@ class DeviceService(
             when (subject) {
                 is MahinAuthSubject.RegisteredUser -> device.ownerUserId == subject.userId
                 is MahinAuthSubject.GuestInstallation -> device.guestInstallationId == subject.guestInstallationId
+                is MahinAuthSubject.CmsStaff -> false
             }
         if (!authorized || subject.deviceId != deviceId) {
             return null

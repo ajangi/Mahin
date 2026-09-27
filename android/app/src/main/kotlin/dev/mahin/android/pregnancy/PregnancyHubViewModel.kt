@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.mahin.core.content.ContentRepository
 import dev.mahin.core.database.entity.PregnancyAppointmentEntity
 import dev.mahin.core.database.entity.PregnancyRecordEntity
 import dev.mahin.core.database.pregnancy.PregnancyAppointmentInput
@@ -53,6 +54,8 @@ data class PregnancyHubUiState(
     val selectedOutcome: PregnancyOutcome? = null,
     val wantsSupportContent: Boolean = false,
     val suppressCelebratoryNotifications: Boolean = false,
+    val weeklyCmsTitle: String? = null,
+    val weeklyCmsSummary: String? = null,
 )
 
 @HiltViewModel
@@ -61,8 +64,10 @@ class PregnancyHubViewModel
     constructor(
         private val repository: PregnancyTrackingRepository,
         private val timerPreferences: PregnancyTimerPreferencesRepository,
+        private val contentRepository: ContentRepository,
         savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
+        private var lastFetchedWeek: Int? = null
         private val _uiState = MutableStateFlow(PregnancyHubUiState())
         val uiState: StateFlow<PregnancyHubUiState> = _uiState.asStateFlow()
 
@@ -119,6 +124,20 @@ class PregnancyHubViewModel
                             appointments = appointments,
                             suppressCelebratoryNotifications = suppressCelebratory,
                         )
+                    }
+                    status?.displayWeekNumber?.let { week ->
+                        if (week != lastFetchedWeek) {
+                            lastFetchedWeek = week
+                            viewModelScope.launch {
+                                val article = contentRepository.pregnancyWeek(week)
+                                _uiState.update {
+                                    it.copy(
+                                        weeklyCmsTitle = article?.title,
+                                        weeklyCmsSummary = article?.summary,
+                                    )
+                                }
+                            }
+                        }
                     }
                     viewModelScope.launch { refreshKickCount(kickSessionId) }
                     restartTicker(kickTimer, contractionTimer)

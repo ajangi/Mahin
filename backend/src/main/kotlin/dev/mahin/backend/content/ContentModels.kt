@@ -14,6 +14,15 @@ enum class MedicalRiskLevel {
 
     @JsonProperty("urgent")
     URGENT,
+    ;
+
+    fun wireValue(): String =
+        when (this) {
+            NONE -> "none"
+            GENERAL_EDUCATION -> "general_education"
+            CONTACT_CLINICIAN -> "contact_clinician"
+            URGENT -> "urgent"
+        }
 }
 
 enum class ContentStatus {
@@ -32,20 +41,3 @@ enum class ContentStatus {
     @JsonProperty("retired")
     RETIRED,
 }
-
-data class ContentArticleResponse(
-    val id: String,
-    val slug: String,
-    val locale: String,
-    val title: String,
-    val summary: String?,
-    val body: String?,
-    val contentType: String,
-    val lifeStage: String?,
-    val medicalRiskLevel: MedicalRiskLevel,
-    val status: ContentStatus,
-    val contentVersion: Int,
-    val sourceReferences: List<String>,
-    val clinicalReviewer: String?,
-    val clinicalReviewedAt: String?,
-)

@@ -56,6 +56,7 @@ class SyncService(
                     syncEntityRecordRepository.findUserChangesAfter(subject.userId, afterRevision)
                 is MahinAuthSubject.GuestInstallation ->
                     syncEntityRecordRepository.findGuestChangesAfter(subject.guestInstallationId, afterRevision)
+                is MahinAuthSubject.CmsStaff -> emptyList()
             }
         val slice = records.take(cappedLimit)
         val hasMore = records.size > cappedLimit
@@ -148,11 +149,13 @@ class SyncService(
                             when (subject) {
                                 is MahinAuthSubject.GuestInstallation -> subject.guestInstallationId
                                 is MahinAuthSubject.RegisteredUser -> null
+                                is MahinAuthSubject.CmsStaff -> null
                             },
                         ownerUserId =
                             when (subject) {
                                 is MahinAuthSubject.RegisteredUser -> subject.userId
                                 is MahinAuthSubject.GuestInstallation -> null
+                                is MahinAuthSubject.CmsStaff -> null
                             },
                         entityType = mutation.entityType,
                         entityId = mutation.entityId,
@@ -190,6 +193,7 @@ class SyncService(
                     entityType,
                     entityId,
                 )
+            is MahinAuthSubject.CmsStaff -> null
         }
 
     private fun allocateRevision(ownerKey: String): Long {
