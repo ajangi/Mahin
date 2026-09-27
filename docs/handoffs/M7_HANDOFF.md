@@ -1,10 +1,32 @@
 # M7 Handoff — Notifications
 
 **Milestone:** M7  
-**Status:** complete (PR pending)  
-**Base:** `1adbfcca4a250d65049ff4a3790aa4d3ab1b2712` (M6 accepted)  
+**Status:** accepted and merged  
+**Merged:** 2026-09-27 as squash-merge `8057d031a5edef45d17880e949b8c82d91c88ddd` of [PR #15](https://github.com/ajangi/Mahin/pull/15)  
+**ACCEPT head:** `bd7b5bcd2e972cb7204d7c70b0f097f392b32412` (final PR tip before squash-merge)  
+**PR CI:** all 5 jobs SUCCESS — [run 36337138151](https://github.com/ajangi/Mahin/actions/runs/36337138151) (PR tip `bd7b5bc`)  
+**Master CI:** push to `master` at `8057d031a5edef45d17880e949b8c82d91c88ddd` — [run 36343507738](https://github.com/ajangi/Mahin/actions/runs/36343507738)  
 **Next milestone:** M8 — Insights, Export & Premium (`prompts/M8.md`)  
-**Do not start M8 in follow-up work without a new assignment.**
+**A fresh agent will implement M8. This acceptance update is docs-only; do not start M8 here.**
+
+### Gatekeeper review (PR #15)
+- **FIRE_TAG** vs **REFRESH_TAG:** replan/periodic work survives `applyPlans` fire cancellation.
+- **ReminderRefreshWorker:** replan before ensuring periodic; **ReminderWorker** chains replan after fire.
+- Category/privacy gates before post; appointment titles never enter WorkManager input.
+- **TIMEZONE_CHANGED** persists new zone id then replans.
+- Push token stored hashed; integration test covers auth rejection without credentials.
+
+### Master CI job results (run 36343507738)
+
+| Job | Result |
+|---|---|
+| design-tokens | SUCCESS |
+| admin | SUCCESS |
+| openapi | SUCCESS |
+| backend | SUCCESS |
+| android | in progress (at acceptance docs update) |
+
+Overall master CI: **pending** until android completes — do not mark master SUCCESS until all five jobs succeed on `8057d031a5edef45d17880e949b8c82d91c88ddd`.
 
 ## Implemented scope
 

@@ -9,5 +9,5 @@ Cloud Agents update one milestone at a time. Do not pre-mark future milestones c
 - M4 — Pregnancy — **complete**
 - M5 — Backend Identity & Sync — **complete**
 - M6 — CMS & Evidence-Governed Content — **complete**
-- M7 — Notifications — **complete (PR pending)**
+- M7 — Notifications — **complete**
 - M8–M12 — pending (M8 next)
