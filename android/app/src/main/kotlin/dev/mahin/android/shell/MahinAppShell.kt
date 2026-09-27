@@ -23,10 +23,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import dev.mahin.android.cycle.CycleCalendarScreen
 import dev.mahin.android.cycle.HistoryScreen
-import dev.mahin.android.export.DataExportScreen
-import dev.mahin.android.insights.CycleInsightsScreen
 import dev.mahin.android.cycle.LogScreen
 import dev.mahin.android.cycle.TodayScreen
+import dev.mahin.android.export.DataExportScreen
+import dev.mahin.android.insights.CycleInsightsScreen
 import dev.mahin.android.learn.LearnScreen
 import dev.mahin.android.navigation.MahinTopLevelDestination
 import dev.mahin.android.pregnancy.PregnancyHubScreen

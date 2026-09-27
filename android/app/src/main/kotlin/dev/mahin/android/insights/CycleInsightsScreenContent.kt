@@ -121,11 +121,20 @@ private fun FreeInsightsSection(insights: CycleInsightsResult) {
 private fun PremiumInsightsSection(insights: CycleInsightsResult) {
     val premium = insights.premium ?: return
     Card {
-        Column(modifier = Modifier.padding(MahinSpacing.md), verticalArrangement = Arrangement.spacedBy(MahinSpacing.sm)) {
-            Text(text = stringResource(R.string.cycle_insights_premium_heading), style = MaterialTheme.typography.titleMedium)
+        Column(
+            modifier = Modifier.padding(MahinSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(MahinSpacing.sm),
+        ) {
+            Text(
+                text = stringResource(R.string.cycle_insights_premium_heading),
+                style = MaterialTheme.typography.titleMedium,
+            )
             Text(premium.cycleLengthTrendLabelFa)
             premium.symptomCoOccurrenceNotesFa.forEach { note ->
-                Text(text = note, style = MaterialTheme.typography.bodySmall)
+                Text(
+                    text = note,
+                    style = MaterialTheme.typography.bodySmall,
+                )
             }
         }
     }

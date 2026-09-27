@@ -1,15 +1,16 @@
 package dev.mahin.android.insights
 
+import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.mahin.android.premium.PremiumBillingCoordinator
 import dev.mahin.core.billing.BillingAdapter
 import dev.mahin.core.billing.BillingAdapterState
+import dev.mahin.core.billing.EntitlementRepository
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.entity.DailyLogEntity
 import dev.mahin.core.database.entity.PeriodRecordEntity
-import dev.mahin.core.billing.EntitlementRepository
 import dev.mahin.domain.subscription.CycleInsightsDailyLog
 import dev.mahin.domain.subscription.CycleInsightsEngineV1
 import dev.mahin.domain.subscription.CycleInsightsInput
@@ -17,16 +18,14 @@ import dev.mahin.domain.subscription.CycleInsightsPeriod
 import dev.mahin.domain.subscription.CycleInsightsResult
 import dev.mahin.domain.subscription.EntitlementRules
 import dev.mahin.domain.subscription.PremiumFeature
-import android.app.Activity
+import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 
 data class CycleInsightsUiState(
     val loading: Boolean = true,
