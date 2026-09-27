@@ -7,5 +7,5 @@ Cloud Agents update one milestone at a time. Do not pre-mark future milestones c
 - M2 — Local-First Cycle Tracking — **complete**
 - M3 — TTC — **complete**
 - M4 — Pregnancy — **complete**
-- M5 — Sync — **pending (next)**
-- M6–M12 — pending
+- M5 — Backend Identity & Sync — **complete**
+- M6–M12 — pending (M6 next)
