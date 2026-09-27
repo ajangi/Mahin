@@ -1,11 +1,30 @@
 # M5 Handoff — Backend Identity & Sync
 
 **Milestone:** M5  
-**Status:** ready for review (PR #11 gatekeeper fixes)  
-**Branch:** `cursor/m5-backend-identity-sync-d224`  
-**Head:** `2011f36` (gatekeeper fixes)  
-**Base:** `61ece89e46a4959f53aabe7463e8fa7947e2bb14` (M4 accepted)  
-**Next milestone:** M6 — CMS & Evidence-Governed Content (`prompts/M6.md`)
+**Status:** accepted and merged  
+**Merged:** 2026-09-27 as squash-merge `46176485a72cb24bcf75548796a75cadc43ffd07` of [PR #11](https://github.com/ajangi/Mahin/pull/11)  
+**PR CI:** all 5 jobs SUCCESS — [run 36198051911](https://github.com/ajangi/Mahin/actions/runs/36198051911) (PR head `749f71d394395c3a003e64a8c113fd51b255bcd3`)  
+**Master CI:** push to `master` at `46176485a72cb24bcf75548796a75cadc43ffd07` — [run 36315648774](https://github.com/ajangi/Mahin/actions/runs/36315648774)  
+**Head (PR):** `749f71d394395c3a003e64a8c113fd51b255bcd3` (final PR tip before squash-merge)  
+**Next milestone:** M6 — CMS & Evidence-Governed Content (`prompts/M6.md`)  
+**A fresh agent will implement M6. This acceptance update is docs-only; do not start M6 here.**
+
+### Gatekeeper review (PR #11)
+- Guest conversion/register-with-`localUserId` requires guest access or refresh token proving `localUserId` (blocks hijack).
+- Stale `DELETE` mutations return `updated_at_stale` instead of applying over newer rows.
+- Guest/user sync row collisions on conversion merge via `SyncConflictResolver` (no silent guest row delete).
+
+### Master CI job results (run 36315648774)
+
+| Job | Result |
+|---|---|
+| design-tokens | SUCCESS |
+| admin | SUCCESS |
+| openapi | SUCCESS |
+| backend | SUCCESS |
+| android | SUCCESS |
+
+Overall master CI: **SUCCESS** on `46176485a72cb24bcf75548796a75cadc43ffd07` — [run 36315648774](https://github.com/ajangi/Mahin/actions/runs/36315648774).
 
 ## Implemented scope
 - **Guest identity mapping:** `POST /v1/identity/guest` registers/resumes server `guestInstallationId` for client `localUserId` (Android `GuestIdentity` UUID).
