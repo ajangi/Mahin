@@ -6,6 +6,9 @@
     <string name="ds_error_title">مشکلی پیش آمد</string>
     <string name="ds_error_body">لطفاً دوباره تلاش کنید.</string>
     <string name="ds_retry">تلاش دوباره</string>
+    <string name="ds_paywall_price_unavailable">قیمت از فروشگاه</string>
+    <string name="ds_paywall_subscribe_monthly">اشتراک ماهانه — %1$s</string>
+    <string name="ds_paywall_subscribe_annual">اشتراک سالانه — %1$s</string>
     <string name="ds_date_picker_title">انتخاب تاریخ</string>
     <string name="ds_date_picker_confirm">تأیید</string>
     <string name="ds_date_picker_cancel">انصراف</string>
