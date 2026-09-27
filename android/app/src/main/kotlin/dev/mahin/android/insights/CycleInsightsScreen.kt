@@ -41,17 +41,20 @@ fun CycleInsightsScreen(
                 restoreLabel = stringResource(R.string.paywall_restore),
                 dismissLabel = stringResource(R.string.paywall_dismiss),
             ),
-        onDismiss = viewModel::dismissPaywall,
-        onSubscribeMonthly = {
-            if (activity != null) {
-                viewModel.purchaseMonthly(activity)
-            }
-        },
-        onSubscribeAnnual = {
-            if (activity != null) {
-                viewModel.purchaseAnnual(activity)
-            }
-        },
-        onRestorePurchases = viewModel::restorePurchases,
+        callbacks =
+            MahinPaywallCallbacks(
+                onDismiss = viewModel::dismissPaywall,
+                onSubscribeMonthly = {
+                    if (activity != null) {
+                        viewModel.purchaseMonthly(activity)
+                    }
+                },
+                onSubscribeAnnual = {
+                    if (activity != null) {
+                        viewModel.purchaseAnnual(activity)
+                    }
+                },
+                onRestorePurchases = viewModel::restorePurchases,
+            ),
     )
 }
