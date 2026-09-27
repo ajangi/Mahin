@@ -9,6 +9,8 @@ interface PlaySubscriptionRecordRepository : JpaRepository<PlaySubscriptionRecor
         userId: UUID,
         purchaseTokenHash: String,
     ): PlaySubscriptionRecordEntity?
+
+    fun findAllByUserId(userId: UUID): List<PlaySubscriptionRecordEntity>
 }
 
 interface EntitlementGrantRepository : JpaRepository<EntitlementGrantEntity, UUID> {

@@ -8,8 +8,6 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
-import dev.mahin.domain.subscription.EntitlementSource
-import dev.mahin.domain.subscription.EntitlementTier
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -19,10 +17,11 @@ private val Context.subscriptionDataStore: DataStore<Preferences> by preferences
     name = "mahin_subscription",
 )
 
+/** Persisted entitlement fields (opaque strings; map to domain in `:core:billing`). */
 data class CachedEntitlement(
-    val tier: EntitlementTier,
+    val tierName: String,
     val expiresAtEpochMs: Long?,
-    val source: EntitlementSource,
+    val sourceName: String,
     val syncedAtEpochMs: Long?,
 )
 
@@ -36,27 +35,23 @@ class SubscriptionPreferencesRepository
 
         val cachedEntitlement: Flow<CachedEntitlement> =
             dataStore.data.map { prefs ->
-                val tierName = prefs[SubscriptionPreferenceKeys.tier] ?: EntitlementTier.FREE.name
-                val tier = runCatching { EntitlementTier.valueOf(tierName) }.getOrDefault(EntitlementTier.FREE)
-                val sourceName = prefs[SubscriptionPreferenceKeys.source] ?: EntitlementSource.LOCAL_DEFAULT.name
-                val source = runCatching { EntitlementSource.valueOf(sourceName) }.getOrDefault(EntitlementSource.LOCAL_DEFAULT)
                 CachedEntitlement(
-                    tier = tier,
+                    tierName = prefs[SubscriptionPreferenceKeys.tier] ?: TIER_FREE,
                     expiresAtEpochMs = prefs[SubscriptionPreferenceKeys.expiresAtEpochMs],
-                    source = source,
+                    sourceName = prefs[SubscriptionPreferenceKeys.source] ?: SOURCE_LOCAL_DEFAULT,
                     syncedAtEpochMs = prefs[SubscriptionPreferenceKeys.syncedAtEpochMs],
                 )
             }
 
         suspend fun saveEntitlement(entitlement: CachedEntitlement) {
             dataStore.edit { prefs ->
-                prefs[SubscriptionPreferenceKeys.tier] = entitlement.tier.name
+                prefs[SubscriptionPreferenceKeys.tier] = entitlement.tierName
                 if (entitlement.expiresAtEpochMs != null) {
                     prefs[SubscriptionPreferenceKeys.expiresAtEpochMs] = entitlement.expiresAtEpochMs
                 } else {
                     prefs.remove(SubscriptionPreferenceKeys.expiresAtEpochMs)
                 }
-                prefs[SubscriptionPreferenceKeys.source] = entitlement.source.name
+                prefs[SubscriptionPreferenceKeys.source] = entitlement.sourceName
                 if (entitlement.syncedAtEpochMs != null) {
                     prefs[SubscriptionPreferenceKeys.syncedAtEpochMs] = entitlement.syncedAtEpochMs
                 } else {
@@ -67,6 +62,13 @@ class SubscriptionPreferencesRepository
 
         suspend fun clear() {
             dataStore.edit { it.clear() }
+        }
+
+        companion object {
+            const val TIER_FREE = "FREE"
+            const val SOURCE_LOCAL_DEFAULT = "LOCAL_DEFAULT"
+            const val SOURCE_GOOGLE_PLAY = "GOOGLE_PLAY"
+            const val SOURCE_SERVER = "SERVER"
         }
     }
 

@@ -1,8 +1,10 @@
 package dev.mahin.backend.entitlement
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import dev.mahin.backend.entitlement.persistence.PlaySubscriptionRecordRepository
 import java.util.UUID
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -10,6 +12,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
@@ -18,9 +21,11 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 class EntitlementIntegrationTest(
     @Autowired private val mockMvc: MockMvc,
     @Autowired private val objectMapper: ObjectMapper,
+    @Autowired private val playSubscriptionRecordRepository: PlaySubscriptionRecordRepository,
 ) {
     @Test
     fun registeredUserStartsFreeThenPremiumAfterVerifiedPurchase() {
@@ -89,8 +94,76 @@ class EntitlementIntegrationTest(
     }
 
     @Test
+    fun restoreWithValidAndRejectedKeepsPremium() {
+        val token = registerUser("restore-reject-${UUID.randomUUID()}@example.test")
+        val validToken = "gp-test-valid-${UUID.randomUUID()}"
+        mockMvc
+            .post("/v1/billing/google-play/restore") {
+                contentType = MediaType.APPLICATION_JSON
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                content =
+                    objectMapper.writeValueAsString(
+                        mapOf(
+                            "purchases" to
+                                listOf(
+                                    mapOf(
+                                        "productId" to DevGooglePlayPurchaseVerifier.PRODUCT_PREMIUM_MONTHLY,
+                                        "purchaseToken" to validToken,
+                                    ),
+                                    mapOf(
+                                        "productId" to DevGooglePlayPurchaseVerifier.PRODUCT_PREMIUM_ANNUAL,
+                                        "purchaseToken" to "not-a-gp-test-token",
+                                    ),
+                                ),
+                        ),
+                    )
+            }.andExpect {
+                status { isOk() }
+                jsonPath("$.tier").value("PREMIUM_MONTHLY")
+            }
+
+        mockMvc
+            .get("/v1/entitlements/me") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+            }.andExpect {
+                status { isOk() }
+                jsonPath("$.tier").value("PREMIUM_MONTHLY")
+            }
+    }
+
+    @Test
+    fun restoreWithValidAndExpiredKeepsPremiumWhenValidActive() {
+        val token = registerUser("restore-expired-${UUID.randomUUID()}@example.test")
+        mockMvc
+            .post("/v1/billing/google-play/restore") {
+                contentType = MediaType.APPLICATION_JSON
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                content =
+                    objectMapper.writeValueAsString(
+                        mapOf(
+                            "purchases" to
+                                listOf(
+                                    mapOf(
+                                        "productId" to DevGooglePlayPurchaseVerifier.PRODUCT_PREMIUM_MONTHLY,
+                                        "purchaseToken" to "gp-test-valid-${UUID.randomUUID()}",
+                                    ),
+                                    mapOf(
+                                        "productId" to DevGooglePlayPurchaseVerifier.PRODUCT_PREMIUM_ANNUAL,
+                                        "purchaseToken" to "gp-test-expired-${UUID.randomUUID()}",
+                                    ),
+                                ),
+                        ),
+                    )
+            }.andExpect {
+                status { isOk() }
+                jsonPath("$.tier").value("PREMIUM_MONTHLY")
+            }
+    }
+
+    @Test
     fun purchaseTokenIsStoredHashedNotRaw() {
-        val token = registerUser("hash-${UUID.randomUUID()}@example.test")
+        val email = "hash-${UUID.randomUUID()}@example.test"
+        val token = registerUser(email)
         val rawToken = "gp-test-valid-${UUID.randomUUID()}"
         mockMvc
             .post("/v1/billing/google-play/verify") {
@@ -107,10 +180,15 @@ class EntitlementIntegrationTest(
                 status { isOk() }
             }
 
-        val hash = EntitlementService.sha256Hex(rawToken)
-        assertEquals(64, hash.length)
-        assertTrue(hash.all { it in '0'..'9' || it in 'a'..'f' })
-        assertTrue(hash != rawToken)
+        val expectedHash = EntitlementService.sha256Hex(rawToken)
+        val rows = playSubscriptionRecordRepository.findAll()
+        val row =
+            rows.single { record ->
+                record.purchaseTokenHash == expectedHash
+            }
+        assertEquals(expectedHash, row.purchaseTokenHash)
+        assertNotEquals(rawToken, row.purchaseTokenHash)
+        assertTrue(row.purchaseTokenHash.length == 64)
     }
 
     private fun registerUser(email: String): String {

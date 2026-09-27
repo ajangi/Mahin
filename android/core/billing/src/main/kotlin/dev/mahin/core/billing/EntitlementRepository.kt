@@ -3,6 +3,8 @@ package dev.mahin.core.billing
 import dev.mahin.core.datastore.AccountSessionRepository
 import dev.mahin.core.datastore.CachedEntitlement
 import dev.mahin.core.datastore.SubscriptionPreferencesRepository
+import dev.mahin.core.datastore.SubscriptionPreferencesRepository.Companion.SOURCE_GOOGLE_PLAY
+import dev.mahin.core.datastore.SubscriptionPreferencesRepository.Companion.SOURCE_SERVER
 import dev.mahin.domain.subscription.EntitlementRules
 import dev.mahin.domain.subscription.EntitlementSnapshot
 import dev.mahin.domain.subscription.EntitlementSource
@@ -26,9 +28,13 @@ class EntitlementRepository
         val entitlement: Flow<EntitlementSnapshot> =
             subscriptionPreferencesRepository.cachedEntitlement.map { cached ->
                 EntitlementSnapshot(
-                    tier = cached.tier,
+                    tier =
+                        runCatching { EntitlementTier.valueOf(cached.tierName) }
+                            .getOrDefault(EntitlementTier.FREE),
                     expiresAtEpochMs = cached.expiresAtEpochMs,
-                    source = cached.source,
+                    source =
+                        runCatching { EntitlementSource.valueOf(cached.sourceName) }
+                            .getOrDefault(EntitlementSource.LOCAL_DEFAULT),
                     syncedAtEpochMs = cached.syncedAtEpochMs,
                 )
             }
@@ -39,9 +45,9 @@ class EntitlementRepository
             val expiresAt = Instant.now().plusSeconds(DEFAULT_PLAY_CACHE_SECONDS).toEpochMilli()
             subscriptionPreferencesRepository.saveEntitlement(
                 CachedEntitlement(
-                    tier = receipt.tier,
+                    tierName = receipt.tier.name,
                     expiresAtEpochMs = expiresAt,
-                    source = EntitlementSource.GOOGLE_PLAY,
+                    sourceName = SOURCE_GOOGLE_PLAY,
                     syncedAtEpochMs = null,
                 ),
             )
@@ -113,9 +119,9 @@ class EntitlementRepository
                 expiresAtIso?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() }
             subscriptionPreferencesRepository.saveEntitlement(
                 CachedEntitlement(
-                    tier = tier,
+                    tierName = tier.name,
                     expiresAtEpochMs = expiresAt,
-                    source = EntitlementSource.SERVER,
+                    sourceName = SOURCE_SERVER,
                     syncedAtEpochMs = System.currentTimeMillis(),
                 ),
             )

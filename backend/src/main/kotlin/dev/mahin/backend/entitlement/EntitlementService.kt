@@ -35,8 +35,43 @@ class EntitlementService(
         productId: String,
         purchaseToken: String,
     ): GooglePlayBillingResponse {
-        val verification = purchaseVerifier.verify(productId, purchaseToken)
         val now = Instant.now()
+        val recorded = recordPurchaseVerification(userId, productId, purchaseToken, now)
+        if (isActivePremium(recorded.verification)) {
+            applyPremiumGrant(userId, now, recorded.verification)
+        }
+        val tier = resolveActiveTier(userId, now)
+        return GooglePlayBillingResponse(
+            tier = tier,
+            expiresAt = recorded.record.expiresAt,
+        )
+    }
+
+    @Transactional
+    fun restoreGooglePlayPurchases(
+        userId: UUID,
+        purchases: List<GooglePlayVerifyRequest>,
+    ): GooglePlayBillingResponse {
+        val now = Instant.now()
+        val verifications =
+            purchases.map { purchase ->
+                recordPurchaseVerification(userId, purchase.productId, purchase.purchaseToken, now).verification
+            }
+        applyBestActiveGrant(userId, now, verifications)
+        val tier = resolveActiveTier(userId, now)
+        return GooglePlayBillingResponse(
+            tier = tier,
+            expiresAt = activeExpiry(userId, now),
+        )
+    }
+
+    private fun recordPurchaseVerification(
+        userId: UUID,
+        productId: String,
+        purchaseToken: String,
+        now: Instant,
+    ): RecordedPurchaseVerification {
+        val verification = purchaseVerifier.verify(productId, purchaseToken)
         val tokenHash = sha256Hex(purchaseToken)
         val existing = playSubscriptionRecordRepository.findByUserIdAndPurchaseTokenHash(userId, tokenHash)
         val record =
@@ -52,44 +87,59 @@ class EntitlementService(
                     updatedAt = now,
                 ),
             )
-        if (verification.accepted && verification.tier != null && verification.tier != EntitlementTier.FREE) {
-            revokeActiveGrants(userId, now)
+        return RecordedPurchaseVerification(verification, record)
+    }
+
+    private fun applyBestActiveGrant(
+        userId: UUID,
+        now: Instant,
+        verifications: List<PlayPurchaseVerification>,
+    ) {
+        val best =
+            verifications
+                .filter { isActivePremium(it) }
+                .maxByOrNull { tierRank(it.tier!!) }
+        revokeActiveGrants(userId, now)
+        if (best != null) {
             grantRepository.save(
                 EntitlementGrantEntity(
                     id = UUID.randomUUID(),
                     userId = userId,
-                    tier = verification.tier.name,
+                    tier = best.tier!!.name,
                     source = "google_play",
                     startsAt = now,
-                    expiresAt = verification.expiresAt,
+                    expiresAt = best.expiresAt,
                     createdAt = now,
                     revokedAt = null,
                 ),
             )
-        } else if (!verification.accepted) {
-            revokeActiveGrants(userId, now)
         }
-        val tier = resolveActiveTier(userId, now)
-        return GooglePlayBillingResponse(
-            tier = tier,
-            expiresAt = record.expiresAt,
+    }
+
+    private fun applyPremiumGrant(
+        userId: UUID,
+        now: Instant,
+        verification: PlayPurchaseVerification,
+    ) {
+        revokeActiveGrants(userId, now)
+        grantRepository.save(
+            EntitlementGrantEntity(
+                id = UUID.randomUUID(),
+                userId = userId,
+                tier = verification.tier!!.name,
+                source = "google_play",
+                startsAt = now,
+                expiresAt = verification.expiresAt,
+                createdAt = now,
+                revokedAt = null,
+            ),
         )
     }
 
-    @Transactional
-    fun restoreGooglePlayPurchases(
-        userId: UUID,
-        purchases: List<GooglePlayVerifyRequest>,
-    ): GooglePlayBillingResponse {
-        var best: GooglePlayBillingResponse? = null
-        purchases.forEach { purchase ->
-            val result = verifyGooglePlayPurchase(userId, purchase.productId, purchase.purchaseToken)
-            if (best == null || EntitlementFeatureCatalog.isPremium(result.tier)) {
-                best = result
-            }
-        }
-        return best ?: GooglePlayBillingResponse(EntitlementTier.FREE, null)
-    }
+    private fun isActivePremium(verification: PlayPurchaseVerification): Boolean =
+        verification.accepted &&
+            verification.tier != null &&
+            verification.tier != EntitlementTier.FREE
 
     private fun resolveActiveTier(
         userId: UUID,
@@ -134,6 +184,11 @@ class EntitlementService(
             EntitlementTier.PREMIUM_MONTHLY -> 1
             EntitlementTier.PREMIUM_ANNUAL -> 2
         }
+
+    private data class RecordedPurchaseVerification(
+        val verification: PlayPurchaseVerification,
+        val record: PlaySubscriptionRecordEntity,
+    )
 
     companion object {
         fun sha256Hex(value: String): String {

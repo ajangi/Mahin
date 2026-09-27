@@ -67,3 +67,20 @@ class DevGooglePlayPurchaseVerifier : GooglePlayPurchaseVerifier {
             }
     }
 }
+
+/**
+ * Production default until Google Play Developer API verification is implemented.
+ * Fails closed: never grants premium from unverified tokens.
+ */
+class RejectingGooglePlayPurchaseVerifier : GooglePlayPurchaseVerifier {
+    override fun verify(
+        productId: String,
+        purchaseToken: String,
+    ): PlayPurchaseVerification =
+        PlayPurchaseVerification(
+            accepted = false,
+            tier = null,
+            expiresAt = null,
+            state = "unverified",
+        )
+}

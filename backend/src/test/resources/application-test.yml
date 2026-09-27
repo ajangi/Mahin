@@ -1,0 +1,2 @@
+# Keeps integration tests on in-memory H2 (see main application.yml).
+# Activates DevGooglePlayPurchaseVerifier via @Profile("test") on EntitlementConfiguration.
