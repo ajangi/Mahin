@@ -8,6 +8,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
 import dev.mahin.core.datastore.NotificationPreferencesRepository
+import dev.mahin.core.datastore.NotificationPrivacyMode
 import dev.mahin.domain.reminders.ReminderCategory
 import kotlinx.coroutines.flow.first
 
@@ -20,6 +21,7 @@ class ReminderWorker
         private val presenter: ReminderNotificationPresenter,
         private val preferencesRepository: NotificationPreferencesRepository,
         private val pregnancyRepository: PregnancyTrackingRepository,
+        private val reminderCoordinator: ReminderCoordinator,
     ) : CoroutineWorker(appContext, params) {
         override suspend fun doWork(): Result {
             val categoryRaw = inputData.getString(ReminderWorkerKeys.CATEGORY) ?: return Result.failure()
@@ -27,18 +29,24 @@ class ReminderWorker
                 runCatching { ReminderCategory.valueOf(categoryRaw) }.getOrElse { return Result.failure() }
             val stableKey = inputData.getString(ReminderWorkerKeys.STABLE_KEY) ?: return Result.failure()
             val prefs = preferencesRepository.observeSnapshot().first()
-            val suppress = pregnancyRepository.shouldSuppressCelebratoryNotifications()
-            val pregnancy = pregnancyRepository.getActivePregnancy()
-            presenter.showReminder(
-                ReminderNotificationRequest(
-                    notificationId = stableKey.hashCode(),
-                    privacyMode = prefs.privacyMode,
-                    suppressCelebratory = suppress,
-                    latestOutcome = pregnancy?.outcome,
-                    category = category,
-                    descriptiveFa = category.defaultDescriptiveFa(),
-                ),
-            )
+            val shouldPost =
+                prefs.privacyMode != NotificationPrivacyMode.OFF &&
+                    prefs.categoryEnabled[category] == true
+            if (shouldPost) {
+                val suppress = pregnancyRepository.shouldSuppressCelebratoryNotifications()
+                val pregnancy = pregnancyRepository.getActivePregnancy()
+                presenter.showReminder(
+                    ReminderNotificationRequest(
+                        notificationId = stableKey.hashCode(),
+                        privacyMode = prefs.privacyMode,
+                        suppressCelebratory = suppress,
+                        latestOutcome = pregnancy?.outcome,
+                        category = category,
+                        descriptiveFa = category.defaultDescriptiveFa(),
+                    ),
+                )
+            }
+            reminderCoordinator.requestRefresh()
             return Result.success()
         }
     }

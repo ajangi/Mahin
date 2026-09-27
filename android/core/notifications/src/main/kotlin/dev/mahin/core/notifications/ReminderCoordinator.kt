@@ -2,8 +2,11 @@ package dev.mahin.core.notifications
 
 import android.content.Context
 import android.content.Intent
+import dev.mahin.core.datastore.NotificationPreferencesRepository
+import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.runBlocking
 
 @Singleton
 class ReminderCoordinator
@@ -22,7 +25,15 @@ class ReminderTimezoneChangedReceiver : android.content.BroadcastReceiver() {
         intent: Intent?,
     ) {
         if (intent?.action != Intent.ACTION_TIMEZONE_CHANGED) return
-        ReminderRefreshEntryPoint.refresh(context)
+        val entryPoint =
+            dagger.hilt.android.EntryPointAccessors.fromApplication(
+                context.applicationContext,
+                ReminderRefreshEntryPointInterface::class.java,
+            )
+        runBlocking {
+            entryPoint.notificationPreferencesRepository().setZoneId(ZoneId.systemDefault().id)
+        }
+        entryPoint.reminderCoordinator().requestRefresh()
     }
 }
 
@@ -41,4 +52,6 @@ object ReminderRefreshEntryPoint {
 @dagger.hilt.InstallIn(dagger.hilt.components.SingletonComponent::class)
 interface ReminderRefreshEntryPointInterface {
     fun reminderCoordinator(): ReminderCoordinator
+
+    fun notificationPreferencesRepository(): NotificationPreferencesRepository
 }

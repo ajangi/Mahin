@@ -52,7 +52,6 @@ class ReminderPlanner
                                 appointmentId = entity.id,
                                 scheduledAtEpochMs = entity.scheduledAtEpochMs,
                                 reminderEnabled = entity.reminderEnabled,
-                                descriptiveFa = ReminderCategorySafeCopy.appointment(entity.title),
                             )
                         }
                 } ?: emptyList()
@@ -85,7 +84,3 @@ class ReminderPlanner
             scheduler.applyPlans(plans)
         }
     }
-
-private object ReminderCategorySafeCopy {
-    fun appointment(title: String): String = title.trim().ifEmpty { "یادآوری قرار" }
-}

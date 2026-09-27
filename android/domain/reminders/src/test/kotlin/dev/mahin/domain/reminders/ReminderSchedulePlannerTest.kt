@@ -22,7 +22,9 @@ class ReminderSchedulePlannerTest {
                     today = today,
                     completedCycles = emptyList(),
                     openPeriodStart = today.minusDays(14),
+                    openPeriodEnd = null,
                     typicalCycleLengthDays = 28,
+                    typicalPeriodLengthDays = 5,
                     regularity = dev.mahin.core.model.CycleRegularity.REGULAR,
                 ),
             )
@@ -121,7 +123,6 @@ class ReminderSchedulePlannerTest {
                             appointmentId = "a1",
                             scheduledAtEpochMs = futureMs,
                             reminderEnabled = false,
-                            descriptiveFa = "ویزیت",
                         ),
                     ),
                 zone = zone,

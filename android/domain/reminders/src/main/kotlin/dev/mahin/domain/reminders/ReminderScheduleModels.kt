@@ -29,7 +29,6 @@ data class AppointmentReminderSeed(
     val appointmentId: String,
     val scheduledAtEpochMs: Long,
     val reminderEnabled: Boolean,
-    val descriptiveFa: String,
 )
 
 data class ReminderPlanContext(

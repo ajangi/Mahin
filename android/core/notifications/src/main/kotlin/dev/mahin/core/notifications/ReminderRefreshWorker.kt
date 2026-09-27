@@ -17,8 +17,8 @@ class ReminderRefreshWorker
         private val workScheduler: AndroidReminderWorkScheduler,
     ) : CoroutineWorker(appContext, params) {
         override suspend fun doWork(): Result {
-            workScheduler.ensurePeriodicReplan()
             planner.refreshAllPlans()
+            workScheduler.ensurePeriodicReplan()
             return Result.success()
         }
     }

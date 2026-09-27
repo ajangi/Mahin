@@ -72,8 +72,14 @@
 - No FCM/APNs delivery or live `PushRegistrationGateway` on Android.
 - Medication, kick-counter, and custom reminder categories deferred (PRD list; not in M7 scope).
 - TTC nudge is a simple daily trigger when category enabled, not tied to fertile-window predictions.
-- Appointment descriptive copy uses generic Persian in worker; user appointment titles are not passed through WorkManager input (privacy).
+- Appointment copy uses category default only at display time (titles never enter WorkManager input).
+- WorkManager may still enforce ~15m minimum delay on one-time work; planner uses exact ms until `triggerAt` (no artificial floor).
 - `android/local.properties` is gitignored; CI uses `ANDROID_HOME` (see `.github/workflows/ci.yml`).
+
+### Reliability (post–gatekeeper #15)
+- **Fire vs refresh tags:** `FIRE_TAG` cancels only one-shot reminder fires; `REFRESH_TAG` covers replan one-shot + 12h periodic (not cancelled during `applyPlans`).
+- **After each fire:** `ReminderWorker` enqueues replan so the next occurrence is scheduled without waiting for periodic work.
+- **Timezone change:** updates stored zone id to system default, then replans.
 
 ## Unresolved questions
 1. Should pregnancy weekly reminders align with CMS publication time or local morning only?

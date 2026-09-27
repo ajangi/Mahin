@@ -207,7 +207,7 @@ object ReminderSchedulePlanner {
                     category = ReminderCategory.APPOINTMENT,
                     stableKey = "appt_${seed.appointmentId}",
                     triggerAt = fireAt,
-                    descriptiveFa = seed.descriptiveFa.ifBlank { ReminderCategory.APPOINTMENT.defaultDescriptiveFa() },
+                    descriptiveFa = ReminderCategory.APPOINTMENT.defaultDescriptiveFa(),
                 )
             }
     }

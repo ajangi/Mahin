@@ -29,7 +29,7 @@ class AndroidReminderWorkScheduler
                 val request =
                     OneTimeWorkRequestBuilder<ReminderWorker>()
                         .setInitialDelay(delayMs, TimeUnit.MILLISECONDS)
-                        .addTag(ReminderWorkerKeys.WORK_TAG)
+                        .addTag(ReminderWorkerKeys.FIRE_TAG)
                         .setInputData(
                             workDataOf(
                                 ReminderWorkerKeys.CATEGORY to plan.category.name,
@@ -45,13 +45,14 @@ class AndroidReminderWorkScheduler
         }
 
         override suspend fun cancelAllMahinReminders() {
-            workManager.cancelAllWorkByTag(ReminderWorkerKeys.WORK_TAG)
+            workManager.cancelAllWorkByTag(ReminderWorkerKeys.FIRE_TAG)
         }
 
         override fun enqueueRefresh() {
+            ensurePeriodicReplan()
             val refresh =
                 OneTimeWorkRequestBuilder<ReminderRefreshWorker>()
-                    .addTag(ReminderWorkerKeys.WORK_TAG)
+                    .addTag(ReminderWorkerKeys.REFRESH_TAG)
                     .build()
             workManager.enqueueUniqueWork(
                 ReminderWorkerKeys.REFRESH_WORK,
@@ -63,7 +64,7 @@ class AndroidReminderWorkScheduler
         fun ensurePeriodicReplan() {
             val periodic =
                 PeriodicWorkRequestBuilder<ReminderRefreshWorker>(12, TimeUnit.HOURS)
-                    .addTag(ReminderWorkerKeys.WORK_TAG)
+                    .addTag(ReminderWorkerKeys.REFRESH_TAG)
                     .build()
             workManager.enqueueUniquePeriodicWork(
                 ReminderWorkerKeys.PERIODIC_REPLAN,
