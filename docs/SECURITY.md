@@ -10,13 +10,14 @@ Reproductive-health data is treated as highly sensitive. This document is the en
 - Analytics/crash tools sit behind privacy-reviewed interfaces; payloads are denylisted.
 
 ## Device
-- Keystore-backed key material interface exists (`:core:security`).
-- App lock, recents hiding, screenshot policy, and SQLCipher are completed in M9 **before** GA; they must be enabled before health rows exist (ADR 0007).
+- Keystore-backed key material (`:core:security`) and SQLCipher Room (M2+).
+- App lock (PIN/biometric), recents hiding, and FLAG_SECURE on sensitive screens (M9).
+- `allowBackup=false` until approved encrypted backup (see `docs/security/BACKUP_RESTORE_DRILL.md`).
 
 ## Backend
-- Least-privilege IAM and a secrets manager are required for staging/prod (not implemented in M0).
-- Admin access to reproductive records is denied by default (M6/M9).
-- Rate limiting, session management, and auth adapters are M5.
+- Least-privilege IAM and a secrets manager are required for staging/prod (M11).
+- Admin access to reproductive records is denied by default; CMS roles enforced (M6/M9).
+- Rate limiting (in-memory), security headers, security audit log, and account deletion erasure (M9).
 
 ## Disclosure
 Store Data Safety, account deletion, and local legal review are M11 plus legal. Keep `docs/compliance/` updated when collection behavior changes.

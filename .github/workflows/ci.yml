@@ -20,6 +20,8 @@ jobs:
           python-version: "3.12"
       - name: Check frozen design tokens
         run: python3 scripts/check_design_tokens.py
+      - name: M9 security checklist gate
+        run: python3 scripts/security_checklist.py
 
   openapi:
     name: openapi
@@ -46,6 +48,9 @@ jobs:
       - name: Ktlint, Detekt, test
         working-directory: backend
         run: ./gradlew ktlintCheck detekt test --stacktrace --no-daemon
+      - name: Dependency report (supply-chain review)
+        working-directory: backend
+        run: ./gradlew dependencies --configuration runtimeClasspath --no-daemon > build/dependency-report.txt
       - name: Upload backend reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -54,6 +59,7 @@ jobs:
           path: |
             backend/build/reports/**
             backend/build/test-results/**
+            backend/build/dependency-report.txt
           if-no-files-found: ignore
 
   admin:
@@ -72,6 +78,9 @@ jobs:
           npm ci
           npm test
           npm run build
+      - name: npm audit (high+)
+        working-directory: admin
+        run: npm audit --audit-level=high
 
   android:
     name: android

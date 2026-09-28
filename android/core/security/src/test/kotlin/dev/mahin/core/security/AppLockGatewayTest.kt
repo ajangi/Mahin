@@ -5,8 +5,9 @@ import org.junit.Test
 
 class AppLockGatewayTest {
     @Test
-    fun defaultLockIsOffUntilM9() {
+    fun disabledLockDoesNotRequireUnlock() {
         assertThat(DisabledAppLockGateway.isLockEnabled).isFalse()
+        assertThat(DisabledAppLockGateway.requiresUnlockForSensitiveAction()).isFalse()
         assertThat(DisabledAppLockGateway.shouldHideRecentsPreview()).isFalse()
     }
 }

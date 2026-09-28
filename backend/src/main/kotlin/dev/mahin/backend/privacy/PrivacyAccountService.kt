@@ -4,6 +4,7 @@ import dev.mahin.backend.privacy.persistence.DeletionRequestEntity
 import dev.mahin.backend.privacy.persistence.DeletionRequestRepository
 import dev.mahin.backend.privacy.persistence.ExportJobEntity
 import dev.mahin.backend.privacy.persistence.ExportJobRepository
+import dev.mahin.backend.security.SecurityAuditService
 import java.time.Instant
 import java.util.UUID
 import org.springframework.stereotype.Service
@@ -13,22 +14,43 @@ import org.springframework.transaction.annotation.Transactional
 class PrivacyAccountService(
     private val deletionRequestRepository: DeletionRequestRepository,
     private val exportJobRepository: ExportJobRepository,
+    private val accountDeletionProcessor: AccountDeletionProcessor,
+    private val securityAuditService: SecurityAuditService,
 ) {
     @Transactional
     fun requestDeletion(userId: UUID): DeletionRequestResponse {
         val now = Instant.now()
+        val graceSeconds = accountDeletionProcessor.gracePeriodSeconds()
         val entity =
             deletionRequestRepository.save(
                 DeletionRequestEntity(
                     id = UUID.randomUUID(),
                     userId = userId,
-                    status = "pending",
+                    status = AccountDeletionProcessor.STATUS_PENDING,
                     requestedAt = now,
-                    scheduledAt = now.plusSeconds(DELETION_GRACE_SECONDS),
+                    scheduledAt =
+                        if (graceSeconds <= 0) {
+                            now.minusSeconds(1)
+                        } else {
+                            now.plusSeconds(graceSeconds)
+                        },
                 ),
             )
+        securityAuditService.record(
+            SecurityAuditService.AuditRecord(
+                actorType = "user",
+                actorId = userId.toString(),
+                action = "account_deletion_requested",
+                targetType = "deletion_request",
+                targetId = entity.id.toString(),
+            ),
+        )
         return entity.toResponse()
     }
+
+    @Transactional(readOnly = true)
+    fun latestDeletionRequest(userId: UUID): DeletionRequestResponse? =
+        deletionRequestRepository.findTopByUserIdOrderByRequestedAtDesc(userId)?.toResponse()
 
     @Transactional
     fun requestExport(userId: UUID): ExportJobResponse {
@@ -64,6 +86,7 @@ class PrivacyAccountService(
             status = status,
             requestedAt = requestedAt,
             scheduledAt = scheduledAt,
+            completedAt = completedAt,
         )
 
     private fun ExportJobEntity.toResponse() =
@@ -73,8 +96,4 @@ class PrivacyAccountService(
             requestedAt = requestedAt,
             completedAt = completedAt,
         )
-
-    companion object {
-        private const val DELETION_GRACE_SECONDS = 14L * 24 * 3600
-    }
 }

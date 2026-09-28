@@ -36,6 +36,7 @@ import dev.mahin.core.model.ReproductiveMode
 @Composable
 fun MahinAppShell(
     modifier: Modifier = Modifier,
+    onLocalDataErased: () -> Unit = {},
     shellViewModel: MahinAppShellViewModel = hiltViewModel(),
 ) {
     val navController = rememberNavController()
@@ -90,7 +91,10 @@ fun MahinAppShell(
             modifier = Modifier.padding(innerPadding),
         ) {
             composable(MahinTopLevelDestination.Today.route) {
-                TodayScreen(onOpenDataExport = { showDataExport = true })
+                TodayScreen(
+                    onOpenDataExport = { showDataExport = true },
+                    onLocalDataErased = onLocalDataErased,
+                )
             }
             composable(MahinTopLevelDestination.Calendar.route) { CycleCalendarScreen() }
             composable(MahinTopLevelDestination.Log.route) { LogScreen() }

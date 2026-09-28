@@ -37,7 +37,7 @@ class HealthExportService
         private val json = Json { prettyPrint = true }
 
         suspend fun buildJsonExport(): HealthExportResult {
-            if (appLockGateway.isLockEnabled) {
+            if (appLockGateway.requiresUnlockForSensitiveAction()) {
                 return HealthExportResult.Locked
             }
             val entitlement = entitlementRepository.entitlement.first()

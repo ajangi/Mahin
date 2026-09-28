@@ -49,6 +49,8 @@ mahin:
     access-token-ttl-seconds: ${MAHIN_AUTH_ACCESS_TTL_SECONDS:900}
     refresh-token-ttl-seconds: ${MAHIN_AUTH_REFRESH_TTL_SECONDS:2592000}
     rate-limit-per-minute: ${MAHIN_AUTH_RATE_LIMIT_PER_MINUTE:120}
+  privacy:
+    deletion-grace-seconds: ${MAHIN_PRIVACY_DELETION_GRACE_SECONDS:1209600}
 
 logging:
   pattern:

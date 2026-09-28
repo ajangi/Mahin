@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mahin.android.onboarding.OnboardingFlow
+import dev.mahin.android.privacy.AppLockGate
 import dev.mahin.android.root.RootViewModel
 import dev.mahin.android.shell.MahinAppShell
 import dev.mahin.core.designsystem.component.MahinLoadingState
@@ -19,6 +20,9 @@ fun MahinRoot(viewModel: RootViewModel = hiltViewModel()) {
     when {
         state.isLoading -> MahinLoadingState()
         !state.onboardingComplete -> OnboardingFlow(onComplete = viewModel::refreshOnboardingState)
-        else -> MahinAppShell()
+        else ->
+            AppLockGate {
+                MahinAppShell(onLocalDataErased = viewModel::refreshOnboardingState)
+            }
     }
 }
