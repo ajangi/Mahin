@@ -10,4 +10,5 @@ Cloud Agents update one milestone at a time. Do not pre-mark future milestones c
 - M5 — Backend Identity & Sync — **complete**
 - M6 — CMS & Evidence-Governed Content — **complete**
 - M7 — Notifications — **complete**
-- M8–M12 — pending (M8 next)
+- M8 — Insights, Export & Premium — **complete**
+- M9–M12 — pending (M9 next)

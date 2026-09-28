@@ -1,10 +1,32 @@
 # M8 Handoff — Insights, Export & Premium
 
 **Milestone:** M8  
-**Status:** ready for review  
-**Branch:** `cursor/m8-insights-premium-d5f6`  
-**Base:** `49e3c4e18d1760ca320beba2752767c1c208fe9e`  
-**Next milestone:** M9 only (per `prompts/M9.md` when assigned) — do not start here.
+**Status:** accepted and merged  
+**Merged:** 2026-09-28 as squash-merge `65f9d422b53065c9bcea646ec0193d46cfafdbfc` of [PR #17](https://github.com/ajangi/Mahin/pull/17)  
+**ACCEPT head:** `3f830939bb3fc5492408d835f92228dd36dea7e2` (final PR tip before squash-merge)  
+**PR CI:** all 5 jobs SUCCESS — [run 36359418916](https://github.com/ajangi/Mahin/actions/runs/36359418916) (PR tip `3f83093`)  
+**Master CI:** push to `master` at `65f9d422b53065c9bcea646ec0193d46cfafdbfc` — [run 36401431441](https://github.com/ajangi/Mahin/actions/runs/36401431441)  
+**Next milestone:** M9 — Privacy/Security Hardening (`prompts/M9.md`)  
+**A fresh agent will implement M9. This acceptance update is docs-only; do not start M9 here.**
+
+### Gatekeeper review (PR #17)
+- DataStore entitlement cache uses opaque strings (no `:domain:subscription` in `:core:datastore`).
+- Play restore verifies all tokens then `applyBestActiveGrant` (failed/expired tokens do not revoke active premium).
+- `DevGooglePlayPurchaseVerifier` profile-gated; `RejectingGooglePlayPurchaseVerifier` fail-closed in non-dev profiles.
+- `:core:billing` depends on `:core:security` for `AppLockGateway`; `GooglePlayBillingAdapter` uses `resumeWith` + `AtomicBoolean` for Kotlin 2 / ktlint.
+- `HealthExportService` ktlint chain; app module insights/shell import and line-wrap fixes.
+
+### Master CI job results (run 36401431441)
+
+| Job | Result |
+|---|---|
+| design-tokens | SUCCESS |
+| admin | SUCCESS |
+| openapi | SUCCESS |
+| backend | pending at acceptance docs update |
+| android | pending at acceptance docs update |
+
+Overall master CI: **pending** until all five jobs succeed on `65f9d422b53065c9bcea646ec0193d46cfafdbfc`.
 
 ## Implemented scope
 
@@ -96,4 +118,4 @@
 - Account settings screen consolidating restore + subscription management.
 
 ## Next milestone
-**M9 only** — follow `prompts/M9.md` when assigned (not started in this handoff).
+**M9** — Privacy/Security Hardening (`prompts/M9.md`). Not started; implement only when assigned.
