@@ -33,6 +33,7 @@ import dev.mahin.domain.cycle.PredictionConfidence
 @Suppress("LongMethod")
 fun TodayScreen(
     modifier: Modifier = Modifier,
+    onOpenDataExport: () -> Unit = {},
     viewModel: TodayViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -122,6 +123,11 @@ fun TodayScreen(
         item {
             TextButton(onClick = { showNotificationSettings = true }) {
                 Text(stringResource(R.string.notification_settings_entry))
+            }
+        }
+        item {
+            TextButton(onClick = onOpenDataExport) {
+                Text(stringResource(R.string.export_entry))
             }
         }
         item {

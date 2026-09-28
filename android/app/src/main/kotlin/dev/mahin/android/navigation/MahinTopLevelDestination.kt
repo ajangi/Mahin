@@ -22,6 +22,7 @@ enum class MahinTopLevelDestination(
     Calendar("calendar", R.string.nav_calendar, Icons.Outlined.CalendarMonth),
     Log("log", R.string.nav_log, Icons.Outlined.EditNote),
     History("history", R.string.nav_history, Icons.Outlined.History),
+    CycleInsights("cycle_insights", R.string.nav_cycle_insights, Icons.Outlined.ShowChart),
     TtcInsights("ttc_insights", R.string.nav_ttc_insights, Icons.Outlined.ShowChart),
     PregnancyHub("pregnancy_hub", R.string.nav_pregnancy_hub, Icons.Outlined.FavoriteBorder),
     Learn("learn", R.string.nav_learn, Icons.Outlined.MenuBook),
@@ -34,6 +35,8 @@ enum class MahinTopLevelDestination(
                     listOf(Today, Calendar, Log, TtcInsights, Learn, History)
                 ReproductiveMode.PREGNANT ->
                     listOf(Today, Calendar, Log, PregnancyHub, Learn, History)
+                ReproductiveMode.CYCLE_TRACKING ->
+                    listOf(Today, Calendar, Log, CycleInsights, Learn)
                 else -> listOf(Today, Calendar, Log, Learn, History)
             }
     }

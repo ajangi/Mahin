@@ -70,6 +70,8 @@ class SecurityConfig(
                     .authenticated()
                     .requestMatchers("/v1/privacy/**")
                     .hasAuthority(JwtAuthenticationFilter.ROLE_USER)
+                    .requestMatchers("/v1/entitlements/**", "/v1/billing/**")
+                    .hasAuthority(JwtAuthenticationFilter.ROLE_USER)
                     .anyRequest()
                     .authenticated()
             }.addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter::class.java)

@@ -10,6 +10,8 @@ info:
     pregnancy-week API, and catalog revision for remote withdrawal/cache invalidation.
     M7 adds device push-token registration (hashed at rest) for future campaign push;
     reminder delivery remains on-device via WorkManager in the Android app.
+    M8 adds server-verifiable entitlements and Google Play purchase verification (hashed tokens),
+    plus billing restore for registered accounts.
     Sync payloads are opaque structured JSON and must not be logged.
     This contract does not expose invented medical advice or production CDN URLs.
 
@@ -30,6 +32,8 @@ tags:
   - name: Sync
   - name: Devices
   - name: Privacy
+  - name: Entitlements
+  - name: Billing
   - name: Admin
 paths:
   /actuator/health:
@@ -811,6 +815,79 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /v1/entitlements/me:
+    get:
+      tags: [Entitlements]
+      operationId: getMyEntitlement
+      summary: Server-verifiable entitlement for the authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Effective entitlement tier and feature flags
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntitlementResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Registered account required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/billing/google-play/verify:
+    post:
+      tags: [Billing]
+      operationId: verifyGooglePlayPurchase
+      summary: Verify and acknowledge a Google Play subscription purchase
+      description: Purchase tokens are hashed at rest; raw tokens must not be logged.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GooglePlayVerifyRequest"
+      responses:
+        "200":
+          description: Updated entitlement after verification
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GooglePlayBillingResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/billing/google-play/restore:
+    post:
+      tags: [Billing]
+      operationId: restoreGooglePlayPurchases
+      summary: Restore Google Play subscriptions for the authenticated user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GooglePlayRestoreRequest"
+      responses:
+        "200":
+          description: Best active entitlement after restore
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GooglePlayBillingResponse"
 components:
   securitySchemes:
     bearerAuth:
@@ -1556,6 +1633,51 @@ components:
           type: string
           format: date-time
         completedAt:
+          type: string
+          format: date-time
+          nullable: true
+    EntitlementResponse:
+      type: object
+      required: [tier, features, verifiedAt]
+      properties:
+        tier:
+          type: string
+          enum: [FREE, PREMIUM_MONTHLY, PREMIUM_ANNUAL]
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        features:
+          type: array
+          items:
+            type: string
+        verifiedAt:
+          type: string
+          format: date-time
+    GooglePlayVerifyRequest:
+      type: object
+      required: [productId, purchaseToken]
+      properties:
+        productId:
+          type: string
+        purchaseToken:
+          type: string
+    GooglePlayRestoreRequest:
+      type: object
+      required: [purchases]
+      properties:
+        purchases:
+          type: array
+          items:
+            $ref: "#/components/schemas/GooglePlayVerifyRequest"
+    GooglePlayBillingResponse:
+      type: object
+      required: [tier]
+      properties:
+        tier:
+          type: string
+          enum: [FREE, PREMIUM_MONTHLY, PREMIUM_ANNUAL]
+        expiresAt:
           type: string
           format: date-time
           nullable: true

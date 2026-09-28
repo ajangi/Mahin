@@ -6,6 +6,36 @@
     <string name="nav_log">ثبت</string>
     <string name="nav_history">تاریخچه</string>
     <string name="nav_ttc_insights">باروری</string>
+    <string name="nav_cycle_insights">تحلیل‌ها</string>
+
+    <string name="paywall_title">ماهین پریمیوم</string>
+    <string name="paywall_body">روندهای پیشرفته، هم‌رخدادی‌های مشاهده‌ای (نه علت‌سنجی)، و خروجی گزارش گسترده—بدون قفل کردن ثبت یا پیش‌بینی پایه.</string>
+    <string name="paywall_unlock">مشاهدهٔ پریمیوم</string>
+    <string name="paywall_restore">بازیابی خرید</string>
+    <string name="paywall_dismiss">بعداً</string>
+
+    <string name="cycle_insights_title">تحلیل‌های چرخه</string>
+    <string name="cycle_insights_loading">در حال محاسبه…</string>
+    <string name="cycle_insights_empty_title">هنوز دادهٔ کافی نیست</string>
+    <string name="cycle_insights_empty_body">چند پریود و ثبت روزانه اضافه کنید تا تحلیل‌ها پر شوند.</string>
+    <string name="cycle_insights_free_heading">خلاصهٔ رایگان</string>
+    <string name="cycle_insights_premium_heading">تحلیل‌های پیشرفته</string>
+    <string name="cycle_insights_premium_teaser_title">تحلیل‌های پیشرفته</string>
+    <string name="cycle_insights_premium_teaser_body">روند چند‌سیکله و یادداشت‌های مشاهده‌ای هم‌رخدادی علائم (بدون ادعای علت قطعی).</string>
+    <string name="cycle_insights_cycle_length_range">طول سیکل (روز): %1$d تا %2$d</string>
+    <string name="cycle_insights_period_length_range">طول پریود (روز): %1$d تا %2$d</string>
+    <string name="cycle_insights_completed_cycles">چرخه‌های کامل: %1$d</string>
+    <string name="cycle_insights_symptom_timeline">خط زمانی علائم اخیر</string>
+    <string name="cycle_insights_open_history">تاریخچهٔ پریود</string>
+
+    <string name="export_entry">خروجی داده</string>
+    <string name="export_title">خروجی دادهٔ شما</string>
+    <string name="export_body">خروجی JSON فقط شامل خلاصهٔ نوع‌بندی‌شده است؛ یادداشتٔ متنی خام در فایل قرار نمی‌گیرد. پریمیوم فقط چیدمان گسترده‌تر را فعال می‌کند.</string>
+    <string name="export_generate">ساخت خروجی</string>
+    <string name="export_share">اشتراک‌گذاری</string>
+    <string name="export_share_chooser">اشتراک خروجی</string>
+    <string name="export_close">بستن</string>
+    <string name="export_locked">قفل حریم خصوصی فعال است. ابتدا اپ را باز کنید (قفل در نسخه‌های بعد).</string>
 
     <string name="today_title">امروز</string>
     <string name="today_subtitle">خلاصهٔ چرخه و ثبت‌های امروز</string>
