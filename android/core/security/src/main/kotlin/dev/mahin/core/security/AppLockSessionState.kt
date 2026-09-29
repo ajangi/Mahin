@@ -32,7 +32,7 @@ data class AppLockSessionState(
     }
 
     fun onPreferencesLoaded(newSnapshot: AppLockPreferencesSnapshot): AppLockSessionState {
-        val wasDisabled = snapshot.mode == AppLockMode.DISABLED
+        val wasDisabled = preferencesLoaded && snapshot.mode == AppLockMode.DISABLED
         val unlocked =
             when {
                 newSnapshot.mode == AppLockMode.DISABLED -> true

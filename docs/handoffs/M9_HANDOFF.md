@@ -1,7 +1,7 @@
 # M9 Handoff — Privacy/Security Hardening
 
 **Milestone:** M9  
-**Status:** ready for review  
+**Status:** Gatekeeper Round 2 — ready for re-review (draft PR #19)  
 **Branch:** `cursor/m9-privacy-security-hardening-f4b2`  
 **Base:** `5d59c2c84f7e5ccc7a54e12ba0b4231c550058b4`  
 **Next milestone:** M10 — Health Connect (Optional Launch Flag) (`prompts/M10.md`)
@@ -53,8 +53,8 @@
 | `python3 scripts/check_design_tokens.py` | PASS |
 | `python3 scripts/security_checklist.py` | PASS (after docs added) |
 | `npx @redocly/cli@1.34.2 lint openapi/openapi.yaml --config redocly.yaml` | PASS (run below) |
-| `cd backend && ./gradlew ktlintCheck detekt test --no-daemon` | PASS — 34 tests |
-| `cd android && ./gradlew …` | **Not run** — `ANDROID_HOME` / empty `sdk.dir` in VM; CI `android` job authoritative |
+| `cd backend && ./gradlew ktlintCheck detekt test --no-daemon` | PASS — 36 tests |
+| `cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug --no-daemon` | PASS (agent VM with user SDK) |
 
 ## Acceptance criteria (M9)
 
@@ -88,6 +88,13 @@
 - `PrivacySecuritySettingsScreen` uses `MahinTypographyRole.TitleLarge` (compile fix).
 - Admin: `vite` ^6.4.3 / `vitest` ^3.2.x — `npm audit --audit-level=high` exits 0.
 - Deletion processor: purge via `UserDataErasureService` first; completion proof in audit event (not a COMPLETED row deleted by erasure).
+
+## Gatekeeper Round 2 fixes (PR #19)
+- **Android ktlint:** import/order and line-length fixes; full CI Android pipeline (`ktlintCheck`, `detekt`, `test`, `assembleDebug`, `lintDebug`).
+- **App lock race:** `AppLockGatewayEngine` holds session in `MutableStateFlow` with atomic `.update`; `AppLockGatewayEngineTest` + fixed `lockSessionShowsGateAgain`.
+- **Recents privacy:** `MainActivity` reapplies `setRecentsScreenshotEnabled` when `sessionRevision` changes (not only `onCreate` / `onStop`).
+- **Guest-converted deletion:** `UserDataErasureService` purges device-scoped refresh tokens, linked `guest_installation` artifacts, then user/devices; integration test `guestConvertedUserDeletionPurgesGuestArtifacts`.
+- **Deletion retry:** V7 `attempt_count` / `processing_started_at`; `AccountDeletionExecutor` (transactional) with backoff retry, stuck `processing` recovery, permanent `account_deletion_failed_permanent` audit; `AccountDeletionRetryIntegrationTest`.
 
 ## Unresolved questions
 1. Should access tokens be blocklisted immediately on deletion (Redis) or is short TTL sufficient for launch?

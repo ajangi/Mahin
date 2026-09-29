@@ -26,4 +26,8 @@ class DeletionRequestEntity(
     var completedAt: Instant? = null,
     @Column(name = "failure_reason", length = 256)
     var failureReason: String? = null,
+    @Column(name = "attempt_count", nullable = false)
+    var attemptCount: Int = 0,
+    @Column(name = "processing_started_at")
+    var processingStartedAt: Instant? = null,
 )

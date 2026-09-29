@@ -3,9 +3,9 @@ package dev.mahin.android.privacy
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.mahin.core.database.LocalHealthDataErasureService
 import dev.mahin.core.datastore.AppLockMode
 import dev.mahin.core.datastore.AppLockPreferencesRepository
-import dev.mahin.core.database.LocalHealthDataErasureService
 import dev.mahin.core.security.AppLockGateway
 import dev.mahin.core.security.PinCredentialStore
 import javax.inject.Inject

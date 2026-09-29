@@ -12,6 +12,11 @@ interface DeletionRequestRepository : JpaRepository<DeletionRequestEntity, UUID>
         scheduledAt: Instant,
     ): List<DeletionRequestEntity>
 
+    fun findAllByStatusAndProcessingStartedAtBefore(
+        status: String,
+        processingStartedAt: Instant,
+    ): List<DeletionRequestEntity>
+
     fun findTopByUserIdOrderByRequestedAtDesc(userId: UUID): DeletionRequestEntity?
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)

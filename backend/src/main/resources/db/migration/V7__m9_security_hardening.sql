@@ -4,6 +4,12 @@ ALTER TABLE deletion_request
 ALTER TABLE deletion_request
     ADD COLUMN failure_reason VARCHAR(256);
 
+ALTER TABLE deletion_request
+    ADD COLUMN attempt_count INTEGER NOT NULL DEFAULT 0;
+
+ALTER TABLE deletion_request
+    ADD COLUMN processing_started_at TIMESTAMP WITH TIME ZONE;
+
 CREATE TABLE security_audit_event (
     id UUID PRIMARY KEY,
     actor_type VARCHAR(32) NOT NULL,

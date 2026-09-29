@@ -11,4 +11,12 @@ interface RefreshTokenRepository : JpaRepository<RefreshTokenEntity, UUID> {
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("delete from RefreshTokenEntity t where t.userId = :userId")
     fun deleteAllByUserId(userId: UUID)
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("delete from RefreshTokenEntity t where t.deviceId in :deviceIds")
+    fun deleteAllByDeviceIdIn(deviceIds: Collection<UUID>)
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("delete from RefreshTokenEntity t where t.guestInstallationId = :guestInstallationId")
+    fun deleteAllByGuestInstallationId(guestInstallationId: UUID)
 }

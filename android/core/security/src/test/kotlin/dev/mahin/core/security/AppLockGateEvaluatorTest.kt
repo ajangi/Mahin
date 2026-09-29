@@ -2,6 +2,7 @@ package dev.mahin.core.security
 
 import com.google.common.truth.Truth.assertThat
 import dev.mahin.core.datastore.AppLockMode
+import dev.mahin.core.datastore.AppLockPreferencesSnapshot
 import org.junit.Test
 
 class AppLockGateEvaluatorTest {
@@ -37,12 +38,14 @@ class AppLockGateEvaluatorTest {
 
     @Test
     fun lockSessionShowsGateAgain() {
-        assertThat(
-            AppLockGateEvaluator.shouldShowGate(
+        val unlocked =
+            AppLockSessionState(
                 preferencesLoaded = true,
-                mode = AppLockMode.PIN,
-                sessionUnlocked = false,
-            ),
-        ).isTrue()
+                snapshot = AppLockPreferencesSnapshot(mode = AppLockMode.PIN),
+                sessionUnlocked = true,
+            )
+        assertThat(unlocked.shouldShowGate()).isFalse()
+        val relocked = unlocked.lockSession()
+        assertThat(relocked.shouldShowGate()).isTrue()
     }
 }

@@ -6,6 +6,7 @@ import dev.mahin.backend.content.persistence.UserContentBookmarkRepository
 import dev.mahin.backend.device.persistence.DeviceInstallationRepository
 import dev.mahin.backend.entitlement.persistence.EntitlementGrantRepository
 import dev.mahin.backend.entitlement.persistence.PlaySubscriptionRecordRepository
+import dev.mahin.backend.identity.persistence.GuestInstallationRepository
 import dev.mahin.backend.privacy.persistence.DeletionRequestRepository
 import dev.mahin.backend.privacy.persistence.ExportJobRepository
 import dev.mahin.backend.security.SecurityAuditService
@@ -32,17 +33,24 @@ class UserDataErasureService(
     private val exportJobRepository: ExportJobRepository,
     private val bookmarkRepository: UserContentBookmarkRepository,
     private val deletionRequestRepository: DeletionRequestRepository,
+    private val guestInstallationRepository: GuestInstallationRepository,
     private val userAccountRepository: UserAccountRepository,
     private val securityAuditService: SecurityAuditService,
-) {
+) : RegisteredUserErasure {
     @Transactional
-    fun eraseRegisteredUser(userId: UUID) {
+    override fun eraseRegisteredUser(userId: UUID) {
         val ownerKey = "user:$userId"
+        val devices = deviceInstallationRepository.findAllByOwnerUserId(userId)
+        val deviceIds = devices.map { it.id }
+        if (deviceIds.isNotEmpty()) {
+            refreshTokenRepository.deleteAllByDeviceIdIn(deviceIds)
+        }
         refreshTokenRepository.deleteAllByUserId(userId)
-        deviceInstallationRepository.deleteAllByOwnerUserId(userId)
+        purgeLinkedGuestInstallations(userId)
         syncEntityRecordRepository.deleteAllByOwnerUserId(userId)
         syncIdempotencyRepository.deleteAllByOwnerKey(ownerKey)
         syncOwnerStateRepository.deleteById(ownerKey)
+        deviceInstallationRepository.deleteAllByOwnerUserId(userId)
         entitlementGrantRepository.deleteAllByUserId(userId)
         playSubscriptionRecordRepository.deleteAllByUserId(userId)
         exportJobRepository.deleteAllByUserId(userId)
@@ -58,5 +66,16 @@ class UserDataErasureService(
                 targetId = userId.toString(),
             ),
         )
+    }
+
+    private fun purgeLinkedGuestInstallations(userId: UUID) {
+        guestInstallationRepository.findAllByLinkedUserId(userId).forEach { guest ->
+            val guestKey = "guest:${guest.id}"
+            refreshTokenRepository.deleteAllByGuestInstallationId(guest.id)
+            syncEntityRecordRepository.deleteAllByGuestInstallationId(guest.id)
+            syncIdempotencyRepository.deleteAllByOwnerKey(guestKey)
+            syncOwnerStateRepository.deleteById(guestKey)
+            guestInstallationRepository.deleteById(guest.id)
+        }
     }
 }

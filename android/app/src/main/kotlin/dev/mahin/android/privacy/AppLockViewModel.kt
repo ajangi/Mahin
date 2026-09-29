@@ -1,5 +1,7 @@
 package dev.mahin.android.privacy
 
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -77,11 +79,11 @@ class AppLockViewModel
             onSuccess: () -> Unit,
         ) {
             val prompt =
-                androidx.biometric.BiometricPrompt(
+                BiometricPrompt(
                     activity,
-                    androidx.core.content.ContextCompat.getMainExecutor(activity),
-                    object : androidx.biometric.BiometricPrompt.AuthenticationCallback() {
-                        override fun onAuthenticationSucceeded(result: androidx.biometric.BiometricPrompt.AuthenticationResult) {
+                    ContextCompat.getMainExecutor(activity),
+                    object : BiometricPrompt.AuthenticationCallback() {
+                        override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                             appLockGateway.markSessionUnlocked()
                             _uiState.update { applyGatewayState(_uiState.value.mode) }
                             onSuccess()
@@ -89,7 +91,7 @@ class AppLockViewModel
                     },
                 )
             val info =
-                androidx.biometric.BiometricPrompt.PromptInfo
+                BiometricPrompt.PromptInfo
                     .Builder()
                     .setTitle(activity.getString(dev.mahin.android.R.string.app_lock_title))
                     .setNegativeButtonText(activity.getString(dev.mahin.android.R.string.privacy_back))

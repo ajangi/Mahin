@@ -42,7 +42,11 @@ class PinCredentialStore
         }
 
         fun clearPin() {
-            prefs.edit().remove(SALT_KEY).remove(HASH_KEY).commit()
+            prefs
+                .edit()
+                .remove(SALT_KEY)
+                .remove(HASH_KEY)
+                .commit()
         }
 
         fun verifyPin(pin: String): Boolean {

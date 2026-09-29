@@ -28,6 +28,7 @@ import dev.mahin.core.designsystem.mahinTextStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Suppress("LongMethod")
 fun PrivacySecuritySettingsScreen(
     onNavigateUp: () -> Unit,
     onLocalDataErased: () -> Unit,

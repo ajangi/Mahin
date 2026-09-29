@@ -45,4 +45,8 @@ interface SyncEntityRecordRepository : JpaRepository<SyncEntityRecordEntity, UUI
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("delete from SyncEntityRecordEntity r where r.ownerUserId = :ownerUserId")
     fun deleteAllByOwnerUserId(ownerUserId: UUID)
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("delete from SyncEntityRecordEntity r where r.guestInstallationId = :guestInstallationId")
+    fun deleteAllByGuestInstallationId(guestInstallationId: UUID)
 }

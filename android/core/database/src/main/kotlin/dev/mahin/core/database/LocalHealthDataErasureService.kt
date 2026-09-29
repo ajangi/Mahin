@@ -1,6 +1,5 @@
 package dev.mahin.core.database
 
-import dev.mahin.core.database.cycle.CycleTrackingRepository
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers

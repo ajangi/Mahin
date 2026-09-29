@@ -1,21 +1,19 @@
 package dev.mahin.backend.privacy
 
-import dev.mahin.backend.privacy.persistence.DeletionRequestEntity
 import dev.mahin.backend.privacy.persistence.DeletionRequestRepository
-import dev.mahin.backend.security.SecurityAuditService
 import java.time.Instant
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 
 @Service
 class AccountDeletionProcessor(
     private val deletionRequestRepository: DeletionRequestRepository,
-    private val userDataErasureService: UserDataErasureService,
-    private val securityAuditService: SecurityAuditService,
+    private val accountDeletionExecutor: AccountDeletionExecutor,
     @Value("\${mahin.privacy.deletion-grace-seconds}") private val graceSeconds: Long,
+    @Value("\${mahin.privacy.deletion-processing-timeout-seconds}") private val processingTimeoutSeconds: Long,
 ) {
     fun processDueDeletions(now: Instant = Instant.now()): Int {
+        recoverStuckProcessing(now)
         val due =
             deletionRequestRepository.findAllByStatusAndScheduledAtLessThanEqual(
                 status = STATUS_PENDING,
@@ -23,53 +21,24 @@ class AccountDeletionProcessor(
             )
         var processed = 0
         due.forEach { request ->
-            if (processSingle(request, now)) {
+            if (accountDeletionExecutor.processSingle(request.id, now)) {
                 processed++
             }
         }
         return processed
     }
 
-    @Transactional
-    @Suppress("TooGenericExceptionCaught")
-    fun processSingle(
-        request: DeletionRequestEntity,
-        now: Instant = Instant.now(),
-    ): Boolean {
-        if (request.status != STATUS_PENDING) return false
-        val requestId = request.id
-        val userId = request.userId
-        request.status = STATUS_PROCESSING
-        deletionRequestRepository.save(request)
-        return try {
-            userDataErasureService.eraseRegisteredUser(userId)
-            securityAuditService.record(
-                SecurityAuditService.AuditRecord(
-                    actorType = "user",
-                    actorId = userId.toString(),
-                    action = "account_deletion_completed",
-                    targetType = "deletion_request",
-                    targetId = requestId.toString(),
-                    metadata = mapOf("completedAt" to now.toString()),
-                ),
+    fun recoverStuckProcessing(now: Instant) {
+        val stuckBefore = now.minusSeconds(processingTimeoutSeconds)
+        val stuck =
+            deletionRequestRepository.findAllByStatusAndProcessingStartedAtBefore(
+                status = STATUS_PROCESSING,
+                processingStartedAt = stuckBefore,
             )
-            true
-        } catch (ex: RuntimeException) {
-            request.status = STATUS_FAILED
-            request.failureReason = ex.javaClass.simpleName
-            request.completedAt = now
+        stuck.forEach { request ->
+            request.status = STATUS_PENDING
+            request.processingStartedAt = null
             deletionRequestRepository.save(request)
-            securityAuditService.record(
-                SecurityAuditService.AuditRecord(
-                    actorType = "system",
-                    actorId = "account_deletion",
-                    action = "account_deletion_failed",
-                    targetType = "deletion_request",
-                    targetId = requestId.toString(),
-                    metadata = mapOf("reason" to ex.javaClass.simpleName),
-                ),
-            )
-            false
         }
     }
 

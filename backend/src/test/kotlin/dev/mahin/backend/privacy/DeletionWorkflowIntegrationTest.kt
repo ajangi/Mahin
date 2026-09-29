@@ -2,6 +2,8 @@ package dev.mahin.backend.privacy
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import dev.mahin.backend.auth.persistence.UserAccountRepository
+import dev.mahin.backend.device.persistence.DeviceInstallationRepository
+import dev.mahin.backend.identity.persistence.GuestInstallationRepository
 import dev.mahin.backend.privacy.persistence.DeletionRequestRepository
 import dev.mahin.backend.security.SecurityAuditEventRepository
 import dev.mahin.backend.sync.persistence.SyncEntityRecordRepository
@@ -33,6 +35,8 @@ class DeletionWorkflowIntegrationTest(
     @Autowired private val syncEntityRecordRepository: SyncEntityRecordRepository,
     @Autowired private val deletionRequestRepository: DeletionRequestRepository,
     @Autowired private val securityAuditEventRepository: SecurityAuditEventRepository,
+    @Autowired private val guestInstallationRepository: GuestInstallationRepository,
+    @Autowired private val deviceInstallationRepository: DeviceInstallationRepository,
 ) {
     @Test
     fun accountDeletionPurgesSyncDataAndUserRow() {
@@ -76,6 +80,73 @@ class DeletionWorkflowIntegrationTest(
 
         assertTrue(userAccountRepository.findById(userId).isEmpty)
         assertTrue(syncEntityRecordRepository.findUserChangesAfter(userId, 0).isEmpty())
+        assertTrue(deletionRequestRepository.findAll().isEmpty())
+        assertTrue(
+            securityAuditEventRepository.findAll().any { it.action == "account_deletion_completed" },
+        )
+    }
+
+    @Test
+    fun guestConvertedUserDeletionPurgesGuestArtifacts() {
+        val localUserId = UUID.randomUUID()
+        val guestJson =
+            mockMvc
+                .post("/v1/identity/guest") {
+                    contentType = MediaType.APPLICATION_JSON
+                    content =
+                        objectMapper.writeValueAsString(
+                            mapOf(
+                                "localUserId" to localUserId.toString(),
+                                "platform" to "android",
+                            ),
+                        )
+                }.andExpect {
+                    status { isOk() }
+                }.andReturn()
+                .response.contentAsString
+        val guestTree = objectMapper.readTree(guestJson)
+        val guestAccessToken = guestTree.get("accessToken").asText()
+        val guestInstallationId = UUID.fromString(guestTree.get("guestInstallationId").asText())
+        val entityId = UUID.randomUUID()
+        pushMutation(guestAccessToken, entityId, Instant.parse("2026-09-01T00:00:00Z"), """{"marker":"guest"}""")
+
+        val email = "guest-convert-delete-${UUID.randomUUID()}@example.test"
+        val registerJson =
+            mockMvc
+                .post("/v1/auth/register") {
+                    contentType = MediaType.APPLICATION_JSON
+                    content =
+                        objectMapper.writeValueAsString(
+                            mapOf(
+                                "email" to email,
+                                "password" to "secure-password-12",
+                                "platform" to "android",
+                                "localUserId" to localUserId.toString(),
+                                "guestAccessToken" to guestAccessToken,
+                            ),
+                        )
+                }.andExpect {
+                    status { isOk() }
+                }.andReturn()
+                .response.contentAsString
+        val userId = UUID.fromString(objectMapper.readTree(registerJson).get("userId").asText())
+        val token = objectMapper.readTree(registerJson).get("accessToken").asText()
+
+        assertTrue(guestInstallationRepository.findById(guestInstallationId).isPresent)
+        assertTrue(deviceInstallationRepository.findAllByOwnerUserId(userId).isNotEmpty())
+
+        mockMvc
+            .post("/v1/privacy/deletion-requests") {
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+            }.andExpect {
+                status { isOk() }
+            }
+
+        assertEquals(1, accountDeletionProcessor.processDueDeletions())
+
+        assertTrue(userAccountRepository.findById(userId).isEmpty)
+        assertTrue(guestInstallationRepository.findById(guestInstallationId).isEmpty)
+        assertTrue(deviceInstallationRepository.findAllByOwnerUserId(userId).isEmpty())
         assertTrue(deletionRequestRepository.findAll().isEmpty())
         assertTrue(
             securityAuditEventRepository.findAll().any { it.action == "account_deletion_completed" },

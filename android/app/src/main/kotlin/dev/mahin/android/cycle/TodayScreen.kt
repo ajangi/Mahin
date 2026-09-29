@@ -19,9 +19,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mahin.android.R
 import dev.mahin.android.notifications.NotificationSettingsScreen
-import dev.mahin.android.privacy.PrivacySecuritySettingsScreen
 import dev.mahin.android.pregnancy.PregnancyStartSheet
 import dev.mahin.android.pregnancy.PregnancyTodayCard
+import dev.mahin.android.privacy.PrivacySecuritySettingsScreen
 import dev.mahin.core.designsystem.MahinSpacing
 import dev.mahin.core.designsystem.MahinTypographyRole
 import dev.mahin.core.designsystem.component.MahinEmptyState
