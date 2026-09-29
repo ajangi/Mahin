@@ -24,6 +24,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 @SpringBootTest
 @AutoConfigureMockMvc
 @TestPropertySource(properties = ["mahin.privacy.deletion-grace-seconds=0"])
+@Suppress("LongParameterList")
 class DeletionWorkflowIntegrationTest(
     @Autowired private val mockMvc: MockMvc,
     @Autowired private val objectMapper: ObjectMapper,
