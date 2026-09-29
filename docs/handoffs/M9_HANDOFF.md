@@ -79,6 +79,15 @@
 - Biometric mode requires PIN backup; no server-side lock policy.
 - Cloud/Android backup remains disabled (`allowBackup=false`).
 - Account deletion UI on device for registered users deferred (backend API ready; Android login milestone).
+- Successful account deletion completion is durable in `security_audit_event` only; `deletion_request` rows are removed during erasure.
+
+## Gatekeeper Round 1 fixes (PR #19)
+- App lock gate re-evaluates on `ON_START` and when `sessionRevision` changes after `lockSession()` (background resume).
+- Fail-closed cold start: loading UI until DataStore prefs load; shell hidden until DISABLED confirmed or user unlocks.
+- Unit tests: `AppLockGateEvaluatorTest`, `AppLockSessionStateTest` (plus existing `AppLockGatewayTest`).
+- `PrivacySecuritySettingsScreen` uses `MahinTypographyRole.TitleLarge` (compile fix).
+- Admin: `vite` ^6.4.3 / `vitest` ^3.2.x — `npm audit --audit-level=high` exits 0.
+- Deletion processor: purge via `UserDataErasureService` first; completion proof in audit event (not a COMPLETED row deleted by erasure).
 
 ## Unresolved questions
 1. Should access tokens be blocklisted immediately on deletion (Redis) or is short TTL sufficient for launch?

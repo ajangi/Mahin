@@ -3,6 +3,7 @@ package dev.mahin.backend.privacy
 import com.fasterxml.jackson.databind.ObjectMapper
 import dev.mahin.backend.auth.persistence.UserAccountRepository
 import dev.mahin.backend.privacy.persistence.DeletionRequestRepository
+import dev.mahin.backend.security.SecurityAuditEventRepository
 import dev.mahin.backend.sync.persistence.SyncEntityRecordRepository
 import java.time.Instant
 import java.util.UUID
@@ -30,6 +31,7 @@ class DeletionWorkflowIntegrationTest(
     @Autowired private val userAccountRepository: UserAccountRepository,
     @Autowired private val syncEntityRecordRepository: SyncEntityRecordRepository,
     @Autowired private val deletionRequestRepository: DeletionRequestRepository,
+    @Autowired private val securityAuditEventRepository: SecurityAuditEventRepository,
 ) {
     @Test
     fun accountDeletionPurgesSyncDataAndUserRow() {
@@ -73,6 +75,10 @@ class DeletionWorkflowIntegrationTest(
 
         assertTrue(userAccountRepository.findById(userId).isEmpty)
         assertTrue(syncEntityRecordRepository.findUserChangesAfter(userId, 0).isEmpty())
+        assertTrue(deletionRequestRepository.findAll().isEmpty())
+        assertTrue(
+            securityAuditEventRepository.findAll().any { it.action == "account_deletion_completed" },
+        )
     }
 
     private fun pushMutation(

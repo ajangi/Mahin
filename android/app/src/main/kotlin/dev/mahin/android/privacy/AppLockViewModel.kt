@@ -2,6 +2,7 @@ package dev.mahin.android.privacy
 
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.mahin.core.datastore.AppLockMode
 import dev.mahin.core.datastore.AppLockPreferencesRepository
@@ -11,12 +12,14 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import androidx.lifecycle.viewModelScope
 
 data class AppLockUiState(
-    val visible: Boolean = false,
+    val showLoading: Boolean = true,
+    val visible: Boolean = true,
     val mode: AppLockMode = AppLockMode.DISABLED,
     val pinEntry: String = "",
     val error: Boolean = false,
@@ -35,17 +38,23 @@ class AppLockViewModel
 
         init {
             viewModelScope.launch {
-                appLockPreferencesRepository.snapshot.collect { snapshot ->
-                    val needsLock =
-                        snapshot.mode != AppLockMode.DISABLED &&
-                            !appLockGateway.isSessionUnlocked()
-                    _uiState.update {
-                        it.copy(
-                            visible = needsLock,
-                            mode = snapshot.mode,
-                        )
-                    }
+                combine(
+                    appLockPreferencesRepository.snapshot,
+                    appLockGateway.sessionRevision,
+                ) { snapshot, _ ->
+                    applyGatewayState(snapshot.mode)
+                }.collectLatest { state ->
+                    _uiState.value = state
                 }
+            }
+        }
+
+        fun onAppForeground() {
+            _uiState.update { current ->
+                current.copy(
+                    showLoading = !appLockGateway.arePreferencesLoaded(),
+                    visible = appLockGateway.shouldShowLockGate(),
+                )
             }
         }
 
@@ -57,7 +66,7 @@ class AppLockViewModel
             val pin = _uiState.value.pinEntry
             if (pinCredentialStore.verifyPin(pin)) {
                 appLockGateway.markSessionUnlocked()
-                _uiState.update { it.copy(visible = false, pinEntry = "", error = false) }
+                _uiState.update { applyGatewayState(_uiState.value.mode) }
             } else {
                 _uiState.update { it.copy(error = true) }
             }
@@ -74,7 +83,7 @@ class AppLockViewModel
                     object : androidx.biometric.BiometricPrompt.AuthenticationCallback() {
                         override fun onAuthenticationSucceeded(result: androidx.biometric.BiometricPrompt.AuthenticationResult) {
                             appLockGateway.markSessionUnlocked()
-                            _uiState.update { it.copy(visible = false, pinEntry = "", error = false) }
+                            _uiState.update { applyGatewayState(_uiState.value.mode) }
                             onSuccess()
                         }
                     },
@@ -86,5 +95,17 @@ class AppLockViewModel
                     .setNegativeButtonText(activity.getString(dev.mahin.android.R.string.privacy_back))
                     .build()
             prompt.authenticate(info)
+        }
+
+        private fun applyGatewayState(mode: AppLockMode): AppLockUiState {
+            val showLoading = !appLockGateway.arePreferencesLoaded()
+            val visible = appLockGateway.shouldShowLockGate()
+            return AppLockUiState(
+                showLoading = showLoading,
+                visible = visible,
+                mode = mode,
+                pinEntry = "",
+                error = false,
+            )
         }
     }

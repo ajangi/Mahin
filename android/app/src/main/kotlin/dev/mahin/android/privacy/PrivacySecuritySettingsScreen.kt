@@ -76,7 +76,7 @@ fun PrivacySecuritySettingsScreen(
             item {
                 Text(
                     text = stringResource(R.string.privacy_app_lock_heading),
-                    style = mahinTextStyle(MahinTypographyRole.TitleMedium),
+                    style = mahinTextStyle(MahinTypographyRole.TitleLarge),
                 )
                 Text(
                     text = stringResource(R.string.privacy_app_lock_body),

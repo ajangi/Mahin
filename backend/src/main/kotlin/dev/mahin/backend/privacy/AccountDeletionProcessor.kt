@@ -37,21 +37,20 @@ class AccountDeletionProcessor(
         now: Instant = Instant.now(),
     ): Boolean {
         if (request.status != STATUS_PENDING) return false
+        val requestId = request.id
+        val userId = request.userId
         request.status = STATUS_PROCESSING
         deletionRequestRepository.save(request)
         return try {
-            request.status = STATUS_COMPLETED
-            request.completedAt = now
-            request.failureReason = null
-            deletionRequestRepository.save(request)
-            userDataErasureService.eraseRegisteredUser(request.userId)
+            userDataErasureService.eraseRegisteredUser(userId)
             securityAuditService.record(
                 SecurityAuditService.AuditRecord(
                     actorType = "user",
-                    actorId = request.userId.toString(),
+                    actorId = userId.toString(),
                     action = "account_deletion_completed",
                     targetType = "deletion_request",
-                    targetId = request.id.toString(),
+                    targetId = requestId.toString(),
+                    metadata = mapOf("completedAt" to now.toString()),
                 ),
             )
             true
@@ -66,7 +65,7 @@ class AccountDeletionProcessor(
                     actorId = "account_deletion",
                     action = "account_deletion_failed",
                     targetType = "deletion_request",
-                    targetId = request.id.toString(),
+                    targetId = requestId.toString(),
                     metadata = mapOf("reason" to ex.javaClass.simpleName),
                 ),
             )

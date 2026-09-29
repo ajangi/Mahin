@@ -1,5 +1,8 @@
 package dev.mahin.core.security
 
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+
 /**
  * Keystore-backed secret material. M9 completes lock/encryption product flows;
  * this boundary exists so M2 persistence does not invent an ad-hoc key store.
@@ -17,6 +20,12 @@ data class AppLockSettings(
 interface AppLockGateway {
     val isLockEnabled: Boolean
 
+    val sessionRevision: StateFlow<Int>
+
+    fun arePreferencesLoaded(): Boolean
+
+    fun shouldShowLockGate(): Boolean
+
     fun lockSettings(): AppLockSettings
 
     fun isSessionUnlocked(): Boolean
@@ -29,12 +38,17 @@ interface AppLockGateway {
 
     fun shouldBlockScreenshots(): Boolean
 
-    fun requiresUnlockForSensitiveAction(): Boolean =
-        isLockEnabled && !isSessionUnlocked()
+    fun requiresUnlockForSensitiveAction(): Boolean = shouldShowLockGate()
 }
 
 object DisabledAppLockGateway : AppLockGateway {
     override val isLockEnabled: Boolean = false
+
+    override val sessionRevision: StateFlow<Int> = MutableStateFlow(0)
+
+    override fun arePreferencesLoaded(): Boolean = true
+
+    override fun shouldShowLockGate(): Boolean = false
 
     override fun lockSettings(): AppLockSettings =
         AppLockSettings(
