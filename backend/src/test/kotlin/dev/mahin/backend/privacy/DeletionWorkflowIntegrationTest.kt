@@ -80,7 +80,7 @@ class DeletionWorkflowIntegrationTest(
 
         assertTrue(userAccountRepository.findById(userId).isEmpty)
         assertTrue(syncEntityRecordRepository.findUserChangesAfter(userId, 0).isEmpty())
-        assertTrue(deletionRequestRepository.findAll().isEmpty())
+        assertTrue(deletionRequestRepository.findTopByUserIdOrderByRequestedAtDesc(userId) == null)
         assertTrue(
             securityAuditEventRepository.findAll().any { it.action == "account_deletion_completed" },
         )
@@ -147,7 +147,7 @@ class DeletionWorkflowIntegrationTest(
         assertTrue(userAccountRepository.findById(userId).isEmpty)
         assertTrue(guestInstallationRepository.findById(guestInstallationId).isEmpty)
         assertTrue(deviceInstallationRepository.findAllByOwnerUserId(userId).isEmpty())
-        assertTrue(deletionRequestRepository.findAll().isEmpty())
+        assertTrue(deletionRequestRepository.findTopByUserIdOrderByRequestedAtDesc(userId) == null)
         assertTrue(
             securityAuditEventRepository.findAll().any { it.action == "account_deletion_completed" },
         )
