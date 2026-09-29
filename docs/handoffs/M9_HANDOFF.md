@@ -1,7 +1,7 @@
 # M9 Handoff — Privacy/Security Hardening
 
 **Milestone:** M9  
-**Status:** Gatekeeper Round 2 — ready for re-review (draft PR #19)  
+**Status:** Gatekeeper Round 3 — ready for re-review (draft PR #19)  
 **Branch:** `cursor/m9-privacy-security-hardening-f4b2`  
 **Base:** `5d59c2c84f7e5ccc7a54e12ba0b4231c550058b4`  
 **Next milestone:** M10 — Health Connect (Optional Launch Flag) (`prompts/M10.md`)
@@ -95,6 +95,13 @@
 - **Recents privacy:** `MainActivity` reapplies `setRecentsScreenshotEnabled` when `sessionRevision` changes (not only `onCreate` / `onStop`).
 - **Guest-converted deletion:** `UserDataErasureService` purges device-scoped refresh tokens, linked `guest_installation` artifacts, then user/devices; integration test `guestConvertedUserDeletionPurgesGuestArtifacts`.
 - **Deletion retry:** V7 `attempt_count` / `processing_started_at`; `AccountDeletionExecutor` (transactional) with backoff retry, stuck `processing` recovery, permanent `account_deletion_failed_permanent` audit; `AccountDeletionRetryIntegrationTest`.
+
+## Gatekeeper Round 3 fixes (PR #19)
+- **Deletion transaction boundaries:** `AccountDeletionClaimService`, `AccountDeletionErasureRunner`, and `AccountDeletionOutcomeRecorder` use `REQUIRES_NEW`; orchestration in non-transactional `AccountDeletionExecutor`; `UserDataErasureService` flushes before commit so FK errors surface inside erasure tx.
+- **Batch isolation:** `processDueDeletions` try/catch per request so one failure cannot abort the batch.
+- **Retry tests:** Transactional `@Primary` erasure test double (`TransactionalErasureTestSupport`); non-zero backoff assertions; audit scoped by `targetId`; multi-user “failure does not block success” case.
+- **Guest deletion test:** refresh-token presence/absence; per-user deletion-request and audit scoping.
+- **App lock test:** `failClosedUntilFirstPreferenceEmission` with deferred prefs flow; `@OptIn(ExperimentalCoroutinesApi::class)` on `AppLockGatewayEngineTest`.
 
 ## Unresolved questions
 1. Should access tokens be blocklisted immediately on deletion (Redis) or is short TTL sufficient for launch?

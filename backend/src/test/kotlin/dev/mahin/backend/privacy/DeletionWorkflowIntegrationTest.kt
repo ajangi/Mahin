@@ -1,6 +1,7 @@
 package dev.mahin.backend.privacy
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import dev.mahin.backend.auth.persistence.RefreshTokenRepository
 import dev.mahin.backend.auth.persistence.UserAccountRepository
 import dev.mahin.backend.device.persistence.DeviceInstallationRepository
 import dev.mahin.backend.identity.persistence.GuestInstallationRepository
@@ -37,6 +38,7 @@ class DeletionWorkflowIntegrationTest(
     @Autowired private val securityAuditEventRepository: SecurityAuditEventRepository,
     @Autowired private val guestInstallationRepository: GuestInstallationRepository,
     @Autowired private val deviceInstallationRepository: DeviceInstallationRepository,
+    @Autowired private val refreshTokenRepository: RefreshTokenRepository,
 ) {
     @Test
     fun accountDeletionPurgesSyncDataAndUserRow() {
@@ -69,6 +71,9 @@ class DeletionWorkflowIntegrationTest(
                 status { isOk() }
             }
 
+        val deletionRequestId =
+            deletionRequestRepository.findTopByUserIdOrderByRequestedAtDesc(userId)!!.id
+
         val pending =
             deletionRequestRepository.findAllByStatusAndScheduledAtLessThanEqual(
                 AccountDeletionProcessor.STATUS_PENDING,
@@ -82,7 +87,10 @@ class DeletionWorkflowIntegrationTest(
         assertTrue(syncEntityRecordRepository.findUserChangesAfter(userId, 0).isEmpty())
         assertTrue(deletionRequestRepository.findTopByUserIdOrderByRequestedAtDesc(userId) == null)
         assertTrue(
-            securityAuditEventRepository.findAll().any { it.action == "account_deletion_completed" },
+            securityAuditEventRepository.findAll().any {
+                it.action == "account_deletion_completed" &&
+                    it.targetId == deletionRequestId.toString()
+            },
         )
     }
 
@@ -134,22 +142,38 @@ class DeletionWorkflowIntegrationTest(
 
         assertTrue(guestInstallationRepository.findById(guestInstallationId).isPresent)
         assertTrue(deviceInstallationRepository.findAllByOwnerUserId(userId).isNotEmpty())
+        assertTrue(refreshTokenRepository.existsByUserId(userId))
 
-        mockMvc
-            .post("/v1/privacy/deletion-requests") {
-                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
-            }.andExpect {
-                status { isOk() }
-            }
+        val deletionResponse =
+            mockMvc
+                .post("/v1/privacy/deletion-requests") {
+                    header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                }.andExpect {
+                    status { isOk() }
+                }.andReturn()
+                .response.contentAsString
+        val deletionRequestId =
+            UUID.fromString(objectMapper.readTree(deletionResponse).get("id").asText())
 
         assertEquals(1, accountDeletionProcessor.processDueDeletions())
 
         assertTrue(userAccountRepository.findById(userId).isEmpty)
         assertTrue(guestInstallationRepository.findById(guestInstallationId).isEmpty)
         assertTrue(deviceInstallationRepository.findAllByOwnerUserId(userId).isEmpty())
+        assertTrue(!refreshTokenRepository.existsByUserId(userId))
+        assertTrue(!refreshTokenRepository.existsByGuestInstallationId(guestInstallationId))
         assertTrue(deletionRequestRepository.findTopByUserIdOrderByRequestedAtDesc(userId) == null)
         assertTrue(
-            securityAuditEventRepository.findAll().any { it.action == "account_deletion_completed" },
+            securityAuditEventRepository.findAll().none {
+                it.action == "account_deletion_failed" &&
+                    it.targetId == deletionRequestId.toString()
+            },
+        )
+        assertTrue(
+            securityAuditEventRepository.findAll().any {
+                it.action == "account_deletion_completed" &&
+                    it.targetId == deletionRequestId.toString()
+            },
         )
     }
 

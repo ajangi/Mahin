@@ -19,4 +19,8 @@ interface RefreshTokenRepository : JpaRepository<RefreshTokenEntity, UUID> {
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("delete from RefreshTokenEntity t where t.guestInstallationId = :guestInstallationId")
     fun deleteAllByGuestInstallationId(guestInstallationId: UUID)
+
+    fun existsByUserId(userId: UUID): Boolean
+
+    fun existsByGuestInstallationId(guestInstallationId: UUID): Boolean
 }

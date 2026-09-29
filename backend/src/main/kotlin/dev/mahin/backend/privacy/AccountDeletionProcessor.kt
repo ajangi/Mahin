@@ -21,8 +21,12 @@ class AccountDeletionProcessor(
             )
         var processed = 0
         due.forEach { request ->
-            if (accountDeletionExecutor.processSingle(request.id, now)) {
-                processed++
+            try {
+                if (accountDeletionExecutor.processSingle(request.id, now)) {
+                    processed++
+                }
+            } catch (_: RuntimeException) {
+                // Outcome should be persisted in a separate transaction; swallow to continue batch.
             }
         }
         return processed

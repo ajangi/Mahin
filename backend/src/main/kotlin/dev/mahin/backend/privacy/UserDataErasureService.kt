@@ -13,6 +13,7 @@ import dev.mahin.backend.security.SecurityAuditService
 import dev.mahin.backend.sync.persistence.SyncEntityRecordRepository
 import dev.mahin.backend.sync.persistence.SyncIdempotencyRepository
 import dev.mahin.backend.sync.persistence.SyncOwnerStateRepository
+import jakarta.persistence.EntityManager
 import java.util.UUID
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -36,6 +37,7 @@ class UserDataErasureService(
     private val guestInstallationRepository: GuestInstallationRepository,
     private val userAccountRepository: UserAccountRepository,
     private val securityAuditService: SecurityAuditService,
+    private val entityManager: EntityManager,
 ) : RegisteredUserErasure {
     @Transactional
     override fun eraseRegisteredUser(userId: UUID) {
@@ -57,6 +59,7 @@ class UserDataErasureService(
         bookmarkRepository.deleteAllByUserId(userId)
         deletionRequestRepository.deleteAllByUserId(userId)
         userAccountRepository.deleteById(userId)
+        entityManager.flush()
         securityAuditService.record(
             SecurityAuditService.AuditRecord(
                 actorType = "system",
