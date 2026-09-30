@@ -1,10 +1,11 @@
 # M9 Handoff — Privacy/Security Hardening
 
 **Milestone:** M9  
-**Status:** Gatekeeper Round 3 — ready for re-review (draft PR #19)  
-**Branch:** `cursor/m9-privacy-security-hardening-f4b2`  
+**Status:** accepted and merged  
+**Merged:** squash-merge `20aaf121ba468f64dc419c89cfb0b26beae3e895` on `master` ([PR #19](https://github.com/ajangi/Mahin/pull/19))  
+**Branch (historical):** `cursor/m9-privacy-security-hardening-f4b2`  
 **Base:** `5d59c2c84f7e5ccc7a54e12ba0b4231c550058b4`  
-**Next milestone:** M10 — Health Connect (Optional Launch Flag) (`prompts/M10.md`)
+**Next milestone:** M10 — Health Connect (Optional Launch Flag) (`prompts/M10.md`) — **not started**
 
 ## Implemented scope
 
@@ -17,7 +18,7 @@
 
 ### Backend
 - **Flyway V7:** `security_audit_event`, deletion request completion columns, schema bootstrap `m9`.
-- **Deletion workflow:** grace-period queue → `AccountDeletionProcessor` → `UserDataErasureService` (sync, devices, tokens, entitlements, bookmarks, user row).
+- **Deletion workflow:** grace-period queue → `AccountDeletionProcessor` → staged claim/erasure/outcome transactions → `UserDataErasureService` (sync, devices, tokens, entitlements, bookmarks, user row).
 - **Security audit:** `SecurityAuditService` + `security_audit_event` (deletion lifecycle; no health payloads).
 - **Headers & rate limits:** CSP / frame deny / nosniff / referrer-policy; rate limit includes `/v1/admin/auth/login`.
 - **Least privilege test:** CMS `SUPPORT` cannot create content documents.
@@ -30,10 +31,10 @@
 
 | Area | Path |
 |---|---|
-| App lock | `android/core/security/DefaultAppLockGateway.kt`, `PinCredentialStore.kt` |
+| App lock | `android/core/security/DefaultAppLockGateway.kt`, `AppLockGatewayEngine.kt`, `PinCredentialStore.kt` |
 | Privacy UI | `android/app/.../privacy/*` |
 | Local erase | `android/core/database/LocalHealthDataErasureService.kt` |
-| Deletion processor | `backend/.../privacy/AccountDeletionProcessor.kt`, `UserDataErasureService.kt` |
+| Deletion processor | `backend/.../privacy/AccountDeletionProcessor.kt`, `AccountDeletionTransactionServices.kt`, `UserDataErasureService.kt` |
 | Security audit | `backend/.../security/SecurityAuditService.kt` |
 | V7 migration | `backend/src/main/resources/db/migration/V7__m9_security_hardening.sql` |
 | Checklist | `docs/security/CHECKLIST.md` |
@@ -45,16 +46,6 @@
 
 ## ADRs
 - **0016** — M9 privacy & security hardening
-
-## Commands and results (Cloud Agent VM)
-
-| Command | Result |
-|---|---|
-| `python3 scripts/check_design_tokens.py` | PASS |
-| `python3 scripts/security_checklist.py` | PASS (after docs added) |
-| `npx @redocly/cli@1.34.2 lint openapi/openapi.yaml --config redocly.yaml` | PASS (run below) |
-| `cd backend && ./gradlew ktlintCheck detekt test --no-daemon` | PASS — 36 tests |
-| `cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug --no-daemon` | PASS (agent VM with user SDK) |
 
 ## Acceptance criteria (M9)
 
@@ -73,45 +64,31 @@
 | backup restore exercise | Met — drill doc + automated probes |
 | Exit: checklist / high-risk closed | Met with noted open items below |
 
-## Known limitations
+## Known limitations (unchanged)
 - JWT **access** tokens remain valid until TTL after account erasure (refresh tokens removed; denylist deferred).
 - Rate limiting is in-memory per instance (not Redis).
 - Biometric mode requires PIN backup; no server-side lock policy.
 - Cloud/Android backup remains disabled (`allowBackup=false`).
 - Account deletion UI on device for registered users deferred (backend API ready; Android login milestone).
 - Successful account deletion completion is durable in `security_audit_event` only; `deletion_request` rows are removed during erasure.
+- Production IAM, KMS, and secrets manager wiring deferred to **M11**.
 
-## Gatekeeper Round 1 fixes (PR #19)
-- App lock gate re-evaluates on `ON_START` and when `sessionRevision` changes after `lockSession()` (background resume).
-- Fail-closed cold start: loading UI until DataStore prefs load; shell hidden until DISABLED confirmed or user unlocks.
-- Unit tests: `AppLockGateEvaluatorTest`, `AppLockSessionStateTest` (plus existing `AppLockGatewayTest`).
-- `PrivacySecuritySettingsScreen` uses `MahinTypographyRole.TitleLarge` (compile fix).
-- Admin: `vite` ^6.4.3 / `vitest` ^3.2.x — `npm audit --audit-level=high` exits 0.
-- Deletion processor: purge via `UserDataErasureService` first; completion proof in audit event (not a COMPLETED row deleted by erasure).
+## Open follow-ups (M9.x / M11 — non-blocking)
+1. **Atomic deletion claim** — use conditional `UPDATE`, optimistic version column, or ShedLock before running multiple backend replicas, so two workers cannot process the same request.
+2. **Stuck `processing` recovery** — increment `attempt_count` when resetting timed-out rows so repeatedly crashing work eventually reaches permanent failure.
+3. **Deletion batch observability** — log a warning (no PII) in `AccountDeletionProcessor`’s per-request catch when an unexpected exception escapes the executor.
 
-## Gatekeeper Round 2 fixes (PR #19)
-- **Android ktlint:** import/order and line-length fixes; full CI Android pipeline (`ktlintCheck`, `detekt`, `test`, `assembleDebug`, `lintDebug`).
-- **App lock race:** `AppLockGatewayEngine` holds session in `MutableStateFlow` with atomic `.update`; `AppLockGatewayEngineTest` + fixed `lockSessionShowsGateAgain`.
-- **Recents privacy:** `MainActivity` reapplies `setRecentsScreenshotEnabled` when `sessionRevision` changes (not only `onCreate` / `onStop`).
-- **Guest-converted deletion:** `UserDataErasureService` purges device-scoped refresh tokens, linked `guest_installation` artifacts, then user/devices; integration test `guestConvertedUserDeletionPurgesGuestArtifacts`.
-- **Deletion retry:** V7 `attempt_count` / `processing_started_at`; `AccountDeletionExecutor` (transactional) with backoff retry, stuck `processing` recovery, permanent `account_deletion_failed_permanent` audit; `AccountDeletionRetryIntegrationTest`.
+## Deferred (from M9 scope)
+- JWT denylist / token introspection endpoint.
+- Redis rate limiting and WAF rules (staging/prod ops).
+- Encrypted cloud backup with account sync.
 
-## Gatekeeper Round 3 fixes (PR #19)
-- **Deletion transaction boundaries:** `AccountDeletionClaimService`, `AccountDeletionErasureRunner`, and `AccountDeletionOutcomeRecorder` use `REQUIRES_NEW`; orchestration in non-transactional `AccountDeletionExecutor`; `UserDataErasureService` flushes before commit so FK errors surface inside erasure tx.
-- **Batch isolation:** `processDueDeletions` try/catch per request so one failure cannot abort the batch.
-- **Retry tests:** Transactional `@Primary` erasure test double (`TransactionalErasureTestSupport`); non-zero backoff assertions; audit scoped by `targetId`; multi-user “failure does not block success” case.
-- **Guest deletion test:** refresh-token presence/absence; per-user deletion-request and audit scoping.
-- **App lock test:** `failClosedUntilFirstPreferenceEmission` with deferred prefs flow; `@OptIn(ExperimentalCoroutinesApi::class)` on `AppLockGatewayEngineTest`.
+## Gatekeeper history (PR #19)
+Round 1–3 fixes (app lock resume/fail-closed, guest-converted erasure, deletion retry transaction boundaries, CI ktlint/Android pipeline) are included in merge `20aaf121`. See git history on `master` for detail.
 
 ## Unresolved questions
 1. Should access tokens be blocklisted immediately on deletion (Redis) or is short TTL sufficient for launch?
 2. Should completed deletion requests be retained without `user_id` FK for compliance reporting?
-
-## Deferred
-- JWT denylist / token introspection endpoint.
-- Redis rate limiting and WAF rules (staging/prod ops).
-- Encrypted cloud backup with account sync.
-- Production IAM, KMS, and secrets manager wiring (M11).
 
 ## Next milestone
 **M10** — Health Connect (Optional Launch Flag) (`prompts/M10.md`). Do not start until assigned.
