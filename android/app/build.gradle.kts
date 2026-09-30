@@ -50,7 +50,7 @@ dependencies {
     implementation(libs.hilt.android)
     implementation(libs.androidx.hilt.work)
     ksp(libs.androidx.hilt.compiler)
-    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.biometric)
 
     testImplementation(libs.junit)
     testImplementation(libs.truth)

@@ -6,12 +6,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.mahin.android.privacy.SensitiveScreenProtection
+import dev.mahin.android.privacy.SensitiveScreenViewModel
 
 @Composable
 fun LogScreen(
     modifier: Modifier = Modifier,
     viewModel: LogViewModel = hiltViewModel(),
+    sensitiveScreenViewModel: SensitiveScreenViewModel = hiltViewModel(),
 ) {
+    SensitiveScreenProtection(enabled = sensitiveScreenViewModel.blockScreenshotsEnabled())
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val ttcCallbacks =
         remember(viewModel) {

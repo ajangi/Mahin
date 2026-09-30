@@ -21,6 +21,7 @@ import dev.mahin.android.R
 import dev.mahin.android.notifications.NotificationSettingsScreen
 import dev.mahin.android.pregnancy.PregnancyStartSheet
 import dev.mahin.android.pregnancy.PregnancyTodayCard
+import dev.mahin.android.privacy.PrivacySecuritySettingsScreen
 import dev.mahin.core.designsystem.MahinSpacing
 import dev.mahin.core.designsystem.MahinTypographyRole
 import dev.mahin.core.designsystem.component.MahinEmptyState
@@ -34,12 +35,24 @@ import dev.mahin.domain.cycle.PredictionConfidence
 fun TodayScreen(
     modifier: Modifier = Modifier,
     onOpenDataExport: () -> Unit = {},
+    onLocalDataErased: () -> Unit = {},
     viewModel: TodayViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showNotificationSettings by rememberSaveable { mutableStateOf(false) }
+    var showPrivacySettings by rememberSaveable { mutableStateOf(false) }
     if (showNotificationSettings) {
         NotificationSettingsScreen(onNavigateUp = { showNotificationSettings = false })
+        return
+    }
+    if (showPrivacySettings) {
+        PrivacySecuritySettingsScreen(
+            onNavigateUp = { showPrivacySettings = false },
+            onLocalDataErased = {
+                showPrivacySettings = false
+                onLocalDataErased()
+            },
+        )
         return
     }
     PregnancyStartSheet(
@@ -123,6 +136,11 @@ fun TodayScreen(
         item {
             TextButton(onClick = { showNotificationSettings = true }) {
                 Text(stringResource(R.string.notification_settings_entry))
+            }
+        }
+        item {
+            TextButton(onClick = { showPrivacySettings = true }) {
+                Text(stringResource(R.string.privacy_security_entry))
             }
         }
         item {

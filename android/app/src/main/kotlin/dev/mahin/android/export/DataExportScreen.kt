@@ -17,6 +17,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mahin.android.R
+import dev.mahin.android.privacy.SensitiveScreenProtection
+import dev.mahin.android.privacy.SensitiveScreenViewModel
 import dev.mahin.core.designsystem.MahinSpacing
 
 @Composable
@@ -24,7 +26,9 @@ fun DataExportScreen(
     onNavigateUp: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DataExportViewModel = hiltViewModel(),
+    sensitiveScreenViewModel: SensitiveScreenViewModel = hiltViewModel(),
 ) {
+    SensitiveScreenProtection(enabled = sensitiveScreenViewModel.blockScreenshotsEnabled())
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 

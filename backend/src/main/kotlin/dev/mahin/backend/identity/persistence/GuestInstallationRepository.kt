@@ -5,4 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 interface GuestInstallationRepository : JpaRepository<GuestInstallationEntity, UUID> {
     fun findByLocalUserId(localUserId: UUID): GuestInstallationEntity?
+
+    fun findAllByLinkedUserId(linkedUserId: UUID): List<GuestInstallationEntity>
 }

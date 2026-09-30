@@ -24,6 +24,7 @@ espresso = "3.6.1"
 truth = "1.4.4"
 turbine = "1.2.0"
 securityCrypto = "1.1.0-alpha06"
+biometric = "1.1.0"
 ktlint = "12.1.1"
 detekt = "1.23.7"
 desugar = "2.1.2"
@@ -69,6 +70,7 @@ androidx-work-ktx = { group = "androidx.work", name = "work-runtime-ktx", versio
 androidx-hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "hiltNavigationCompose" }
 androidx-hilt-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "hiltNavigationCompose" }
 androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
+androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "biometric" }
 play-billing-ktx = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "billing" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }

@@ -11,6 +11,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter
 
 @Configuration
 @EnableWebSecurity
@@ -76,6 +77,17 @@ class SecurityConfig(
                     .authenticated()
             }.addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter::class.java)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
+            .headers { headers ->
+                headers.contentTypeOptions { }
+                headers.frameOptions { frame -> frame.deny() }
+                headers.referrerPolicy { referrer ->
+                    referrer.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
+                }
+                headers.cacheControl { }
+                headers.contentSecurityPolicy { csp ->
+                    csp.policyDirectives("default-src 'none'; frame-ancestors 'none'")
+                }
+            }
         return http.build()
     }
 }

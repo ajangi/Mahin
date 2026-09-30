@@ -35,7 +35,28 @@
     <string name="export_share">اشتراک‌گذاری</string>
     <string name="export_share_chooser">اشتراک خروجی</string>
     <string name="export_close">بستن</string>
-    <string name="export_locked">قفل حریم خصوصی فعال است. ابتدا اپ را باز کنید (قفل در نسخه‌های بعد).</string>
+    <string name="export_locked">برای خروجی داده ابتدا قفل اپ را باز کنید.</string>
+
+    <string name="privacy_security_entry">حریم خصوصی و امنیت</string>
+    <string name="privacy_security_title">حریم خصوصی و امنیت</string>
+    <string name="privacy_app_lock_heading">قفل اپ</string>
+    <string name="privacy_app_lock_body">با PIN یا اثرانگشت از دسترسی دیگران به داده‌های حساس جلوگیری کنید.</string>
+    <string name="privacy_lock_mode_off">خاموش</string>
+    <string name="privacy_lock_mode_pin">PIN</string>
+    <string name="privacy_lock_mode_biometric">اثرانگشت</string>
+    <string name="privacy_set_pin">تنظیم PIN جدید</string>
+    <string name="privacy_pin_hint">حداقل ۴ رقم</string>
+    <string name="privacy_hide_recents">مخفی‌کردن پیش‌نمایش در برنامه‌های اخیر</string>
+    <string name="privacy_block_screenshots">مسدود کردن اسکرین‌شات در صفحات حساس</string>
+    <string name="privacy_erase_local">پاک‌کردن همهٔ دادهٔ محلی</string>
+    <string name="privacy_erase_confirm">همهٔ تاریخچهٔ پریود، TTC و بارداری روی این دستگاه برای همیشه حذف می‌شود.</string>
+    <string name="privacy_erase_action">پاک‌سازی</string>
+    <string name="privacy_back">بازگشت</string>
+    <string name="app_lock_title">ماهین قفل است</string>
+    <string name="app_lock_pin_prompt">PIN را وارد کنید</string>
+    <string name="app_lock_unlock">باز کردن</string>
+    <string name="app_lock_use_biometric">اثرانگشت</string>
+    <string name="app_lock_invalid_pin">PIN نادرست است</string>
 
     <string name="today_title">امروز</string>
     <string name="today_subtitle">خلاصهٔ چرخه و ثبت‌های امروز</string>

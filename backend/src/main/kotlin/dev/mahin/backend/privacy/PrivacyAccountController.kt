@@ -35,4 +35,11 @@ class PrivacyAccountController(
         return privacyAccountService.getExportJob(user.userId, jobId)
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "export_job_not_found")
     }
+
+    @GetMapping("/deletion-requests/latest")
+    fun latestDeletionRequest(): DeletionRequestResponse {
+        val user = currentRegisteredUser()
+        return privacyAccountService.latestDeletionRequest(user.userId)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "deletion_request_not_found")
+    }
 }

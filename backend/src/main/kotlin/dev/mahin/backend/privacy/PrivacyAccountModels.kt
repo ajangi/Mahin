@@ -8,6 +8,7 @@ data class DeletionRequestResponse(
     val status: String,
     val requestedAt: Instant,
     val scheduledAt: Instant?,
+    val completedAt: Instant?,
 )
 
 data class ExportJobResponse(

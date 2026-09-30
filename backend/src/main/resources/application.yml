@@ -49,6 +49,12 @@ mahin:
     access-token-ttl-seconds: ${MAHIN_AUTH_ACCESS_TTL_SECONDS:900}
     refresh-token-ttl-seconds: ${MAHIN_AUTH_REFRESH_TTL_SECONDS:2592000}
     rate-limit-per-minute: ${MAHIN_AUTH_RATE_LIMIT_PER_MINUTE:120}
+  privacy:
+    deletion-grace-seconds: ${MAHIN_PRIVACY_DELETION_GRACE_SECONDS:1209600}
+    deletion-processor-delay-ms: ${MAHIN_PRIVACY_DELETION_PROCESSOR_DELAY_MS:60000}
+    deletion-max-attempts: ${MAHIN_PRIVACY_DELETION_MAX_ATTEMPTS:5}
+    deletion-retry-base-seconds: ${MAHIN_PRIVACY_DELETION_RETRY_BASE_SECONDS:60}
+    deletion-processing-timeout-seconds: ${MAHIN_PRIVACY_DELETION_PROCESSING_TIMEOUT_SECONDS:900}
 
 logging:
   pattern:

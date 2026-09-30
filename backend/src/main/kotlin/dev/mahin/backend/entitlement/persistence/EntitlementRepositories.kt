@@ -2,6 +2,7 @@ package dev.mahin.backend.entitlement.persistence
 
 import java.util.UUID
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 
 interface PlaySubscriptionRecordRepository : JpaRepository<PlaySubscriptionRecordEntity, UUID> {
@@ -11,6 +12,10 @@ interface PlaySubscriptionRecordRepository : JpaRepository<PlaySubscriptionRecor
     ): PlaySubscriptionRecordEntity?
 
     fun findAllByUserId(userId: UUID): List<PlaySubscriptionRecordEntity>
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("delete from PlaySubscriptionRecordEntity r where r.userId = :userId")
+    fun deleteAllByUserId(userId: UUID)
 }
 
 interface EntitlementGrantRepository : JpaRepository<EntitlementGrantEntity, UUID> {
@@ -27,4 +32,8 @@ interface EntitlementGrantRepository : JpaRepository<EntitlementGrantEntity, UUI
         userId: UUID,
         now: java.time.Instant,
     ): List<EntitlementGrantEntity>
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("delete from EntitlementGrantEntity g where g.userId = :userId")
+    fun deleteAllByUserId(userId: UUID)
 }

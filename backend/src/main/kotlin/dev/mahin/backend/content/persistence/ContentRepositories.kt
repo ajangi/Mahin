@@ -3,6 +3,7 @@ package dev.mahin.backend.content.persistence
 import java.util.Optional
 import java.util.UUID
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 
@@ -75,4 +76,8 @@ interface UserContentBookmarkRepository : JpaRepository<UserContentBookmarkEntit
         userId: UUID,
         documentId: UUID,
     ): Boolean
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("delete from UserContentBookmarkEntity b where b.userId = :userId")
+    fun deleteAllByUserId(userId: UUID)
 }

@@ -9,6 +9,7 @@ import java.util.UUID
 
 @Entity
 @Table(name = "deletion_request")
+@Suppress("LongParameterList")
 class DeletionRequestEntity(
     @Id
     @Column(name = "id", nullable = false)
@@ -21,4 +22,12 @@ class DeletionRequestEntity(
     var requestedAt: Instant,
     @Column(name = "scheduled_at")
     var scheduledAt: Instant? = null,
+    @Column(name = "completed_at")
+    var completedAt: Instant? = null,
+    @Column(name = "failure_reason", length = 256)
+    var failureReason: String? = null,
+    @Column(name = "attempt_count", nullable = false)
+    var attemptCount: Int = 0,
+    @Column(name = "processing_started_at")
+    var processingStartedAt: Instant? = null,
 )

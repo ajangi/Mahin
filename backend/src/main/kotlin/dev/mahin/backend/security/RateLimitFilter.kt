@@ -22,7 +22,11 @@ class RateLimitFilter(
         response: HttpServletResponse,
         filterChain: FilterChain,
     ) {
-        if (!request.requestURI.startsWith("/v1/auth") && !request.requestURI.startsWith("/v1/identity")) {
+        if (
+            !request.requestURI.startsWith("/v1/auth") &&
+            !request.requestURI.startsWith("/v1/identity") &&
+            !request.requestURI.startsWith("/v1/admin/auth")
+        ) {
             filterChain.doFilter(request, response)
             return
         }

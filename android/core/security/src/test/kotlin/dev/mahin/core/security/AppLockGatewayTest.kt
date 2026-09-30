@@ -7,6 +7,8 @@ class AppLockGatewayTest {
     @Test
     fun defaultLockIsOffUntilM9() {
         assertThat(DisabledAppLockGateway.isLockEnabled).isFalse()
+        assertThat(DisabledAppLockGateway.shouldShowLockGate()).isFalse()
+        assertThat(DisabledAppLockGateway.requiresUnlockForSensitiveAction()).isFalse()
         assertThat(DisabledAppLockGateway.shouldHideRecentsPreview()).isFalse()
     }
 }
