@@ -13,6 +13,7 @@ import dev.mahin.core.datastore.TtcPrivacyPreferencesRepository
 import dev.mahin.core.datetime.CivilDateConverter
 import dev.mahin.core.datetime.JalaliDate
 import dev.mahin.core.datetime.PersianCivilDateConverter
+import dev.mahin.core.healthconnect.PeriodDayTrackingService
 import dev.mahin.core.model.CervicalMucusType
 import dev.mahin.core.model.OvulationTestResult
 import dev.mahin.core.model.PeriodFlowLevel
@@ -68,6 +69,7 @@ class LogViewModel
     @Inject
     constructor(
         private val repository: CycleTrackingRepository,
+        private val periodDayTrackingService: PeriodDayTrackingService,
         private val ttcRepository: TtcTrackingRepository,
         private val pregnancyRepository: PregnancyTrackingRepository,
         private val ttcPrivacyRepository: TtcPrivacyPreferencesRepository,
@@ -236,26 +238,7 @@ class LogViewModel
                 bpSystolic = bpPair?.first
                 bpDiastolic = bpPair?.second
             }
-            if (state.loggingPeriod) {
-                val existing =
-                    repository.getAllPeriods().find { record ->
-                        !date.isBefore(record.startDate) &&
-                            (record.endDate == null || !date.isAfter(record.endDate))
-                    }
-                if (existing == null) {
-                    repository.upsertPeriod(
-                        startDate = date,
-                        endDate = date,
-                        note = null,
-                        recordId = null,
-                    )
-                }
-                repository.upsertPeriodDay(
-                    date = date,
-                    flowLevel = state.flowLevel,
-                    hasClots = false,
-                )
-            }
+            applyPeriodDayFromLog(state, date)
             repository.upsertDailyLog(
                 date = date,
                 moodTags = state.moodTags,
@@ -302,6 +285,34 @@ class LogViewModel
                 )
             }
             _uiState.update { it.copy(saving = false, saved = true) }
+        }
+
+        private suspend fun applyPeriodDayFromLog(
+            state: LogUiState,
+            date: LocalDate,
+        ) {
+            if (state.loggingPeriod) {
+                val existing =
+                    repository.getAllPeriods().find { record ->
+                        !date.isBefore(record.startDate) &&
+                            (record.endDate == null || !date.isAfter(record.endDate))
+                    }
+                if (existing == null) {
+                    repository.upsertPeriod(
+                        startDate = date,
+                        endDate = date,
+                        note = null,
+                        recordId = null,
+                    )
+                }
+                periodDayTrackingService.saveLoggedPeriodDay(
+                    date = date,
+                    flowLevel = state.flowLevel,
+                    hasClots = false,
+                )
+            } else if (repository.getPeriodDayForDate(date) != null) {
+                periodDayTrackingService.removeUserPeriodDay(date)
+            }
         }
 
         private fun loadForSelectedDate() {

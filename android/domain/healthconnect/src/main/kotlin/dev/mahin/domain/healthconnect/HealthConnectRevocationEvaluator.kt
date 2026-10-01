@@ -1,4 +1,4 @@
-package dev.mahin.core.healthconnect
+package dev.mahin.domain.healthconnect
 
 internal object HealthConnectRevocationEvaluator {
     fun evaluate(

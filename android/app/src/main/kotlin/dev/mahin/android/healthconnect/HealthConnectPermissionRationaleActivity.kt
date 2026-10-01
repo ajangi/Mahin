@@ -1,11 +1,15 @@
 package dev.mahin.android.healthconnect
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import dev.mahin.android.R
@@ -20,11 +24,24 @@ class HealthConnectPermissionRationaleActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MahinTheme {
-                Text(
-                    text = stringResource(R.string.health_connect_rationale_activity),
-                    modifier = Modifier.padding(MahinSpacing.md),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
+                Column(modifier = Modifier.padding(MahinSpacing.md)) {
+                    Text(
+                        text = stringResource(R.string.health_connect_rationale_activity),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    TextButton(
+                        onClick = {
+                            startActivity(
+                                Intent(
+                                    Intent.ACTION_VIEW,
+                                    Uri.parse(getString(R.string.health_connect_privacy_policy_url)),
+                                ),
+                            )
+                        },
+                    ) {
+                        Text(stringResource(R.string.health_connect_privacy_policy_link))
+                    }
+                }
             }
         }
     }

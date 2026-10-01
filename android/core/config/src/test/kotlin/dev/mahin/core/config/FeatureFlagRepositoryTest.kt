@@ -37,4 +37,18 @@ class FeatureFlagRepositoryTest {
         val gateway = RemoteFeatureFlagGateway(repository)
         assertThat(gateway.isEnabled(MahinFeatureFlags.HEALTH_CONNECT)).isFalse()
     }
+
+    @Test
+    fun refreshFailureKeepsPriorSnapshot() =
+        runTest {
+            val repository =
+                FeatureFlagRepository(
+                    object : MetaApi {
+                        override suspend fun meta(): MetaApiResponse = error("network down")
+                    },
+                )
+            val result = repository.refreshFromRemote()
+            assertThat(result.isFailure).isTrue()
+            assertThat(repository.isEnabled(MahinFeatureFlags.HEALTH_CONNECT)).isFalse()
+        }
 }

@@ -8,15 +8,17 @@ PRD §23 and milestone M10 require an optional Health Connect boundary, minimal 
 
 ## Decision
 1. Expose launch flag `health_connect` on public `GET /v1/meta` (`featureFlags`), default **false** (`MAHIN_FEATURE_HEALTH_CONNECT`).
-2. Android `FeatureFlagRepository` refreshes from meta; `FeatureFlagGateway` gates all Health Connect UI and coordinator paths.
+2. Android `FeatureFlagRepository` refreshes from meta; `FeatureFlagGateway` gates all Health Connect UI and `HealthConnectSyncEngine` paths.
 3. New modules:
-   - `domain/healthconnect` — deterministic menstruation flow mapping/merge rules (no SDK).
-   - `core/healthconnect` — `connect-client` SDK boundary, permission policy, sync coordinator.
-4. Approved M10 sync scope: **MenstruationFlowRecord** import/export for logged period days only; period span write and non-cycle records deferred.
-5. User opt-in + education screen before `PermissionController` request; rationale activity for Android 14+ policy.
-6. Revocation: if permissions were granted then removed, clear local opt-in flags and stop sync (no impact on Room tracker).
+   - `domain/healthconnect` — `HealthConnectSyncEngine`, mapping/merge/tombstone rules (no SDK).
+   - `core/healthconnect` — `connect-client` SDK adapter (`AndroidHealthConnectRemoteClient`), permission policy, coordinator facade.
+4. M10 sync scope: **MenstruationFlowRecord** import/export for logged period days only. Mapping sign-off: **pending product-owner confirmation** (see handoff).
+5. User opt-in + education before permission request; rationale activity links to privacy policy URL.
+6. **Revocation:** on screen open and every `ON_RESUME`, re-check permissions; if previously granted permissions are missing, clear opt-in flags and show revoked message. **Imported/local period data remains on device.**
+7. **Deleted days (default policy):** local tombstone when user removes period logging; import skips tombstoned dates; export deletes Mahin `clientRecordId` rows in Health Connect. Documented in `docs/health-connect/DELETED_PERIOD_DAY_POLICY.md` (isolated for future product changes).
+8. Export idempotency: stable `clientRecordId` (`mahin-period-day-<yyyy-MM-dd>`) + `clientRecordVersion = updatedAtEpochMs`.
 
 ## Consequences
 - Health Connect can be enabled remotely without an app release (meta fetch on settings open / Today flag refresh).
-- Manifest menstruation permissions are declared but unused when flag is off.
-- Further record types require PRD/product approval and ADR amendment.
+- Manifest menstruation permissions are declared; Play Console health-permissions declaration required even when launch flag is off.
+- Health Connect SDK calls occur only when availability is `READY`, wrapped in `runCatching`.

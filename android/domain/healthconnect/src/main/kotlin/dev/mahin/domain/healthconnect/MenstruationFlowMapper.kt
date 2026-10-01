@@ -5,10 +5,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
-/**
- * Product-approved Health Connect menstruation mapping (M10).
- * SDK record types: MenstruationFlowRecord, MenstruationPeriodRecord (see docs/health-connect/).
- */
 enum class HealthConnectMenstruationFlow {
     UNKNOWN,
     LIGHT,
@@ -20,12 +16,13 @@ data class HealthConnectMenstruationFlowDay(
     val localDate: LocalDate,
     val flow: HealthConnectMenstruationFlow,
     val sourceUpdatedAt: Instant,
+    val dataOriginPackage: String = "",
 )
 
-data class HealthConnectMenstruationPeriodSpan(
-    val startDate: LocalDate,
-    val endDate: LocalDate,
-    val sourceUpdatedAt: Instant,
+data class MenstruationFlowExportWrite(
+    val localDate: LocalDate,
+    val flow: HealthConnectMenstruationFlow,
+    val updatedAtEpochMs: Long,
 )
 
 object MenstruationFlowMapper {
@@ -54,9 +51,6 @@ object MenstruationFlowMapper {
 }
 
 object MenstruationImportMerger {
-    /**
-     * Keeps the row with the newest [sourceUpdatedAt] when both local and Health Connect have a day.
-     */
     fun shouldReplaceLocal(
         localUpdatedAtEpochMs: Long,
         incoming: Instant,

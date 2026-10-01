@@ -6,11 +6,11 @@
 
 ## Product-approved record types
 
-| Health Connect record | Mahin feature | Direction |
-|---|---|---|
-| `MenstruationFlowRecord` | Period day flow logging / calendar | Import + export |
+| Health Connect record | Mahin feature | Direction | Sign-off |
+|---|---|---|---|
+| `MenstruationFlowRecord` | Period day flow logging / calendar | Import + export | **Pending product-owner confirmation** |
 
-M10 implements **menstruation flow day** import/export mapping only. `MenstruationPeriodRecord` and other families are out of scope until product-approved.
+No other Health Connect families in M10.
 
 ## Permissions (minimal)
 
@@ -19,14 +19,25 @@ M10 implements **menstruation flow day** import/export mapping only. `Menstruati
 
 Mapped Health Connect permissions (via SDK): read/write for `MenstruationFlowRecord` only (`HealthConnectPermissionPolicy`).
 
+**Play Console:** declare health permissions even when `health_connect` launch flag is off (manifest still declares menstruation permissions).
+
 ## User education
 
-Persian copy in `HealthConnectPermissionEducation` and Settings UI explains each permission before the system dialog (`HealthConnectSettingsScreen`).
+Persian copy in `HealthConnectPermissionEducation` and Settings UI explains each permission before the system dialog. Rationale activity links to privacy policy URL (`health_connect_privacy_policy_url`).
+
+## SDK call safety
+
+- `AndroidHealthConnectRemoteClient` calls `HealthConnectClient` only when `availability == READY`.
+- `getOrCreate`, permission reads, paginated reads, upsert, and delete are wrapped in `runCatching` → `HealthConnectClientResult`.
 
 ## Revocation
 
-If granted permissions drop after prior success, `HealthConnectCoordinator` clears opt-in state and surfaces `PermissionsRevoked` (core tracker unchanged).
+On settings open and every `ON_RESUME`, `HealthConnectSyncEngine.refreshRevocationState()` runs. If permissions drop after a prior grant, opt-in flags clear and UI shows revoked message. **Data already imported into Room stays local.**
+
+## Deleted period days
+
+See `docs/health-connect/DELETED_PERIOD_DAY_POLICY.md`.
 
 ## Remote disable
 
-When `health_connect` flag is false, Today screen hides entry, coordinator returns `FeatureDisabled`, and no permission requests are made.
+When `health_connect` flag is false, Today hides entry, settings screen closes only **after** meta load confirms flag off, and sync engine returns `FeatureDisabled` without Health Connect API calls.

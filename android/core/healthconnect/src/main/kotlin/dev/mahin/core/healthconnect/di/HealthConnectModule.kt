@@ -4,8 +4,10 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import dev.mahin.core.healthconnect.AndroidHealthConnectClientGateway
-import dev.mahin.core.healthconnect.HealthConnectClientGateway
+import dev.mahin.core.healthconnect.AndroidHealthConnectRemoteClient
+import dev.mahin.core.healthconnect.HealthConnectCoordinator
+import dev.mahin.core.healthconnect.HealthConnectCoordinatorFacade
+import dev.mahin.domain.healthconnect.HealthConnectRemoteClient
 import javax.inject.Singleton
 
 @Module
@@ -13,5 +15,9 @@ import javax.inject.Singleton
 abstract class HealthConnectModule {
     @Binds
     @Singleton
-    abstract fun bindHealthConnectClientGateway(impl: AndroidHealthConnectClientGateway): HealthConnectClientGateway
+    abstract fun bindHealthConnectRemoteClient(impl: AndroidHealthConnectRemoteClient): HealthConnectRemoteClient
+
+    @Binds
+    @Singleton
+    abstract fun bindHealthConnectCoordinatorFacade(impl: HealthConnectCoordinator): HealthConnectCoordinatorFacade
 }

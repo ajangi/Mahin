@@ -1,34 +1,44 @@
 # M10 Handoff — Health Connect (Optional Launch Flag)
 
 **Milestone:** M10  
-**Status:** Complete — draft PR pending  
+**Status:** Gatekeeper round 1 fixes applied — **draft PR #21 in review**  
 **Branch:** `cursor/m10-health-connect-launch-flag-60e6`  
 **Base:** `1fb20319bd0c4458c8c8080acc2a8cd363450338`  
-**Next milestone:** M11 — Production Hardening & Release (`prompts/M11.md`)
+**Next milestone:** M11 — Production Hardening & Release (`prompts/M11.md`) — **do not start until assigned**
+
+## Gatekeeper round 1 (BLOCK → fixes)
+
+Addressed review on PR #21: loading gate before navigate-away, HC API crash safety + Play Store links, export idempotency metadata, import safety (origin skip, lossy-level preservation, record `zoneOffset`, pagination), user-deleted tombstones, revocation on open/resume, expanded JVM/Robolectric tests, rationale privacy policy link, compliance doc rows, doc accuracy (mapping sign-off pending, acceptance criteria honest).
 
 ## Implemented scope
 
 ### Remote launch flag (default off)
 - Backend `GET /v1/meta` includes `featureFlags.health_connect` from `mahin.features.health-connect` / env `MAHIN_FEATURE_HEALTH_CONNECT` (default `false`).
-- Android `FeatureFlagRepository` + `RemoteFeatureFlagGateway` refresh from meta; Today screen shows Health Connect entry only when flag is true.
+- Android `FeatureFlagRepository` + `RemoteFeatureFlagGateway` refresh from meta; Today shows Health Connect entry only when flag is true after refresh.
 
 ### Health Connect boundary (Android)
-- SDK: `androidx.health.connect:connect-client:1.1.0-alpha11` (verified compileSdk 35 / AGP 8.7.3 — see `docs/health-connect/SDK_POLICY_VERIFICATION.md`).
-- Modules: `domain/healthconnect` (mapping/merge), `core/healthconnect` (SDK + coordinator).
+- SDK: `androidx.health.connect:connect-client:1.1.0-alpha11` (compileSdk 35 — see `docs/health-connect/SDK_POLICY_VERIFICATION.md`).
+- Modules: `domain/healthconnect` (`HealthConnectSyncEngine`, policies, mappers); `core/healthconnect` (`AndroidHealthConnectRemoteClient`, pager, coordinator facade).
 - Minimal permissions: read/write **MenstruationFlowRecord** only (`HealthConnectPermissionPolicy`).
-- Persian permission education before system dialog; optional user opt-in; import/export actions gated by app lock (M9).
-- Revocation: `HealthConnectRevocationEvaluator` + coordinator clears opt-in when permissions drop after prior grant.
-- Rationale activity for Android 14+ policy (`HealthConnectPermissionRationaleActivity`).
+- Persian strings in `strings.xml`; permission education before system dialog; opt-in row toggleable with merged accessibility label.
+- **Loading:** `HealthConnectUiState.launchFlagLoading` — screen stays until meta refresh completes; navigate up only when `!loading && !launchFlagEnabled`.
+- **Crash safety:** HC APIs only when `availability() == READY`; `getOrCreate`, grants, read, insert, delete wrapped in `runCatching` → `HealthConnectClientResult` / sync `Failure` / `PermissionsMissing`. Play Store link for `NOT_INSTALLED`, `UPDATE_REQUIRED`, `SDK_UNAVAILABLE`.
+- **Revocation:** `refreshRevocationState()` on screen open and every `ON_RESUME`; clears opt-in when permissions drop after prior grant; user messaging. **Imported/local period data stays on device after revoke or opt-out** (documented in ADR 0017, SDK doc, strings).
+- Rationale activity: privacy policy URL (`health_connect_privacy_policy_url`) per HC policy.
 
-### Import/export mapping (product-approved M10)
-- **Export:** local `period_day` rows with flow → Health Connect `MenstruationFlowRecord`.
-- **Import:** Health Connect flow records → `period_day` with newer-wins merge (`MenstruationImportMerger`).
-- No BBT, intercourse, pregnancy, or other HC families.
+### Sync engine (domain)
+- **Export idempotency:** `MenstruationExportIds.clientRecordId` = `mahin-period-day-<yyyy-MM-dd>`; `clientRecordVersion = updatedAtEpochMs` on write metadata.
+- **Import:** skip records whose `dataOrigin` is Mahin package; newer-wins unless lossy mapping would downgrade local flow (`MenstruationImportPolicy`); local date from record `zoneOffset`; all pages via `HealthConnectMenstruationFlowPager`.
+- **Deleted days (default, changeable):** `HealthConnectPeriodDayTombstoneRepository` + `PeriodDayTrackingService`; policy in `docs/health-connect/DELETED_PERIOD_DAY_POLICY.md`. Import skips tombstoned dates; export deletes Mahin `clientRecordId` in HC.
 
-### Tests
-- Backend: meta flag default + enabled property test.
-- JVM: menstruation mapper/merge, feature flag repository, permission policy, revocation evaluator.
-- Android module unit tests for healthconnect/config.
+### Import/export mapping
+- **Export:** local `period_day` rows with mappable flow → Health Connect `MenstruationFlowRecord`.
+- **Import:** HC flow records → `period_day` with rules above.
+- **Product sign-off:** period day ↔ MenstruationFlow mapping — **pending product-owner confirmation** (not blocking code merge; do not treat as medically “approved” in release comms until confirmed).
+
+### Compliance documentation
+- `docs/compliance/DATA_SAFETY_MATRIX.md` — Health Connect read/write rows, local-only, no backend upload, revoke behaviour.
+- `docs/PRIVACY_ENGINEERING.md` — Health Connect section; Play Console health-permissions declaration required even when launch flag is off.
 
 ## Notable files
 
@@ -36,54 +46,66 @@
 |---|---|
 | Launch flag (server) | `backend/.../config/MahinFeatureFlagsProperties.kt`, `MetaController.kt` |
 | Launch flag (client) | `android/core/config/FeatureFlagRepository.kt`, `MetaApi.kt` |
-| SDK boundary | `android/core/healthconnect/AndroidHealthConnectClientGateway.kt` |
+| Sync engine | `android/domain/healthconnect/HealthConnectSyncEngine.kt` |
+| SDK adapter | `android/core/healthconnect/AndroidHealthConnectRemoteClient.kt` |
 | Coordinator | `android/core/healthconnect/HealthConnectCoordinator.kt` |
-| Domain mapping | `android/domain/healthconnect/MenstruationFlowMapper.kt` |
-| Settings UI | `android/app/.../healthconnect/HealthConnectSettingsScreen.kt` |
-| SDK verification | `docs/health-connect/SDK_POLICY_VERIFICATION.md` |
+| Tombstones | `android/core/datastore/HealthConnectPeriodDayTombstoneRepository.kt` |
+| Deleted-day policy | `docs/health-connect/DELETED_PERIOD_DAY_POLICY.md` |
+| Settings UI | `android/app/.../healthconnect/HealthConnectSettingsScreen.kt`, `HealthConnectSettingsViewModel.kt` |
 | ADR | `docs/adr/0017-m10-health-connect-launch-flag.md` |
 
 ## Migrations
 - **Backend:** none (config-only flag).
-- **Android Room:** none.
+- **Android Room:** none (tombstones in DataStore preferences).
 
 ## ADRs
 - **0017** — M10 Health Connect optional launch flag
 
-## Commands and results (Cloud Agent VM)
+## Commands and results (Gatekeeper re-run, Cloud Agent VM)
 
 | Command | Result |
 |---|---|
 | `python3 scripts/check_design_tokens.py` | PASS |
 | `python3 scripts/security_checklist.py` | PASS |
 | `npx @redocly/cli@1.34.2 lint openapi/openapi.yaml --config redocly.yaml` | PASS |
-| `cd backend && ./gradlew ktlintCheck detekt test --no-daemon` | PASS (37 tests) |
-| `cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug --no-daemon` | PASS (after local SDK install: `sdkmanager` platforms 35 + build-tools; `android/local.properties` not committed) |
+| `cd backend && ./gradlew ktlintCheck detekt test` | PASS (37 tests) |
+| `cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug` | PASS |
+
+## Tests (high level)
+
+- **Backend:** meta flag default + enabled property.
+- **domain/healthconnect (JVM):** `HealthConnectSyncEngineTest` (flag off → zero remote calls; locked / not opted in / permissions / revoked; import newer-wins, skip own origin, lossy preserve, tombstone, Tehran offset, pagination via pager test); `MenstruationFlowMapperTest` (Tehran start-of-day assertion, stable `clientRecordId`); `HealthConnectRevocationEvaluatorTest`.
+- **core/healthconnect:** `HealthConnectMenstruationFlowPagerTest`.
+- **core/config:** `FeatureFlagRepositoryTest` fetch-error path.
+- **app (Robolectric):** `HealthConnectSettingsViewModelTest` (loading, flag off navigate, flag on).
+- **app:** `LogViewModelTest` updated for `PeriodDayTrackingService` / tombstones.
 
 ## Acceptance criteria (M10)
 
 | Criterion | Status |
 |---|---|
 | Current SDK/policy verification | Met — doc + `connect-client:1.1.0-alpha11` on compileSdk 35 |
-| Permission education | Met — fa-IR rationale list + ack before request |
+| Permission education | Met — fa-IR rationale + ack before request; privacy policy in rationale activity |
 | Minimal record permissions | Met — MenstruationFlow read/write only |
-| Import/export mapping (approved) | Met — period day ↔ MenstruationFlow |
-| Revocation behavior | Met — clears opt-in, user messaging |
-| Tests | Met — backend + JVM + Android unit |
-| Exit: remotely disable without affecting core tracker | Met — flag off hides UI; coordinator no-ops |
+| Import/export mapping (approved) | **Partial — pending product-owner confirmation** |
+| Revocation behavior | Met — open + ON_RESUME refresh; clears opt-in; local data retained |
+| Deleted-day default policy | Met — tombstone isolated + documented |
+| Tests | Met — expanded JVM + Robolectric coverage per gatekeeper |
+| Exit: remotely disable without affecting core tracker | Met — flag off hides UI; engine no-ops; zero HC calls when flag off |
 
 ## Known limitations
 - Launch flag refresh requires network reachability to `/v1/meta` (defaults off until refresh succeeds).
 - Menstruation **period span** records and non-flow data not synced in M10.
 - Health Connect provider must be installed/updated on device; alpha11 SDK pinned for current AGP/compileSdk.
-- `core:network` no longer depends on `core:config` (removed unused dependency to break cycle with config’s meta client).
+- Guest **erase-all** clears Room only; Health Connect tombstone DataStore keys may remain until a follow-up ties erasure to HC prefs/tombstones (M11 hygiene if product requires).
+- `core:network` no longer depends on `core:config` (removed unused dependency to break cycle).
 
 ## Unresolved questions
-- None blocking M10 exit. Product may later approve additional HC record families under a new ADR.
+- Product-owner confirmation of period day ↔ MenstruationFlow mapping for release messaging.
 
 ## Deferred (not M10)
 - M9 follow-ups (atomic deletion claim, stuck-recovery `attempt_count`, processor warning log) — unchanged per gatekeeper.
-- MenstruationPeriodRecord sync, background auto-sync, analytics for HC funnels.
+- Menstruation period-span sync, background auto-sync, analytics for HC funnels.
 - Bumping to `connect-client` 1.1.0-rc+ when project adopts compileSdk 36 / AGP 8.9.1+.
 
 ## Next milestone only

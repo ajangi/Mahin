@@ -39,6 +39,7 @@ dependencies {
     implementation(project(":domain:account"))
     implementation(project(":domain:subscription"))
     implementation(project(":domain:reminders"))
+    implementation(project(":domain:healthconnect"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
