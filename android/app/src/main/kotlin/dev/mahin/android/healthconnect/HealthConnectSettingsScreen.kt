@@ -1,7 +1,5 @@
 package dev.mahin.android.healthconnect
 
-import android.content.Intent
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,8 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.state.ToggleableState
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -120,12 +118,9 @@ fun HealthConnectSettingsScreen(
                         item {
                             TextButton(
                                 onClick = {
-                                    val intent =
-                                        Intent(
-                                            Intent.ACTION_VIEW,
-                                            Uri.parse(context.getString(R.string.health_connect_play_store_url)),
-                                        )
-                                    context.startActivity(intent)
+                                    context.startViewUriSafely(
+                                        context.getString(R.string.health_connect_play_store_url),
+                                    )
                                 },
                             ) {
                                 Text(stringResource(R.string.health_connect_play_store_link))
@@ -247,7 +242,7 @@ private fun OptInRow(
                 modifier =
                     Modifier.semantics {
                         toggleableState = if (checked) ToggleableState.On else ToggleableState.Off
-                        stateDescription = switchLabel
+                        contentDescription = switchLabel
                     },
             )
         }

@@ -1,7 +1,5 @@
 package dev.mahin.android.healthconnect
 
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -31,12 +29,7 @@ class HealthConnectPermissionRationaleActivity : ComponentActivity() {
                     )
                     TextButton(
                         onClick = {
-                            startActivity(
-                                Intent(
-                                    Intent.ACTION_VIEW,
-                                    Uri.parse(getString(R.string.health_connect_privacy_policy_url)),
-                                ),
-                            )
+                            startViewUriSafely(getString(R.string.health_connect_privacy_policy_url))
                         },
                     ) {
                         Text(stringResource(R.string.health_connect_privacy_policy_link))

@@ -11,11 +11,14 @@ import dev.mahin.core.database.entity.DailyLogEntity
 import dev.mahin.core.database.entity.TtcDayLogEntity
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
 import dev.mahin.core.database.ttc.TtcTrackingRepository
+import dev.mahin.core.datastore.HealthConnectPeriodDayTombstoneRepository
 import dev.mahin.core.datastore.PregnancyTimerPreferencesRepository
 import dev.mahin.core.datastore.TtcPrivacyPreferencesRepository
 import dev.mahin.core.datetime.PersianCivilDateConverter
+import dev.mahin.core.healthconnect.HealthConnectPeriodDayIntegrationGate
 import dev.mahin.core.healthconnect.PeriodDayTrackingService
 import dev.mahin.core.model.CycleRegularity
+import dev.mahin.core.model.PeriodFlowLevel
 import dev.mahin.core.model.ReproductiveMode
 import java.time.LocalDate
 import java.util.UUID
@@ -38,6 +41,7 @@ class LogViewModelTest {
     private lateinit var pregnancyRepository: PregnancyTrackingRepository
     private lateinit var privacyRepository: TtcPrivacyPreferencesRepository
     private lateinit var periodDayTrackingService: PeriodDayTrackingService
+    private lateinit var tombstoneRepository: HealthConnectPeriodDayTombstoneRepository
 
     @Before
     fun setUp() {
@@ -51,12 +55,8 @@ class LogViewModelTest {
         ttcRepository = TtcTrackingRepository(database)
         pregnancyRepository = PregnancyTrackingRepository(database, PregnancyTimerPreferencesRepository(context))
         privacyRepository = TtcPrivacyPreferencesRepository(context)
-        periodDayTrackingService =
-            PeriodDayTrackingService(
-                cycleRepository,
-                dev.mahin.core.datastore
-                    .HealthConnectPeriodDayTombstoneRepository(context),
-            )
+        tombstoneRepository = HealthConnectPeriodDayTombstoneRepository(context)
+        periodDayTrackingService = PeriodDayTrackingService(cycleRepository, tombstoneRepository)
     }
 
     @After
@@ -67,16 +67,7 @@ class LogViewModelTest {
     @Test
     fun switchingDate_resetsSymptomsBeforeSave() {
         runBlocking {
-            database.cycleProfileDao().upsert(
-                CycleProfileEntity(
-                    reproductiveMode = ReproductiveMode.TRYING_TO_CONCEIVE,
-                    typicalCycleLengthDays = 28,
-                    typicalPeriodLengthDays = 5,
-                    regularity = CycleRegularity.UNKNOWN,
-                    onboardingCompleted = true,
-                    updatedAtEpochMs = 0L,
-                ),
-            )
+            seedTtcProfile()
             val dayA = LocalDate.of(2025, 3, 1)
             val dayB = LocalDate.of(2025, 3, 2)
             database.dailyLogDao().upsert(
@@ -90,23 +81,16 @@ class LogViewModelTest {
                     updatedAtEpochMs = 0L,
                 ),
             )
-            val vm =
-                LogViewModel(
-                    cycleRepository,
-                    periodDayTrackingService,
-                    ttcRepository,
-                    pregnancyRepository,
-                    privacyRepository,
-                )
+            val vm = createViewModel(integrationActive = false)
             vm.onDateSelected(PersianCivilDateConverter.toJalali(dayA))
             awaitUntil {
                 val state = vm.uiState.value
-                state.symptomTags.contains("سردرد")
+                state.selectedDateReady && state.symptomTags.contains("سردرد")
             }
             vm.onDateSelected(PersianCivilDateConverter.toJalali(dayB))
             awaitUntil {
                 val state = vm.uiState.value
-                state.symptomTags.isEmpty() && state.note.isEmpty()
+                state.selectedDateReady && state.symptomTags.isEmpty() && state.note.isEmpty()
             }
             assertThat(vm.uiState.value.symptomTags).isEmpty()
             vm.toggleSymptom("نفخ")
@@ -121,16 +105,7 @@ class LogViewModelTest {
     @Test
     fun save_withInvalidPersianBbt_blocksSaveAndPreservesStoredValue() {
         runBlocking {
-            database.cycleProfileDao().upsert(
-                CycleProfileEntity(
-                    reproductiveMode = ReproductiveMode.TRYING_TO_CONCEIVE,
-                    typicalCycleLengthDays = 28,
-                    typicalPeriodLengthDays = 5,
-                    regularity = CycleRegularity.UNKNOWN,
-                    onboardingCompleted = true,
-                    updatedAtEpochMs = 0L,
-                ),
-            )
+            seedTtcProfile()
             val day = LocalDate.of(2025, 3, 5)
             database.ttcDayLogDao().upsert(
                 TtcDayLogEntity(
@@ -145,15 +120,9 @@ class LogViewModelTest {
                     updatedAtEpochMs = 0L,
                 ),
             )
-            val vm =
-                LogViewModel(
-                    cycleRepository,
-                    periodDayTrackingService,
-                    ttcRepository,
-                    pregnancyRepository,
-                    privacyRepository,
-                )
+            val vm = createViewModel(integrationActive = false)
             vm.onDateSelected(PersianCivilDateConverter.toJalali(day))
+            awaitUntil { vm.uiState.value.selectedDateReady }
             val state = vm.uiState.value.copy(bbtInput = "۳۶٫abc")
             vm.performSave(state)
             assertThat(vm.uiState.value.bbtError).isEqualTo(BbtFieldError.UNPARSEABLE)
@@ -164,16 +133,7 @@ class LogViewModelTest {
     @Test
     fun save_withIntercourseOptInOff_preservesStoredIntercourse() {
         runBlocking {
-            database.cycleProfileDao().upsert(
-                CycleProfileEntity(
-                    reproductiveMode = ReproductiveMode.TRYING_TO_CONCEIVE,
-                    typicalCycleLengthDays = 28,
-                    typicalPeriodLengthDays = 5,
-                    regularity = CycleRegularity.UNKNOWN,
-                    onboardingCompleted = true,
-                    updatedAtEpochMs = 0L,
-                ),
-            )
+            seedTtcProfile()
             val day = LocalDate.of(2025, 3, 8)
             database.ttcDayLogDao().upsert(
                 TtcDayLogEntity(
@@ -188,22 +148,106 @@ class LogViewModelTest {
                     updatedAtEpochMs = 0L,
                 ),
             )
-            val vm =
-                LogViewModel(
-                    cycleRepository,
-                    periodDayTrackingService,
-                    ttcRepository,
-                    pregnancyRepository,
-                    privacyRepository,
-                )
+            val vm = createViewModel(integrationActive = false)
             vm.onDateSelected(PersianCivilDateConverter.toJalali(day))
-            awaitUntil { vm.uiState.value.intercourseLogged }
+            awaitUntil { vm.uiState.value.selectedDateReady && vm.uiState.value.intercourseLogged }
             assertThat(vm.uiState.value.intercourseLoggingEnabled).isFalse()
             vm.performSave(vm.uiState.value.copy(note = "یادداشت"))
             val stored = database.ttcDayLogDao().getForDate(day)
             assertThat(stored?.intercourseLogged).isTrue()
             assertThat(stored?.intercourseProtected).isTrue()
         }
+    }
+
+    @Test
+    fun healthConnectOff_untickPeriod_doesNotDeletePeriodDay() {
+        runBlocking {
+            val day = LocalDate.of(2025, 5, 1)
+            cycleRepository.upsertPeriodDay(day, PeriodFlowLevel.LIGHT, hasClots = false)
+            val vm = createViewModel(integrationActive = false)
+            vm.onDateSelected(PersianCivilDateConverter.toJalali(day))
+            awaitUntil { vm.uiState.value.selectedDateReady && vm.uiState.value.loggingPeriod }
+            vm.toggleLoggingPeriod()
+            vm.performSave(vm.uiState.value)
+            assertThat(cycleRepository.getPeriodDayForDate(day)).isNotNull()
+            assertThat(tombstoneRepository.isUserDeleted(day)).isFalse()
+        }
+    }
+
+    @Test
+    fun healthConnectOn_untickPeriod_deletesRowAndWritesTombstone() {
+        runBlocking {
+            val day = LocalDate.of(2025, 5, 2)
+            cycleRepository.upsertPeriodDay(day, PeriodFlowLevel.MEDIUM, hasClots = false)
+            val vm = createViewModel(integrationActive = true)
+            vm.onDateSelected(PersianCivilDateConverter.toJalali(day))
+            awaitUntil { vm.uiState.value.selectedDateReady && vm.uiState.value.loggingPeriod }
+            vm.toggleLoggingPeriod()
+            vm.performSave(vm.uiState.value)
+            assertThat(cycleRepository.getPeriodDayForDate(day)).isNull()
+            assertThat(tombstoneRepository.isUserDeleted(day)).isTrue()
+        }
+    }
+
+    @Test
+    fun healthConnectOn_relogPeriod_clearsTombstone() {
+        runBlocking {
+            val day = LocalDate.of(2025, 5, 3)
+            tombstoneRepository.markUserDeleted(day)
+            val vm = createViewModel(integrationActive = true)
+            vm.onDateSelected(PersianCivilDateConverter.toJalali(day))
+            awaitUntil { vm.uiState.value.selectedDateReady && !vm.uiState.value.loggingPeriod }
+            vm.toggleLoggingPeriod()
+            vm.onFlowLevelSelected(PeriodFlowLevel.HEAVY)
+            vm.performSave(vm.uiState.value)
+            assertThat(tombstoneRepository.isUserDeleted(day)).isFalse()
+            assertThat(cycleRepository.getPeriodDayForDate(day)?.flowLevel).isEqualTo(PeriodFlowLevel.HEAVY)
+        }
+    }
+
+    @Test
+    fun save_beforeDateLoaded_isIgnored() {
+        runBlocking {
+            seedTtcProfile()
+            val vm = createViewModel(integrationActive = false)
+            val day = LocalDate.of(2025, 6, 1)
+            vm.performSave(
+                vm.uiState.value.copy(
+                    selectedJalali = PersianCivilDateConverter.toJalali(day),
+                    selectedDateReady = false,
+                    note = "blocked",
+                ),
+            )
+            assertThat(database.dailyLogDao().getForDate(day)).isNull()
+        }
+    }
+
+    private suspend fun seedTtcProfile() {
+        database.cycleProfileDao().upsert(
+            CycleProfileEntity(
+                reproductiveMode = ReproductiveMode.TRYING_TO_CONCEIVE,
+                typicalCycleLengthDays = 28,
+                typicalPeriodLengthDays = 5,
+                regularity = CycleRegularity.UNKNOWN,
+                onboardingCompleted = true,
+                updatedAtEpochMs = 0L,
+            ),
+        )
+    }
+
+    private fun createViewModel(integrationActive: Boolean): LogViewModel {
+        val gate =
+            object : HealthConnectPeriodDayIntegrationGate {
+                override suspend fun isIntegrationActive(): Boolean = integrationActive
+            }
+        return LogViewModel(
+            cycleRepository,
+            periodDayTrackingService,
+            gate,
+            ttcRepository,
+            pregnancyRepository,
+            privacyRepository,
+        )
     }
 
     private suspend fun awaitUntil(

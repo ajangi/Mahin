@@ -30,4 +30,31 @@ class PeriodDayTrackingService
             cycleTrackingRepository.deletePeriodDay(date)
             tombstoneRepository.markUserDeleted(date)
         }
+
+        /**
+         * Applies period-day logging from the daily log screen.
+         * Tombstones and row deletion run only when [healthConnectIntegrationActive] is true.
+         */
+        suspend fun applyUserPeriodLogChange(
+            healthConnectIntegrationActive: Boolean,
+            loggingPeriod: Boolean,
+            date: LocalDate,
+            flowLevel: dev.mahin.core.model.PeriodFlowLevel?,
+            ensurePeriodSpanExists: suspend () -> Unit,
+        ) {
+            if (loggingPeriod) {
+                ensurePeriodSpanExists()
+                if (healthConnectIntegrationActive) {
+                    saveLoggedPeriodDay(date = date, flowLevel = flowLevel, hasClots = false)
+                } else {
+                    cycleTrackingRepository.upsertPeriodDay(
+                        date = date,
+                        flowLevel = flowLevel,
+                        hasClots = false,
+                    )
+                }
+            } else if (healthConnectIntegrationActive && cycleTrackingRepository.getPeriodDayForDate(date) != null) {
+                removeUserPeriodDay(date)
+            }
+        }
     }

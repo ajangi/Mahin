@@ -122,21 +122,28 @@ class HealthConnectSyncEngine(
     suspend fun refreshRevocationState(): HealthConnectSyncResult {
         if (!isLaunchFlagEnabled()) return HealthConnectSyncResult.FeatureDisabled
         val prefs = preferences.snapshot()
-        val granted = loadGrantedPermissions() ?: return HealthConnectSyncResult.PermissionsMissing
-        val evaluated =
-            HealthConnectRevocationEvaluator.evaluate(
-                launchFlagEnabled = true,
-                userOptIn = prefs.userOptIn,
-                permissionsPreviouslyGranted = prefs.permissionsPreviouslyGranted,
-                allPermissionsGranted = hasAllPermissions(granted),
-            )
-        if (evaluated == HealthConnectSyncResult.PermissionsRevoked) {
-            preferences.clearIntegrationState()
-            return evaluated
+        when (val load = readGrantedPermissions()) {
+            GrantedPermissionsRead.Unknown -> return HealthConnectSyncResult.Success()
+            GrantedPermissionsRead.NotReady -> return HealthConnectSyncResult.Failure("NotReady")
+            GrantedPermissionsRead.Missing -> return HealthConnectSyncResult.PermissionsMissing
+            is GrantedPermissionsRead.Ok -> {
+                val granted = load.granted
+                val evaluated =
+                    HealthConnectRevocationEvaluator.evaluate(
+                        launchFlagEnabled = true,
+                        userOptIn = prefs.userOptIn,
+                        permissionsPreviouslyGranted = prefs.permissionsPreviouslyGranted,
+                        allPermissionsGranted = hasAllPermissions(granted),
+                    )
+                if (evaluated == HealthConnectSyncResult.PermissionsRevoked) {
+                    preferences.clearIntegrationState()
+                    return evaluated
+                }
+                if (evaluated != null) return evaluated
+                preferences.setPermissionsPreviouslyGranted(true)
+                return HealthConnectSyncResult.Success()
+            }
         }
-        if (evaluated != null) return evaluated
-        preferences.setPermissionsPreviouslyGranted(true)
-        return HealthConnectSyncResult.Success()
     }
 
     suspend fun setUserOptIn(optIn: Boolean) {
@@ -232,18 +239,39 @@ class HealthConnectSyncEngine(
             !isLaunchFlagEnabled() -> HealthConnectSyncResult.FeatureDisabled
             appLock.requiresUnlockForSensitiveAction() -> HealthConnectSyncResult.Locked
             !preferences.snapshot().userOptIn -> HealthConnectSyncResult.NotOptedIn
-            !hasAllPermissions(loadGrantedPermissions() ?: emptySet()) ->
-                HealthConnectSyncResult.PermissionsMissing
-            else -> null
+            else ->
+                when (val load = readGrantedPermissions()) {
+                    GrantedPermissionsRead.Unknown -> HealthConnectSyncResult.Failure("PermissionsUnknown")
+                    GrantedPermissionsRead.NotReady -> HealthConnectSyncResult.Failure("NotReady")
+                    GrantedPermissionsRead.Missing -> HealthConnectSyncResult.PermissionsMissing
+                    is GrantedPermissionsRead.Ok ->
+                        if (!hasAllPermissions(load.granted)) {
+                            HealthConnectSyncResult.PermissionsMissing
+                        } else {
+                            null
+                        }
+                }
         }
 
-    private suspend fun loadGrantedPermissions(): Set<String>? {
-        if (remoteClient.availability() != HealthConnectAvailability.READY) return emptySet()
+    private sealed interface GrantedPermissionsRead {
+        data class Ok(
+            val granted: Set<String>,
+        ) : GrantedPermissionsRead
+
+        data object Missing : GrantedPermissionsRead
+
+        data object Unknown : GrantedPermissionsRead
+
+        data object NotReady : GrantedPermissionsRead
+    }
+
+    private suspend fun readGrantedPermissions(): GrantedPermissionsRead {
+        if (remoteClient.availability() != HealthConnectAvailability.READY) return GrantedPermissionsRead.NotReady
         return when (val result = remoteClient.grantedPermissionStrings()) {
-            is HealthConnectClientResult.Ok -> result.value
-            is HealthConnectClientResult.PermissionsMissing -> null
-            is HealthConnectClientResult.NotReady -> emptySet()
-            is HealthConnectClientResult.Error -> emptySet()
+            is HealthConnectClientResult.Ok -> GrantedPermissionsRead.Ok(result.value)
+            is HealthConnectClientResult.PermissionsMissing -> GrantedPermissionsRead.Missing
+            is HealthConnectClientResult.NotReady -> GrantedPermissionsRead.NotReady
+            is HealthConnectClientResult.Error -> GrantedPermissionsRead.Unknown
         }
     }
 

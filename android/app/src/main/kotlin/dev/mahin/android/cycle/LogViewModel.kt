@@ -13,6 +13,7 @@ import dev.mahin.core.datastore.TtcPrivacyPreferencesRepository
 import dev.mahin.core.datetime.CivilDateConverter
 import dev.mahin.core.datetime.JalaliDate
 import dev.mahin.core.datetime.PersianCivilDateConverter
+import dev.mahin.core.healthconnect.HealthConnectPeriodDayIntegrationGate
 import dev.mahin.core.healthconnect.PeriodDayTrackingService
 import dev.mahin.core.model.CervicalMucusType
 import dev.mahin.core.model.OvulationTestResult
@@ -60,6 +61,7 @@ data class LogUiState(
         listOf("تهوع", "خستگی", "سردرد", "درد کمر", "ورم"),
     val saving: Boolean = false,
     val saved: Boolean = false,
+    val selectedDateReady: Boolean = false,
     val availableSymptoms: List<String> =
         listOf("گرفتگی", "سردرد", "نفخ", "خستگی", "درد پستان"),
 )
@@ -70,6 +72,7 @@ class LogViewModel
     constructor(
         private val repository: CycleTrackingRepository,
         private val periodDayTrackingService: PeriodDayTrackingService,
+        private val healthConnectPeriodDayIntegrationGate: HealthConnectPeriodDayIntegrationGate,
         private val ttcRepository: TtcTrackingRepository,
         private val pregnancyRepository: PregnancyTrackingRepository,
         private val ttcPrivacyRepository: TtcPrivacyPreferencesRepository,
@@ -98,7 +101,9 @@ class LogViewModel
         }
 
         fun onDateSelected(jalali: JalaliDate) {
-            _uiState.update { it.copy(selectedJalali = jalali, saved = false, bbtError = null) }
+            _uiState.update {
+                it.copy(selectedJalali = jalali, saved = false, bbtError = null, selectedDateReady = false)
+            }
             loadForSelectedDate()
         }
 
@@ -198,12 +203,15 @@ class LogViewModel
 
         fun save() {
             viewModelScope.launch {
-                performSave(_uiState.value)
+                val state = _uiState.value
+                if (!state.selectedDateReady || state.saving) return@launch
+                performSave(state)
             }
         }
 
         @Suppress("LongMethod")
         internal suspend fun performSave(state: LogUiState) {
+            if (!state.selectedDateReady) return
             val date = state.converter.toGregorian(state.selectedJalali)
             _uiState.update { it.copy(saving = true, bbtError = null) }
             val reproductiveMode = ttcRepository.getReproductiveMode()
@@ -291,28 +299,28 @@ class LogViewModel
             state: LogUiState,
             date: LocalDate,
         ) {
-            if (state.loggingPeriod) {
-                val existing =
-                    repository.getAllPeriods().find { record ->
-                        !date.isBefore(record.startDate) &&
-                            (record.endDate == null || !date.isAfter(record.endDate))
+            val integrationActive = healthConnectPeriodDayIntegrationGate.isIntegrationActive()
+            periodDayTrackingService.applyUserPeriodLogChange(
+                healthConnectIntegrationActive = integrationActive,
+                loggingPeriod = state.loggingPeriod,
+                date = date,
+                flowLevel = state.flowLevel,
+                ensurePeriodSpanExists = {
+                    val existing =
+                        repository.getAllPeriods().find { record ->
+                            !date.isBefore(record.startDate) &&
+                                (record.endDate == null || !date.isAfter(record.endDate))
+                        }
+                    if (existing == null) {
+                        repository.upsertPeriod(
+                            startDate = date,
+                            endDate = date,
+                            note = null,
+                            recordId = null,
+                        )
                     }
-                if (existing == null) {
-                    repository.upsertPeriod(
-                        startDate = date,
-                        endDate = date,
-                        note = null,
-                        recordId = null,
-                    )
-                }
-                periodDayTrackingService.saveLoggedPeriodDay(
-                    date = date,
-                    flowLevel = state.flowLevel,
-                    hasClots = false,
-                )
-            } else if (repository.getPeriodDayForDate(date) != null) {
-                periodDayTrackingService.removeUserPeriodDay(date)
-            }
+                },
+            )
         }
 
         private fun loadForSelectedDate() {
@@ -366,6 +374,7 @@ class LogViewModel
                             pregnancyBpDiastolicInput = pregnancyLog?.bpDiastolic?.toString() ?: "",
                             pregnancyBpError = null,
                             saved = false,
+                            selectedDateReady = true,
                         )
                     }
                 }

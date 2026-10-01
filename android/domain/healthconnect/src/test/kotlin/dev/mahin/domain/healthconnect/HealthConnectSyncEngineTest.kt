@@ -58,6 +58,20 @@ class HealthConnectSyncEngineTest {
         }
 
     @Test
+    fun permissionReadErrorDoesNotRevokeOptIn() =
+        runTest {
+            val prefs = FakePreferences(userOptIn = true, permissionsPreviouslyGranted = true)
+            val remote =
+                RecordingRemoteClient(
+                    grantResult = HealthConnectClientResult.Error("Transient"),
+                )
+            val engine = engine(remote = remote, preferences = prefs)
+            assertThat(engine.refreshRevocationState()).isEqualTo(HealthConnectSyncResult.Success())
+            assertThat(prefs.cleared).isFalse()
+            assertThat(prefs.snapshot().userOptIn).isTrue()
+        }
+
+    @Test
     fun importSkipsOwnAppRecords() =
         runTest {
             val periodDays = FakePeriodDays()
@@ -345,6 +359,7 @@ class HealthConnectSyncEngineTest {
         private val granted: Set<String> = setOf("read", "write"),
         private val readResult: List<HealthConnectMenstruationFlowDay> = emptyList(),
         private val throwOnRead: Boolean = false,
+        private val grantResult: HealthConnectClientResult<Set<String>>? = null,
     ) : HealthConnectRemoteClient {
         var callCount = 0
         var lastExport: List<MenstruationFlowExportWrite> = emptyList()
@@ -357,7 +372,7 @@ class HealthConnectSyncEngineTest {
 
         override suspend fun grantedPermissionStrings(): HealthConnectClientResult<Set<String>> {
             callCount++
-            return HealthConnectClientResult.Ok(granted)
+            return grantResult ?: HealthConnectClientResult.Ok(granted)
         }
 
         override suspend fun readMenstruationFlowDays(): MenstruationFlowDaysResult {
