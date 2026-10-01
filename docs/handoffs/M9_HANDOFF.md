@@ -5,7 +5,7 @@
 **Merged:** squash-merge `20aaf121ba468f64dc419c89cfb0b26beae3e895` on `master` ([PR #19](https://github.com/ajangi/Mahin/pull/19))  
 **Branch (historical):** `cursor/m9-privacy-security-hardening-f4b2`  
 **Base:** `5d59c2c84f7e5ccc7a54e12ba0b4231c550058b4`  
-**Next milestone:** M10 — Health Connect (Optional Launch Flag) (`prompts/M10.md`) — **not started**
+**Next milestone:** M11 — Production Hardening & Release (`prompts/M11.md`)
 
 ## Implemented scope
 
