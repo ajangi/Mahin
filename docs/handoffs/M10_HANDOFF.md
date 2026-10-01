@@ -1,10 +1,14 @@
 # M10 Handoff — Health Connect (Optional Launch Flag)
 
 **Milestone:** M10  
-**Status:** Gatekeeper round 2 fixes — **draft PR #21 in review**  
+**Status:** Product-owner stale-tombstone fix — **draft PR #21 in review**  
 **Branch:** `cursor/m10-health-connect-launch-flag-60e6`  
 **Base:** `1fb20319bd0c4458c8c8080acc2a8cd363450338`  
 **Next milestone:** M11 — Production Hardening & Release (`prompts/M11.md`) — **do not start until assigned**
+
+## Gatekeeper round 3 (ACCEPT + product fix)
+
+- **Stale tombstones:** re-logging period clears that day’s tombstone regardless of integration gate; opt-out and permission revocation clear all tombstones (`PeriodDayTombstoneStore.clearAll()`).
 
 ## Gatekeeper round 2 (BLOCK → fixes)
 
@@ -34,7 +38,7 @@ Addressed review on PR #21: loading gate before navigate-away, HC API crash safe
 ### Sync engine (domain)
 - **Export idempotency:** `MenstruationExportIds.clientRecordId` = `mahin-period-day-<yyyy-MM-dd>`; `clientRecordVersion = updatedAtEpochMs` on write metadata.
 - **Import:** skip records whose `dataOrigin` is Mahin package; newer-wins unless lossy mapping would downgrade local flow (`MenstruationImportPolicy`); local date from record `zoneOffset`; all pages via `HealthConnectMenstruationFlowPager`. Import updates **`period_day` only** — no period-span records, so predictions from spans are unaffected.
-- **Deleted days (default, changeable):** tombstone + row delete only when launch flag **and** user opt-in (`HealthConnectPeriodDayIntegrationGate`); policy in `docs/health-connect/DELETED_PERIOD_DAY_POLICY.md`. Import skips tombstoned dates; export deletes Mahin `clientRecordId` in HC.
+- **Deleted days (default, changeable):** tombstone + row delete only when launch flag **and** user opt-in; re-log always clears that day’s tombstone; opt-out/revoke clears all tombstones (`HealthConnectSyncEngine` + `PeriodDayTrackingService`). Policy in `docs/health-connect/DELETED_PERIOD_DAY_POLICY.md`.
 
 ### Import/export mapping
 - **Export:** local `period_day` rows with mappable flow → Health Connect `MenstruationFlowRecord`.
@@ -76,17 +80,17 @@ Addressed review on PR #21: loading gate before navigate-away, HC API crash safe
 | `python3 scripts/security_checklist.py` | PASS |
 | `npx @redocly/cli@1.34.2 lint openapi/openapi.yaml --config redocly.yaml` | PASS |
 | `cd backend && ./gradlew ktlintCheck detekt test` | PASS (37 tests) |
-| `cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug` | PASS |
+| `cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug` | PASS (round 3 stale-tombstone fix) |
 
 ## Tests (high level)
 
 - **Backend:** meta flag default + enabled property.
-- **domain/healthconnect (JVM):** `HealthConnectSyncEngineTest` (flag off → zero remote calls; locked / not opted in / permissions / revoked; import newer-wins, skip own origin, lossy preserve, tombstone, Tehran offset, pagination via pager test); `MenstruationFlowMapperTest` (Tehran start-of-day assertion, stable `clientRecordId`); `HealthConnectRevocationEvaluatorTest`.
+- **domain/healthconnect (JVM):** `HealthConnectSyncEngineTest` (… opt-out/revoke clear all tombstones; post–opt-out export does not delete re-logged day; …); `MenstruationFlowMapperTest`; `HealthConnectRevocationEvaluatorTest`.
 - **core/healthconnect:** `HealthConnectMenstruationFlowPagerTest`.
 - **core/config:** `FeatureFlagRepositoryTest` fetch-error path.
 - **app (Robolectric):** `HealthConnectSettingsViewModelTest` (loading, flag off navigate, flag on).
 - **core/database:** `LocalHealthDataErasureServiceTest` (tombstones + HC prefs cleared).
-- **app:** `LogViewModelTest` (HC off/on tombstone behaviour, save before load, existing cases).
+- **app:** `LogViewModelTest` (HC off re-log clears tombstone; HC off/on untick/tombstone; save before load).
 
 ## Acceptance criteria (M10)
 

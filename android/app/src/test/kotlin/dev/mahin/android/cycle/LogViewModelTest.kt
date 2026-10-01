@@ -190,6 +190,22 @@ class LogViewModelTest {
     }
 
     @Test
+    fun healthConnectOff_relogPeriod_clearsExistingTombstone() {
+        runBlocking {
+            val day = LocalDate.of(2025, 5, 4)
+            tombstoneRepository.markUserDeleted(day)
+            val vm = createViewModel(integrationActive = false)
+            vm.onDateSelected(PersianCivilDateConverter.toJalali(day))
+            awaitUntil { vm.uiState.value.selectedDateReady && !vm.uiState.value.loggingPeriod }
+            vm.toggleLoggingPeriod()
+            vm.onFlowLevelSelected(PeriodFlowLevel.LIGHT)
+            vm.performSave(vm.uiState.value)
+            assertThat(tombstoneRepository.isUserDeleted(day)).isFalse()
+            assertThat(cycleRepository.getPeriodDayForDate(day)?.flowLevel).isEqualTo(PeriodFlowLevel.LIGHT)
+        }
+    }
+
+    @Test
     fun healthConnectOn_relogPeriod_clearsTombstone() {
         runBlocking {
             val day = LocalDate.of(2025, 5, 3)

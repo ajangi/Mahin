@@ -131,4 +131,6 @@ private class TombstoneStoreAdapter(
         start: LocalDate,
         end: LocalDate,
     ): Set<LocalDate> = repository.userDeletedDatesInRange(start, end)
+
+    override suspend fun clearAll() = repository.clearAll()
 }

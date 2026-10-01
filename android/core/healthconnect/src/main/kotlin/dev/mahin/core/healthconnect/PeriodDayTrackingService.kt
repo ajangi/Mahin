@@ -44,15 +44,12 @@ class PeriodDayTrackingService
         ) {
             if (loggingPeriod) {
                 ensurePeriodSpanExists()
-                if (healthConnectIntegrationActive) {
-                    saveLoggedPeriodDay(date = date, flowLevel = flowLevel, hasClots = false)
-                } else {
-                    cycleTrackingRepository.upsertPeriodDay(
-                        date = date,
-                        flowLevel = flowLevel,
-                        hasClots = false,
-                    )
-                }
+                tombstoneRepository.clearUserDeleted(date)
+                cycleTrackingRepository.upsertPeriodDay(
+                    date = date,
+                    flowLevel = flowLevel,
+                    hasClots = false,
+                )
             } else if (healthConnectIntegrationActive && cycleTrackingRepository.getPeriodDayForDate(date) != null) {
                 removeUserPeriodDay(date)
             }

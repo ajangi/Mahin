@@ -72,6 +72,66 @@ class HealthConnectSyncEngineTest {
         }
 
     @Test
+    fun optOutClearsAllTombstones() =
+        runTest {
+            val date = LocalDate.of(2024, 6, 8)
+            val tombstones = FakeTombstones(initial = setOf(date))
+            val prefs = FakePreferences(userOptIn = true, permissionsPreviouslyGranted = true)
+            val engine = engine(remote = RecordingRemoteClient(), preferences = prefs, tombstones = tombstones)
+            engine.setUserOptIn(false)
+            assertThat(tombstones.isUserDeleted(date)).isFalse()
+        }
+
+    @Test
+    fun revocationClearsAllTombstones() =
+        runTest {
+            val date = LocalDate.of(2024, 6, 9)
+            val tombstones = FakeTombstones(initial = setOf(date))
+            val prefs = FakePreferences(userOptIn = true, permissionsPreviouslyGranted = true)
+            val remote = RecordingRemoteClient(granted = emptySet())
+            val engine = engine(remote = remote, preferences = prefs, tombstones = tombstones)
+            assertThat(engine.refreshRevocationState()).isEqualTo(HealthConnectSyncResult.PermissionsRevoked)
+            assertThat(tombstones.isUserDeleted(date)).isFalse()
+        }
+
+    @Test
+    fun untickOptOutRelogOptIn_exportDoesNotDeleteReloggedDay() =
+        runTest {
+            val date = LocalDate.of(2024, 6, 10)
+            val tombstones = FakeTombstones(initial = setOf(date))
+            val periodDays =
+                FakePeriodDays(
+                    initial =
+                        mapOf(
+                            date to
+                                PeriodDayRow(
+                                    logDate = date,
+                                    flowLevel = PeriodFlowLevel.MEDIUM,
+                                    hasClots = false,
+                                    updatedAtEpochMs = 100L,
+                                ),
+                        ),
+                )
+            val prefs = FakePreferences(userOptIn = true, permissionsPreviouslyGranted = true)
+            val remote = RecordingRemoteClient()
+            val engine =
+                engine(
+                    remote = remote,
+                    preferences = prefs,
+                    tombstones = tombstones,
+                    periodDays = periodDays,
+                    clock = { today },
+                )
+            engine.setUserOptIn(false)
+            assertThat(tombstones.isUserDeleted(date)).isFalse()
+            engine.setUserOptIn(true)
+            prefs.setPermissionsPreviouslyGranted(true)
+            val result = engine.exportToHealthConnect() as HealthConnectSyncResult.Success
+            assertThat(result.deletedRemoteDays).isEqualTo(0)
+            assertThat(remote.lastDeletedIds).isEmpty()
+        }
+
+    @Test
     fun importSkipsOwnAppRecords() =
         runTest {
             val periodDays = FakePeriodDays()
@@ -163,7 +223,7 @@ class HealthConnectSyncEngineTest {
     fun importRespectsTombstone() =
         runTest {
             val date = LocalDate.of(2024, 6, 4)
-            val tombstones = FakeTombstones(deleted = setOf(date))
+            val tombstones = FakeTombstones(initial = setOf(date))
             val periodDays = FakePeriodDays()
             val remote =
                 RecordingRemoteClient(
@@ -228,7 +288,7 @@ class HealthConnectSyncEngineTest {
     fun exportDeletesTombstonedClientRecordIds() =
         runTest {
             val deleted = LocalDate.of(2024, 6, 6)
-            val tombstones = FakeTombstones(deleted = setOf(deleted))
+            val tombstones = FakeTombstones(initial = setOf(deleted))
             val remote = RecordingRemoteClient()
             val engine = engine(remote = remote, tombstones = tombstones, clock = { today })
             val result = engine.exportToHealthConnect() as HealthConnectSyncResult.Success
@@ -345,14 +405,20 @@ class HealthConnectSyncEngineTest {
     }
 
     private class FakeTombstones(
-        private val deleted: Set<LocalDate> = emptySet(),
+        initial: Set<LocalDate> = emptySet(),
     ) : PeriodDayTombstoneStore {
+        private val deleted = initial.toMutableSet()
+
         override suspend fun isUserDeleted(date: LocalDate): Boolean = date in deleted
 
         override suspend fun userDeletedDatesInRange(
             start: LocalDate,
             end: LocalDate,
         ): Set<LocalDate> = deleted.filter { !it.isBefore(start) && !it.isAfter(end) }.toSet()
+
+        override suspend fun clearAll() {
+            deleted.clear()
+        }
     }
 
     private class RecordingRemoteClient(

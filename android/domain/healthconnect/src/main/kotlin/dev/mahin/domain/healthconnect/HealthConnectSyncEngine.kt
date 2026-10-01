@@ -67,6 +67,8 @@ interface PeriodDayTombstoneStore {
         start: LocalDate,
         end: LocalDate,
     ): Set<LocalDate>
+
+    suspend fun clearAll()
 }
 
 interface PeriodDayStore {
@@ -137,6 +139,7 @@ class HealthConnectSyncEngine(
                     )
                 if (evaluated == HealthConnectSyncResult.PermissionsRevoked) {
                     preferences.clearIntegrationState()
+                    tombstones.clearAll()
                     return evaluated
                 }
                 if (evaluated != null) return evaluated
@@ -149,7 +152,10 @@ class HealthConnectSyncEngine(
     suspend fun setUserOptIn(optIn: Boolean) {
         if (!isLaunchFlagEnabled()) return
         preferences.setUserOptIn(optIn)
-        if (!optIn) preferences.clearIntegrationState()
+        if (!optIn) {
+            preferences.clearIntegrationState()
+            tombstones.clearAll()
+        }
     }
 
     suspend fun importFromHealthConnect(): HealthConnectSyncResult {
