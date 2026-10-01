@@ -31,6 +31,7 @@ dependencies {
     implementation(project(":core:content"))
     implementation(project(":core:notifications"))
     implementation(project(":core:billing"))
+    implementation(project(":core:healthconnect"))
     implementation(project(":domain:cycle"))
     implementation(project(":domain:fertility"))
     implementation(project(":domain:pregnancy"))

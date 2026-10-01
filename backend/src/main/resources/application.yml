@@ -42,6 +42,8 @@ springdoc:
 mahin:
   api-version: 0.0.1
   environment: ${MAHIN_ENV:local}
+  features:
+    health-connect: ${MAHIN_FEATURE_HEALTH_CONNECT:false}
   media:
     public-base-url: ${MEDIA_PUBLIC_BASE_URL:http://localhost:9000/mahin-media}
   auth:

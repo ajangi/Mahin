@@ -38,6 +38,7 @@ interface FeatureFlagGateway {
     fun isEnabled(flag: String): Boolean
 }
 
+/** Default-off gateway when remote meta has not been fetched yet. */
 class LocalFeatureFlagGateway : FeatureFlagGateway {
     override fun isEnabled(flag: String): Boolean = false
 }

@@ -3,6 +3,9 @@ package dev.mahin.android.cycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.mahin.core.config.FeatureFlagGateway
+import dev.mahin.core.config.FeatureFlagRepository
+import dev.mahin.core.config.MahinFeatureFlags
 import dev.mahin.core.database.cycle.CycleDashboard
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
@@ -25,6 +28,7 @@ data class TodayUiState(
     val hasActivePregnancy: Boolean = false,
     val showPregnancyStartSheet: Boolean = false,
     val modeChangeBlockedMessage: Boolean = false,
+    val healthConnectEntryVisible: Boolean = false,
 )
 
 @HiltViewModel
@@ -33,11 +37,22 @@ class TodayViewModel
     constructor(
         repository: CycleTrackingRepository,
         private val pregnancyRepository: PregnancyTrackingRepository,
+        private val featureFlagGateway: FeatureFlagGateway,
+        private val featureFlagRepository: FeatureFlagRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(TodayUiState())
         val uiState: StateFlow<TodayUiState> = _uiState.asStateFlow()
 
         init {
+            viewModelScope.launch {
+                featureFlagRepository.refreshFromRemote()
+                _uiState.update {
+                    it.copy(
+                        healthConnectEntryVisible =
+                            featureFlagGateway.isEnabled(MahinFeatureFlags.HEALTH_CONNECT),
+                    )
+                }
+            }
             viewModelScope.launch {
                 repository.observeDashboard().collect { dashboard ->
                     _uiState.update { it.copy(dashboard = dashboard) }
