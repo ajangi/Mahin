@@ -1,9 +1,8 @@
 # M10 Handoff — Health Connect (Optional Launch Flag)
 
 **Milestone:** M10  
-**Status:** Product-owner stale-tombstone fix — **draft PR #21 in review**  
-**Branch:** `cursor/m10-health-connect-launch-flag-60e6`  
-**Base:** `1fb20319bd0c4458c8c8080acc2a8cd363450338`  
+**Status:** **Accepted** — merged to `master`  
+**Merge commit:** `71e78cf0e47ce6bba1f2b2d970fb9a498d16c749` ([PR #21](https://github.com/ajangi/Mahin/pull/21))  
 **Next milestone:** M11 — Production Hardening & Release (`prompts/M11.md`) — **do not start until assigned**
 
 ## Gatekeeper round 3 (ACCEPT + product fix)
@@ -114,6 +113,17 @@ Addressed review on PR #21: loading gate before navigate-away, HC API crash safe
 
 ## Unresolved questions
 - Product-owner confirmation of period day ↔ MenstruationFlow mapping for release messaging.
+
+## Deferred / follow-ups (M11+)
+
+- **Meta base URL:** make `/v1/meta` base URL configurable for non-production and staging (M11 hardening).
+- **Import scope:** imported Health Connect days update `period_day` only; they do **not** create Mahin period-span records (predictions unchanged by import alone) — document in release/compliance comms as needed.
+- **Privacy policy URL:** confirm production `health_connect_privacy_policy_url` before enabling launch flag in production.
+- **Health Connect SDK:** remain on `connect-client:1.1.0-alpha11` until compileSdk 36 / AGP bump (see SDK policy doc).
+- **Play Console:** file health-permissions declaration even when `health_connect` launch flag is off (manifest permissions present).
+- **Mapping sign-off:** period day ↔ MenstruationFlow mapping still **pending product-owner confirmation** for release messaging.
+- **Tests:** extend `permissionReadErrorDoesNotRevokeOptIn` to assert tombstones survive transient permission read errors.
+- **Hygiene:** remove unused `PeriodDayTrackingService.saveLoggedPeriodDay` (re-log path uses `clearUserDeleted` + `upsertPeriodDay` directly).
 
 ## Deferred (not M10)
 - M9 follow-ups (atomic deletion claim, stuck-recovery `attempt_count`, processor warning log) — unchanged per gatekeeper.
