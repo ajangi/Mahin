@@ -13,19 +13,6 @@ class PeriodDayTrackingService
         private val cycleTrackingRepository: CycleTrackingRepository,
         private val tombstoneRepository: HealthConnectPeriodDayTombstoneRepository,
     ) {
-        suspend fun saveLoggedPeriodDay(
-            date: LocalDate,
-            flowLevel: dev.mahin.core.model.PeriodFlowLevel?,
-            hasClots: Boolean,
-        ) {
-            tombstoneRepository.clearUserDeleted(date)
-            cycleTrackingRepository.upsertPeriodDay(
-                date = date,
-                flowLevel = flowLevel,
-                hasClots = hasClots,
-            )
-        }
-
         suspend fun removeUserPeriodDay(date: LocalDate) {
             cycleTrackingRepository.deletePeriodDay(date)
             tombstoneRepository.markUserDeleted(date)

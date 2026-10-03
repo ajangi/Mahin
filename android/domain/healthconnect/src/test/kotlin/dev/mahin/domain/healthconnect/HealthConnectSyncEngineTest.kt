@@ -60,15 +60,18 @@ class HealthConnectSyncEngineTest {
     @Test
     fun permissionReadErrorDoesNotRevokeOptIn() =
         runTest {
+            val tombstoneDate = LocalDate.of(2024, 6, 7)
+            val tombstones = FakeTombstones(initial = setOf(tombstoneDate))
             val prefs = FakePreferences(userOptIn = true, permissionsPreviouslyGranted = true)
             val remote =
                 RecordingRemoteClient(
                     grantResult = HealthConnectClientResult.Error("Transient"),
                 )
-            val engine = engine(remote = remote, preferences = prefs)
+            val engine = engine(remote = remote, preferences = prefs, tombstones = tombstones)
             assertThat(engine.refreshRevocationState()).isEqualTo(HealthConnectSyncResult.Success())
             assertThat(prefs.cleared).isFalse()
             assertThat(prefs.snapshot().userOptIn).isTrue()
+            assertThat(tombstones.isUserDeleted(tombstoneDate)).isTrue()
         }
 
     @Test

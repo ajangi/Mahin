@@ -8,6 +8,7 @@ import dagger.hilt.components.SingletonComponent
 import dev.mahin.core.billing.BillingAdapter
 import dev.mahin.core.billing.EntitlementApi
 import dev.mahin.core.billing.GooglePlayBillingAdapter
+import dev.mahin.core.network.BuildConfig
 import dev.mahin.core.network.MahinHttpClientFactory
 import javax.inject.Singleton
 
@@ -22,12 +23,10 @@ abstract class BillingBindingsModule {
 @Module
 @InstallIn(SingletonComponent::class)
 object BillingProvidesModule {
-    private const val DEFAULT_API_BASE = "http://10.0.2.2:8080/"
-
     @Provides
     @Singleton
     fun provideEntitlementApi(): EntitlementApi =
         MahinHttpClientFactory()
-            .create(DEFAULT_API_BASE)
+            .create(BuildConfig.MAHIN_API_BASE_URL)
             .create(EntitlementApi::class.java)
 }

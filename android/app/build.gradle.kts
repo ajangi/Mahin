@@ -1,3 +1,6 @@
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+
 plugins {
     alias(libs.plugins.mahin.android.application)
     alias(libs.plugins.mahin.android.compose)
@@ -73,6 +76,41 @@ tasks.withType<Test>().configureEach {
             excludeTestsMatching("dev.mahin.android.ttc.TtcInsightsScreenScrollTest")
             excludeTestsMatching("dev.mahin.android.pregnancy.PregnancyHubScreenScrollTest")
             excludeTestsMatching("dev.mahin.android.pregnancy.PregnancyStartSheetScrollTest")
+        }
+    }
+}
+
+tasks.register("verifyReleaseApkNoEmulatorApiHost") {
+    group = "verification"
+    description = "Fails if the release APK embeds the dev emulator API base URL."
+    dependsOn("assembleRelease")
+    doLast {
+        val apk =
+            layout.buildDirectory
+                .file("outputs/apk/release/app-release-unsigned.apk")
+                .get()
+                .asFile
+        check(apk.exists()) { "Expected release APK at ${apk.path}" }
+        val needle = "http://10.0.2.2:8080"
+        ZipFile(apk).use { zip ->
+            zip
+                .entries()
+                .asSequence()
+                .filter { entry: ZipEntry -> !entry.isDirectory }
+                .filter { entry: ZipEntry ->
+                    entry.name.endsWith(".dex") ||
+                        entry.name.endsWith(".jar") ||
+                        entry.name.endsWith(".kotlin_module")
+                }.forEach { entry: ZipEntry ->
+                    val text =
+                        zip
+                            .getInputStream(entry)
+                            .bufferedReader(Charsets.ISO_8859_1)
+                            .readText()
+                    check(!text.contains(needle)) {
+                        "Release artifact ${entry.name} contains dev emulator API host string"
+                    }
+                }
         }
     }
 }

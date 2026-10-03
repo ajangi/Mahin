@@ -38,6 +38,14 @@ On settings open and every `ON_RESUME`, `HealthConnectSyncEngine.refreshRevocati
 
 See `docs/health-connect/DELETED_PERIOD_DAY_POLICY.md`.
 
+## Import and predictions (unchanged behaviour)
+
+Health Connect **import** upserts **`period_day`** rows only. It does **not** create Mahin period-span records, so **span-based prediction inputs are not modified by import alone**. Document this in store/Data Safety materials (`docs/compliance/DATA_SAFETY_MATRIX.md`).
+
+## Release risk: alpha SDK pin
+
+`connect-client:1.1.0-alpha11` is pinned for compileSdk 35 / current AGP. Track Play policy updates and plan bump to stable/rc when compileSdk 36+ is adopted — gate production HC flag enablement on checklist in `docs/RELEASE_CHECKLIST.md`.
+
 ## Remote disable
 
 When `health_connect` flag is false, Today hides entry, settings screen closes only **after** meta load confirms flag off, and sync engine returns `FeatureDisabled` without Health Connect API calls.
