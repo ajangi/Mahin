@@ -284,4 +284,33 @@
     <string name="notification_cat_pregnancy_weekly_body">یادآوری هفتهٔ جدید (بدون متن پزشکی).</string>
     <string name="notification_cat_appointment">قرار ملاقات</string>
     <string name="notification_cat_appointment_body">یادآوری برای قرارهایی که یادآوری آن‌ها را فعال کرده‌اید.</string>
+
+    <string name="health_connect_entry">Health Connect (اختیاری)</string>
+    <string name="health_connect_title">Health Connect</string>
+    <string name="health_connect_intro">اتصال اختیاری به Health Connect فقط برای همگام‌سازی دادهٔ پریود است؛ پیگیری اصلی بدون آن کار می‌کند.</string>
+    <string name="health_connect_opt_in">فعال‌سازی همگام‌سازی</string>
+    <string name="health_connect_education_heading">چرا این دسترسی‌ها لازم است؟</string>
+    <string name="health_connect_education_ack">متوجه شدم — ادامه</string>
+    <string name="health_connect_request_permissions">درخواست دسترسی Health Connect</string>
+    <string name="health_connect_import">دریافت از Health Connect</string>
+    <string name="health_connect_export">ارسال به Health Connect</string>
+    <string name="health_connect_maps_to">قابلیت در ماهین: %1$s</string>
+    <string name="health_connect_locked">برای همگام‌سازی ابتدا قفل اپ را باز کنید.</string>
+    <string name="health_connect_unavailable_flag">این قابلیت فعلاً از راه دور غیرفعال است.</string>
+    <string name="health_connect_not_installed">Health Connect روی دستگاه نصب نیست.</string>
+    <string name="health_connect_update_required">Health Connect نیاز به به‌روزرسانی دارد.</string>
+    <string name="health_connect_sdk_unavailable">Health Connect روی این دستگاه پشتیبانی نمی‌شود.</string>
+    <string name="health_connect_ready">Health Connect آماده است.</string>
+    <string name="health_connect_status_revoked">دسترسی Health Connect لغو شد. همگام‌سازی متوقف شد؛ دادهٔ واردشده در ماهین روی دستگاه می‌ماند.</string>
+    <string name="health_connect_status_permissions">ابتدا دسترسی‌های خواسته‌شده را تأیید کنید.</string>
+    <string name="health_connect_status_error">همگام‌سازی انجام نشد. بعداً دوباره تلاش کنید.</string>
+    <string name="health_connect_status_sync_success">همگام‌سازی انجام شد.</string>
+    <string name="health_connect_play_store_link">نصب یا به‌روزرسانی Health Connect</string>
+    <string name="health_connect_play_store_url">https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata</string>
+    <string name="health_connect_opt_in_switch">فعال‌سازی همگام‌سازی Health Connect</string>
+    <string name="health_connect_loading">در حال بارگذاری…</string>
+    <string name="health_connect_revoke_data_note">با لغو دسترسی یا خاموش کردن همگام‌سازی، فقط ارتباط با Health Connect قطع می‌شود؛ دادهٔ محلی ماهین حذف نمی‌شود.</string>
+    <string name="health_connect_privacy_policy_link">سیاست حریم خصوصی</string>
+    <string name="health_connect_privacy_policy_url">https://mahin.app/privacy</string>
+    <string name="health_connect_rationale_activity">ماهین فقط برای همگام‌سازی جریان پریود (Menstruation Flow) با Health Connect دسترسی می‌خواهد.</string>
 </resources>

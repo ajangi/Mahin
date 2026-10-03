@@ -131,16 +131,26 @@ class CycleTrackingRepository
             date: LocalDate,
             flowLevel: PeriodFlowLevel?,
             hasClots: Boolean,
+            updatedAtEpochMs: Long = System.currentTimeMillis(),
         ) {
             periodDayDao.upsert(
                 PeriodDayEntity(
                     logDate = date,
                     flowLevel = flowLevel,
                     hasClots = hasClots,
-                    updatedAtEpochMs = System.currentTimeMillis(),
+                    updatedAtEpochMs = updatedAtEpochMs,
                 ),
             )
         }
+
+        suspend fun deletePeriodDay(date: LocalDate) {
+            periodDayDao.deleteByDate(date)
+        }
+
+        suspend fun getPeriodDaysInRange(
+            start: LocalDate,
+            end: LocalDate,
+        ): List<PeriodDayEntity> = periodDayDao.getRange(start, end)
 
         suspend fun upsertDailyLog(
             date: LocalDate,

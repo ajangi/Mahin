@@ -22,3 +22,10 @@ See `docs/ANALYTICS_SPEC.md`. `SensitiveAnalyticsGuard` rejects unknown events a
 
 ## Export / deletion
 Required for GA and must not be paywalled. Implemented in M5/M8/M9, not M0.
+
+## Health Connect (M10, launch flag off by default)
+- **Read/write:** Menstruation flow records only when user opts in, launch flag on, permissions granted, and Health Connect app ready.
+- **Storage:** Imported values land in local Room (`period_day`); tombstones in DataStore. **No Health Connect payloads are sent to Mahin servers.**
+- **Revocation / opt-out:** Stops sync and clears opt-in flags; existing local tracker data remains unless the user deletes it.
+- **Play Console:** Health permissions declaration required in store listing even when feature flag is off (manifest permissions present).
+- **Policy docs:** `docs/health-connect/SDK_POLICY_VERIFICATION.md`, `docs/health-connect/DELETED_PERIOD_DAY_POLICY.md`.

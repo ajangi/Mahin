@@ -951,6 +951,13 @@ components:
         product:
           type: string
           example: mahin
+        featureFlags:
+          type: object
+          additionalProperties:
+            type: boolean
+          description: Server-controlled launch flags (non-sensitive). Keys are stable product identifiers.
+          example:
+            health_connect: false
     MediaApprovalStatus:
       type: string
       enum: [draft, in_review, approved, published, retired, rejected]

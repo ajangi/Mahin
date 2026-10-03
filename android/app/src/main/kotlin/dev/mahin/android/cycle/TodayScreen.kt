@@ -18,6 +18,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mahin.android.R
+import dev.mahin.android.healthconnect.HealthConnectSettingsScreen
 import dev.mahin.android.notifications.NotificationSettingsScreen
 import dev.mahin.android.pregnancy.PregnancyStartSheet
 import dev.mahin.android.pregnancy.PregnancyTodayCard
@@ -41,6 +42,7 @@ fun TodayScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showNotificationSettings by rememberSaveable { mutableStateOf(false) }
     var showPrivacySettings by rememberSaveable { mutableStateOf(false) }
+    var showHealthConnectSettings by rememberSaveable { mutableStateOf(false) }
     if (showNotificationSettings) {
         NotificationSettingsScreen(onNavigateUp = { showNotificationSettings = false })
         return
@@ -53,6 +55,10 @@ fun TodayScreen(
                 onLocalDataErased()
             },
         )
+        return
+    }
+    if (showHealthConnectSettings) {
+        HealthConnectSettingsScreen(onNavigateUp = { showHealthConnectSettings = false })
         return
     }
     PregnancyStartSheet(
@@ -141,6 +147,13 @@ fun TodayScreen(
         item {
             TextButton(onClick = { showPrivacySettings = true }) {
                 Text(stringResource(R.string.privacy_security_entry))
+            }
+        }
+        if (state.healthConnectEntryVisible) {
+            item {
+                TextButton(onClick = { showHealthConnectSettings = true }) {
+                    Text(stringResource(R.string.health_connect_entry))
+                }
             }
         }
         item {

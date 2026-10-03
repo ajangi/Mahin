@@ -26,6 +26,7 @@ class MetaAndHealthTest(
             status { isOk() }
             jsonPath("$.product") { value("mahin") }
             jsonPath("$.apiVersion") { value("0.0.1") }
+            jsonPath("$.featureFlags.health_connect") { value(false) }
         }
     }
 
