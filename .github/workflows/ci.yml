@@ -108,9 +108,14 @@ jobs:
             "build-tools;34.0.0"
       - name: Point Gradle at the SDK
         run: echo "sdk.dir=${ANDROID_HOME}" > android/local.properties
-      - name: Lint, unit tests, assemble debug
+      - name: Lint, unit tests, debug and release (minify) verification
         working-directory: android
-        run: ./gradlew lintDebug ktlintCheck detekt test assembleDebug --stacktrace --no-daemon
+        run: |
+          ./gradlew lintDebug ktlintCheck detekt test assembleDebug assembleRelease \
+            :core:network:testReleaseUnitTest \
+            :core:network:verifyReleaseMahinApiBaseUrlHttps \
+            :app:verifyReleaseApkNoEmulatorApiHost \
+            --stacktrace --no-daemon
       - name: Upload Android reports
         if: always()
         uses: actions/upload-artifact@v4
