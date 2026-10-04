@@ -12,3 +12,6 @@ Map `declared data -> collection -> storage -> purpose -> retention -> sharing -
 | Analytics | Guard exists; no vendor | — | — | none |
 | Crash tools | Not wired | — | — | — |
 | CMS media metadata fixture | Yes (non-medical placeholder) | memory/API | contract | public metadata only |
+| Assistant consent scopes | When registered user opts in + flag on | Postgres `assistant_consent` | optional future assistant | none until provider enabled | deleted on account erasure; **not in export stub yet** (planned metadata-only) |
+| Assistant interaction metadata | When ask API used + flag on | Postgres `assistant_interaction_log` | safety/ops (no bodies) | vendor only after explicit config + consent | **90-day retention** + deleted on account erasure; **not in export stub yet** (planned metadata-only) |
+| Assistant tracker context in flight | Only with per-scope consent | ephemeral request | grounded answers | vendor boundary if provider on | not logged |

@@ -44,6 +44,16 @@ mahin:
   environment: ${MAHIN_ENV:local}
   features:
     health-connect: ${MAHIN_FEATURE_HEALTH_CONNECT:false}
+    health-assistant: ${MAHIN_FEATURE_HEALTH_ASSISTANT:false}
+  assistant:
+    # Provider: none (fail closed), fake (local/test deterministic), or external vendor id (requires keys out-of-band).
+    provider: ${MAHIN_ASSISTANT_PROVIDER:none}
+    prompt-template-id: ${MAHIN_ASSISTANT_PROMPT_TEMPLATE:mahin-assistant-v0-placeholder}
+    # Vendor keys (e.g. MAHIN_OPENAI_API_KEY) are never committed; wire in deployment secrets manager.
+    openai-api-key: ${MAHIN_OPENAI_API_KEY:}
+    openai-model: ${MAHIN_OPENAI_MODEL:gpt-4o-mini}
+    log-retention-days: ${MAHIN_ASSISTANT_LOG_RETENTION_DAYS:90}
+    log-retention-delay-ms: ${MAHIN_ASSISTANT_LOG_RETENTION_DELAY_MS:86400000}
   media:
     public-base-url: ${MEDIA_PUBLIC_BASE_URL:http://localhost:9000/mahin-media}
   auth:

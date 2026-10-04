@@ -69,6 +69,8 @@ class SecurityConfig(
                     .authenticated()
                     .requestMatchers("/v1/devices/**")
                     .authenticated()
+                    .requestMatchers("/v1/assistant/**")
+                    .hasAuthority(JwtAuthenticationFilter.ROLE_USER)
                     .requestMatchers("/v1/privacy/**")
                     .hasAuthority(JwtAuthenticationFilter.ROLE_USER)
                     .requestMatchers("/v1/entitlements/**", "/v1/billing/**")

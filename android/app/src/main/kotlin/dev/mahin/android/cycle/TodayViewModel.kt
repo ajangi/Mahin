@@ -29,6 +29,7 @@ data class TodayUiState(
     val showPregnancyStartSheet: Boolean = false,
     val modeChangeBlockedMessage: Boolean = false,
     val healthConnectEntryVisible: Boolean = false,
+    val healthAssistantEntryVisible: Boolean = false,
 )
 
 @HiltViewModel
@@ -50,6 +51,8 @@ class TodayViewModel
                     it.copy(
                         healthConnectEntryVisible =
                             featureFlagGateway.isEnabled(MahinFeatureFlags.HEALTH_CONNECT),
+                        healthAssistantEntryVisible =
+                            featureFlagGateway.isEnabled(MahinFeatureFlags.HEALTH_ASSISTANT),
                     )
                 }
             }

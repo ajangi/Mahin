@@ -285,6 +285,17 @@
     <string name="notification_cat_appointment">قرار ملاقات</string>
     <string name="notification_cat_appointment_body">یادآوری برای قرارهایی که یادآوری آن‌ها را فعال کرده‌اید.</string>
 
+    <string name="assistant_settings_entry">دستیار آموزشی (آزمایشی)</string>
+    <string name="assistant_settings_title">دستیار آموزشی</string>
+    <string name="assistant_loading">در حال بررسی وضعیت سرویس…</string>
+    <string name="assistant_consent_heading">رضایت برای اشتراک داده</string>
+    <string name="assistant_consent_body">هیچ داده‌ای بدون انتخاب شما ارسال نمی‌شود. این قابلیت جایگزین مشاورهٔ پزشکی نیست.</string>
+    <string name="assistant_consent_cycle_summary">خلاصهٔ چرخه (بدون تاریخ‌های دقیق در لاگ سرور)</string>
+    <string name="assistant_consent_symptom_tags">برچسب‌های علامت (بدون یادداشت آزاد)</string>
+    <string name="assistant_consent_save">ذخیرهٔ رضایت</string>
+    <string name="assistant_consent_status_saved">رضایت ذخیره شد.</string>
+    <string name="assistant_consent_status_error">ذخیرهٔ رضایت انجام نشد. دوباره تلاش کنید.</string>
+    <string name="assistant_not_medical_disclaimer">پاسخ‌ها فقط از محتوای آموزشی تأییدشده هستند و برای تشخیص یا تجویز استفاده نمی‌شوند.</string>
     <string name="health_connect_entry">Health Connect (اختیاری)</string>
     <string name="health_connect_title">Health Connect</string>
     <string name="health_connect_intro">اتصال اختیاری به Health Connect فقط برای همگام‌سازی دادهٔ پریود است؛ پیگیری اصلی بدون آن کار می‌کند.</string>

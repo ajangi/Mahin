@@ -18,6 +18,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mahin.android.R
+import dev.mahin.android.assistant.AssistantSettingsScreen
 import dev.mahin.android.healthconnect.HealthConnectSettingsScreen
 import dev.mahin.android.notifications.NotificationSettingsScreen
 import dev.mahin.android.pregnancy.PregnancyStartSheet
@@ -43,6 +44,7 @@ fun TodayScreen(
     var showNotificationSettings by rememberSaveable { mutableStateOf(false) }
     var showPrivacySettings by rememberSaveable { mutableStateOf(false) }
     var showHealthConnectSettings by rememberSaveable { mutableStateOf(false) }
+    var showAssistantSettings by rememberSaveable { mutableStateOf(false) }
     if (showNotificationSettings) {
         NotificationSettingsScreen(onNavigateUp = { showNotificationSettings = false })
         return
@@ -59,6 +61,10 @@ fun TodayScreen(
     }
     if (showHealthConnectSettings) {
         HealthConnectSettingsScreen(onNavigateUp = { showHealthConnectSettings = false })
+        return
+    }
+    if (showAssistantSettings) {
+        AssistantSettingsScreen(onNavigateUp = { showAssistantSettings = false })
         return
     }
     PregnancyStartSheet(
@@ -153,6 +159,13 @@ fun TodayScreen(
             item {
                 TextButton(onClick = { showHealthConnectSettings = true }) {
                     Text(stringResource(R.string.health_connect_entry))
+                }
+            }
+        }
+        if (state.healthAssistantEntryVisible) {
+            item {
+                TextButton(onClick = { showAssistantSettings = true }) {
+                    Text(stringResource(R.string.assistant_settings_entry))
                 }
             }
         }

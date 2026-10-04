@@ -19,6 +19,9 @@ java {
 
 kotlin {
     jvmToolchain(21)
+    compilerOptions {
+        freeCompilerArgs.add("-Xemit-jvm-type-annotations")
+    }
 }
 
 dependencies {

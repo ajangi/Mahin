@@ -22,11 +22,12 @@ class RateLimitFilter(
         response: HttpServletResponse,
         filterChain: FilterChain,
     ) {
-        if (
-            !request.requestURI.startsWith("/v1/auth") &&
-            !request.requestURI.startsWith("/v1/identity") &&
-            !request.requestURI.startsWith("/v1/admin/auth")
-        ) {
+        val rateLimited =
+            request.requestURI.startsWith("/v1/auth") ||
+                request.requestURI.startsWith("/v1/identity") ||
+                request.requestURI.startsWith("/v1/admin/auth") ||
+                request.requestURI == "/v1/assistant/ask"
+        if (!rateLimited) {
             filterChain.doFilter(request, response)
             return
         }

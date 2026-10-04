@@ -81,6 +81,7 @@ dependencies {
     implementation(project(":core:notifications"))
     implementation(project(":core:billing"))
     implementation(project(":core:healthconnect"))
+    implementation(project(":core:assistant"))
     implementation(project(":domain:cycle"))
     implementation(project(":domain:fertility"))
     implementation(project(":domain:pregnancy"))
@@ -89,6 +90,7 @@ dependencies {
     implementation(project(":domain:subscription"))
     implementation(project(":domain:reminders"))
     implementation(project(":domain:healthconnect"))
+    implementation(project(":domain:assistant"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -122,6 +124,7 @@ tasks.withType<Test>().configureEach {
             excludeTestsMatching("dev.mahin.android.ttc.TtcInsightsScreenScrollTest")
             excludeTestsMatching("dev.mahin.android.pregnancy.PregnancyHubScreenScrollTest")
             excludeTestsMatching("dev.mahin.android.pregnancy.PregnancyStartSheetScrollTest")
+            excludeTestsMatching("dev.mahin.android.assistant.AssistantSettingsScreenTest")
         }
     }
 }

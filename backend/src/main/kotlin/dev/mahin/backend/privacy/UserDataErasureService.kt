@@ -1,5 +1,7 @@
 package dev.mahin.backend.privacy
 
+import dev.mahin.backend.assistant.persistence.AssistantConsentRepository
+import dev.mahin.backend.assistant.persistence.AssistantInteractionLogRepository
 import dev.mahin.backend.auth.persistence.RefreshTokenRepository
 import dev.mahin.backend.auth.persistence.UserAccountRepository
 import dev.mahin.backend.content.persistence.UserContentBookmarkRepository
@@ -33,6 +35,8 @@ class UserDataErasureService(
     private val playSubscriptionRecordRepository: PlaySubscriptionRecordRepository,
     private val exportJobRepository: ExportJobRepository,
     private val bookmarkRepository: UserContentBookmarkRepository,
+    private val assistantConsentRepository: AssistantConsentRepository,
+    private val assistantInteractionLogRepository: AssistantInteractionLogRepository,
     private val deletionRequestRepository: DeletionRequestRepository,
     private val guestInstallationRepository: GuestInstallationRepository,
     private val userAccountRepository: UserAccountRepository,
@@ -57,6 +61,8 @@ class UserDataErasureService(
         playSubscriptionRecordRepository.deleteAllByUserId(userId)
         exportJobRepository.deleteAllByUserId(userId)
         bookmarkRepository.deleteAllByUserId(userId)
+        assistantInteractionLogRepository.deleteAllByUserId(userId)
+        assistantConsentRepository.deleteById(userId)
         deletionRequestRepository.deleteAllByUserId(userId)
         userAccountRepository.deleteById(userId)
         entityManager.flush()

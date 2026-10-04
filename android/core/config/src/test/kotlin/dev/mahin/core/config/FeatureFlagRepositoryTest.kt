@@ -39,6 +39,18 @@ class FeatureFlagRepositoryTest {
     }
 
     @Test
+    fun healthAssistantDefaultsOffUntilRemoteRefresh() =
+        runTest {
+            val repository =
+                FeatureFlagRepository(
+                    FakeMetaApi(mapOf(MahinFeatureFlags.HEALTH_ASSISTANT to true)),
+                )
+            assertThat(repository.isEnabled(MahinFeatureFlags.HEALTH_ASSISTANT)).isFalse()
+            repository.refreshFromRemote()
+            assertThat(repository.isEnabled(MahinFeatureFlags.HEALTH_ASSISTANT)).isTrue()
+        }
+
+    @Test
     fun refreshFailureKeepsPriorSnapshot() =
         runTest {
             val repository =
