@@ -7,6 +7,7 @@ Map `declared data -> collection -> storage -> purpose -> retention -> sharing -
 | Guest/local install identity | Not yet persisted beyond process | planned DataStore (M2) | local app | none |
 | Cycle/pregnancy logs | No | — | — | — |
 | Health Connect menstruation flow (device) | When user opts in + flag on | Health Connect + local Room `period_day` | optional sync | **Not sent to Mahin backend** | user revoke / tombstone export delete | on-device only |
+| Health Connect import → predictions | When import runs | Local `period_day` rows only | display in tracker | none | same as period_day | **Does not create period spans; span-based predictions unchanged** |
 | Health Connect tombstones (deleted period days) | When user removes period log (HC active) | DataStore (ISO dates) | prevent re-import | none | cleared with local erase | on-device only |
 | Analytics | Guard exists; no vendor | — | — | none |
 | Crash tools | Not wired | — | — | — |
