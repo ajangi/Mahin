@@ -1,11 +1,19 @@
 # M12 Handoff — AI Foundation / Future (No default GA chatbot)
 
 **Milestone:** M12  
-**Status:** draft PR — gatekeeper round 2 fixes  
-**Branch:** `cursor/m12-ai-foundation-8b27`  
-**PR:** [#25](https://github.com/ajangi/Mahin/pull/25)  
-**Base:** `master` @ `b9c35cd55cbcf57749d9fe56a05ce38b09ea4552`  
-**Next milestone:** None — post-GA enablement gates only
+**Status:** **accepted** (squash-merge `0a02ad89a85836c196ab66df167f0d7decdc2142` on `master` via [PR #25](https://github.com/ajangi/Mahin/pull/25))  
+**Final CI:** [37208629805](https://github.com/ajangi/Mahin/actions/runs/37208629805) on `dc9869f` — all 5 jobs **success**  
+**Next milestone:** None — **M0–M12 program closed**; post-GA / human gates only
+
+## Acceptance
+- M12 merged to `master` as **`0a02ad89a85836c196ab66df167f0d7decdc2142`** ([PR #25](https://github.com/ajangi/Mahin/pull/25)).
+- Last pre-merge branch tip: `dc9869f`; authoritative green run **37208629805**.
+- With M12 accepted, the **M0–M12 agent milestone program is complete**. No M13+ backlog in-repo.
+
+### Post-GA / human gates (not agent milestones)
+- **M11 infra & release** — staging/prod, secrets, observability, backups, load/chaos runs, GA RC promotion (`docs/handoffs/M11_HANDOFF.md`).
+- **Health Connect** — product-owner mapping sign-off (`period_day` ↔ `MenstruationFlowRecord`).
+- **M12 assistant production** — clinical corpus, clinician-signed escalation copy, legal consent review, vendor DPA/keys, explicit `health_assistant` + provider enablement (items below remain **prepared, not executed**).
 
 ## Milestone outcome (honest)
 - **Implemented:** AI-ready architecture with kill switch on **all** assistant endpoints (including consent), CMS-only retrieval in production profiles, citation pair enforcement, consent/redaction tests, sensitive-logging tests, retention purge, erasure coverage, rate limits, OpenAPI-aligned validation, Android consent UI hardening.
@@ -18,7 +26,7 @@ Use GitHub Actions on the **last code commit** below — do not rely on ad-hoc l
 |---|---|---|
 | [37207382669](https://github.com/ajangi/Mahin/actions/runs/37207382669) | `babe84f` (**last code commit** — round 2) | All 5 jobs **success** |
 
-Commits after `babe84f` are **docs-only** (handoff/PR CI table). Branch-tip CI is listed in [PR #25](https://github.com/ajangi/Mahin/pull/25).
+Commits after `babe84f` on the feature branch were **docs-only** before merge. Pre-merge branch tip `dc9869f` validated in run **37208629805**.
 
 ## Implemented scope (round 2 additions)
 - JVM type-use annotations for tag `maxLength`; `symptomTags` `maxItems` 20; MockMvc validation tests; OpenAPI `locale` maxLength + ask `503` `ErrorResponse`
