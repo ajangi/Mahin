@@ -4,14 +4,16 @@ Use before any store/staging promotion. M0 does not ship to production.
 
 ## Engineering
 - [ ] Milestone acceptance criteria met and handoff written
-- [ ] CI green on the release commit (design-tokens, openapi, admin, backend, android)
-- [ ] Release API base URL verified: `./scripts/verify_android_release_api_base.sh` (see ADR 0018)
+- [ ] CI green on the release commit (design-tokens, openapi, admin, backend, android **including minified `assembleRelease` + verify tasks**)
+- [ ] Release API / network guards: `./scripts/verify_android_release_api_base.sh` (see ADR 0018)
+- [ ] **Version bump:** increment `mahin.versionCode` (monotonic integer) and `mahin.versionName` (semver/RC) in `android/gradle.properties` or CI secrets for each store upload — never reuse a shipped `versionCode`
 - [ ] No secrets in the artifact or logs
 - [ ] Encoding/ProGuard mapping archived for the release versionCode
 - [ ] Rollback / forward-fix path written (`docs/release/STAGED_ROLLOUT.md`)
 
 ## Store & product
 - [ ] Production `applicationId` approved (see ADR 0003) before Play listing
+- [ ] **Release signing configured** (not committed): set `mahin.release.keystorePath`, `mahin.release.storePassword`, `mahin.release.keyAlias`, `mahin.release.keyPassword` in `~/.gradle/gradle.properties` or env vars `MAHIN_RELEASE_KEYSTORE_PATH`, `MAHIN_RELEASE_STORE_PASSWORD`, `MAHIN_RELEASE_KEY_ALIAS`, `MAHIN_RELEASE_KEY_PASSWORD`. CI builds stay **unsigned** when unset.
 - [ ] Signing identity stored in a secrets manager, not git
 - [ ] Store assets complete per `docs/release/STORE_LISTING.md`
 - [ ] Staged rollout plan executed per `docs/release/STAGED_ROLLOUT.md`
@@ -30,7 +32,7 @@ Use before any store/staging promotion. M0 does not ship to production.
 - [ ] Runbooks reviewed (`docs/operations/RUNBOOKS.md`)
 - [ ] Backend load test script executed against staging (`scripts/loadtest/README.md`) — **do not claim pass without logs**
 - [ ] Staging soak executed per `docs/release/STAGING_SOAK.md` — **do not claim pass without logs**
-- [ ] Sync chaos scenarios exercised or dry-run (`scripts/chaos/README.md`)
+- [ ] Sync chaos scenarios exercised manually (`scripts/chaos/README.md`) — **not** `sync_chaos_not_automated.sh` (that script exits 2 by design)
 
 ## QA (human sign-off)
 - [ ] Accessibility audit (`docs/qa/ACCESSIBILITY_AUDIT.md`)

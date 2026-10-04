@@ -13,8 +13,48 @@ android {
         // Non-production working identity. Production applicationId is NOT locked in M0.
         // See docs/adr/0003-android-application-id.md
         applicationId = "dev.mahin.android"
-        versionCode = 1
-        versionName = "0.0.5-m4"
+        versionCode =
+            (project.findProperty("mahin.versionCode") as String?)?.toIntOrNull()
+                ?: 1_100_001
+        versionName =
+            project.findProperty("mahin.versionName") as String?
+                ?: "1.0.0-rc1"
+    }
+    signingConfigs {
+        create("release") {
+            val keystorePath =
+                providers
+                    .gradleProperty("mahin.release.keystorePath")
+                    .orElse(providers.environmentVariable("MAHIN_RELEASE_KEYSTORE_PATH"))
+                    .orNull
+                    ?.trim()
+            if (!keystorePath.isNullOrEmpty()) {
+                storeFile = rootProject.file(keystorePath)
+                storePassword =
+                    providers
+                        .gradleProperty("mahin.release.storePassword")
+                        .orElse(providers.environmentVariable("MAHIN_RELEASE_STORE_PASSWORD"))
+                        .orNull
+                keyAlias =
+                    providers
+                        .gradleProperty("mahin.release.keyAlias")
+                        .orElse(providers.environmentVariable("MAHIN_RELEASE_KEY_ALIAS"))
+                        .orNull
+                keyPassword =
+                    providers
+                        .gradleProperty("mahin.release.keyPassword")
+                        .orElse(providers.environmentVariable("MAHIN_RELEASE_KEY_PASSWORD"))
+                        .orNull
+            }
+        }
+    }
+    buildTypes {
+        getByName("release") {
+            val releaseSigning = signingConfigs.getByName("release")
+            if (releaseSigning.storeFile?.exists() == true) {
+                signingConfig = releaseSigning
+            }
+        }
     }
 }
 
@@ -80,35 +120,53 @@ tasks.withType<Test>().configureEach {
     }
 }
 
+private val releaseApkForbiddenSubstrings =
+    listOf(
+        "http://10.0.2.2:8080",
+        "10.0.2.2",
+    )
+
 tasks.register("verifyReleaseApkNoEmulatorApiHost") {
     group = "verification"
-    description = "Fails if the release APK embeds the dev emulator API base URL."
+    description =
+        "Fails if the minified release APK ships dev API hosts, cleartext dev network config, or emulator base URL strings."
     dependsOn("assembleRelease")
     doLast {
-        val apk =
+        val releaseDir =
             layout.buildDirectory
-                .file("outputs/apk/release/app-release-unsigned.apk")
+                .dir("outputs/apk/release")
                 .get()
                 .asFile
-        check(apk.exists()) { "Expected release APK at ${apk.path}" }
-        val needle = "http://10.0.2.2:8080"
+        val apk =
+            releaseDir
+                .listFiles()
+                ?.firstOrNull { it.isFile && it.extension == "apk" }
+        check(apk != null) { "Expected a release APK under ${releaseDir.path}" }
         ZipFile(apk).use { zip ->
             zip
                 .entries()
                 .asSequence()
                 .filter { entry: ZipEntry -> !entry.isDirectory }
-                .filter { entry: ZipEntry ->
-                    entry.name.endsWith(".dex") ||
-                        entry.name.endsWith(".jar") ||
-                        entry.name.endsWith(".kotlin_module")
-                }.forEach { entry: ZipEntry ->
+                .forEach { entry: ZipEntry ->
                     val text =
                         zip
                             .getInputStream(entry)
                             .bufferedReader(Charsets.ISO_8859_1)
                             .readText()
-                    check(!text.contains(needle)) {
-                        "Release artifact ${entry.name} contains dev emulator API host string"
+                    val needles =
+                        if (
+                            entry.name.endsWith(".dex") ||
+                            entry.name.endsWith(".jar") ||
+                            entry.name.endsWith(".kotlin_module")
+                        ) {
+                            listOf("http://10.0.2.2:8080")
+                        } else {
+                            releaseApkForbiddenSubstrings
+                        }
+                    needles.forEach { needle ->
+                        check(!text.contains(needle)) {
+                            "Release artifact ${entry.name} contains forbidden release string: $needle"
+                        }
                     }
                 }
         }

@@ -47,3 +47,30 @@ private fun quotedGradleString(value: String): String {
     val escaped = value.replace("\\", "\\\\").replace("\"", "\\\"")
     return "\"$escaped\""
 }
+
+tasks.register("verifyReleaseMahinApiBaseUrlHttps") {
+    group = "verification"
+    description = "Fails if release MAHIN_API_BASE_URL BuildConfig is not HTTPS."
+    dependsOn("generateReleaseBuildConfig")
+    doLast {
+        val buildConfigDir =
+            layout.buildDirectory
+                .dir("generated/source/buildConfig/release")
+                .get()
+                .asFile
+        val buildConfigFile =
+            buildConfigDir
+                .walkTopDown()
+                .firstOrNull { it.isFile && it.name == "BuildConfig.java" }
+                ?: error("Release BuildConfig not found under ${buildConfigDir.path}")
+        val content = buildConfigFile.readText()
+        val match =
+            Regex("""MAHIN_API_BASE_URL\s*=\s*"([^"]+)"""")
+                .find(content)
+                ?: error("MAHIN_API_BASE_URL not found in ${buildConfigFile.path}")
+        val url = match.groupValues[1]
+        check(url.startsWith("https://")) {
+            "Release MAHIN_API_BASE_URL must use HTTPS (was $url). Override mahin.api.baseUrl.release for staging only."
+        }
+    }
+}

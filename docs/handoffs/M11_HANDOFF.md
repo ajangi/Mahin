@@ -1,96 +1,78 @@
 # M11 Handoff — Production Hardening & Release
 
 **Milestone:** M11  
-**Status:** draft PR (gatekeeper)  
+**Status:** draft PR #23 — gatekeeper round 1 fixes  
 **Branch:** `cursor/m11-production-hardening-release-c320`  
 **Base:** `f3096edd4cfc8b3268b65eeb0636dc0acb879e0e`  
 **Next milestone:** M12 — AI Foundation / Future (`prompts/M12.md`) — **do not start until assigned**
 
 ## Implemented scope
 
-### M10 carry-over (required)
-- **Build-config API base URL:** `MAHIN_API_BASE_URL` on `:core:network` `BuildConfig`; debug defaults to emulator host via `mahin.api.baseUrl.debug`, release to `mahin.api.baseUrl.release` (default `https://api.mahin.app/`). `MetaApi`, `ContentApi`, and `EntitlementApi` DI use `BuildConfig` (ADR **0018**).
-- **Release guards:** `:core:network:testReleaseUnitTest` (`MahinApiBaseUrlBuildConfigTest`); `:app:verifyReleaseApkNoEmulatorApiHost` + `scripts/verify_android_release_api_base.sh`.
+### M10 carry-over + release hardening (code)
+- Build-config API base URL (ADR **0018**); HTTPS enforced on release via `verifyReleaseMahinApiBaseUrlHttps`
+- Cleartext dev hosts only in **debug** `network_security_config`; release merge is HTTPS-only
+- CI android job runs **minified `assembleRelease`** + release verify tasks
+- R8 rules for Retrofit/suspend, kotlinx.serialization DTOs, Room entities (plus bundled AAR rules)
+- Optional release **signingConfig** from Gradle properties / env (unsigned when unset)
+- GA RC versioning via `mahin.versionCode` / `mahin.versionName` (default `1100001` / `1.0.0-rc1`)
+- StrictMode (detectAll + penaltyLog) on debuggable builds
+- k6 script aligned to OpenAPI; sync chaos manual playbook (no fake pass script)
 
-### Production hardening artifacts (prepared / documented)
-- Expanded `docs/RELEASE_CHECKLIST.md` (Play health permissions, privacy URL, HC mapping gate, alpha SDK pin, import/prediction behaviour)
-- QA playbooks: `docs/qa/*` (accessibility, Persian, RTL/Jalali, performance, crash/ANR)
-- Operations: `docs/operations/RUNBOOKS.md`, `docs/operations/OBSERVABILITY.md`
-- Release: `docs/release/STAGED_ROLLOUT.md`, `docs/release/STORE_LISTING.md`, `docs/release/STAGING_SOAK.md`
-- Load test script: `scripts/loadtest/k6_read_paths.js` + README (**prepared, not executed** — no staging credentials)
-- Sync chaos catalog: `scripts/chaos/README.md` + stub runner (**prepared, not executed**)
-
-### Compliance / Health Connect (document only; behaviour unchanged)
-- Imported HC days update **`period_day` only** — **no period spans** — **span-based predictions unchanged** (`docs/compliance/DATA_SAFETY_MATRIX.md`, `docs/PRIVACY_ENGINEERING.md`, `docs/health-connect/SDK_POLICY_VERIFICATION.md`).
-
-### Optional hygiene
-- `permissionReadErrorDoesNotRevokeOptIn` asserts tombstones survive transient permission read errors.
-- Removed unused `PeriodDayTrackingService.saveLoggedPeriodDay`.
+### Prepared only (infra / human gates — GA RC **not** complete until these run)
+- k6 load test against staging
+- Staging soak (72h)
+- Manual sync chaos scenarios (`scripts/chaos/README.md`)
+- Store listing assets upload
+- Release keystore + Play App Signing
+- Play Console health-permissions declaration
+- Product-owner Health Connect mapping sign-off
+- Privacy URL legal confirmation
+- QA sign-offs (accessibility, Persian, RTL/Jalali, profiling, Vitals crash review)
+- Operational dashboards wired in target environment
 
 ## Notable files
 
 | Area | Path |
 |---|---|
-| API URL BuildConfig | `android/core/network/build.gradle.kts`, `android/gradle.properties` |
-| Retrofit DI | `android/core/config/.../ConfigModule.kt`, `android/core/content/.../ContentModule.kt`, `android/core/billing/.../BillingModule.kt` |
-| Release verify | `android/app/build.gradle.kts`, `scripts/verify_android_release_api_base.sh` |
-| Release checklist | `docs/RELEASE_CHECKLIST.md` |
-| ADR | `docs/adr/0018-m11-android-api-base-url-build-config.md` |
+| CI release build | `.github/workflows/ci.yml` |
+| Network security | `app/src/main/res/xml/…`, `app/src/debug/res/xml/…` |
+| R8 | `android/app/proguard-rules.pro` |
+| Release verify | `android/app/build.gradle.kts`, `ReleaseNetworkSecurityConfigTest.kt` |
+| Signing / version | `android/app/build.gradle.kts`, `android/gradle.properties` |
+| Load / chaos | `scripts/loadtest/*`, `scripts/chaos/*` |
 
 ## Migrations
-- None (Android Gradle properties + BuildConfig only).
+- None.
 
 ## ADRs
-- **0018** — Android API base URL via BuildConfig (M11)
+- **0018** — Android API base URL + release network/CI guards (updated round 1)
 
-## Commands and results (Cloud Agent VM, pre-push)
-
-| Command | Result |
-|---|---|
-| `python3 scripts/check_design_tokens.py` | PASS |
-| `python3 scripts/security_checklist.py` | PASS |
-| `npx @redocly/cli@1.34.2 lint openapi/openapi.yaml --config redocly.yaml` | PASS |
-| `cd admin && npm ci && npm test && npm run build && npm audit --audit-level=high` | PASS (2 moderate dev-deps; no high+) |
-| `cd backend && ./gradlew ktlintCheck detekt test --stacktrace --no-daemon` | PASS (37 tests) |
-| `cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug --stacktrace --no-daemon` | PASS |
-| `./scripts/verify_android_release_api_base.sh` | PASS (`testReleaseUnitTest` + `verifyReleaseApkNoEmulatorApiHost`) |
-
-**Not executed (honest):** k6 load test, staging soak, on-device profiling, Play Vitals crash review — scripts/runbooks provided; see checklists.
+## Verification source of truth
+Use **GitHub Actions CI on PR #23** (commit under test), not ad-hoc agent claims. After push, confirm the latest workflow run is green for all five jobs (android includes `assembleRelease` + verify tasks).
 
 ## Acceptance criteria (M11)
 
 | Criterion | Status |
 |---|---|
-| Performance profiling | **Prepared** — `docs/qa/PERFORMANCE_PROFILING.md` (not run on device in VM) |
-| Accessibility audit | **Prepared** — playbook + lint gate in CI |
-| Persian linguistic QA | **Prepared** — playbook |
-| RTL/Jalali edge QA | **Prepared** — playbook |
-| Crash/ANR review | **Prepared** — playbook (no Vitals data in repo) |
-| Sync chaos scenarios | **Prepared** — `scripts/chaos/README.md` |
-| Backend load tests | **Prepared** — k6 script; not executed |
-| Staging soak | **Prepared** — `docs/release/STAGING_SOAK.md` |
-| Store assets/config | **Prepared** — `docs/release/STORE_LISTING.md` |
-| Privacy/Data Safety verification | **Updated** matrix + checklist gates |
-| Operational dashboards/runbooks | **Prepared** — ops docs |
-| Release checklist | **Updated** — `docs/RELEASE_CHECKLIST.md` |
-| Staged rollout configuration | **Documented** — `docs/release/STAGED_ROLLOUT.md` |
-| M10 carry-over API URL + release guard | **Met** |
-| Exit: GA release candidate path | **Met** (RC process documented; infra-dependent steps marked pending) |
+| Release minify in CI | **Met** — `assembleRelease` + verify in android job |
+| R8 rules for Retrofit/serialization/Room | **Met** — `proguard-rules.pro` + AAR bundled rules documented |
+| Release network security | **Met** — debug-only cleartext; tests + APK scan |
+| Signing / versioning documented | **Met** — checklist + Gradle hooks |
+| k6 / chaos / soak / store / dashboards | **Prepared** — scripts/playbooks; execution pending infra |
+| M10 API URL carry-over | **Met** |
+| Exit: GA release candidate | **Partial** — **code/CI path ready**; **GA RC pending** infra/human gates listed above |
 
 ## Known limitations
-- Default production API host is `https://api.mahin.app/` until pipeline overrides `mahin.api.baseUrl.release`.
-- Release APK artifact name is `app-release-unsigned.apk` (no release signing config in repo).
-- `network_security_config.xml` still lists `10.0.2.2` for cleartext dev domains; release HTTP clients use HTTPS production base URL.
-- Load/soak/dashboard wiring requires staging/production credentials outside this repo.
+- Release APK remains unsigned in CI until keystore env/properties are provided locally or in secure CI.
+- Staging HTTPS host for load/soak must be supplied out-of-band (`mahin.api.baseUrl.release` override).
 
 ## Unresolved questions
-- Product-owner sign-off on `period_day` ↔ `MenstruationFlowRecord` mapping (gate before enabling HC in production).
-- Confirm `https://mahin.app/privacy` is final production policy (legal/product).
+- Product-owner confirmation of `period_day` ↔ `MenstruationFlowRecord` mapping.
+- Confirm `https://mahin.app/privacy` is production-final.
 
 ## Deferred (not M11)
-- M12 AI foundation (no default GA chatbot).
-- Bumping `connect-client` beyond alpha11 when compileSdk/AGP upgraded.
-- M9 follow-ups (JWT denylist, deletion processor hardening) — unchanged.
+- M12 AI foundation.
+- `connect-client` bump when compileSdk/AGP upgraded.
 
 ## Next milestone only
 **M12** — AI Foundation / Future (`prompts/M12.md`). Do not start until assigned.
