@@ -16,10 +16,9 @@ Use GitHub Actions on the **last code commit** below — do not rely on ad-hoc l
 
 | Run | Commit | Result |
 |---|---|---|
-| [37203230499](https://github.com/ajangi/Mahin/actions/runs/37203230499) | `de2af04` (docs-only churn before round 2 code) | All 5 jobs **success** |
-| *(pending)* | `49fe680`+ (**last code commits** — round 2) | CI on PR branch after push |
+| [37207382669](https://github.com/ajangi/Mahin/actions/runs/37207382669) | `babe84f` (**last code commit** — round 2) | All 5 jobs **success** |
 
-Commits after the round 2 code SHA are **docs-only** (handoff/PR CI table updates).
+Commits after `babe84f` are **docs-only** (handoff/PR CI table). Branch-tip CI is listed in [PR #25](https://github.com/ajangi/Mahin/pull/25).
 
 ## Implemented scope (round 2 additions)
 - JVM type-use annotations for tag `maxLength`; `symptomTags` `maxItems` 20; MockMvc validation tests; OpenAPI `locale` maxLength + ask `503` `ErrorResponse`
