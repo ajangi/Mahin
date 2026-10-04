@@ -95,7 +95,6 @@ class AssistantCitationEnforcementIntegrationTest(
     fun mixedChunkPairCitationReturnsErrorOutcome() {
         capturingGateway.reset()
         val docA = "00000000-0000-4000-8000-00000000a12a"
-        val verA = "00000000-0000-4000-8000-00000000a12b"
         val verB = "00000000-0000-4000-8000-00000000b12b"
         capturingGateway.responseOverride =
             AssistantGatewayResponse(
