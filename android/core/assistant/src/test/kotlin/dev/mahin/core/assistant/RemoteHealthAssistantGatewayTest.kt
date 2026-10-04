@@ -87,8 +87,7 @@ class RemoteHealthAssistantGatewayTest {
         var nextAskResponse: AssistantAskResponseDto? = null
         var nextAskThrowable: Throwable? = null
 
-        override suspend fun getConsent(authorization: String): AssistantConsentResponseDto =
-            error("not used")
+        override suspend fun getConsent(authorization: String): AssistantConsentResponseDto = error("not used")
 
         override suspend fun updateConsent(
             authorization: String,

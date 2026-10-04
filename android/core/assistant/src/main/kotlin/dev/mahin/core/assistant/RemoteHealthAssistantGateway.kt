@@ -40,15 +40,16 @@ class RemoteHealthAssistantGateway
                     null
                 }
             return runCatching {
-                assistantApi.ask(
-                    authorization = bearer(token),
-                    body =
-                        AssistantAskRequestDto(
-                            locale = input.locale,
-                            question = input.question,
-                            trackerContext = trackerContext,
-                        ),
-                ).toDomain()
+                assistantApi
+                    .ask(
+                        authorization = bearer(token),
+                        body =
+                            AssistantAskRequestDto(
+                                locale = input.locale,
+                                question = input.question,
+                                trackerContext = trackerContext,
+                            ),
+                    ).toDomain()
             }.fold(
                 onSuccess = { Result.success(it) },
                 onFailure = { error ->

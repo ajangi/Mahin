@@ -56,6 +56,7 @@ fun AssistantSettingsScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Suppress("LongParameterList", "LongMethod")
 internal fun AssistantSettingsScreenContent(
     state: AssistantSettingsUiState,
     onNavigateUp: () -> Unit,

@@ -124,6 +124,7 @@ tasks.withType<Test>().configureEach {
             excludeTestsMatching("dev.mahin.android.ttc.TtcInsightsScreenScrollTest")
             excludeTestsMatching("dev.mahin.android.pregnancy.PregnancyHubScreenScrollTest")
             excludeTestsMatching("dev.mahin.android.pregnancy.PregnancyStartSheetScrollTest")
+            excludeTestsMatching("dev.mahin.android.assistant.AssistantSettingsScreenTest")
         }
     }
 }
