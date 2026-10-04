@@ -29,7 +29,13 @@ android {
                     .orNull
                     ?.trim()
             if (!keystorePath.isNullOrEmpty()) {
-                storeFile = rootProject.file(keystorePath)
+                val keystoreFile = rootProject.file(keystorePath)
+                check(keystoreFile.isFile) {
+                    "Release keystore not found at ${keystoreFile.absolutePath} " +
+                        "(mahin.release.keystorePath / MAHIN_RELEASE_KEYSTORE_PATH). " +
+                        "Unset the property for unsigned CI builds."
+                }
+                storeFile = keystoreFile
                 storePassword =
                     providers
                         .gradleProperty("mahin.release.storePassword")
