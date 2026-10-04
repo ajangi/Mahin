@@ -60,6 +60,100 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MetaResponse"
+  /v1/assistant/consent:
+    get:
+      tags: [Assistant]
+      operationId: getAssistantConsent
+      summary: Read granular assistant data-sharing consent (registered users)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Consent scopes (all default false until user opts in)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantConsentResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      tags: [Assistant]
+      operationId: updateAssistantConsent
+      summary: Update assistant data-sharing consent (never pre-ticked server-side)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAssistantConsentRequest"
+      responses:
+        "200":
+          description: Updated consent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantConsentResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/assistant/ask:
+    post:
+      tags: [Assistant]
+      operationId: askAssistant
+      summary: Grounded assistant question (kill-switch and provider gated)
+      description: |
+        Requires `featureFlags.health_assistant=true` on `/v1/meta` and a configured provider.
+        Answers include citations from published CMS content only. Not a diagnosis service.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssistantAskRequest"
+      responses:
+        "200":
+          description: Answered, refused, or escalated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantAskResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
+          description: Assistant disabled or provider not configured
   /v1/media/assets/{assetId}:
     get:
       tags: [Media]
@@ -958,6 +1052,95 @@ components:
           description: Server-controlled launch flags (non-sensitive). Keys are stable product identifiers.
           example:
             health_connect: false
+            health_assistant: false
+    AssistantConsentScopes:
+      type: object
+      required: [shareCycleSummary, shareSymptomTags]
+      properties:
+        shareCycleSummary:
+          type: boolean
+          default: false
+        shareSymptomTags:
+          type: boolean
+          default: false
+    AssistantConsentResponse:
+      type: object
+      required: [scopes]
+      properties:
+        scopes:
+          $ref: "#/components/schemas/AssistantConsentScopes"
+        updatedAtEpochMs:
+          type: integer
+          format: int64
+          nullable: true
+    UpdateAssistantConsentRequest:
+      type: object
+      required: [scopes]
+      properties:
+        scopes:
+          $ref: "#/components/schemas/AssistantConsentScopes"
+    AssistantTrackerContext:
+      type: object
+      properties:
+        cycleSummary:
+          type: string
+          maxLength: 512
+        symptomTags:
+          type: array
+          items:
+            type: string
+            maxLength: 64
+    AssistantAskRequest:
+      type: object
+      required: [question]
+      properties:
+        locale:
+          type: string
+          default: fa-IR
+        question:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        trackerContext:
+          $ref: "#/components/schemas/AssistantTrackerContext"
+    AssistantOutcomeClass:
+      type: string
+      enum: [ANSWERED, ESCALATED, REFUSED, DISABLED, NOT_CONFIGURED, ERROR]
+    ContentCitation:
+      type: object
+      required: [documentId, versionId, title, slug]
+      properties:
+        documentId:
+          type: string
+          format: uuid
+        versionId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        slug:
+          type: string
+    AssistantAskResponse:
+      type: object
+      required: [outcome, disclaimer]
+      properties:
+        outcome:
+          $ref: "#/components/schemas/AssistantOutcomeClass"
+        answer:
+          type: string
+          nullable: true
+        citations:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentCitation"
+        escalationCode:
+          type: string
+          nullable: true
+        refusalCode:
+          type: string
+          nullable: true
+        disclaimer:
+          type: string
     MediaApprovalStatus:
       type: string
       enum: [draft, in_review, approved, published, retired, rejected]
