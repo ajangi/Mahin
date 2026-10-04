@@ -103,12 +103,11 @@ class AssistantValidationIntegrationTest(
     private fun postAsk(
         token: String,
         request: AssistantAskRequest,
-    ) =
-        mockMvc.post("/v1/assistant/ask") {
-            contentType = MediaType.APPLICATION_JSON
-            header(HttpHeaders.AUTHORIZATION, "Bearer $token")
-            content = objectMapper.writeValueAsString(request)
-        }
+    ) = mockMvc.post("/v1/assistant/ask") {
+        contentType = MediaType.APPLICATION_JSON
+        header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+        content = objectMapper.writeValueAsString(request)
+    }
 
     private fun registerUser(): String {
         val email = "assistant-val-${java.util.UUID.randomUUID()}@example.test"
