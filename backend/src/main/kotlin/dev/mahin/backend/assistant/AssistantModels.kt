@@ -1,5 +1,8 @@
 package dev.mahin.backend.assistant
 
+import jakarta.validation.Valid
+import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.Size
 import java.util.UUID
 
 data class AssistantConsentScopes(
@@ -13,18 +16,21 @@ data class AssistantConsentResponse(
 )
 
 data class UpdateAssistantConsentRequest(
-    val scopes: AssistantConsentScopes,
+    @field:Valid val scopes: AssistantConsentScopes,
 )
 
 data class AssistantTrackerContext(
-    val cycleSummary: String? = null,
-    val symptomTags: List<String> = emptyList(),
+    @field:Size(max = 512) val cycleSummary: String? = null,
+    val symptomTags: List<
+        @Size(max = 64)
+        String,
+    > = emptyList(),
 )
 
 data class AssistantAskRequest(
-    val locale: String = "fa-IR",
-    val question: String,
-    val trackerContext: AssistantTrackerContext? = null,
+    @field:Size(max = 16) val locale: String = "fa-IR",
+    @field:NotBlank @field:Size(max = 2000) val question: String,
+    @field:Valid val trackerContext: AssistantTrackerContext? = null,
 )
 
 enum class AssistantOutcomeClass {

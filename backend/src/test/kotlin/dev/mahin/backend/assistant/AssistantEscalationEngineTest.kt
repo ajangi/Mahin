@@ -4,7 +4,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class AssistantEscalationEngineTest {
-    private val fixtureChunk = AssistantFixtureCorpus.chunks.first()
+    private val fixtureChunk =
+        dev.mahin.backend.assistant.AssistantFixtureCorpus.chunks
+            .first()
 
     @Test
     fun crisisTermEscalates() {
@@ -50,7 +52,7 @@ class AssistantEscalationEngineTest {
     fun groundedQuestionProceeds() {
         val result =
             AssistantEscalationEngine.evaluate(
-                question = "نمونه fixture آموزشی",
+                question = "m12-fixture-token آموزشی",
                 retrievedChunks = listOf(fixtureChunk),
             )
         assertEquals(AssistantEscalationEngine.Decision.PROCEED, result.decision)

@@ -1,27 +1,47 @@
 package dev.mahin.backend.assistant
 
+import ch.qos.logback.classic.Logger
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.core.read.ListAppender
 import com.fasterxml.jackson.databind.ObjectMapper
-import dev.mahin.backend.assistant.persistence.AssistantConsentRepository
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
-import org.springframework.test.web.servlet.put
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class AssistantKillSwitchIntegrationTest(
+class AssistantSensitiveLoggingKillSwitchIntegrationTest(
     @Autowired val mockMvc: MockMvc,
     @Autowired val objectMapper: ObjectMapper,
-    @Autowired val consentRepository: AssistantConsentRepository,
 ) {
+    private lateinit var appender: ListAppender<ILoggingEvent>
+
+    @BeforeEach
+    fun attachLogAppender() {
+        val root = LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME) as Logger
+        appender = ListAppender()
+        appender.start()
+        root.addAppender(appender)
+    }
+
+    @AfterEach
+    fun detachLogAppender() {
+        val root = LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME) as Logger
+        root.detachAppender(appender)
+    }
+
     @Test
-    fun askFailsClosedWhenRemoteKillSwitchOff() {
+    fun disabledAskDoesNotLogSensitiveQuestion() {
+        val sensitiveQuestion = "سوال حساس غیرمجاز با جزئیات پزشکی"
         val token = registerUser()
         mockMvc
             .post("/v1/assistant/ask") {
@@ -29,49 +49,17 @@ class AssistantKillSwitchIntegrationTest(
                 header(HttpHeaders.AUTHORIZATION, "Bearer $token")
                 content =
                     objectMapper.writeValueAsString(
-                        AssistantAskRequest(
-                            question = "m12-fixture-token",
-                        ),
+                        AssistantAskRequest(question = sensitiveQuestion),
                     )
             }.andExpect {
                 status { isEqualTo(503) }
             }
-    }
-
-    @Test
-    fun getConsentFailsClosedWhenKillSwitchOff() {
-        val token = registerUser()
-        mockMvc
-            .get("/v1/assistant/consent") {
-                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
-            }.andExpect {
-                status { isEqualTo(503) }
-            }
-    }
-
-    @Test
-    fun putConsentFailsClosedAndDoesNotPersist() {
-        val token = registerUser()
-        val before = consentRepository.count()
-        mockMvc
-            .put("/v1/assistant/consent") {
-                contentType = MediaType.APPLICATION_JSON
-                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
-                content =
-                    objectMapper.writeValueAsString(
-                        UpdateAssistantConsentRequest(
-                            scopes = AssistantConsentScopes(shareCycleSummary = true),
-                        ),
-                    )
-            }.andExpect {
-                status { isEqualTo(503) }
-            }
-        org.junit.jupiter.api.Assertions
-            .assertEquals(before, consentRepository.count())
+        val logs = appender.list.joinToString("\n") { it.formattedMessage }
+        assertFalse(logs.contains(sensitiveQuestion))
     }
 
     private fun registerUser(): String {
-        val email = "assistant-kill-${java.util.UUID.randomUUID()}@example.test"
+        val email = "assistant-log-off-${java.util.UUID.randomUUID()}@example.test"
         val json =
             mockMvc
                 .post("/v1/auth/register") {

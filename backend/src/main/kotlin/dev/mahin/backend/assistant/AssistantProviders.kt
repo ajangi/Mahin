@@ -4,6 +4,8 @@ import org.springframework.http.HttpStatus
 import org.springframework.web.server.ResponseStatusException
 
 class UnconfiguredHealthAssistantGateway : HealthAssistantGateway {
+    override fun isReady(): Boolean = false
+
     override fun ask(request: AssistantGatewayRequest): AssistantGatewayResponse =
         throw ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "assistant_not_configured")
 }
@@ -12,6 +14,8 @@ class UnconfiguredHealthAssistantGateway : HealthAssistantGateway {
  * Deterministic fake provider for local/test only. Never enabled in production profiles.
  */
 class DeterministicFakeHealthAssistantGateway : HealthAssistantGateway {
+    override fun isReady(): Boolean = true
+
     override fun ask(request: AssistantGatewayRequest): AssistantGatewayResponse {
         val primary = request.retrievedChunks.first()
         val answer =
@@ -45,6 +49,8 @@ class DeterministicFakeHealthAssistantGateway : HealthAssistantGateway {
 class OpenAiHealthAssistantGateway(
     private val properties: AssistantProperties,
 ) : HealthAssistantGateway {
+    override fun isReady(): Boolean = properties.openaiApiKey.isNotBlank()
+
     override fun ask(request: AssistantGatewayRequest): AssistantGatewayResponse {
         if (properties.openaiApiKey.isBlank()) {
             throw ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "assistant_provider_not_configured")

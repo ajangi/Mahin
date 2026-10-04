@@ -293,6 +293,8 @@
     <string name="assistant_consent_cycle_summary">خلاصهٔ چرخه (بدون تاریخ‌های دقیق در لاگ سرور)</string>
     <string name="assistant_consent_symptom_tags">برچسب‌های علامت (بدون یادداشت آزاد)</string>
     <string name="assistant_consent_save">ذخیرهٔ رضایت</string>
+    <string name="assistant_consent_status_saved">رضایت ذخیره شد.</string>
+    <string name="assistant_consent_status_error">ذخیرهٔ رضایت انجام نشد. دوباره تلاش کنید.</string>
     <string name="assistant_not_medical_disclaimer">پاسخ‌ها فقط از محتوای آموزشی تأییدشده هستند و برای تشخیص یا تجویز استفاده نمی‌شوند.</string>
     <string name="health_connect_entry">Health Connect (اختیاری)</string>
     <string name="health_connect_title">Health Connect</string>

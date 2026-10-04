@@ -1,6 +1,8 @@
 package dev.mahin.backend.assistant
 
 import dev.mahin.backend.api.currentRegisteredUser
+import jakarta.validation.Valid
+import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/v1/assistant")
+@Validated
 class AssistantController(
     private val assistantService: AssistantService,
 ) {
@@ -21,7 +24,7 @@ class AssistantController(
 
     @PutMapping("/consent")
     fun updateConsent(
-        @RequestBody request: UpdateAssistantConsentRequest,
+        @Valid @RequestBody request: UpdateAssistantConsentRequest,
     ): AssistantConsentResponse {
         val user = currentRegisteredUser()
         return assistantService.updateConsent(user.userId, request)
@@ -29,7 +32,7 @@ class AssistantController(
 
     @PostMapping("/ask")
     fun ask(
-        @RequestBody request: AssistantAskRequest,
+        @Valid @RequestBody request: AssistantAskRequest,
     ): AssistantAskResponse {
         val user = currentRegisteredUser()
         return assistantService.ask(user.userId, request)

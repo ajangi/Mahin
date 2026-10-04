@@ -15,13 +15,16 @@ class AssistantEvaluationHarnessTest {
                 question: String,
                 locale: String,
                 limit: Int,
-            ): List<RetrievedContentChunk> = AssistantFixtureCorpus.match(question).take(limit)
+            ): List<RetrievedContentChunk> =
+                dev.mahin.backend.assistant.AssistantFixtureCorpus
+                    .match(question)
+                    .take(limit)
         }
     private val gateway = DeterministicFakeHealthAssistantGateway()
 
     @Test
     fun persianGroundedAnswerIncludesCitation() {
-        val question = "لطفاً نمونه fixture را توضیح بده"
+        val question = "لطفاً m12-fixture-token را توضیح بده"
         val chunks = retriever.retrieve(question, "fa-IR")
         val escalation = AssistantEscalationEngine.evaluate(question, chunks)
         assertEquals(AssistantEscalationEngine.Decision.PROCEED, escalation.decision)
@@ -42,7 +45,7 @@ class AssistantEvaluationHarnessTest {
     @Test
     fun crisisScenarioEscalatesBeforeModel() {
         val question = "می‌خواهم بمیرم"
-        val chunks = retriever.retrieve("نمونه fixture", "fa-IR")
+        val chunks = retriever.retrieve("m12-fixture-token", "fa-IR")
         val escalation = AssistantEscalationEngine.evaluate(question, chunks)
         assertEquals(AssistantEscalationEngine.Decision.ESCALATE_CRISIS, escalation.decision)
     }

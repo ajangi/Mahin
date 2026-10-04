@@ -5,4 +5,6 @@ package dev.mahin.backend.assistant
  */
 interface HealthAssistantGateway {
     fun ask(request: AssistantGatewayRequest): AssistantGatewayResponse
+
+    fun isReady(): Boolean
 }

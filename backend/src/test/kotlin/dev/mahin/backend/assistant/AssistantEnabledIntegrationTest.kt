@@ -3,11 +3,14 @@ package dev.mahin.backend.assistant
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.annotation.Import
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
@@ -20,6 +23,7 @@ import org.springframework.test.web.servlet.put
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Import(CapturingAssistantGatewayTestConfiguration::class)
 @TestPropertySource(
     properties = [
         "mahin.features.health-assistant=true",
@@ -29,6 +33,7 @@ import org.springframework.test.web.servlet.put
 class AssistantEnabledIntegrationTest(
     @Autowired val mockMvc: MockMvc,
     @Autowired val objectMapper: ObjectMapper,
+    @Autowired val capturingGateway: CapturingHealthAssistantGateway,
 ) {
     @Test
     fun metaExposesHealthAssistantFlagWhenEnabled() {
@@ -40,6 +45,7 @@ class AssistantEnabledIntegrationTest(
 
     @Test
     fun groundedAskReturnsCitation() {
+        capturingGateway.reset()
         val token = registerUser()
         val json =
             mockMvc
@@ -49,7 +55,7 @@ class AssistantEnabledIntegrationTest(
                     content =
                         objectMapper.writeValueAsString(
                             AssistantAskRequest(
-                                question = "نمونه fixture آموزشی",
+                                question = "لطفاً m12-fixture-token را توضیح بده",
                             ),
                         )
                 }.andExpect {
@@ -81,6 +87,7 @@ class AssistantEnabledIntegrationTest(
 
     @Test
     fun trackerContextNotSentWithoutConsent() {
+        capturingGateway.reset()
         val token = registerUser()
         mockMvc
             .put("/v1/assistant/consent") {
@@ -89,7 +96,7 @@ class AssistantEnabledIntegrationTest(
                 content =
                     objectMapper.writeValueAsString(
                         UpdateAssistantConsentRequest(
-                            scopes = AssistantConsentScopes(shareCycleSummary = false),
+                            scopes = AssistantConsentScopes(),
                         ),
                     )
             }.andExpect { status { isOk() } }
@@ -100,13 +107,71 @@ class AssistantEnabledIntegrationTest(
                 content =
                     objectMapper.writeValueAsString(
                         AssistantAskRequest(
-                            question = "نمونه fixture",
+                            question = "m12-fixture-token",
                             trackerContext =
                                 AssistantTrackerContext(
                                     cycleSummary = "SECRET_CYCLE_SUMMARY",
+                                    symptomTags = listOf("SECRET_TAG"),
                                 ),
                         ),
                     )
+            }.andExpect { status { isOk() } }
+        val redacted = capturingGateway.requests.single().redactedContext
+        assertNull(redacted)
+    }
+
+    @Test
+    fun trackerContextIncludesOnlyCycleSummaryWhenConsented() {
+        capturingGateway.reset()
+        val token = registerUser()
+        updateConsent(token, AssistantConsentScopes(shareCycleSummary = true))
+        askWithContext(token)
+        val redacted = capturingGateway.requests.single().redactedContext
+        assertNotNull(redacted)
+        assertTrue(redacted!!.contains("cycle_summary"))
+        assertFalse(redacted.contains("SECRET_TAG"))
+    }
+
+    @Test
+    fun trackerContextIncludesBothScopesWhenConsented() {
+        capturingGateway.reset()
+        val token = registerUser()
+        updateConsent(token, AssistantConsentScopes(shareCycleSummary = true, shareSymptomTags = true))
+        askWithContext(token)
+        val redacted = capturingGateway.requests.single().redactedContext
+        assertNotNull(redacted)
+        assertTrue(redacted!!.contains("cycle_summary"))
+        assertTrue(redacted.contains("symptom_tags"))
+    }
+
+    private fun askWithContext(token: String) {
+        mockMvc
+            .post("/v1/assistant/ask") {
+                contentType = MediaType.APPLICATION_JSON
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                content =
+                    objectMapper.writeValueAsString(
+                        AssistantAskRequest(
+                            question = "m12-fixture-token",
+                            trackerContext =
+                                AssistantTrackerContext(
+                                    cycleSummary = "SECRET_CYCLE_SUMMARY",
+                                    symptomTags = listOf("SECRET_TAG"),
+                                ),
+                        ),
+                    )
+            }.andExpect { status { isOk() } }
+    }
+
+    private fun updateConsent(
+        token: String,
+        scopes: AssistantConsentScopes,
+    ) {
+        mockMvc
+            .put("/v1/assistant/consent") {
+                contentType = MediaType.APPLICATION_JSON
+                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                content = objectMapper.writeValueAsString(UpdateAssistantConsentRequest(scopes = scopes))
             }.andExpect { status { isOk() } }
     }
 

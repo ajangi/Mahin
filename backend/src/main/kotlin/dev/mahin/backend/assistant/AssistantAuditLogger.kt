@@ -22,8 +22,7 @@ class AssistantAuditLogger(
             ),
         )
         logger.info(
-            "assistant_interaction userId={} template={} provider={} model={} outcome={}",
-            metadata.userId,
+            "assistant_interaction template={} provider={} model={} outcome={}",
             metadata.promptTemplateId,
             metadata.providerId,
             metadata.modelVersion,

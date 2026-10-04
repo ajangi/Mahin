@@ -13,6 +13,7 @@ import dev.mahin.domain.assistant.HealthAssistantGateway
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.first
+import retrofit2.HttpException
 
 @Singleton
 class RemoteHealthAssistantGateway
@@ -39,18 +40,25 @@ class RemoteHealthAssistantGateway
                     null
                 }
             return runCatching {
-                val response =
-                    assistantApi.ask(
-                        authorization = bearer(token),
-                        body =
-                            AssistantAskRequestDto(
-                                locale = input.locale,
-                                question = input.question,
-                                trackerContext = trackerContext,
-                            ),
-                    )
-                response.toDomain()
-            }
+                assistantApi.ask(
+                    authorization = bearer(token),
+                    body =
+                        AssistantAskRequestDto(
+                            locale = input.locale,
+                            question = input.question,
+                            trackerContext = trackerContext,
+                        ),
+                ).toDomain()
+            }.fold(
+                onSuccess = { Result.success(it) },
+                onFailure = { error ->
+                    if (error is HttpException && error.code() == 503) {
+                        Result.failure(AssistantDisabledException())
+                    } else {
+                        Result.failure(error)
+                    }
+                },
+            )
         }
 
         override suspend fun refreshConsent(): Result<AssistantConsentState> {
@@ -99,9 +107,12 @@ class RemoteHealthAssistantGateway
                 updatedAtEpochMs = updatedAtEpochMs,
             )
 
-        private fun AssistantAskResponseDto.toDomain(): AssistantAnswer =
-            AssistantAnswer(
-                outcome = AssistantOutcome.valueOf(outcome),
+        private fun AssistantAskResponseDto.toDomain(): AssistantAnswer {
+            val parsedOutcome =
+                runCatching { AssistantOutcome.valueOf(outcome) }
+                    .getOrDefault(AssistantOutcome.ERROR)
+            return AssistantAnswer(
+                outcome = parsedOutcome,
                 answer = answer,
                 citations =
                     citations.map {
@@ -116,6 +127,7 @@ class RemoteHealthAssistantGateway
                 refusalCode = refusalCode,
                 disclaimer = disclaimer,
             )
+        }
     }
 
 class AssistantDisabledException : IllegalStateException("health_assistant_disabled")

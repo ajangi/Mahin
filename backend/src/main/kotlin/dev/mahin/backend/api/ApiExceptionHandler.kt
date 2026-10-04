@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.server.ResponseStatusException
@@ -11,6 +12,22 @@ import org.springframework.web.server.ResponseStatusException
 @RestControllerAdvice
 class ApiExceptionHandler {
     private val logger = LoggerFactory.getLogger(ApiExceptionHandler::class.java)
+
+    @ExceptionHandler(MethodArgumentNotValidException::class)
+    fun handleValidation(
+        @Suppress("UnusedParameter") ex: MethodArgumentNotValidException,
+        request: HttpServletRequest,
+    ): ResponseEntity<ErrorResponse> {
+        val requestId = request.getHeader("X-Request-Id") ?: "unknown"
+        logger.warn("status=400 path={} code=validation_error", request.requestURI)
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+            ErrorResponse(
+                code = "validation_error",
+                message = "Request could not be completed",
+                requestId = requestId,
+            ),
+        )
+    }
 
     @ExceptionHandler(ResponseStatusException::class)
     fun handleStatus(

@@ -12,23 +12,30 @@ class AssistantService(
     private val featureFlags: MahinFeatureFlagsProperties,
     private val properties: AssistantProperties,
     private val consentService: AssistantConsentService,
-    private val retriever: CompositeApprovedContentRetriever,
+    private val retriever: ApprovedContentRetriever,
     private val contextRedactor: AssistantContextRedactor,
     private val gateway: HealthAssistantGateway,
     private val auditLogger: AssistantAuditLogger,
 ) {
-    fun getConsent(userId: UUID): AssistantConsentResponse = consentService.getConsent(userId)
+    fun getConsent(userId: UUID): AssistantConsentResponse {
+        ensureKillSwitchEnabled()
+        return consentService.getConsent(userId)
+    }
 
     fun updateConsent(
         userId: UUID,
         request: UpdateAssistantConsentRequest,
-    ): AssistantConsentResponse = consentService.updateConsent(userId, request)
+    ): AssistantConsentResponse {
+        ensureKillSwitchEnabled()
+        return consentService.updateConsent(userId, request)
+    }
 
+    @Suppress("ReturnCount")
     fun ask(
         userId: UUID,
         request: AssistantAskRequest,
     ): AssistantAskResponse {
-        ensureAssistantEnabled()
+        ensureAssistantOperational()
         val consent = consentService.getConsent(userId).scopes
         val retrieved = retriever.retrieve(request.question, request.locale)
         val escalation = AssistantEscalationEngine.evaluate(request.question, retrieved)
@@ -48,6 +55,10 @@ class AssistantService(
                     promptTemplateId = properties.promptTemplateId,
                 ),
             )
+        val invalidCitations = invalidCitationResponse(userId, gatewayResponse, retrieved)
+        if (invalidCitations != null) {
+            return invalidCitations
+        }
         auditLogger.record(
             AssistantInteractionMetadata(
                 userId = userId,
@@ -109,11 +120,39 @@ class AssistantService(
             AssistantEscalationEngine.Decision.PROCEED -> null
         }
 
-    private fun ensureAssistantEnabled() {
+    private fun invalidCitationResponse(
+        userId: UUID,
+        gatewayResponse: AssistantGatewayResponse,
+        retrieved: List<RetrievedContentChunk>,
+    ): AssistantAskResponse? {
+        if (AssistantCitationValidator.isValid(gatewayResponse, retrieved)) {
+            return null
+        }
+        auditLogger.record(
+            AssistantInteractionMetadata(
+                userId = userId,
+                promptTemplateId = properties.promptTemplateId,
+                providerId = gatewayResponse.providerId,
+                modelVersion = gatewayResponse.modelVersion,
+                outcomeClass = AssistantOutcomeClass.ERROR,
+            ),
+        )
+        return AssistantAskResponse(
+            outcome = AssistantOutcomeClass.ERROR,
+            refusalCode = "invalid_citations",
+            answer = null,
+        )
+    }
+
+    private fun ensureKillSwitchEnabled() {
         if (!featureFlags.healthAssistant) {
             throw ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "assistant_disabled")
         }
-        if (!properties.isProviderConfigured()) {
+    }
+
+    private fun ensureAssistantOperational() {
+        ensureKillSwitchEnabled()
+        if (!properties.isProviderConfigured() || !gateway.isReady()) {
             throw ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "assistant_not_configured")
         }
     }

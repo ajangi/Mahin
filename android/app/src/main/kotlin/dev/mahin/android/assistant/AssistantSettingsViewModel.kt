@@ -15,12 +15,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+enum class AssistantConsentStatus {
+    SAVED,
+    ERROR,
+}
+
 data class AssistantSettingsUiState(
     val launchFlagLoading: Boolean = true,
     val launchFlagEnabled: Boolean = false,
     val shareCycleSummary: Boolean = false,
     val shareSymptomTags: Boolean = false,
-    val statusMessage: String? = null,
+    val statusMessage: AssistantConsentStatus? = null,
     val saving: Boolean = false,
 )
 
@@ -80,14 +85,14 @@ class AssistantSettingsViewModel
                         _uiState.update { state ->
                             state.copy(
                                 saving = false,
-                                statusMessage = "saved",
+                                statusMessage = AssistantConsentStatus.SAVED,
                             )
                         }
                     }.onFailure {
                         _uiState.update { state ->
                             state.copy(
                                 saving = false,
-                                statusMessage = "error",
+                                statusMessage = AssistantConsentStatus.ERROR,
                             )
                         }
                     }

@@ -39,3 +39,5 @@ Required for GA and must not be paywalled. Implemented in M5/M8/M9, not M0.
 - **Grounding:** Answers require published CMS retrieval or explicit non-medical fixtures in CI; out-of-corpus questions are refused.
 - **Vendor boundary:** `HealthAssistantGateway` — fake provider isolated to local/test/dev; real vendor keys (`MAHIN_OPENAI_API_KEY`, etc.) live in deployment secrets only (prepared, not executed for OpenAI HTTP).
 - **Enablement:** Turning on production assistant requires clinical corpus, signed escalation rules, legal review of consent copy, DPA/residency, and explicit ops configuration — not merely merging M12 code.
+- **Retention:** `assistant_interaction_log` rows are metadata-only and purged after **90 days** (`MAHIN_ASSISTANT_LOG_RETENTION_DAYS`) via scheduled job; consent rows persist until account erasure.
+- **Export:** Server privacy export jobs remain a **status stub** in M12 (no downloadable health bundle yet). When export is implemented, **assistant consent scopes** and **interaction log metadata** (not questions/answers) should be included for registered accounts; intimate Q&A bodies are not stored server-side in M12.

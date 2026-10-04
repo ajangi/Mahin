@@ -12,15 +12,21 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mahin.android.R
+import dev.mahin.android.privacy.SensitiveScreenProtection
 import dev.mahin.core.designsystem.MahinSpacing
 import dev.mahin.core.designsystem.MahinTypographyRole
 import dev.mahin.core.designsystem.mahinTextStyle
@@ -33,10 +39,35 @@ fun AssistantSettingsScreen(
     viewModel: AssistantSettingsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    LaunchedEffect(state.launchFlagLoading, state.launchFlagEnabled) {
+        if (!state.launchFlagLoading && !state.launchFlagEnabled) {
+            onNavigateUp()
+        }
+    }
+    AssistantSettingsScreenContent(
+        state = state,
+        onNavigateUp = onNavigateUp,
+        onShareCycleSummary = viewModel::setShareCycleSummary,
+        onShareSymptomTags = viewModel::setShareSymptomTags,
+        onSaveConsent = viewModel::saveConsent,
+        modifier = modifier,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun AssistantSettingsScreenContent(
+    state: AssistantSettingsUiState,
+    onNavigateUp: () -> Unit,
+    onShareCycleSummary: (Boolean) -> Unit,
+    onShareSymptomTags: (Boolean) -> Unit,
+    onSaveConsent: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     if (!state.launchFlagLoading && !state.launchFlagEnabled) {
-        onNavigateUp()
         return
     }
+    SensitiveScreenProtection(enabled = true)
     Scaffold(
         modifier = modifier.testTag("assistant_settings_screen"),
         topBar = {
@@ -78,7 +109,7 @@ fun AssistantSettingsScreen(
                 ConsentRow(
                     label = stringResource(R.string.assistant_consent_cycle_summary),
                     checked = state.shareCycleSummary,
-                    onCheckedChange = viewModel::setShareCycleSummary,
+                    onCheckedChange = onShareCycleSummary,
                     testTag = "assistant_consent_cycle_summary",
                 )
             }
@@ -86,17 +117,33 @@ fun AssistantSettingsScreen(
                 ConsentRow(
                     label = stringResource(R.string.assistant_consent_symptom_tags),
                     checked = state.shareSymptomTags,
-                    onCheckedChange = viewModel::setShareSymptomTags,
+                    onCheckedChange = onShareSymptomTags,
                     testTag = "assistant_consent_symptom_tags",
                 )
             }
             item {
                 TextButton(
-                    onClick = viewModel::saveConsent,
+                    onClick = onSaveConsent,
                     enabled = !state.saving,
                     modifier = Modifier.padding(top = MahinSpacing.md),
                 ) {
                     Text(stringResource(R.string.assistant_consent_save))
+                }
+            }
+            state.statusMessage?.let { status ->
+                item {
+                    val message =
+                        when (status) {
+                            AssistantConsentStatus.SAVED ->
+                                stringResource(R.string.assistant_consent_status_saved)
+                            AssistantConsentStatus.ERROR ->
+                                stringResource(R.string.assistant_consent_status_error)
+                        }
+                    Text(
+                        text = message,
+                        modifier = Modifier.padding(top = MahinSpacing.sm),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
             item {
@@ -125,7 +172,11 @@ private fun ConsentRow(
             modifier =
                 Modifier
                     .testTag(testTag)
-                    .semantics { contentDescription = label },
+                    .semantics {
+                        contentDescription = label
+                        role = Role.Switch
+                        toggleableState = if (checked) ToggleableState.On else ToggleableState.Off
+                    },
         )
     }
 }

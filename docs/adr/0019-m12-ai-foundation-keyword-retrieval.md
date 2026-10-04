@@ -17,3 +17,5 @@ PRD §24 requires AI-ready architecture without shipping an unrestricted medical
 ## Consequences
 - Controlled experimentation is possible in staging with `fake` provider and fixture content.
 - Enabling real vendors requires keys/DPA, OpenAI adapter completion (currently `prepared_not_executed`), clinically reviewed corpus, and signed escalation rules.
+- **Keyword retrieval limitation:** CMS `searchPublished` matches normalized substrings in `searchIndexText`; full-sentence user questions will often miss unless terms overlap indexed keywords (embeddings deferred).
+- **Escalation UX:** API returns `escalationCode` only; user-facing crisis/urgent guidance copy requires clinician sign-off before production enablement.
