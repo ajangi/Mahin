@@ -295,6 +295,9 @@
     <string name="assistant_consent_save">ذخیرهٔ رضایت</string>
     <string name="assistant_consent_status_saved">رضایت ذخیره شد.</string>
     <string name="assistant_consent_status_error">ذخیرهٔ رضایت انجام نشد. دوباره تلاش کنید.</string>
+    <!-- English (en) copy for store/localization prep; default locale remains fa-IR -->
+    <string name="assistant_consent_status_saved_en" translatable="false">Consent saved.</string>
+    <string name="assistant_consent_status_error_en" translatable="false">Could not save consent. Please try again.</string>
     <string name="assistant_not_medical_disclaimer">پاسخ‌ها فقط از محتوای آموزشی تأییدشده هستند و برای تشخیص یا تجویز استفاده نمی‌شوند.</string>
     <string name="health_connect_entry">Health Connect (اختیاری)</string>
     <string name="health_connect_title">Health Connect</string>

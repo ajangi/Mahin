@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="assistant_consent_status_saved">Consent saved.</string>
-    <string name="assistant_consent_status_error">Could not save consent. Please try again.</string>
-</resources>
