@@ -18,6 +18,7 @@ Use GitHub Actions on the PR head commit — do not rely on ad-hoc local PASS ta
 |---|---|---|
 | [37191683493](https://github.com/ajangi/Mahin/actions/runs/37191683493) | `541763c` (round 0) | All 5 jobs **success** |
 | [37194829971](https://github.com/ajangi/Mahin/actions/runs/37194829971) | `dfe22cb` (round 1 gatekeeper fixes) | All 5 jobs **success** |
+| [37195954049](https://github.com/ajangi/Mahin/actions/runs/37195954049) | `5416e12` (handoff/PR CI table) | All 5 jobs **success** |
 
 ## Implemented scope (round 1 additions)
 - Consent `GET`/`PUT` gated by kill switch (`503 assistant_disabled`)
