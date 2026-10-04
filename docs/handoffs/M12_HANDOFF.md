@@ -1,40 +1,42 @@
 # M12 Handoff — AI Foundation / Future (No default GA chatbot)
 
 **Milestone:** M12  
-**Status:** draft PR — gatekeeper round 1 fixes pushed  
+**Status:** draft PR — gatekeeper round 2 fixes  
 **Branch:** `cursor/m12-ai-foundation-8b27`  
 **PR:** [#25](https://github.com/ajangi/Mahin/pull/25)  
 **Base:** `master` @ `b9c35cd55cbcf57749d9fe56a05ce38b09ea4552`  
 **Next milestone:** None — post-GA enablement gates only
 
 ## Milestone outcome (honest)
-- **Implemented:** AI-ready architecture with kill switch on **all** assistant endpoints (including consent), CMS-only retrieval in production profiles, citation enforcement, consent/redaction tests, sensitive-logging tests, retention purge, erasure coverage, rate limits, validation, Android consent UI hardening.
+- **Implemented:** AI-ready architecture with kill switch on **all** assistant endpoints (including consent), CMS-only retrieval in production profiles, citation pair enforcement, consent/redaction tests, sensitive-logging tests, retention purge, erasure coverage, rate limits, OpenAPI-aligned validation, Android consent UI hardening.
 - **Not enabled for GA:** OpenAI adapter, clinical corpus, clinician-signed escalation copy, legal consent review, vendor DPA — **prepared, not executed**.
 
 ## CI (source of truth)
-Use GitHub Actions on the PR head commit — do not rely on ad-hoc local PASS tables.
+Use GitHub Actions on the **last code commit** below — do not rely on ad-hoc local PASS tables. Commits after that SHA are **docs-only** unless noted otherwise.
 
-| Run | Branch / commit | Result |
+| Run | Commit | Result |
 |---|---|---|
-| [37191683493](https://github.com/ajangi/Mahin/actions/runs/37191683493) | `541763c` (round 0) | All 5 jobs **success** |
-| [37194829971](https://github.com/ajangi/Mahin/actions/runs/37194829971) | `dfe22cb` (round 1 gatekeeper fixes) | All 5 jobs **success** |
-| [37195954049](https://github.com/ajangi/Mahin/actions/runs/37195954049) | `5416e12` (handoff/PR CI table) | All 5 jobs **success** |
-| [37197410311](https://github.com/ajangi/Mahin/actions/runs/37197410311) | `6163f45` | All 5 jobs **success** |
-| [37198937542](https://github.com/ajangi/Mahin/actions/runs/37198937542) | `99ed605` | All 5 jobs **success** |
-| [37199969214](https://github.com/ajangi/Mahin/actions/runs/37199969214) | `12d09d5` | All 5 jobs **success** |
-| [37200963335](https://github.com/ajangi/Mahin/actions/runs/37200963335) | `aff61bb` | All 5 jobs **success** |
-| [37201757806](https://github.com/ajangi/Mahin/actions/runs/37201757806) | `762da3c` (**PR head**) | All 5 jobs **success** |
+| [37203230499](https://github.com/ajangi/Mahin/actions/runs/37203230499) | `de2af04` (docs-only churn before round 2 code) | All 5 jobs **success** |
+| *(pending)* | `1d52fc7` (**last code commit** — round 2) | CI on PR branch after push |
 
-## Implemented scope (round 1 additions)
+Commits after `1d52fc7` are **docs-only** (handoff/PR CI table updates).
+
+## Implemented scope (round 2 additions)
+- JVM type-use annotations for tag `maxLength`; `symptomTags` `maxItems` 20; MockMvc validation tests; OpenAPI `locale` maxLength + ask `503` `ErrorResponse`
+- Citation validator requires matching `(documentId, versionId)` pairs
+- Android: fa-only status strings; removed unused `*_en` resources
+- Logging tests assert answer text absent and `outcome=ESCALATED` on escalation path
+
+## Implemented scope (round 1)
 - Consent `GET`/`PUT` gated by kill switch (`503 assistant_disabled`)
 - Fixture corpus only under `local`/`test`/`dev` profiles; production uses CMS keyword retrieval only
 - Capturing gateway tests for per-scope consent redaction; `AssistantContextRedactor` unit tests
 - Root log capture tests for ask/escalation/kill-switch paths; removed `userId` from assistant app log line
 - Server-side citation validation (`ERROR` / `invalid_citations`)
-- `@ActiveProfiles("prod")` test: fake provider not wired; ask `503`
+- `@SpringBootTest(spring.profiles.active=prod)` test: fake provider not wired; ask `503`
 - 90-day interaction log retention scheduler + erasure integration test
 - `@Valid` ask payload limits; `/v1/assistant/ask` rate limit + OpenAPI `400`/`429`/`503`
-- Android: `LaunchedEffect` navigation, status strings (fa/en), RTL/semantics Compose tests, `core:assistant` + `domain:assistant` tests, sensitive screen protection
+- Android: `LaunchedEffect` navigation, **fa** status strings (en localization deferred — app is fa-only), RTL/semantics Compose tests, `core:assistant` + `domain:assistant` tests, sensitive screen protection
 
 ## Migrations
 - **V8** — `assistant_consent`, `assistant_interaction_log` (unchanged)

@@ -21,6 +21,7 @@ data class UpdateAssistantConsentRequest(
 
 data class AssistantTrackerContext(
     @field:Size(max = 512) val cycleSummary: String? = null,
+    @field:Size(max = 20)
     val symptomTags: List<
         @Size(max = 64)
         String,

@@ -178,6 +178,10 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "503":
           description: Assistant disabled or provider not configured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /v1/media/assets/{assetId}:
     get:
       tags: [Media]
@@ -1111,6 +1115,7 @@ components:
           maxLength: 512
         symptomTags:
           type: array
+          maxItems: 20
           items:
             type: string
             maxLength: 64
@@ -1121,6 +1126,7 @@ components:
         locale:
           type: string
           default: fa-IR
+          maxLength: 16
         question:
           type: string
           minLength: 1

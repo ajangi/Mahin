@@ -29,19 +29,86 @@ class AssistantValidationIntegrationTest(
     fun oversizedQuestionReturnsValidationError() {
         val token = registerUser()
         val longQuestion = "a".repeat(2001)
-        mockMvc
-            .post("/v1/assistant/ask") {
-                contentType = MediaType.APPLICATION_JSON
-                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
-                content =
-                    objectMapper.writeValueAsString(
-                        AssistantAskRequest(question = longQuestion),
-                    )
-            }.andExpect {
+        postAsk(token, AssistantAskRequest(question = longQuestion))
+            .andExpect {
                 status { isBadRequest() }
                 jsonPath("$.code") { value("validation_error") }
             }
     }
+
+    @Test
+    fun blankQuestionReturnsValidationError() {
+        val token = registerUser()
+        postAsk(token, AssistantAskRequest(question = "   "))
+            .andExpect {
+                status { isBadRequest() }
+                jsonPath("$.code") { value("validation_error") }
+            }
+    }
+
+    @Test
+    fun oversizedCycleSummaryReturnsValidationError() {
+        val token = registerUser()
+        postAsk(
+            token,
+            AssistantAskRequest(
+                question = "m12-fixture-token",
+                trackerContext =
+                    AssistantTrackerContext(
+                        cycleSummary = "x".repeat(513),
+                    ),
+            ),
+        ).andExpect {
+            status { isBadRequest() }
+            jsonPath("$.code") { value("validation_error") }
+        }
+    }
+
+    @Test
+    fun oversizedSymptomTagReturnsValidationError() {
+        val token = registerUser()
+        postAsk(
+            token,
+            AssistantAskRequest(
+                question = "m12-fixture-token",
+                trackerContext =
+                    AssistantTrackerContext(
+                        symptomTags = listOf("t".repeat(65)),
+                    ),
+            ),
+        ).andExpect {
+            status { isBadRequest() }
+            jsonPath("$.code") { value("validation_error") }
+        }
+    }
+
+    @Test
+    fun tooManySymptomTagsReturnsValidationError() {
+        val token = registerUser()
+        postAsk(
+            token,
+            AssistantAskRequest(
+                question = "m12-fixture-token",
+                trackerContext =
+                    AssistantTrackerContext(
+                        symptomTags = List(21) { "tag-$it" },
+                    ),
+            ),
+        ).andExpect {
+            status { isBadRequest() }
+            jsonPath("$.code") { value("validation_error") }
+        }
+    }
+
+    private fun postAsk(
+        token: String,
+        request: AssistantAskRequest,
+    ) =
+        mockMvc.post("/v1/assistant/ask") {
+            contentType = MediaType.APPLICATION_JSON
+            header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+            content = objectMapper.writeValueAsString(request)
+        }
 
     private fun registerUser(): String {
         val email = "assistant-val-${java.util.UUID.randomUUID()}@example.test"

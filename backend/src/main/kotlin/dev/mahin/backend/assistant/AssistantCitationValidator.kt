@@ -8,10 +8,12 @@ object AssistantCitationValidator {
         if (response.citations.isEmpty()) {
             return false
         }
-        val documentIds = retrievedChunks.map { it.documentId.toString() }.toSet()
-        val versionIds = retrievedChunks.map { it.versionId.toString() }.toSet()
+        val allowedPairs =
+            retrievedChunks
+                .map { Pair(it.documentId.toString(), it.versionId.toString()) }
+                .toSet()
         return response.citations.all { citation ->
-            citation.documentId in documentIds && citation.versionId in versionIds
+            Pair(citation.documentId, citation.versionId) in allowedPairs
         }
     }
 }

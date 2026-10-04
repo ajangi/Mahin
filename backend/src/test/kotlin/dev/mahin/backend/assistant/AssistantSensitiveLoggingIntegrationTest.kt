@@ -57,26 +57,36 @@ class AssistantSensitiveLoggingIntegrationTest(
         val sensitiveSummary = "SECRET_CYCLE_SUMMARY_VALUE"
         val sensitiveTag = "SECRET_SYMPTOM_TAG"
         val token = registerUser()
-        mockMvc
-            .post("/v1/assistant/ask") {
-                contentType = MediaType.APPLICATION_JSON
-                header(HttpHeaders.AUTHORIZATION, "Bearer $token")
-                content =
-                    objectMapper.writeValueAsString(
-                        AssistantAskRequest(
-                            question = sensitiveQuestion,
-                            trackerContext =
-                                AssistantTrackerContext(
-                                    cycleSummary = sensitiveSummary,
-                                    symptomTags = listOf(sensitiveTag),
-                                ),
-                        ),
-                    )
-            }.andExpect {
-                status { isOk() }
-            }
+        val body =
+            mockMvc
+                .post("/v1/assistant/ask") {
+                    contentType = MediaType.APPLICATION_JSON
+                    header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                    content =
+                        objectMapper.writeValueAsString(
+                            AssistantAskRequest(
+                                question = sensitiveQuestion,
+                                trackerContext =
+                                    AssistantTrackerContext(
+                                        cycleSummary = sensitiveSummary,
+                                        symptomTags = listOf(sensitiveTag),
+                                    ),
+                            ),
+                        )
+                }.andExpect {
+                    status { isOk() }
+                }.andReturn()
+                .response
+                .contentAsString
+        val answerText = objectMapper.readTree(body).get("answer")?.asText()
         val logs = appender.list.joinToString("\n") { it.formattedMessage }
         assertNoSensitiveLeak(logs, sensitiveQuestion, sensitiveSummary, sensitiveTag)
+        if (answerText != null) {
+            org.junit.jupiter.api.Assertions.assertFalse(
+                logs.contains(answerText),
+                "logs leaked gateway answer text",
+            )
+        }
     }
 
     @Test
@@ -96,6 +106,10 @@ class AssistantSensitiveLoggingIntegrationTest(
             }
         val logs = appender.list.joinToString("\n") { it.formattedMessage }
         assertNoSensitiveLeak(logs, sensitiveQuestion)
+        org.junit.jupiter.api.Assertions.assertTrue(
+            logs.contains("outcome=ESCALATED"),
+            "expected metadata-only escalation audit log line",
+        )
     }
 
     private fun assertNoSensitiveLeak(

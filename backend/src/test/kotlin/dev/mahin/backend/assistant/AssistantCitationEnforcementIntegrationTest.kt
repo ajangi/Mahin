@@ -91,6 +91,44 @@ class AssistantCitationEnforcementIntegrationTest(
         assertEquals("ERROR", objectMapper.readTree(json).get("outcome").asText())
     }
 
+    @Test
+    fun mixedChunkPairCitationReturnsErrorOutcome() {
+        capturingGateway.reset()
+        val docA = "00000000-0000-4000-8000-00000000a12a"
+        val verA = "00000000-0000-4000-8000-00000000a12b"
+        val verB = "00000000-0000-4000-8000-00000000b12b"
+        capturingGateway.responseOverride =
+            AssistantGatewayResponse(
+                answer = "should not surface",
+                citations =
+                    listOf(
+                        ContentCitation(
+                            documentId = docA,
+                            versionId = verB,
+                            title = "x",
+                            slug = "x",
+                        ),
+                    ),
+                modelVersion = "stub",
+                providerId = "stub",
+            )
+        val token = registerUser()
+        val json =
+            mockMvc
+                .post("/v1/assistant/ask") {
+                    contentType = MediaType.APPLICATION_JSON
+                    header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+                    content =
+                        objectMapper.writeValueAsString(
+                            AssistantAskRequest(question = "m12-fixture-token"),
+                        )
+                }.andExpect { status { isOk() } }
+                .andReturn()
+                .response
+                .contentAsString
+        assertEquals("ERROR", objectMapper.readTree(json).get("outcome").asText())
+    }
+
     private fun registerUser(): String {
         val email = "assistant-cite-${java.util.UUID.randomUUID()}@example.test"
         val json =

@@ -15,7 +15,7 @@ PRD §24 requires AI-ready architecture without shipping an unrestricted medical
 6. **Escalation:** Deterministic `AssistantEscalationEngine` runs before any provider call; rules are placeholders pending clinician sign-off.
 
 ## Consequences
-- Controlled experimentation is possible in staging with `fake` provider and fixture content.
+- Controlled experimentation is possible in **local/dev/test profiles only** (`fake` provider and fixture corpus are rejected in any other profile, including staging/prod).
 - Enabling real vendors requires keys/DPA, OpenAI adapter completion (currently `prepared_not_executed`), clinically reviewed corpus, and signed escalation rules.
 - **Keyword retrieval limitation:** CMS `searchPublished` matches normalized substrings in `searchIndexText`; full-sentence user questions will often miss unless terms overlap indexed keywords (embeddings deferred).
 - **Escalation UX:** API returns `escalationCode` only; user-facing crisis/urgent guidance copy requires clinician sign-off before production enablement.
