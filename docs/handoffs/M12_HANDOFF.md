@@ -17,7 +17,7 @@ Use GitHub Actions on the PR head commit — do not rely on ad-hoc local PASS ta
 | Run | Branch / commit | Result |
 |---|---|---|
 | [37191683493](https://github.com/ajangi/Mahin/actions/runs/37191683493) | `541763c` (round 0) | All 5 jobs **success** |
-| *(pending)* | round 1 head after push | Re-run `ci` on PR #25 |
+| [37194829971](https://github.com/ajangi/Mahin/actions/runs/37194829971) | `dfe22cb` (round 1 gatekeeper fixes) | All 5 jobs **success** |
 
 ## Implemented scope (round 1 additions)
 - Consent `GET`/`PUT` gated by kill switch (`503 assistant_disabled`)
