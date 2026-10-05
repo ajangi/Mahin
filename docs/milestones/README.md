@@ -15,13 +15,13 @@ Cloud Agents update one milestone at a time. Do not pre-mark future milestones c
 - M10 — Health Connect (Optional Launch Flag) — **accepted** ([PR #21](https://github.com/ajangi/Mahin/pull/21), merge `71e78cf0e47ce6bba1f2b2d970fb9a498d16c749`)
 - M11 — Production Hardening & Release — **accepted** ([PR #23](https://github.com/ajangi/Mahin/pull/23), merge `9f97ac53b17d408ebbe42de5a01d86edf8470096`)
 - M12 — **accepted** ([PR #25](https://github.com/ajangi/Mahin/pull/25), merge `0a02ad89a85836c196ab66df167f0d7decdc2142`)
-- M13 — UI / Design Polish — **in review** (draft PR; see `docs/milestones/M13.md`)
+- M13 — UI / Design Polish — **accepted** ([PR #27](https://github.com/ajangi/Mahin/pull/27), merge `4eb28b7decffc9c78415d69010fd1fb622b83796`, **2026-10-05**)
 
 ## M0–M12 program
 
-All planned milestones **M0 through M12** are now **accepted** on `master`.
+All planned milestones **M0 through M12** are **accepted** on `master`.
 
-**M13** is a post-program polish milestone (not part of the original M0–M12 agent backlog).
+**M13** (post-program UI polish) is **accepted** on `master` as of **2026-10-05**.
 
 Remaining work is **post-GA or human-operated**, not additional agent milestones:
 
