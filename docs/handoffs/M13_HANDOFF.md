@@ -1,13 +1,13 @@
 # M13 Handoff — UI / Design Polish
 
 **Milestone:** M13  
-**Status:** in review (draft PR [#27](https://github.com/ajangi/Mahin/pull/27))  
-**Branch:** `cursor/m13-ui-design-polish-b55a`  
-**Branch tip (may include docs-only):** `e5dc1d07856907ef9923035fae8b66123d5ff045`  
-**Last code commit:** `ac927880eedcd882ff3a72955e916b114744d205` (Round 2: `TodayScreenContent` + RTL/a11y tests + detekt `LongMethod` suppress)  
-**CI (last code commit):** [37306914453](https://github.com/ajangi/Mahin/actions/runs/37306914453) — design-tokens, openapi, backend, admin, android all **success**  
-**Docs-only after last code:** `5b958ce`, `1a978f0`, `4ff7d7d`, `e5dc1d0` — handoff metadata only; do not treat branch tip as a new code baseline.  
+**Status:** **accepted** (squash-merge `4eb28b7decffc9c78415d69010fd1fb622b83796` on `master` via [PR #27](https://github.com/ajangi/Mahin/pull/27), **2026-10-05**)  
+**Pre-merge branch tip:** `36cd2c8ab9b3439851b80767e9640e9ea571ee17`  
 **Next milestone:** None mandated — further polish is product backlog (Insights, hubs, Learn, etc.)
+
+## Acceptance
+- M13 merged to `master` as **`4eb28b7decffc9c78415d69010fd1fb622b83796`** ([PR #27](https://github.com/ajangi/Mahin/pull/27)) on **2026-10-05**.
+- Pre-merge branch tip: `36cd2c8` (includes Roborazzi goldens and `docs/milestones/m13-screenshots/`).
 
 ## Implemented
 
