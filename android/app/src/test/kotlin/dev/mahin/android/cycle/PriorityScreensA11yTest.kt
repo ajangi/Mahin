@@ -54,7 +54,7 @@ class PriorityScreensA11yTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun todayAndLogScreensExposeListSemanticsInRtl() {
+    fun logScreenList_exposedInRtl() {
         composeRule.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 MahinTheme {
@@ -69,6 +69,27 @@ class PriorityScreensA11yTest {
             }
         }
         composeRule.onNodeWithTag("log_screen_list").assertIsDisplayed()
+    }
+
+    @Test
+    fun todayScreenList_andHeading_exposedInRtl() {
+        composeRule.setContent {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                MahinTheme {
+                    TodayScreenContent(
+                        state = TodayUiState(),
+                        settingsEntries = emptyList(),
+                        onModeSelected = {},
+                    )
+                }
+            }
+        }
+        composeRule.onNodeWithTag("today_screen_list").assertIsDisplayed()
+        val headingMatcher =
+            SemanticsMatcher("has heading semantics") { node ->
+                node.config.getOrNull(SemanticsProperties.Heading) != null
+            }
+        assertNotNull(composeRule.onNode(headingMatcher).fetchSemanticsNode())
     }
 
     @Test

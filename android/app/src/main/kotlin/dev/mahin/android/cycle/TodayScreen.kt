@@ -90,6 +90,21 @@ fun TodayScreen(
         onDismiss = viewModel::dismissPregnancyStartSheet,
         onConfirm = viewModel::confirmPregnancyStart,
     )
+    TodayScreenContent(
+        state = state,
+        settingsEntries = settingsEntries,
+        onModeSelected = viewModel::onReproductiveModeSelected,
+        modifier = modifier,
+    )
+}
+
+@Composable
+internal fun TodayScreenContent(
+    state: TodayUiState,
+    settingsEntries: List<MahinSettingsEntry>,
+    onModeSelected: (ReproductiveMode) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     LazyColumn(
         modifier =
             modifier
@@ -168,7 +183,7 @@ fun TodayScreen(
             ReproductiveModeCard(
                 currentMode = state.reproductiveMode,
                 hasActivePregnancy = state.hasActivePregnancy,
-                onModeSelected = viewModel::onReproductiveModeSelected,
+                onModeSelected = onModeSelected,
             )
         }
         if (state.reproductiveMode == ReproductiveMode.TRYING_TO_CONCEIVE) {
