@@ -10,9 +10,11 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.LayoutDirection
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.mahin.core.datetime.JalaliDate
+import dev.mahin.core.designsystem.component.MahinCalendarLegend
 import dev.mahin.core.designsystem.component.MahinEmptyState
 import dev.mahin.core.designsystem.component.MahinJalaliDatePicker
 import dev.mahin.core.designsystem.component.MahinLoadingState
+import dev.mahin.core.designsystem.component.MahinScreenHeader
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -49,6 +51,24 @@ class MahinDesignSystemScreenshotTest {
                         onDateSelected = {},
                         modifier = Modifier.fillMaxSize(),
                     )
+                }
+            }
+        }
+        composeRule.onRoot().captureRoboImage()
+    }
+
+    @Test
+    fun screenHeaderAndCalendarLegendRtlLight() {
+        composeRule.setContent {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                MahinTheme(darkTheme = false) {
+                    androidx.compose.foundation.layout.Column(modifier = Modifier.fillMaxSize()) {
+                        MahinScreenHeader(
+                            title = "تقویم چرخه",
+                            subtitle = "راهنمای رنگ‌ها در پایین",
+                        )
+                        MahinCalendarLegend()
+                    }
                 }
             }
         }
