@@ -16,10 +16,9 @@ import dev.mahin.android.pregnancy.PregnancyLogCallbacks
 import dev.mahin.android.pregnancy.PregnancyLogFormState
 import dev.mahin.android.pregnancy.PregnancyLogSections
 import dev.mahin.core.designsystem.MahinSpacing
-import dev.mahin.core.designsystem.MahinTypographyRole
 import dev.mahin.core.designsystem.component.MahinJalaliDatePicker
 import dev.mahin.core.designsystem.component.MahinPrimaryButton
-import dev.mahin.core.designsystem.mahinTextStyle
+import dev.mahin.core.designsystem.component.MahinScreenHeader
 import dev.mahin.core.model.ReproductiveMode
 
 @Composable
@@ -37,9 +36,9 @@ internal fun LogScreenContent(
                 .padding(MahinSpacing.md),
     ) {
         item {
-            Text(
-                text = stringResource(R.string.log_title),
-                style = mahinTextStyle(MahinTypographyRole.TitleLarge),
+            MahinScreenHeader(
+                title = stringResource(R.string.log_title),
+                subtitle = stringResource(R.string.log_subtitle),
             )
         }
         item {

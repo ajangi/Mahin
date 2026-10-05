@@ -71,12 +71,14 @@
     <string name="today_empty_body">از تب «ثبت» علائم یا پریود را اضافه کنید.</string>
 
     <string name="calendar_title">تقویم چرخه</string>
-    <string name="calendar_legend">رنگ‌ها: پریود ثبت‌شده، بازهٔ تخمینی پریود، پنجرهٔ باروری تخمینی. این‌ها تخمین هستند، نه تشخیص.</string>
+    <string name="calendar_legend_hint">برای معنی رنگ‌ها، راهنمای زیر را ببینید.</string>
+    <string name="today_settings_heading">تنظیمات و داده</string>
     <string name="calendar_demo_title">تقویم جلالی</string>
     <string name="calendar_demo_body">تاریخ را برای ورودی انتخاب کنید. ذخیرهٔ داخلی همیشه میلادی ISO است.</string>
     <string name="calendar_demo_selection">انتخاب‌شده: %1$s/%2$s/%3$s</string>
 
     <string name="log_title">ثبت روزانه</string>
+    <string name="log_subtitle">پریود، علائم و یادداشت خصوصی برای هر روز</string>
     <string name="log_period_section">پریود</string>
     <string name="log_period_toggle">امروز پریود دارم</string>
     <string name="log_symptoms_section">علائم (غیرپزشکی — برای ردیابی شخصی)</string>
@@ -85,11 +87,12 @@
     <string name="log_saved_confirmation">ذخیره شد.</string>
 
     <string name="history_title">تاریخچهٔ پریود</string>
+    <string name="history_subtitle">بازه‌های ثبت‌شده روی این دستگاه</string>
     <string name="history_empty_title">هنوز پریودی ثبت نشده</string>
     <string name="history_empty_body">از تب «ثبت» یا راه‌اندازی اولیه، پریود را اضافه کنید.</string>
 
     <string name="onboarding_welcome_title">به ماهین خوش آمدید</string>
-    <string name="onboarding_welcome_body">ردیابی خصوصی چرخه، بدون نیاز به حساب کاربری. داده‌ها روی این دستگاه می‌مانند.</string>
+    <string name="onboarding_welcome_body">چرخه را خصوصی و آفلاین پیگیری کنید—بدون حساب اجباری. داده‌ها روی این دستگاه می‌مانند.</string>
     <string name="onboarding_privacy_note">حذف اپلیکیشن ممکن است داده‌های ذخیره‌نشده را از بین ببرد. حساب اختیاری در نسخه‌های بعد برای پشتیبان‌گیری است.</string>
     <string name="onboarding_continue">ادامه</string>
     <string name="onboarding_goal_title">هدف شما چیست؟</string>
@@ -99,7 +102,7 @@
     <string name="onboarding_goal_pregnancy_deferred">حالت بارداری در نسخهٔ بعدی اضافه می‌شود.</string>
     <string name="onboarding_setup_cycle_title">تنظیم چرخه</string>
     <string name="onboarding_setup_ttc_title">تنظیم برای قصد بارداری</string>
-    <string name="onboarding_setup_body">برای شروع، تاریخ آخرین پریود را وارد کنید. همهٔ تاریخ‌ها به‌صورت میلادی ISO ذخیره می‌شوند.</string>
+    <string name="onboarding_setup_body">تاریخ شروع آخرین پریود را انتخاب کنید تا پیش‌بینی اولیه تنظیم شود.</string>
     <string name="onboarding_last_period_start">شروع آخرین پریود</string>
     <string name="onboarding_typical_cycle_length">طول معمول چرخه (روز، اختیاری)</string>
     <string name="onboarding_typical_period_length">طول معمول پریود (روز، اختیاری)</string>

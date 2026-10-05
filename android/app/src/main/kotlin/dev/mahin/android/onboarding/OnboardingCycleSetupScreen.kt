@@ -4,22 +4,21 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import dev.mahin.android.R
 import dev.mahin.core.datetime.PersianCivilDateConverter
 import dev.mahin.core.designsystem.MahinSpacing
-import dev.mahin.core.designsystem.MahinTypographyRole
+import dev.mahin.core.designsystem.component.MahinChoiceChip
 import dev.mahin.core.designsystem.component.MahinJalaliDatePicker
 import dev.mahin.core.designsystem.component.MahinPrimaryButton
-import dev.mahin.core.designsystem.mahinTextStyle
+import dev.mahin.core.designsystem.component.MahinScreenHeader
+import dev.mahin.core.designsystem.component.MahinSectionLabel
 import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
 
@@ -36,26 +35,22 @@ fun OnboardingCycleSetupScreen(
 ) {
     val converter = remember { PersianCivilDateConverter }
     val startJalali = remember(form.lastPeriodStart) { converter.toJalali(form.lastPeriodStart) }
-    Column(modifier = modifier) {
-        Text(
-            text =
+    Column(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .testTag("onboarding_cycle_setup_screen"),
+    ) {
+        MahinScreenHeader(
+            title =
                 if (form.mode == ReproductiveMode.TRYING_TO_CONCEIVE) {
                     stringResource(R.string.onboarding_setup_ttc_title)
                 } else {
                     stringResource(R.string.onboarding_setup_cycle_title)
                 },
-            style = mahinTextStyle(MahinTypographyRole.TitleLarge),
+            subtitle = stringResource(R.string.onboarding_setup_body),
         )
-        Text(
-            text = stringResource(R.string.onboarding_setup_body),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(vertical = MahinSpacing.sm),
-        )
-        Text(
-            text = stringResource(R.string.onboarding_last_period_start),
-            style = mahinTextStyle(MahinTypographyRole.Label),
-        )
+        MahinSectionLabel(text = stringResource(R.string.onboarding_last_period_start))
         MahinJalaliDatePicker(
             selectedDate = startJalali,
             onDateSelected = { onLastPeriodStartChange(converter.toGregorian(it)) },
@@ -77,20 +72,12 @@ fun OnboardingCycleSetupScreen(
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
         )
-        Text(
-            text = stringResource(R.string.onboarding_regularity_label),
-            style = mahinTextStyle(MahinTypographyRole.Label),
-            modifier = Modifier.padding(top = MahinSpacing.md),
-        )
+        MahinSectionLabel(text = stringResource(R.string.onboarding_regularity_label))
         CycleRegularity.entries.forEach { option ->
-            FilterChip(
+            MahinChoiceChip(
+                label = regularityLabel(option),
                 selected = form.regularity == option,
                 onClick = { onRegularityChange(option) },
-                label = { Text(regularityLabel(option)) },
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = MahinSpacing.xs),
             )
         }
         Spacer(modifier = Modifier.height(MahinSpacing.lg))

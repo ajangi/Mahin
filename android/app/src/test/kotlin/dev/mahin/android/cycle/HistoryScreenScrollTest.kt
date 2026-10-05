@@ -15,8 +15,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * Regression: [HistoryScreen] uses a weighted [androidx.compose.foundation.lazy.LazyColumn]
- * inside a bounded [androidx.compose.foundation.layout.Column]. Unbounded lazy lists crash.
+ * Regression: [HistoryScreenContent] uses a single bounded [androidx.compose.foundation.lazy.LazyColumn].
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)

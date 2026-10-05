@@ -11,17 +11,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mahin.android.R
+import dev.mahin.core.datetime.JalaliDate
 import dev.mahin.core.datetime.PersianCivilDateConverter
 import dev.mahin.core.designsystem.LocalMahinExtendedColors
 import dev.mahin.core.designsystem.MahinExtendedColors
 import dev.mahin.core.designsystem.MahinSpacing
-import dev.mahin.core.designsystem.MahinTypographyRole
+import dev.mahin.core.designsystem.component.MahinCalendarLegend
 import dev.mahin.core.designsystem.component.MahinJalaliDatePicker
-import dev.mahin.core.designsystem.mahinTextStyle
+import dev.mahin.core.designsystem.component.MahinScreenHeader
 
 @Composable
 fun CycleCalendarScreen(
@@ -29,28 +31,37 @@ fun CycleCalendarScreen(
     viewModel: CalendarViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    CycleCalendarScreenContent(
+        state = state,
+        onDateSelected = { viewModel.selectJalaliDate(it) },
+        modifier = modifier,
+    )
+}
+
+@Composable
+internal fun CycleCalendarScreenContent(
+    state: CalendarUiState,
+    onDateSelected: (JalaliDate) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val converter = PersianCivilDateConverter
     val extended = LocalMahinExtendedColors.current
     Column(
         modifier =
             modifier
                 .fillMaxSize()
+                .testTag("cycle_calendar_screen")
                 .verticalScroll(rememberScrollState())
                 .padding(MahinSpacing.md),
     ) {
-        Text(
-            text = stringResource(R.string.calendar_title),
-            style = mahinTextStyle(MahinTypographyRole.TitleLarge),
+        MahinScreenHeader(
+            title = stringResource(R.string.calendar_title),
+            subtitle = stringResource(R.string.calendar_legend_hint),
         )
-        Text(
-            text = stringResource(R.string.calendar_legend),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = MahinSpacing.sm),
-        )
+        MahinCalendarLegend(modifier = Modifier.padding(vertical = MahinSpacing.md))
         MahinJalaliDatePicker(
             selectedDate = state.selectedJalali,
-            onDateSelected = { viewModel.selectJalaliDate(it) },
+            onDateSelected = onDateSelected,
             converter = converter,
             initialVisibleMonth = state.selectedJalali,
             dayBackgroundColor = { date -> markerColor(state.dayMarkers[date], extended) },

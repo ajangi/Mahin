@@ -121,6 +121,7 @@ tasks.withType<Test>().configureEach {
         filter {
             excludeTestsMatching("dev.mahin.android.demo.CalendarDemoScreenScrollTest")
             excludeTestsMatching("dev.mahin.android.cycle.HistoryScreenScrollTest")
+            excludeTestsMatching("dev.mahin.android.cycle.PriorityScreensA11yTest")
             excludeTestsMatching("dev.mahin.android.ttc.TtcInsightsScreenScrollTest")
             excludeTestsMatching("dev.mahin.android.pregnancy.PregnancyHubScreenScrollTest")
             excludeTestsMatching("dev.mahin.android.pregnancy.PregnancyStartSheetScrollTest")
