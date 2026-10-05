@@ -3,8 +3,8 @@
 **Milestone:** M13  
 **Status:** in review (draft PR [#27](https://github.com/ajangi/Mahin/pull/27))  
 **Branch:** `cursor/m13-ui-design-polish-b55a`  
-**Head:** `b918a1170212956f0625f7f90664d5e5df8a7012`  
-**CI:** [37311713882](https://github.com/ajangi/Mahin/actions/runs/37311713882) — all 5 jobs **success**  
+**Head:** `4ff7d7db99ef36b1a3f481761689b931da1255df`  
+**CI:** [37314177411](https://github.com/ajangi/Mahin/actions/runs/37314177411) — all 5 jobs **success**  
 **Next milestone:** None mandated — further polish is product backlog (Insights, hubs, Learn, etc.)
 
 ## Implemented
