@@ -59,7 +59,7 @@ npx @redocly/cli lint openapi/openapi.yaml      # PASS
 
 ## Known gaps / deferred polish
 - Insights, TTC insights, Pregnancy hub, Learn, export, notification settings — only inherit shared components where touched
-- No dedicated Roborazzi goldens for full app screens (design-system component goldens only)
+- Roborazzi captures are **component-level** composables (not emulator full-screen); see `docs/milestones/m13-screenshots/`
 - Dark-theme visual QA on new cards/legend not separately screenshot-tested
 - `MahinTextButton` in settings group uses start-aligned label; no chevron affordance yet
 

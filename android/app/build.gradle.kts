@@ -5,6 +5,11 @@ plugins {
     alias(libs.plugins.mahin.android.application)
     alias(libs.plugins.mahin.android.compose)
     alias(libs.plugins.mahin.android.hilt)
+    alias(libs.plugins.roborazzi)
+}
+
+roborazzi {
+    outputDir.set(file("src/test/screenshots"))
 }
 
 android {
@@ -114,6 +119,9 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.androidx.compose.ui.test.junit4)
     testImplementation(libs.androidx.compose.ui.test.manifest)
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
+    testImplementation(libs.roborazzi.junit.rule)
 }
 
 tasks.withType<Test>().configureEach {
@@ -122,6 +130,7 @@ tasks.withType<Test>().configureEach {
             excludeTestsMatching("dev.mahin.android.demo.CalendarDemoScreenScrollTest")
             excludeTestsMatching("dev.mahin.android.cycle.HistoryScreenScrollTest")
             excludeTestsMatching("dev.mahin.android.cycle.PriorityScreensA11yTest")
+            excludeTestsMatching("dev.mahin.android.cycle.M13PriorityScreensScreenshotTest")
             excludeTestsMatching("dev.mahin.android.ttc.TtcInsightsScreenScrollTest")
             excludeTestsMatching("dev.mahin.android.pregnancy.PregnancyHubScreenScrollTest")
             excludeTestsMatching("dev.mahin.android.pregnancy.PregnancyStartSheetScrollTest")
