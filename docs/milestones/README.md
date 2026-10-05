@@ -17,6 +17,18 @@ Cloud Agents update one milestone at a time. Do not pre-mark future milestones c
 - M12 — **accepted** ([PR #25](https://github.com/ajangi/Mahin/pull/25), merge `0a02ad89a85836c196ab66df167f0d7decdc2142`)
 - M13 — UI / Design Polish — **accepted** ([PR #27](https://github.com/ajangi/Mahin/pull/27), merge `4eb28b7decffc9c78415d69010fd1fb622b83796`, **2026-10-05**)
 
+### Program V2 — proposed (see `docs/PROGRAM_V2_PLAN.md`)
+
+- M14 — Visual identity, icon set, illustration pipeline & app shell — **planned**
+- M15 — Today home & calendar redesign — **planned**
+- M16 — Logging experience overhaul — **planned**
+- M17 — Daily wellness, Learn magazine & guided programs — **planned**
+- M18 — Pregnancy companion depth — **planned**
+- M19 — Postpartum, breastfeeding & baby growth — **gated (owner approval + PRD amendment)**
+- M20 — Iran distribution: Bazaar/Myket billing & phone OTP — **gated (owner decisions + vendor secrets)**
+- M21 — Expert consultation (async Q&A) — **gated (PRD non-goal today; owner + legal approval)**
+- M22 — Nutrition programs — **gated (owner approval + dietitian content)**
+
 ## M0–M12 program
 
 All planned milestones **M0 through M12** are **accepted** on `master`.
