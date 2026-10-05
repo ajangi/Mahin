@@ -99,6 +99,7 @@ fun TodayScreen(
 }
 
 @Composable
+@Suppress("LongMethod")
 internal fun TodayScreenContent(
     state: TodayUiState,
     settingsEntries: List<MahinSettingsEntry>,
