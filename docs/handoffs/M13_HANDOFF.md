@@ -3,8 +3,10 @@
 **Milestone:** M13  
 **Status:** in review (draft PR [#27](https://github.com/ajangi/Mahin/pull/27))  
 **Branch:** `cursor/m13-ui-design-polish-b55a`  
-**Head:** `4ff7d7db99ef36b1a3f481761689b931da1255df`  
-**CI:** [37314177411](https://github.com/ajangi/Mahin/actions/runs/37314177411) — all 5 jobs **success**  
+**Branch tip (may include docs-only):** `e5dc1d07856907ef9923035fae8b66123d5ff045`  
+**Last code commit:** `ac927880eedcd882ff3a72955e916b114744d205` (Round 2: `TodayScreenContent` + RTL/a11y tests + detekt `LongMethod` suppress)  
+**CI (last code commit):** [37306914453](https://github.com/ajangi/Mahin/actions/runs/37306914453) — design-tokens, openapi, backend, admin, android all **success**  
+**Docs-only after last code:** `5b958ce`, `1a978f0`, `4ff7d7d`, `e5dc1d0` — handoff metadata only; do not treat branch tip as a new code baseline.  
 **Next milestone:** None mandated — further polish is product backlog (Insights, hubs, Learn, etc.)
 
 ## Implemented
