@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="icon_catalogue_title">کاتالوگ آیکون‌های ماهین (اشکال‌زدایی)</string>
+    <string name="icon_catalogue_family_nav">ناوبری</string>
+    <string name="icon_catalogue_family_action">عمل</string>
+    <string name="icon_catalogue_family_flow">جریان خون</string>
+    <string name="icon_catalogue_family_symptom">علائم</string>
+    <string name="icon_catalogue_family_mood">خلق</string>
+    <string name="icon_catalogue_family_discharge">ترشح</string>
+    <string name="icon_catalogue_family_tests">آزمایش‌ها</string>
+    <string name="icon_catalogue_family_lifestyle">سبک زندگی</string>
+    <string name="icon_catalogue_rtl_mirror_title">آینهٔ RTL — آیکون‌های جهت‌دار</string>
+</resources>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ill_desc_editorial_placeholder">تصویر نمایشی</string>
+    <string name="ill_desc_empty_state_placeholder">جایگاه تصویر خالی</string>
+    <string name="ill_desc_medical_gated">محتوای تصویری در انتظار تأیید پزشکی</string>
+</resources>
