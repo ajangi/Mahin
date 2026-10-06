@@ -114,11 +114,11 @@ ICONS: dict[str, tuple[list[str], bool]] = {
     ),
     "action/share/v1": (
         [
-            "M17 7 a 1.8 1.8 0 1 1 0 3.6 a 1.8 1.8 0 1 1 0 -3.6",
-            "M7 12 a 1.8 1.8 0 1 1 0 3.6 a 1.8 1.8 0 1 1 0 -3.6",
-            "M17 16 a 1.8 1.8 0 1 1 0 3.6 a 1.8 1.8 0 1 1 0 -3.6",
-            "M8.6 12.8 L 15.4 8.6",
-            "M8.6 13.2 L 15.4 16.4",
+            "M16 8 a 2 2 0 1 1 0 4 a 2 2 0 1 1 0 -4",
+            "M8 12 a 2 2 0 1 1 0 4 a 2 2 0 1 1 0 -4",
+            "M16 10 a 2 2 0 1 1 0 4 a 2 2 0 1 1 0 -4",
+            "M10 11 l 4 2",
+            "M10 13 l 4 -2",
         ],
         False,
     ),
@@ -406,8 +406,20 @@ ICONS: dict[str, tuple[list[str], bool]] = {
         False,
     ),
     # --- tests ---
-    "tests/opk/v1": (["M10 6 h 4 v 12 h-4 z"], False),
-    "tests/pregnancy_test/v1": (["M7.5 5.5 h 9 v 13 h-9 z"], False),
+    "tests/opk/v1": (
+        [
+            "M9 6 h 6 v 12 H 9 z",
+            "M10.5 8 h 3 v 2 h-3 z",
+        ],
+        False,
+    ),
+    "tests/pregnancy_test/v1": (
+        [
+            "M8 5 h 8 v 14 H 8 z",
+            "M10 7 h 4 v 3 h-4 z",
+        ],
+        False,
+    ),
     "tests/bbt/v1": (
         [
             "M14 6 v 13",

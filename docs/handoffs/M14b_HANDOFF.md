@@ -62,7 +62,7 @@ cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug assemble
   --stacktrace --no-daemon
 ```
 
-CI: await green on PR head (all 5 jobs).
+CI: green on PR head — [run 37492766307](https://github.com/ajangi/Mahin/actions/runs/37492766307) (all 5 jobs; regen script sync commit on same branch).
 
 ## Acceptance criteria (`prompts/M14b.md`)
 
@@ -73,7 +73,7 @@ CI: await green on PR head (all 5 jobs).
 | fa descriptions + decorative `MahinIcon` | ✅ |
 | Medical gating via `MahinIllustration` + test fixtures | ✅ |
 | RTL mirroring tests + goldens | ✅ |
-| Design tokens + CI | ⏳ PR CI |
+| Design tokens + CI | ✅ [run 37492766307](https://github.com/ajangi/Mahin/actions/runs/37492766307) |
 
 ## Known limitations
 
