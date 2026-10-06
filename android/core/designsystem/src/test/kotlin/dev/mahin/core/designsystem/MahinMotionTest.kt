@@ -1,6 +1,8 @@
 package dev.mahin.core.designsystem
 
 import android.provider.Settings
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.Easing
 import androidx.compose.material3.Text
 import androidx.compose.ui.test.junit4.createComposeRule
 import com.google.common.truth.Truth.assertThat
@@ -41,7 +43,10 @@ class MahinMotionTest {
         assertThat(MahinMotionEasing.STANDARD).isEqualTo(easing.getString("standard"))
         assertThat(MahinMotionEasing.EMPHASIZED).isEqualTo(easing.getString("emphasized"))
         assertThat(MahinMotionEasing.EMPHASIZED).isNotEqualTo(MahinMotionEasing.STANDARD)
-        assertThat(MahinMotionEasingCurves.standard).isNotEqualTo(MahinMotionEasingCurves.emphasized)
+        assertEasingMatchesToken(MahinMotionEasingCurves.standard, easing.getString("standard"))
+        assertEasingMatchesToken(MahinMotionEasingCurves.emphasized, easing.getString("emphasized"))
+        assertEasingMatchesToken(MahinMotionEasingCurves.decelerate, easing.getString("decelerate"))
+        assertEasingMatchesToken(MahinMotionEasingCurves.accelerate, easing.getString("accelerate"))
     }
 
     @Test
@@ -78,7 +83,7 @@ class MahinMotionTest {
     }
 
     private fun locateDesignTokensFile(): File {
-        var dir = File(System.getProperty("user.dir"))
+        var dir = File(requireNotNull(System.getProperty("user.dir")) { "user.dir not set" })
         while (true) {
             val candidate = File(dir, "design/tokens.json")
             if (candidate.isFile) return candidate
@@ -86,5 +91,25 @@ class MahinMotionTest {
             dir = parent
         }
         error("design/tokens.json not found from ${System.getProperty("user.dir")}")
+    }
+
+    private fun assertEasingMatchesToken(
+        actual: Easing,
+        css: String,
+    ) {
+        val expected = cubicBezierEasingFromCss(css)
+        for (fraction in listOf(0f, 0.1f, 0.5f, 0.9f, 1f)) {
+            assertThat(actual.transform(fraction)).isWithin(0.0001f).of(expected.transform(fraction))
+        }
+    }
+
+    private fun cubicBezierEasingFromCss(css: String): CubicBezierEasing {
+        val inner =
+            css
+                .removePrefix("cubic-bezier(")
+                .removeSuffix(")")
+        val parts = inner.split(",").map { it.trim().toFloat() }
+        require(parts.size == 4) { "Expected four control values in $css" }
+        return CubicBezierEasing(parts[0], parts[1], parts[2], parts[3])
     }
 }
