@@ -91,6 +91,7 @@ fun MahinTheme(
 ) {
     val scheme = if (darkTheme) darkScheme() else lightScheme()
     val typography = mahinTypography(scheme.onBackground)
+    val reducedMotion = rememberSystemReducedMotion()
     val extended =
         if (darkTheme) {
             MahinExtendedColors(
@@ -102,7 +103,7 @@ fun MahinTheme(
                 statusWarning = MahinDarkColors.statusWarning,
                 statusCritical = MahinDarkColors.statusCritical,
                 brandPrimarySoft = MahinDarkColors.brandPrimary,
-                brandPrimaryPressed = MahinDarkColors.brandPrimary,
+                brandPrimaryPressed = MahinLightColors.brandPrimaryPressed,
             )
         } else {
             MahinExtendedColors(
@@ -117,7 +118,10 @@ fun MahinTheme(
                 brandPrimaryPressed = MahinLightColors.brandPrimaryPressed,
             )
         }
-    CompositionLocalProvider(LocalMahinExtendedColors provides extended) {
+    CompositionLocalProvider(
+        LocalMahinExtendedColors provides extended,
+        LocalReducedMotion provides reducedMotion,
+    ) {
         MaterialTheme(
             colorScheme = scheme,
             typography = typography,

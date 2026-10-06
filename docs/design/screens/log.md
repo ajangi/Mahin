@@ -22,7 +22,11 @@ Capture daily bleeding, symptoms, TTC signals, and pregnancy vitals for the sele
 ## States
 | State | Trigger | UI behaviour | Copy keys |
 |---|---|---|---|
+| Empty | n/a — date always selected | n/a | n/a |
+| Loading | Persist in flight | n/a — save is immediate local write without loading chrome | n/a |
 | Populated | Date selected | Chips reflect `LogUiState` | `log_*` |
+| Error | Persist failure | n/a — no dedicated error surface (M16) | n/a |
+| Offline | No network | Same as populated — log is local-first | n/a |
 | TTC / pregnancy | Mode switch | Additional sections visible | `ttc_*`, `pregnancy_*` |
 
 ## Tokens & semantics

@@ -38,9 +38,9 @@ Predicted period/fertility states must be visually distinguishable from recorded
 | `brand.primary` | `#D2A5C3` |
 | `text.primary` | `#F7F2F5` |
 | `text.secondary` | `#BEB4BB` |
-| `health.period` | `#CC7582` |
+| `health.period` | `#D48A96` |
 | `health.fertility` | `#599799` |
-| `health.ovulation` | `#549A9E` |
+| `health.ovulation` | `#6FB8BE` |
 | `health.pregnancy` | `#AD846F` |
 | `status.positive` | `#679983` |
 | `status.warning` | `#AF8757` |

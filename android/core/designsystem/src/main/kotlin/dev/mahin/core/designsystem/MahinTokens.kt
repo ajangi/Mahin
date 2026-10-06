@@ -46,7 +46,7 @@ object MahinMotionDuration {
  */
 object MahinMotionEasing {
     const val STANDARD = "cubic-bezier(0.2, 0.0, 0.0, 1.0)"
-    const val EMPHASIZED = "cubic-bezier(0.2, 0.0, 0.0, 1.0)"
+    const val EMPHASIZED = "cubic-bezier(0.2, 0.0, 0.2, 1.0)"
     const val DECELERATE = "cubic-bezier(0.0, 0.0, 0.0, 1.0)"
     const val ACCELERATE = "cubic-bezier(0.3, 0.0, 1.0, 1.0)"
 }

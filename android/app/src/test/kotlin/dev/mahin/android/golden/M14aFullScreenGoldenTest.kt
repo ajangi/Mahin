@@ -30,7 +30,7 @@ import org.robolectric.annotation.GraphicsMode
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@Config(sdk = [33], qualifiers = "fa-rIR")
+@Config(sdk = [33], qualifiers = "fa-rIR-w411dp-h891dp-xxhdpi")
 class M14aFullScreenGoldenTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()

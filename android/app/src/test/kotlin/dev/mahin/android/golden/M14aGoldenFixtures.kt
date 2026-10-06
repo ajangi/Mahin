@@ -14,6 +14,7 @@ import dev.mahin.core.content.ContentArticleSummaryDto
 import dev.mahin.core.database.cycle.CycleDashboard
 import dev.mahin.core.database.entity.PeriodRecordEntity
 import dev.mahin.core.datetime.JalaliDate
+import dev.mahin.core.datetime.PersianCivilDateConverter
 import dev.mahin.core.model.PregnancyAppointmentType
 import dev.mahin.core.model.PregnancyDatingSource
 import dev.mahin.domain.cycle.CyclePredictionResult
@@ -111,18 +112,19 @@ object M14aGoldenFixtures {
         )
 
     fun calendarPopulated(): CalendarUiState {
-        val selected = JalaliDate(1403, 6, 15)
-        val base = LocalDate.of(2025, 3, 10)
-        val markers =
-            (0..20).associate { offset ->
-                val date = base.plusDays(offset.toLong())
-                date to
-                    DayMarkers(
-                        loggedPeriod = offset < 5,
-                        predictedPeriod = offset in 26..28,
-                        fertileWindow = offset in 10..16,
-                    )
-            }
+        val selected = JalaliDate(year = 1403, month = 6, day = 15)
+        val converter = PersianCivilDateConverter
+        val markers = mutableMapOf<LocalDate, DayMarkers>()
+        for (day in 1..31) {
+            val jalali = JalaliDate(year = 1403, month = 6, day = day)
+            val gregorian = converter.toGregorian(jalali)
+            markers[gregorian] =
+                DayMarkers(
+                    loggedPeriod = day in 1..4,
+                    predictedPeriod = day in 26..28,
+                    fertileWindow = day in 11..17,
+                )
+        }
         return CalendarUiState(selectedJalali = selected, dayMarkers = markers)
     }
 
@@ -175,12 +177,16 @@ object M14aGoldenFixtures {
                 effectiveEddDate = LocalDate.of(2025, 10, 8),
                 datingSource = PregnancyDatingSource.LMP_PLUS_280_DAYS,
             )
+        val lmp = LocalDate.of(2025, 1, 1)
+        val asOfDate = lmp.plusDays(149)
+        val daysUntilEdd =
+            dating.effectiveEddDate.toEpochDay() - asOfDate.toEpochDay()
         val status =
             PregnancyStatusSnapshot(
                 dating = dating,
                 gestationalAge = GestationalAge(weeks = 21, days = 2, totalDays = 149),
                 trimester = PregnancyTrimester.SECOND,
-                daysUntilEdd = 100,
+                daysUntilEdd = daysUntilEdd,
                 displayWeekNumber = 22,
             )
         return PregnancyHubContentState(

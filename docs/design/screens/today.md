@@ -22,7 +22,10 @@ Daily home: cycle/pregnancy status at a glance, prediction summary with disclaim
 | State | Trigger | UI behaviour | Copy keys |
 |---|---|---|---|
 | Empty | No dashboard data | `MahinEmptyState` | `today_empty_*` |
+| Loading | Repository/dashboard flow pending | n/a — current UI has no dedicated loading shell (M15 may add skeleton) | n/a |
 | Populated | Dashboard available | Prediction card + status | `today_*`, `prediction_disclaimer` |
+| Error | Repository failure | n/a — no global error surface today (stays on empty/prior data) | n/a |
+| Offline | No network | Same as populated/empty — core tracking is local-first | n/a |
 | Pregnant | `PREGNANT` mode | Pregnancy today card | `pregnancy_*` |
 | Blocked mode change | Active pregnancy | Error hint text | `pregnancy_active_block_mode_change` |
 

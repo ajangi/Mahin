@@ -20,8 +20,11 @@ Month grid with Jalali picker, recorded vs predicted period/fertile markers, and
 ## States
 | State | Trigger | UI behaviour | Copy keys |
 |---|---|---|---|
-| Populated | Markers loaded | Coloured cells + legend | `calendar_*` |
-| Empty markers | New user | Grid without overlays | same |
+| Empty | No marker data | Plain grid + legend | `calendar_*` |
+| Loading | Marker aggregation | n/a — markers load synchronously from local DB in current UI | n/a |
+| Populated | Markers for visible month | Tinted cells + legend | `calendar_*` |
+| Error | Data read failure | n/a — no dedicated error UI (M15) | n/a |
+| Offline | No network | Same as populated — calendar is local | n/a |
 
 ## Tokens & semantics
 - Recorded period: `health.period`
@@ -37,7 +40,7 @@ Month grid with Jalali picker, recorded vs predicted period/fertile markers, and
 ## Golden list
 | Test | State |
 |---|---|
-| `M14aFullScreenGoldenTest.calendar_populated_*` | Synthetic period/fertile markers |
+| `M14aFullScreenGoldenTest.calendar_populated_*` | **Shahrivar 1403** (month 6): logged period days **1–4**, fertile window **11–17**, predicted period **26–28**; selected day **15** |
 
 ## M15 planned deltas
 - Richer month chrome, clearer predicted vs recorded distinction

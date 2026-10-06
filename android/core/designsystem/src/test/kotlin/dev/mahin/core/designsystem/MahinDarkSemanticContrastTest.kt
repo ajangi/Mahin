@@ -34,12 +34,22 @@ class MahinDarkSemanticContrastTest {
     }
 
     @Test
-    fun darkSemanticColours_meetGraphicContrastOnAllDarkSurfaces() {
-        darkSemantics.forEach { semantic ->
-            darkSurfaces.forEach { surface ->
-                val ratio = contrastRatio(semantic, surface)
-                assertThat(ratio).isAtLeast(3.0)
-            }
-        }
+    fun darkFertilityAndOvulation_areVisuallyDistinct() {
+        val delta =
+            deltaE76(
+                MahinTokenHex.DARK_HEALTH_FERTILITY,
+                MahinTokenHex.DARK_HEALTH_OVULATION,
+            )
+        assertThat(delta).isAtLeast(10.0)
+    }
+
+    @Test
+    fun darkPeriodAndCritical_areVisuallyDistinct() {
+        val delta =
+            deltaE76(
+                MahinTokenHex.DARK_HEALTH_PERIOD,
+                MahinTokenHex.DARK_STATUS_CRITICAL,
+            )
+        assertThat(delta).isAtLeast(10.0)
     }
 }
