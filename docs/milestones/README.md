@@ -17,16 +17,20 @@ Cloud Agents update one milestone at a time. Do not pre-mark future milestones c
 - M12 — **accepted** ([PR #25](https://github.com/ajangi/Mahin/pull/25), merge `0a02ad89a85836c196ab66df167f0d7decdc2142`)
 - M13 — UI / Design Polish — **accepted** ([PR #27](https://github.com/ajangi/Mahin/pull/27), merge `4eb28b7decffc9c78415d69010fd1fb622b83796`, **2026-10-05**)
 
-### Program V2 — proposed (see `docs/PROGRAM_V2_PLAN.md`)
+### Program V2 — approved for M14a–M18, gated for M19–M22 (see `docs/PROGRAM_V2_PLAN.md`)
 
-- M14 — Visual identity, icon set, illustration pipeline & app shell — **planned**
-- M15 — Today home & calendar redesign — **planned**
-- M16 — Logging experience overhaul — **planned**
-- M17 — Daily wellness, Learn magazine & guided programs — **planned**
-- M18 — Pregnancy companion depth — **planned**
+Merging the V2 plan approves the M14a–M18 scope. Execute in order: M14a → M14b → M14c → M15 → M16 → M17 (as M17a, M17b) → M18 (as M18a, M18b).
+
+- M14a — Design foundations (screen specs, dark semantic colours, motion, Numeric Display, golden harness + CI verify, benchmark skeleton) — **approved, not started**
+- M14b — Icon set & illustration slot — **approved, not started**
+- M14c — App shell (5 tabs per mode, PRD §5) & Settings — **approved, not started**
+- M15 — Today home & calendar redesign — **approved, not started**
+- M16 — Logging experience overhaul — **approved, not started**
+- M17 — Daily wellness, Learn magazine & guided programs (split into M17a/M17b before execution) — **approved, not started**
+- M18 — Pregnancy companion depth (split into M18a/M18b before execution) — **approved, not started**
 - M19 — Postpartum, breastfeeding & baby growth — **gated (owner approval + PRD amendment)**
 - M20 — Iran distribution: Bazaar/Myket billing & phone OTP — **gated (owner decisions + vendor secrets)**
-- M21 — Expert consultation (async Q&A) — **gated (PRD non-goal today; owner + legal approval)**
+- M21 — Expert consultation (async Q&A) — **gated (PRD §38 non-goal today; owner + legal approval)**
 - M22 — Nutrition programs — **gated (owner approval + dietitian content)**
 
 ## M0–M12 program
@@ -35,7 +39,7 @@ All planned milestones **M0 through M12** are **accepted** on `master`.
 
 **M13** (post-program UI polish) is **accepted** on `master` as of **2026-10-05**.
 
-Remaining work is **post-GA or human-operated**, not additional agent milestones:
+Program V2 (above) adds further agent milestones on top of M0–M13. Separately, these human-operated or post-GA items from M0–M13 remain open:
 
 - **M11 production / infra gates** — staging/prod topology, secrets, observability, backups, load/chaos execution, GA RC promotion (see `docs/handoffs/M11_HANDOFF.md`).
 - **Health Connect** — product-owner sign-off on `period_day` ↔ `MenstruationFlowRecord` mapping (M10/M11 follow-up).
