@@ -3,7 +3,7 @@
 **Milestone:** M14a  
 **Status:** ready for owner re-review (PR [#31](https://github.com/ajangi/Mahin/pull/31))  
 **Branch:** `cursor/m14a-design-foundations-e5d9`  
-**PR head:** `193e97d`  
+**PR head:** `c38a650`  
 **Next milestone:** **M14b** only
 
 ## Implemented scope
