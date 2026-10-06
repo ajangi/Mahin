@@ -1,9 +1,9 @@
 # M14a Handoff — Design foundations
 
 **Milestone:** M14a  
-**Status:** ready for owner re-review (PR [#31](https://github.com/ajangi/Mahin/pull/31))  
-**Branch:** `cursor/m14a-design-foundations-e5d9`  
-**PR head:** `19e8453` (see GitHub for tip if later doc-only commits land)  
+**Status:** **accepted** (squash-merge `4591b53880409d95aed32d40638ca385e75dc08a` on `master` via [PR #31](https://github.com/ajangi/Mahin/pull/31), **2026-10-06**)  
+**Pre-merge PR tip:** `6c1e1b3` — final green CI [run 37467571731](https://github.com/ajangi/Mahin/actions/runs/37467571731) (all 5 jobs)  
+**Owner:** Alireza approved final dark semantic colours at PR review (**2026-10-06**)  
 **Next milestone:** **M14b** only
 
 ## Implemented scope
@@ -14,7 +14,7 @@
 
 ### Dark semantic health/status tokens + ADR 0020
 - Seven dark-only semantic colours in `design/tokens.json`, `docs/DESIGN_SYSTEM.md`, `REQUIRED_DARK` (`scripts/check_design_tokens.py`), `MahinTokenHex`, `MahinDarkColors`, dark `MahinExtendedColors` / `MahinTheme`
-- **ADR:** `docs/adr/0020-dark-semantic-colours.md` — status **Proposed — pending owner approval at PR review**
+- **ADR:** `docs/adr/0020-dark-semantic-colours.md` — **Accepted** (owner approved **2026-10-06** at PR #31 review)
 - **Final dark values** (text contrast on `surface.background` / `surface.default` / `surface.elevated`):
 
 | Token | Hex | vs `#171417` | vs `#211D21` | vs `#2A252A` |
@@ -78,11 +78,11 @@ None.
 ## ADRs
 | ADR | Summary |
 |---|---|
-| [0020](docs/adr/0020-dark-semantic-colours.md) | Dark semantic health/status hex values, contrast table, `onError`, ΔE separation — **Proposed**, owner PR review |
+| [0020](docs/adr/0020-dark-semantic-colours.md) | Dark semantic health/status hex values, contrast table, `onError`, ΔE separation — **Accepted** (owner **2026-10-06**) |
 
 ## Commands / results
 
-**Authoritative:** GitHub Actions on PR head. **Verified green:** [CI run 37461353665](https://github.com/ajangi/Mahin/actions/runs/37461353665) on commit `c38a650` (all 5 jobs).
+**Authoritative:** GitHub Actions on PR #31. **Verified green:** [CI run 37467571731](https://github.com/ajangi/Mahin/actions/runs/37467571731) on PR tip `6c1e1b3` (all 5 jobs; squash-merged as `4591b53`).
 
 ```bash
 # design-tokens job
@@ -145,7 +145,7 @@ python3 -c "import json; b=json.load(open('design/tokens.json'))['brand']; m=jso
 - Benchmark metrics require physical device/emulator (not run in CI).
 
 ## Unresolved questions
-- **Owner sign-off** of final dark semantic hex table at PR review (ADR 0020 remains Proposed until approved).
+- None for M14a (dark colours approved at PR #31 review).
 
 ## Deferred items
 | Item | Reason | Where |
