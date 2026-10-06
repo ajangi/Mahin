@@ -1,7 +1,7 @@
 # ADR 0020 — Dark-theme semantic health and status colours
 
 ## Status
-**Proposed — pending owner approval at PR review** (M14a).
+**Accepted** — owner approved **2026-10-06** at [PR #31](https://github.com/ajangi/Mahin/pull/31) review (M14a).
 
 ## Context
 Light-theme semantic colours (`health.*`, `status.*`) were defined in M0. Dark theme baseline (M0/M13) only froze surfaces, brand primary, and text. `MahinTheme` incorrectly reused light semantic colours on dark surfaces, failing WCAG contrast for text and calendar legend semantics.
