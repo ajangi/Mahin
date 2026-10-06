@@ -33,4 +33,11 @@ object MahinDarkColors {
     val brandPrimary: Color = hex(MahinTokenHex.DARK_BRAND_PRIMARY)
     val textPrimary: Color = hex(MahinTokenHex.DARK_TEXT_PRIMARY)
     val textSecondary: Color = hex(MahinTokenHex.DARK_TEXT_SECONDARY)
+    val healthPeriod: Color = hex(MahinTokenHex.DARK_HEALTH_PERIOD)
+    val healthFertility: Color = hex(MahinTokenHex.DARK_HEALTH_FERTILITY)
+    val healthOvulation: Color = hex(MahinTokenHex.DARK_HEALTH_OVULATION)
+    val healthPregnancy: Color = hex(MahinTokenHex.DARK_HEALTH_PREGNANCY)
+    val statusPositive: Color = hex(MahinTokenHex.DARK_STATUS_POSITIVE)
+    val statusWarning: Color = hex(MahinTokenHex.DARK_STATUS_WARNING)
+    val statusCritical: Color = hex(MahinTokenHex.DARK_STATUS_CRITICAL)
 }

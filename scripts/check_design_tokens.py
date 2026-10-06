@@ -37,7 +37,79 @@ REQUIRED_DARK = {
     "brand.primary": "#D2A5C3",
     "text.primary": "#F7F2F5",
     "text.secondary": "#BEB4BB",
+    "health.period": "#CC7582",
+    "health.fertility": "#599799",
+    "health.ovulation": "#549A9E",
+    "health.pregnancy": "#AD846F",
+    "status.positive": "#679983",
+    "status.warning": "#AF8757",
+    "status.critical": "#D66F78",
 }
+
+DARK_SEMANTIC_TEXT_KEYS = (
+    "health.period",
+    "health.fertility",
+    "health.ovulation",
+    "health.pregnancy",
+    "status.positive",
+    "status.warning",
+    "status.critical",
+)
+
+DARK_SURFACE_KEYS = (
+    "surface.background",
+    "surface.default",
+    "surface.elevated",
+)
+
+MIN_GRAPHIC_CONTRAST = 3.0
+MIN_TEXT_CONTRAST = 4.5
+
+
+def _hex_to_rgb(hex_color: str) -> tuple[float, float, float]:
+    digits = hex_color.lstrip("#")
+    return (
+        int(digits[0:2], 16) / 255.0,
+        int(digits[2:4], 16) / 255.0,
+        int(digits[4:6], 16) / 255.0,
+    )
+
+
+def _relative_luminance(hex_color: str) -> float:
+    r, g, b = _hex_to_rgb(hex_color)
+
+    def channel(c: float) -> float:
+        return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+
+    r, g, b = channel(r), channel(g), channel(b)
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def contrast_ratio(foreground: str, background: str) -> float:
+    l1 = _relative_luminance(foreground)
+    l2 = _relative_luminance(background)
+    lighter = max(l1, l2)
+    darker = min(l1, l2)
+    return (lighter + 0.05) / (darker + 0.05)
+
+
+def check_dark_semantic_contrast(dark: dict[str, str], errors: list[str]) -> None:
+    surfaces = [dark[key] for key in DARK_SURFACE_KEYS]
+    for key in DARK_SEMANTIC_TEXT_KEYS:
+        color = dark.get(key)
+        if not color:
+            errors.append(f"dark.{key}: missing semantic colour")
+            continue
+        for surface_key, surface_hex in zip(DARK_SURFACE_KEYS, surfaces, strict=True):
+            ratio = contrast_ratio(color, surface_hex)
+            if ratio < MIN_TEXT_CONTRAST:
+                errors.append(
+                    f"dark.{key} on {surface_key}: contrast {ratio:.2f} < {MIN_TEXT_CONTRAST}"
+                )
+            elif ratio < MIN_GRAPHIC_CONTRAST:
+                errors.append(
+                    f"dark.{key} on {surface_key}: contrast {ratio:.2f} < {MIN_GRAPHIC_CONTRAST}"
+                )
 
 
 def extract_hex_from_markdown(text: str) -> set[str]:
@@ -60,6 +132,8 @@ def main() -> int:
         actual = dark.get(key)
         if actual != expected:
             errors.append(f"dark.{key}: expected {expected}, found {actual}")
+
+    check_dark_semantic_contrast(dark, errors)
 
     markdown = DESIGN_SYSTEM_PATH.read_text(encoding="utf-8")
     markdown_hex = extract_hex_from_markdown(markdown)

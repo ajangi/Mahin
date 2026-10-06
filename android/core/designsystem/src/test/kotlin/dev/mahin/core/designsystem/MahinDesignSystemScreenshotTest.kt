@@ -2,6 +2,8 @@ package dev.mahin.core.designsystem
 
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -68,6 +70,29 @@ class MahinDesignSystemScreenshotTest {
                             subtitle = "راهنمای رنگ‌ها در پایین",
                         )
                         MahinCalendarLegend()
+                    }
+                }
+            }
+        }
+        composeRule.onRoot().captureRoboImage()
+    }
+
+    @Test
+    fun numericDisplayPersianDigitsRtlLight() {
+        composeRule.setContent {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                MahinTheme(darkTheme = false) {
+                    androidx.compose.foundation.layout.Column(modifier = Modifier.fillMaxSize()) {
+                        Text(
+                            text = "۲۸",
+                            style = mahinTextStyle(MahinTypographyRole.NumericDisplay),
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                        Text(
+                            text = "هفته ۲۱",
+                            style = mahinTextStyle(MahinTypographyRole.NumericDisplay),
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
                     }
                 }
             }

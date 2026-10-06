@@ -115,6 +115,9 @@ jobs:
             :core:network:testReleaseUnitTest \
             :core:network:verifyReleaseMahinApiBaseUrlHttps \
             :app:verifyReleaseApkNoEmulatorApiHost \
+            :app:verifyRoborazziDebug \
+            :core:designsystem:verifyRoborazziDebug \
+            :benchmark:assemble \
             --stacktrace --no-daemon
       - name: Upload Android reports
         if: always()
