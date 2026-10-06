@@ -18,6 +18,7 @@ dependencyResolutionManagement {
 rootProject.name = "mahin-android"
 
 include(":app")
+include(":benchmark")
 include(":core:common")
 include(":core:model")
 include(":core:datetime")

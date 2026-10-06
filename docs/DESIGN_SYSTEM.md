@@ -38,8 +38,15 @@ Predicted period/fertility states must be visually distinguishable from recorded
 | `brand.primary` | `#D2A5C3` |
 | `text.primary` | `#F7F2F5` |
 | `text.secondary` | `#BEB4BB` |
+| `health.period` | `#D48A96` |
+| `health.fertility` | `#599799` |
+| `health.ovulation` | `#6FB8BE` |
+| `health.pregnancy` | `#AD846F` |
+| `status.positive` | `#679983` |
+| `status.warning` | `#AF8757` |
+| `status.critical` | `#D66F78` |
 
-Semantic health colors require accessible dark-theme variants validated by contrast tests before GA; do not blindly reuse/invert light colors.
+Semantic health colors require accessible dark-theme variants validated by contrast tests before GA; do not blindly reuse/invert light colors. Dark values above are contrast-validated in ADR 0020 and automated tests (≥ 4.5:1 as text on all dark surfaces).
 
 ## Mode identity
 The product identity always remains Mulberry. Journey modes add restrained semantic accents:

@@ -18,6 +18,9 @@ class MahinTokenHexTest {
     fun frozenDarkBaselineMatchesDesignSystem() {
         assertThat(MahinTokenHex.DARK_SURFACE_BACKGROUND).isEqualTo("#171417")
         assertThat(MahinTokenHex.DARK_BRAND_PRIMARY).isEqualTo("#D2A5C3")
+        assertThat(MahinTokenHex.DARK_HEALTH_PERIOD).isEqualTo("#D48A96")
+        assertThat(MahinTokenHex.DARK_HEALTH_OVULATION).isEqualTo("#6FB8BE")
+        assertThat(MahinTokenHex.DARK_STATUS_CRITICAL).isEqualTo("#D66F78")
     }
 }
 

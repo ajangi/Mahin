@@ -17,6 +17,7 @@ dependencies {
     implementation(project(":core:datetime"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.compose.material.icons)
+    testImplementation(project(":core:testing"))
     testImplementation(libs.junit)
     testImplementation(libs.truth)
     testImplementation(libs.robolectric)

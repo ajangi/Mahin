@@ -23,4 +23,11 @@ object MahinTokenHex {
     const val DARK_BRAND_PRIMARY = "#D2A5C3"
     const val DARK_TEXT_PRIMARY = "#F7F2F5"
     const val DARK_TEXT_SECONDARY = "#BEB4BB"
+    const val DARK_HEALTH_PERIOD = "#D48A96"
+    const val DARK_HEALTH_FERTILITY = "#599799"
+    const val DARK_HEALTH_OVULATION = "#6FB8BE"
+    const val DARK_HEALTH_PREGNANCY = "#AD846F"
+    const val DARK_STATUS_POSITIVE = "#679983"
+    const val DARK_STATUS_WARNING = "#AF8757"
+    const val DARK_STATUS_CRITICAL = "#D66F78"
 }

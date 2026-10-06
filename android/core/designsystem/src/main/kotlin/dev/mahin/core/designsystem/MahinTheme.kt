@@ -71,8 +71,8 @@ private fun darkScheme(): ColorScheme =
         onSurface = MahinDarkColors.textPrimary,
         surfaceVariant = MahinDarkColors.surfaceElevated,
         onSurfaceVariant = MahinDarkColors.textSecondary,
-        error = MahinLightColors.statusCritical,
-        onError = Color.White,
+        error = MahinDarkColors.statusCritical,
+        onError = MahinDarkColors.surfaceBackground,
     )
 
 private val mahinShapes =
@@ -91,16 +91,17 @@ fun MahinTheme(
 ) {
     val scheme = if (darkTheme) darkScheme() else lightScheme()
     val typography = mahinTypography(scheme.onBackground)
+    val reducedMotion = rememberSystemReducedMotion()
     val extended =
         if (darkTheme) {
             MahinExtendedColors(
-                healthPeriod = MahinLightColors.healthPeriod,
-                healthFertility = MahinLightColors.healthFertility,
-                healthOvulation = MahinLightColors.healthOvulation,
-                healthPregnancy = MahinLightColors.healthPregnancy,
-                statusPositive = MahinLightColors.statusPositive,
-                statusWarning = MahinLightColors.statusWarning,
-                statusCritical = MahinLightColors.statusCritical,
+                healthPeriod = MahinDarkColors.healthPeriod,
+                healthFertility = MahinDarkColors.healthFertility,
+                healthOvulation = MahinDarkColors.healthOvulation,
+                healthPregnancy = MahinDarkColors.healthPregnancy,
+                statusPositive = MahinDarkColors.statusPositive,
+                statusWarning = MahinDarkColors.statusWarning,
+                statusCritical = MahinDarkColors.statusCritical,
                 brandPrimarySoft = MahinDarkColors.brandPrimary,
                 brandPrimaryPressed = MahinLightColors.brandPrimaryPressed,
             )
@@ -117,7 +118,10 @@ fun MahinTheme(
                 brandPrimaryPressed = MahinLightColors.brandPrimaryPressed,
             )
         }
-    CompositionLocalProvider(LocalMahinExtendedColors provides extended) {
+    CompositionLocalProvider(
+        LocalMahinExtendedColors provides extended,
+        LocalReducedMotion provides reducedMotion,
+    ) {
         MaterialTheme(
             colorScheme = scheme,
             typography = typography,
