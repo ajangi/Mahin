@@ -3,7 +3,7 @@
 **Milestone:** M14a  
 **Status:** ready for owner re-review (PR [#31](https://github.com/ajangi/Mahin/pull/31))  
 **Branch:** `cursor/m14a-design-foundations-e5d9`  
-**PR head:** `565dc11` (gatekeeper round 2 docs/test fixes may add commits)  
+**PR head:** `193e97d`  
 **Next milestone:** **M14b** only
 
 ## Implemented scope
@@ -82,7 +82,7 @@ None.
 
 ## Commands / results
 
-**Authoritative:** GitHub Actions on PR head. **Verified green:** [CI run 37455204613](https://github.com/ajangi/Mahin/actions/runs/37455204613) on commit `565dc11` (all 5 jobs).
+**Authoritative:** GitHub Actions on PR head. **Verified green:** [CI run 37458416981](https://github.com/ajangi/Mahin/actions/runs/37458416981) on commit `193e97d` (all 5 jobs).
 
 ```bash
 # design-tokens job
