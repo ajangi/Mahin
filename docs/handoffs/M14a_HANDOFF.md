@@ -106,7 +106,7 @@ cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug assemble
   :app:verifyRoborazziDebug \
   :core:designsystem:verifyRoborazziDebug \
   :benchmark:assemble \
-  --stacktrace --no-daemon                        # PASS (CI run 37455204613)
+  --stacktrace --no-daemon                        # PASS (CI run 37458416981)
 ```
 
 Local re-record goldens (when needed):
@@ -134,7 +134,7 @@ python3 -c "import json; b=json.load(open('design/tokens.json'))['brand']; m=jso
 | Motion tokens + `LocalReducedMotion` + tests | ✅ |
 | `NumericDisplay` in showcase/golden; Persian digits | ✅ (light + dark) |
 | Full-screen goldens (listed screens, 4 variants each) | ✅ |
-| CI `verifyRoborazziDebug` | ✅ [run 37455204613](https://github.com/ajangi/Mahin/actions/runs/37455204613) |
+| CI `verifyRoborazziDebug` | ✅ [run 37458416981](https://github.com/ajangi/Mahin/actions/runs/37458416981) |
 | `:benchmark` compiles in CI | ✅ same run |
 | M13 command list + new checks | ✅ same run |
 
