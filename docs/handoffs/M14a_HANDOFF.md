@@ -3,7 +3,7 @@
 **Milestone:** M14a  
 **Status:** ready for owner re-review (PR [#31](https://github.com/ajangi/Mahin/pull/31))  
 **Branch:** `cursor/m14a-design-foundations-e5d9`  
-**PR head:** `c38a650`  
+**PR head:** `19e8453` (see GitHub for tip if later doc-only commits land)  
 **Next milestone:** **M14b** only
 
 ## Implemented scope
@@ -82,7 +82,7 @@ None.
 
 ## Commands / results
 
-**Authoritative:** GitHub Actions on PR head. **Verified green:** [CI run 37458416981](https://github.com/ajangi/Mahin/actions/runs/37458416981) on commit `193e97d` (all 5 jobs).
+**Authoritative:** GitHub Actions on PR head. **Verified green:** [CI run 37461353665](https://github.com/ajangi/Mahin/actions/runs/37461353665) on commit `c38a650` (all 5 jobs).
 
 ```bash
 # design-tokens job
@@ -106,7 +106,7 @@ cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug assemble
   :app:verifyRoborazziDebug \
   :core:designsystem:verifyRoborazziDebug \
   :benchmark:assemble \
-  --stacktrace --no-daemon                        # PASS (CI run 37458416981)
+  --stacktrace --no-daemon                        # PASS (CI run 37461353665)
 ```
 
 Local re-record goldens (when needed):
@@ -134,7 +134,7 @@ python3 -c "import json; b=json.load(open('design/tokens.json'))['brand']; m=jso
 | Motion tokens + `LocalReducedMotion` + tests | ✅ |
 | `NumericDisplay` in showcase/golden; Persian digits | ✅ (light + dark) |
 | Full-screen goldens (listed screens, 4 variants each) | ✅ |
-| CI `verifyRoborazziDebug` | ✅ [run 37458416981](https://github.com/ajangi/Mahin/actions/runs/37458416981) |
+| CI `verifyRoborazziDebug` | ✅ [run 37461353665](https://github.com/ajangi/Mahin/actions/runs/37461353665) |
 | `:benchmark` compiles in CI | ✅ same run |
 | M13 command list + new checks | ✅ same run |
 
