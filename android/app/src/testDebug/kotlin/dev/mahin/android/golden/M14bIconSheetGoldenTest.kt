@@ -1,10 +1,9 @@
 package dev.mahin.android.golden
 
 import androidx.activity.ComponentActivity
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import dev.mahin.core.designsystem.icon.IconCatalogueFamilyGoldenSheet
-import dev.mahin.core.designsystem.icon.IconCatalogueRtlMirrorCheck
+import dev.mahin.android.demo.IconCatalogueFamilyGoldenSheet
+import dev.mahin.android.demo.IconCatalogueRtlMirrorCompare
 import dev.mahin.core.testing.roborazzi.captureMahinFullScreenGolden
 import org.junit.Rule
 import org.junit.Test
@@ -72,9 +71,16 @@ class M14bIconSheetGoldenTest {
     fun icons_lifestyle_dark() = captureFamily("lifestyle", "سبک زندگی", darkTheme = true)
 
     @Test
+    fun icons_rtl_directional_mirror_light() {
+        composeRule.captureMahinFullScreenGolden(darkTheme = false, fontScale = 1f) {
+            IconCatalogueRtlMirrorCompare(darkTheme = false)
+        }
+    }
+
+    @Test
     fun icons_rtl_directional_mirror_dark() {
         composeRule.captureMahinFullScreenGolden(darkTheme = true, fontScale = 1f) {
-            IconCatalogueRtlMirrorCheck(darkTheme = true, modifier = Modifier)
+            IconCatalogueRtlMirrorCompare(darkTheme = true)
         }
     }
 

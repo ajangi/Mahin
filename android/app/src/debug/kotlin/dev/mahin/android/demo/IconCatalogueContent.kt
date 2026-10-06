@@ -1,9 +1,10 @@
-package dev.mahin.core.designsystem.icon
+package dev.mahin.android.demo
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -11,13 +12,21 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import dev.mahin.android.R
 import dev.mahin.core.designsystem.MahinSpacing
 import dev.mahin.core.designsystem.MahinTheme
 import dev.mahin.core.designsystem.MahinTypographyRole
+import dev.mahin.core.designsystem.icon.MahinIcon
+import dev.mahin.core.designsystem.icon.MahinIconSpec
+import dev.mahin.core.designsystem.icon.MahinIcons
 import dev.mahin.core.designsystem.mahinTextStyle
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -55,7 +64,6 @@ fun IconCatalogueGrid(
     }
 }
 
-/** Single-family sheet for Roborazzi goldens and the debug catalogue. */
 @Composable
 fun IconCatalogueFamilyGoldenSheet(
     familyPrefix: String,
@@ -83,8 +91,8 @@ fun IconCatalogueFamilyGoldenSheet(
 }
 
 @Composable
-fun IconCatalogueRtlMirrorCheck(
-    darkTheme: Boolean = false,
+fun IconCatalogueRtlMirrorCompare(
+    darkTheme: Boolean,
     modifier: Modifier = Modifier,
 ) {
     MahinTheme(darkTheme = darkTheme) {
@@ -96,13 +104,26 @@ fun IconCatalogueRtlMirrorCheck(
             verticalArrangement = Arrangement.spacedBy(MahinSpacing.lg),
         ) {
             Text(
-                text = "آینهٔ RTL — آیکون‌های جهت‌دار",
+                text = stringResource(R.string.icon_catalogue_rtl_mirror_title),
                 style = mahinTextStyle(MahinTypographyRole.Title),
             )
-            listOf(MahinIcons.Action.back, MahinIcons.Action.share, MahinIcons.Action.undo).forEach { icon ->
-                Column(verticalArrangement = Arrangement.spacedBy(MahinSpacing.xs)) {
-                    MahinIcon(icon = icon, modifier = Modifier.size(48.dp))
-                    Text(text = icon.semanticId, style = MaterialTheme.typography.labelMedium)
+            val directional = listOf(MahinIcons.Action.back, MahinIcons.Action.undo)
+            Row(horizontalArrangement = Arrangement.spacedBy(MahinSpacing.xl)) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = "LTR", style = MaterialTheme.typography.labelMedium)
+                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                        directional.forEach { icon ->
+                            MahinIcon(icon = icon, modifier = Modifier.size(48.dp))
+                        }
+                    }
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = "RTL", style = MaterialTheme.typography.labelMedium)
+                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                        directional.forEach { icon ->
+                            MahinIcon(icon = icon, modifier = Modifier.size(48.dp))
+                        }
+                    }
                 }
             }
         }

@@ -45,7 +45,7 @@
     <string name="icon_desc_mood_irritable_v1">تحریک‌پذیر</string>
     <string name="icon_desc_mood_anxious_v1">مضطرب</string>
     <string name="icon_desc_mood_sad_v1">غمگین یا افسرده</string>
-    <string name="icon_desc_mood_stressed_v1">استرس</string>
+    <string name="icon_desc_mood_stressed_v1">خلق: استرس</string>
     <string name="icon_desc_mood_mood_swings_v1">نوسان خلقی</string>
     <string name="icon_desc_mood_note_v1">یادداشت خلق</string>
     <string name="icon_desc_discharge_dry_v1">ترشح خشک</string>
@@ -60,7 +60,7 @@
     <string name="icon_desc_lifestyle_sleep_v1">خواب</string>
     <string name="icon_desc_lifestyle_exercise_v1">ورزش</string>
     <string name="icon_desc_lifestyle_water_v1">آب</string>
-    <string name="icon_desc_lifestyle_stress_v1">استرس</string>
+    <string name="icon_desc_lifestyle_stress_v1">سبک زندگی: استرس</string>
     <string name="icon_desc_lifestyle_weight_v1">وزن</string>
     <string name="icon_desc_lifestyle_medication_v1">دارو یا مکمل</string>
 </resources>

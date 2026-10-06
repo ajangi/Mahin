@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import com.google.common.truth.Truth.assertThat
 import dev.mahin.core.designsystem.MahinTheme
+import dev.mahin.core.model.MediaApprovalStatus
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -16,14 +17,32 @@ class MahinIllustrationGatingTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
+    private val fixtures = TestMahinIllustrationFixtures.gatedCatalog
+
     @Test
     fun medicalFamily_withoutApproved_rendersNeutralFrameWithoutImagery() {
         composeRule.setContent {
             MahinTheme {
-                MahinIllustration(assetId = "pregnancy/fetal-development/week-18/v3")
+                MahinIllustration(
+                    assetId = TestMahinIllustrationFixtures.PREGNANCY_UNAPPROVED,
+                    source = fixtures,
+                )
             }
         }
         composeRule.onNodeWithTag(MahinIllustrationTestTags.FRAME).assertIsDisplayed()
+        composeRule.onNodeWithTag(MahinIllustrationTestTags.IMAGERY).assertDoesNotExist()
+    }
+
+    @Test
+    fun cycleEducation_throughComposable_isGatedWithoutImagery() {
+        composeRule.setContent {
+            MahinTheme {
+                MahinIllustration(
+                    assetId = TestMahinIllustrationFixtures.CYCLE_EDUCATION_DRAFT,
+                    source = fixtures,
+                )
+            }
+        }
         composeRule.onNodeWithTag(MahinIllustrationTestTags.IMAGERY).assertDoesNotExist()
     }
 
@@ -31,17 +50,23 @@ class MahinIllustrationGatingTest {
     fun medicalPlaceholder_neverRendersImagery_evenIfMislabelledApproved() {
         composeRule.setContent {
             MahinTheme {
-                MahinIllustration(assetId = "pregnancy/placeholder/mislabelled/v1")
+                MahinIllustration(
+                    assetId = TestMahinIllustrationFixtures.PREGNANCY_MISLABELLED_PLACEHOLDER,
+                    source = fixtures,
+                )
             }
         }
         composeRule.onNodeWithTag(MahinIllustrationTestTags.IMAGERY).assertDoesNotExist()
     }
 
     @Test
-    fun unknownAssetId_failsSafeWithoutImagery() {
+    fun unknownMedicalFamilyId_failsSafeWithoutImagery() {
         composeRule.setContent {
             MahinTheme {
-                MahinIllustration(assetId = "unknown/asset/id/v1")
+                MahinIllustration(
+                    assetId = TestMahinIllustrationFixtures.PREGNANCY_UNKNOWN,
+                    source = fixtures,
+                )
             }
         }
         composeRule.onNodeWithTag(MahinIllustrationTestTags.FRAME).assertIsDisplayed()
@@ -49,7 +74,20 @@ class MahinIllustrationGatingTest {
     }
 
     @Test
-    fun editorialPlaceholder_rendersImageryThroughMahinIllustration() {
+    fun approvedNonPlaceholderMedicalAsset_rendersImagery() {
+        composeRule.setContent {
+            MahinTheme(darkTheme = true) {
+                MahinIllustration(
+                    assetId = TestMahinIllustrationFixtures.PREGNANCY_APPROVED,
+                    source = fixtures,
+                )
+            }
+        }
+        composeRule.onNodeWithTag(MahinIllustrationTestTags.IMAGERY).assertIsDisplayed()
+    }
+
+    @Test
+    fun editorialPlaceholder_rendersImageryThroughProductionCatalog() {
         composeRule.setContent {
             MahinTheme {
                 MahinIllustration(assetId = "editorial/empty-state/v1")
@@ -59,9 +97,10 @@ class MahinIllustrationGatingTest {
     }
 
     @Test
-    fun mayRenderBundledImagery_usesRealCatalogMetadata() {
-        val meta = BundledMahinIllustrationCatalog.metadataFor("cycle/education/ovulation/v2")
+    fun publishedStatus_countsAsApprovedForGating() {
+        val meta = fixtures.metadataFor(TestMahinIllustrationFixtures.PREGNANCY_APPROVED)
         assertThat(meta).isNotNull()
-        assertThat(meta!!.mayRenderBundledImagery()).isFalse()
+        assertThat(meta!!.approvalStatus).isEqualTo(MediaApprovalStatus.PUBLISHED)
+        assertThat(meta.mayRenderBundledImagery()).isTrue()
     }
 }

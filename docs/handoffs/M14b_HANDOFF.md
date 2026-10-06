@@ -1,41 +1,29 @@
 # M14b Handoff — Icon set & illustration slot
 
 **Milestone:** M14b  
-**Status:** ready for review (branch `cursor/m14b-icon-set-illustration-ded3`)  
+**Status:** in review — gatekeeper round 2 on PR [#33](https://github.com/ajangi/Mahin/pull/33)  
 **Next milestone:** **M14c** only
 
 ## Implemented scope
 
-### Original Mahin icon set (`:core:designsystem`)
-- **63** hand-authored **24dp** vector drawables (`mahin_ic_*`) with rounded organic geometry; tint via Compose theme (no feature hex).
-- Typed registry: `MahinIconSpec`, `MahinIcons` (stable semantic IDs `family/name/v1`), `MahinIcon` composable with fa `contentDescription` and **decorative** mode.
-- **RTL:** directional action icons (`action/back`, `action/share`, `action/undo`) use `android:autoMirrored` on vectors + `autoMirrored` on specs; verified by `MahinIconAutoMirrorDrawableTest` and golden `icons_rtl_directional_mirror_dark`.
-- Shared grid composables: `IconCatalogueContent.kt` (used by debug catalogue and Roborazzi).
+### Icon set (`:core:designsystem`)
+- **63** original **stroke-only** vector pictograms (24dp viewport, **1.75** stroke, round caps/joins), one semantic path set per icon via explicit definitions in `scripts/generate_m14b_vectors.py` (no hash / shared-path generation).
+- `MahinIcons`, `MahinIcon`, fa `icon_strings.xml` (unique content descriptions, including disambiguated mood vs lifestyle stress).
+- Quality tests: `MahinIconDrawableQualityTest` (visible stroke geometry, unique path signatures), registry uniqueness tests, RTL `autoMirrored` on **back** and **undo** only (share uses a distinct share-node glyph, not mirrored).
 
-### Debug icon catalogue (`app/src/debug/`)
-- `IconCatalogueScreen` lists every icon with semantic ID (light/dark via parameter). **Not** wired into production navigation.
+### Debug catalogue (`app/src/debug/`)
+- `IconCatalogueActivity` (debug manifest launcher) + `IconCatalogueScreen` / `IconCatalogueContent` for visual review.
+- Roborazzi uses the same debug composables (`IconCatalogueFamilyGoldenSheet`, `IconCatalogueRtlMirrorCompare`).
 
 ### `MahinIllustration` (`:core:media`)
-- `MahinIllustration(assetId, …)` composable, `MahinIllustrationSource`, `BundledMahinIllustrationCatalog`, `mayRenderBundledImagery()` gating.
-- Bundled neutral placeholders (`editorial/empty-state/v1`, `editorial/welcome/v1`) with `placeholder = true`.
-- Medical families `pregnancy/*` and `cycle/education/*`: neutral frame **without imagery** unless approved **and** not a placeholder.
-- `MahinIllustrationGatingTest` exercises the **composable** resolution path (Compose + test tags).
+- Production catalog: editorial placeholders only (`editorial/empty-state/v1`, `editorial/welcome/v1`).
+- Medical gating tests use `TestMahinIllustrationFixtures.gatedCatalog` via the composable `source` parameter.
+- Placeholder art tinted with `ColorFilter.tint(MaterialTheme.colorScheme.onSurfaceVariant)` for light/dark contrast.
+- Single accessibility announcement (description on `Image` when imagery shown; on frame when gated empty).
 
-### Roborazzi icon sheets
-- `M14bIconSheetGoldenTest`: 8 family sheets × light/dark + RTL mirror sheet; harness `captureMahinFullScreenGolden` + `MahinRoborazzi.options` (`changeThreshold = 0.005f`), qualifier `fa-rIR-w411dp-h891dp-xxhdpi`.
-- Output: `android/app/src/test/screenshots/dev.mahin.android.golden.M14bIconSheetGoldenTest.*.png`
-- **Existing M14a / M13 goldens:** not re-recorded (no intentional visual change to those tests).
-
-## Notable files / modules
-
-| Area | Paths |
-|------|--------|
-| Icons | `android/core/designsystem/src/main/res/drawable/`, `icon/*`, `values/icon_strings.xml` |
-| Vector regen script | `android/core/designsystem/scripts/generate_m14b_vectors.py` |
-| Illustration | `android/core/media/src/main/kotlin/.../illustration/` |
-| Debug catalogue | `android/app/src/debug/kotlin/.../IconCatalogueScreen.kt`, `app/src/debug/res/values/strings.xml` |
-| Tests | `MahinIconsRegistryTest`, `MahinIconAutoMirrorDrawableTest`, `MahinIllustrationGatingTest`, `M14bIconSheetGoldenTest` |
-| ADR | `docs/adr/0021-m14b-icons-and-illustration-slot.md` |
+### Roborazzi
+- `M14bIconSheetGoldenTest`: 8 families × light/dark + RTL LTR/RTL compare (light + dark).
+- **M14a goldens not re-recorded.**
 
 ## Migrations
 
@@ -45,31 +33,25 @@ None.
 
 | ADR | Summary |
 |-----|---------|
-| [0021](docs/adr/0021-m14b-icons-and-illustration-slot.md) | Icon registry, illustration slot, medical gating, debug vs production adoption |
+| [0021](docs/adr/0021-m14b-icons-and-illustration-slot.md) | Icon registry + illustration slot — **Proposed (pending owner approval)** |
 
 ## Commands / results
 
-**From M14a handoff (still valid):**
+**M14a baseline commands (unchanged):**
 
 ```bash
-python3 scripts/check_design_tokens.py          # PASS (local)
-python3 scripts/security_checklist.py           # PASS (local)
-npx @redocly/cli lint openapi/openapi.yaml      # PASS (local, @redocly/cli@1.34.2)
-cd backend && ./gradlew ktlintCheck detekt test # PASS (local)
-cd admin && npm ci && npm test && npm run build # PASS (local)
+python3 scripts/check_design_tokens.py
+python3 scripts/security_checklist.py
+npx @redocly/cli lint openapi/openapi.yaml
+cd backend && ./gradlew ktlintCheck detekt test
+cd admin && npm ci && npm test && npm run build
 ```
 
-**M14b additions:**
+**M14b:**
 
 ```bash
-# Regenerate vector XML (if art paths change)
 cd android/core/designsystem && python3 scripts/generate_m14b_vectors.py
-
-# Record / verify icon-sheet goldens
-cd android && ./gradlew :app:recordRoborazziDebug :core:designsystem:recordRoborazziDebug
-cd android && ./gradlew :app:verifyRoborazziDebug :core:designsystem:verifyRoborazziDebug
-
-# Full android CI parity (local; requires ANDROID_HOME / android/local.properties)
+cd android && ./gradlew :app:recordRoborazziDebug   # M14b sheets only when art changes
 cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug assembleRelease \
   :core:network:testReleaseUnitTest \
   :core:network:verifyReleaseMahinApiBaseUrlHttps \
@@ -77,53 +59,52 @@ cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug assemble
   :app:verifyRoborazziDebug \
   :core:designsystem:verifyRoborazziDebug \
   :benchmark:assemble \
-  --stacktrace --no-daemon                        # PASS (local VM)
+  --stacktrace --no-daemon
 ```
 
-**CI:** await green GitHub Actions on PR head (all 5 jobs). Do not doc-only bump commit SHAs.
+CI: await green on PR head (all 5 jobs).
 
 ## Acceptance criteria (`prompts/M14b.md`)
 
 | Criterion | Status |
 |-----------|--------|
-| All 8 families complete; each icon in `MahinIcons` by semantic ID | ✅ 63 icons |
-| Debug catalogue + icon-sheet goldens light/dark; `verifyRoborazziDebug` | ✅ |
-| fa content descriptions + decorative usage | ✅ |
-| Medical gating via real `MahinIllustration` path | ✅ |
-| RTL mirroring for directional actions | ✅ test + golden |
-| `check_design_tokens.py` + existing checks | ✅ local |
+| 8 families, semantic IDs, designed stroke icons | ✅ (round 2) |
+| Debug catalogue + icon-sheet goldens | ✅ |
+| fa descriptions + decorative `MahinIcon` | ✅ |
+| Medical gating via `MahinIllustration` + test fixtures | ✅ |
+| RTL mirroring tests + goldens | ✅ |
+| Design tokens + CI | ⏳ PR CI |
 
 ## Known limitations
 
-- Icons are **engineering placeholders** for product shape; clinical review required for borderline families before release.
-- `MahinIllustration` loads **bundled vectors only**; remote Coil/CMS deferred to **M17**.
-- Debug catalogue is not reachable from `MahinAppShell` (intentional; avoids production UI churn).
-- Icon accent colour is single `Icon` tint today; dual-tone accents per icon are a future design-system enhancement.
+- Icons still require **clinical review** for borderline families before release (see below).
+- Remote CMS illustrations deferred to **M17**.
+- Debug catalogue uses a second debug launcher icon (intentional for review).
 
 ## Unresolved questions
 
-- None blocking M14b merge; clinical sign-off on borderline icons is an owner workflow, not an engineering blocker.
+- Owner approval of ADR 0021 and final icon artwork sign-off.
 
 ## Deferred items
 
 | Item | Where |
 |------|--------|
-| Wire icons into production screens | **M14c**, M15, M16 |
-| Remote illustration loading (Coil) | **M17** |
-| Final medical/editorial artwork | Governed CMS workflow |
+| Production screen icon adoption | M14c+ |
+| Coil / remote illustrations | M17 |
 
 ## Borderline icons for clinical review before release
 
-- **All** `tests/*` (3): OPK, pregnancy test, BBT  
-- **All** `discharge/*` (6)  
-- **Body-adjacent symptoms:** `symptom/breast_tenderness/v1`, `symptom/back_pain/v1`, `symptom/nausea/v1`, `symptom/pain/v1`, `symptom/cramps/v1`
+- **All** `tests/*` (3)
+- **All** `discharge/*` (6)
+- **All** `flow/*` (5)
+- `nav/pregnancy/v1`
+- **Symptoms:** `symptom/cramps/v1`, `symptom/headache/v1`, `symptom/migraine/v1`, `symptom/bloating/v1`, `symptom/breast_tenderness/v1`, `symptom/digestive/v1`, `symptom/acne/v1`, `symptom/nausea/v1`, `symptom/back_pain/v1`, `symptom/pain/v1`
 
 ## Golden change notes
 
-- **New** PNGs only under `M14bIconSheetGoldenTest.*`.
-- **No** re-records of `M14aFullScreenGoldenTest` or `:core:designsystem` M14a component goldens on this branch.
+- Re-recorded **only** `M14bIconSheetGoldenTest` PNGs after icon redesign (+ RTL light sheet; RTL compare replaces mirror-only dark sheet).
 
 ## Evidence
 
-- Icon sheets: `android/app/src/test/screenshots/dev.mahin.android.golden.M14bIconSheetGoldenTest.*.png`
-- Milestone summary: `docs/milestones/M14b.md`
+- `android/app/src/test/screenshots/dev.mahin.android.golden.M14bIconSheetGoldenTest.*.png`
+- `docs/milestones/M14b.md`

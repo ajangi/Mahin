@@ -15,8 +15,6 @@ import dev.mahin.android.R
 import dev.mahin.core.designsystem.MahinSpacing
 import dev.mahin.core.designsystem.MahinTheme
 import dev.mahin.core.designsystem.MahinTypographyRole
-import dev.mahin.core.designsystem.icon.IconCatalogueFamilyGoldenSheet
-import dev.mahin.core.designsystem.icon.IconCatalogueGrid
 import dev.mahin.core.designsystem.icon.MahinIcons
 import dev.mahin.core.designsystem.mahinTextStyle
 
@@ -68,20 +66,4 @@ private fun catalogueSection(
         )
         IconCatalogueGrid(icons = MahinIcons.all.filter { it.semanticId.startsWith("$familyPrefix/") })
     }
-}
-
-/** Convenience wrapper for debug previews. */
-@Composable
-fun IconCatalogueFamilySheetDebug(
-    familyPrefix: String,
-    titleRes: Int,
-    darkTheme: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    IconCatalogueFamilyGoldenSheet(
-        familyPrefix = familyPrefix,
-        title = stringResource(titleRes),
-        darkTheme = darkTheme,
-        modifier = modifier,
-    )
 }

@@ -25,6 +25,7 @@ fun isMedicalGovernedIllustrationId(assetId: String): Boolean =
 
 /**
  * Whether [metadata] may render bundled imagery inside the illustration slot.
+ * [MediaApprovalStatus.PUBLISHED] is treated like [MediaApprovalStatus.APPROVED] for medical assets.
  * Unknown IDs and gated medical assets fail safe to the neutral frame without imagery.
  */
 fun MahinIllustrationMetadata.mayRenderBundledImagery(): Boolean {

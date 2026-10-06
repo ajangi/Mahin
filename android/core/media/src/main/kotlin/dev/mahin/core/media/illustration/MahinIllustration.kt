@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -37,16 +38,6 @@ fun MahinIllustration(
     val metadata = source.metadataFor(assetId)
     val showImagery = metadata?.mayRenderBundledImagery() == true
     val frameShape = RoundedCornerShape(MahinSpacing.md)
-    val frameModifier =
-        modifier
-            .size(120.dp)
-            .clip(frameShape)
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
-                shape = frameShape,
-            ).testTag(MahinIllustrationTestTags.FRAME)
-
     val resolvedDescription =
         when {
             decorative -> null
@@ -58,13 +49,27 @@ fun MahinIllustration(
             else -> null
         }
 
+    val frameModifier =
+        modifier
+            .size(120.dp)
+            .clip(frameShape)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant,
+                shape = frameShape,
+            ).testTag(MahinIllustrationTestTags.FRAME)
+            .then(
+                if (!showImagery && resolvedDescription != null) {
+                    Modifier.semantics { this.contentDescription = resolvedDescription }
+                } else {
+                    Modifier
+                },
+            )
+
+    val tint = MaterialTheme.colorScheme.onSurfaceVariant
+
     Box(
-        modifier =
-            frameModifier.semantics {
-                if (resolvedDescription != null) {
-                    this.contentDescription = resolvedDescription
-                }
-            },
+        modifier = frameModifier,
         contentAlignment = Alignment.Center,
     ) {
         if (showImagery) {
@@ -76,6 +81,7 @@ fun MahinIllustration(
                         .fillMaxSize()
                         .testTag(MahinIllustrationTestTags.IMAGERY),
                 contentScale = ContentScale.Fit,
+                colorFilter = ColorFilter.tint(tint),
             )
         }
     }

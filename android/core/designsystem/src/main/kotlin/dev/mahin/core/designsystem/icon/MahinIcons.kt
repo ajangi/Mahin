@@ -115,7 +115,7 @@ object MahinIcons {
                 semanticId = "action/share/v1",
                 drawableRes = R.drawable.mahin_ic_action_share_v1,
                 contentDescriptionRes = R.string.icon_desc_action_share_v1,
-                autoMirrored = true,
+                autoMirrored = false,
             )
         val search =
             MahinIconSpec(
