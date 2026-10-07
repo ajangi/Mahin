@@ -1,9 +1,9 @@
 # M14b Handoff — Icon set & illustration slot
 
 **Milestone:** M14b  
-**Status:** **accepted** (squash-merge `4a31e20804eace306c5d98b2c0406b934e634baa` on `master` via [PR #33](https://github.com/ajangi/Mahin/pull/33), **2026-10-06**)  
+**Status:** **accepted** (squash-merge `4a31e20804eace306c5d98b2c0406b934e634baa` on `master` via [PR #33](https://github.com/ajangi/Mahin/pull/33), **2026-10-07**)  
 **Pre-merge PR tip:** `b9ed73f` — final green CI [run 37496000268](https://github.com/ajangi/Mahin/actions/runs/37496000268) (all 5 jobs)  
-**Owner:** approved at PR #33 merge (**2026-10-06**)  
+**Owner:** approved at PR #33 merge (**2026-10-07**)  
 **Next milestone:** **M14c** only
 
 ## Implemented scope
@@ -35,7 +35,7 @@ None.
 
 | ADR | Summary |
 |-----|---------|
-| [0021](docs/adr/0021-m14b-icons-and-illustration-slot.md) | Icon registry + illustration slot — **Accepted** (owner **2026-10-06** at PR #33 merge) |
+| [0021](docs/adr/0021-m14b-icons-and-illustration-slot.md) | Icon registry + illustration slot — **Accepted** (owner **2026-10-07** at PR #33 merge) |
 
 ## Commands / results
 
