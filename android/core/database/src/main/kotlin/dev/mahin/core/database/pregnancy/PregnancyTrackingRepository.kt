@@ -195,6 +195,15 @@ class PregnancyTrackingRepository
             timerPreferences.clearAllActiveTimers()
         }
 
+        suspend fun postTransitionLearnLinkVisible(): Boolean {
+            val latest =
+                pregnancyDao
+                    .getAll()
+                    .filter { it.outcome != null }
+                    .maxByOrNull { it.outcomeRecordedAtEpochMs ?: 0L }
+            return latest?.wantsSupportContent == true
+        }
+
         suspend fun resumeTracking(mode: ReproductiveMode) {
             require(mode == ReproductiveMode.CYCLE_TRACKING || mode == ReproductiveMode.TRYING_TO_CONCEIVE)
             updateReproductiveMode(mode)

@@ -49,6 +49,7 @@ class SettingsViewModel
         private val entitlementRepository: EntitlementRepository,
     ) : ViewModel() {
         private val paywallVisible = MutableStateFlow(false)
+        private var paywallWarmUpInFlight = false
         private val _uiState = MutableStateFlow(SettingsUiState())
         val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
@@ -162,9 +163,12 @@ class SettingsViewModel
         }
 
         fun openPaywall() {
+            if (paywallWarmUpInFlight) return
+            paywallVisible.value = true
             viewModelScope.launch {
+                paywallWarmUpInFlight = true
                 premiumBillingCoordinator.warmUp()
-                paywallVisible.value = true
+                paywallWarmUpInFlight = false
             }
         }
 

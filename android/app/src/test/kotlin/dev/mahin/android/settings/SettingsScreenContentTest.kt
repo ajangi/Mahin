@@ -158,6 +158,7 @@ class SettingsScreenContentTest {
         }
         composeRule.onNodeWithTag("settings_screen_list").performScrollToNode(hasText("ماهین پریمیوم"))
         composeRule.onNodeWithText("پریمیوم فعال است").assertIsDisplayed()
+        composeRule.onNode(hasText("پریمیوم فعال است") and hasClickAction()).assertDoesNotExist()
     }
 
     @Test

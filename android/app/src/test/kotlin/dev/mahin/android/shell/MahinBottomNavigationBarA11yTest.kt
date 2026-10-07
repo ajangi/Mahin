@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -78,10 +79,16 @@ class MahinBottomNavigationBarA11yTest {
         }
         destinations.forEach { tab ->
             composeRule.onNodeWithTag("shell_tab_${tab.route}").performClick()
-            val node = composeRule.onNodeWithTag("shell_tab_${tab.route}")
-            node.assertIsDisplayed()
-            node.assertHeightIsAtLeast(48.dp)
-            node.assertIsSelected()
+            destinations.forEach { candidate ->
+                val node = composeRule.onNodeWithTag("shell_tab_${candidate.route}")
+                node.assertIsDisplayed()
+                node.assertHeightIsAtLeast(48.dp)
+                if (candidate.route == tab.route) {
+                    node.assertIsSelected()
+                } else {
+                    node.assertIsNotSelected()
+                }
+            }
         }
     }
 

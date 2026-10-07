@@ -19,8 +19,9 @@ import dev.mahin.core.designsystem.component.MahinSettingsGroup
 fun PostPregnancyTransitionSection(
     actions: PostPregnancyTransitionActions,
     modifier: Modifier = Modifier,
+    showLearnLink: Boolean = false,
     onOpenHistory: (() -> Unit)? = null,
-    onOpenCycleCalendar: (() -> Unit)? = null,
+    onOpenLearn: (() -> Unit)? = null,
 ) {
     Column(
         modifier =
@@ -48,31 +49,25 @@ fun PostPregnancyTransitionSection(
                     .testTag("post_pregnancy_resume_ttc")
                     .padding(top = MahinSpacing.sm),
         )
-        PostPregnancySupportLinks(
+        PostPregnancyExtraLinks(
+            showLearnLink = showLearnLink,
             onOpenHistory = onOpenHistory,
-            onOpenCycleCalendar = onOpenCycleCalendar,
+            onOpenLearn = onOpenLearn,
             modifier = Modifier.padding(top = MahinSpacing.md),
         )
     }
 }
 
 @Composable
-private fun PostPregnancySupportLinks(
+private fun PostPregnancyExtraLinks(
+    showLearnLink: Boolean,
     onOpenHistory: (() -> Unit)?,
-    onOpenCycleCalendar: (() -> Unit)?,
+    onOpenLearn: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
-    if (onOpenHistory == null && onOpenCycleCalendar == null) return
+    if (onOpenHistory == null && (!showLearnLink || onOpenLearn == null)) return
     val entries =
         buildList {
-            onOpenCycleCalendar?.let {
-                add(
-                    MahinSettingsEntry(
-                        label = stringResource(R.string.pregnancy_open_cycle_calendar),
-                        onClick = it,
-                    ),
-                )
-            }
             onOpenHistory?.let {
                 add(
                     MahinSettingsEntry(
@@ -81,7 +76,16 @@ private fun PostPregnancySupportLinks(
                     ),
                 )
             }
+            if (showLearnLink && onOpenLearn != null) {
+                add(
+                    MahinSettingsEntry(
+                        label = stringResource(R.string.nav_learn),
+                        onClick = onOpenLearn,
+                    ),
+                )
+            }
         }
+    if (entries.isEmpty()) return
     MahinSettingsGroup(
         title = stringResource(R.string.pregnancy_hub_links_heading),
         entries = entries,

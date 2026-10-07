@@ -1,3 +1,4 @@
+import java.io.ByteArrayOutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 
@@ -154,12 +155,42 @@ private val releaseApkForbiddenSubstrings =
         "10.0.2.2",
     )
 
+fun org.gradle.api.Project.dumpApkManifestText(apk: File): String {
+    val aapt2 =
+        File(
+            android.sdkDirectory,
+            "build-tools/${android.buildToolsVersion}/aapt2",
+        )
+    check(aapt2.isFile) { "aapt2 not found at ${aapt2.absolutePath}" }
+    val stdout = ByteArrayOutputStream()
+    exec {
+        executable = aapt2.absolutePath
+        args("dump", "xmltree", apk.absolutePath, "--file", "AndroidManifest.xml")
+        standardOutput = stdout
+    }
+    return stdout.toString(Charsets.UTF_8)
+}
+
 tasks.register("verifyReleaseApkNoEmulatorApiHost") {
     group = "verification"
     description =
         "Fails if the minified release APK ships dev API hosts, cleartext dev network config, or emulator base URL strings."
-    dependsOn("assembleRelease")
+    dependsOn("assembleRelease", "assembleDebug")
     doLast {
+        val debugDir =
+            layout.buildDirectory
+                .dir("outputs/apk/debug")
+                .get()
+                .asFile
+        val debugApk =
+            debugDir
+                .listFiles()
+                ?.firstOrNull { it.isFile && it.extension == "apk" }
+        check(debugApk != null) { "Expected a debug APK under ${debugDir.path}" }
+        check(dumpApkManifestText(debugApk).contains(".demo.")) {
+            "Debug manifest dump smoke check failed: expected a .demo. component (verifies aapt2 manifest scan)"
+        }
+
         val releaseDir =
             layout.buildDirectory
                 .dir("outputs/apk/release")
@@ -170,6 +201,9 @@ tasks.register("verifyReleaseApkNoEmulatorApiHost") {
                 .listFiles()
                 ?.firstOrNull { it.isFile && it.extension == "apk" }
         check(apk != null) { "Expected a release APK under ${releaseDir.path}" }
+        check(!dumpApkManifestText(apk).contains(".demo.")) {
+            "Release manifest contains debug demo package component"
+        }
         ZipFile(apk).use { zip ->
             zip
                 .entries()
@@ -199,11 +233,6 @@ tasks.register("verifyReleaseApkNoEmulatorApiHost") {
                     if (entry.name.endsWith(".dex")) {
                         check(!text.contains("dev/mahin/android/demo/")) {
                             "Release artifact ${entry.name} contains debug demo package classes"
-                        }
-                    }
-                    if (entry.name == "AndroidManifest.xml") {
-                        check(!text.contains(".demo.")) {
-                            "Release manifest contains debug demo package component"
                         }
                     }
                 }

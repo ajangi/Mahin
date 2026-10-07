@@ -1,5 +1,6 @@
 package dev.mahin.android.shell
 
+import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -14,28 +15,33 @@ fun MahinAppShell(
     modifier: Modifier = Modifier,
     onLocalDataErased: () -> Unit = {},
     screenOverrides: MahinShellScreenOverrides = MahinShellScreenOverrides.Default,
-    shellNavigationStateOverride: ShellNavigationState? = null,
 ) {
-    val navController = rememberNavController()
-    if (shellNavigationStateOverride != null) {
-        MahinAppShellContent(
-            shellState = shellNavigationStateOverride,
-            navController = navController,
-            modifier = modifier,
-            onLocalDataErased = onLocalDataErased,
-            screenOverrides = screenOverrides,
-        )
-    } else {
-        val shellViewModel: MahinAppShellViewModel = hiltViewModel()
-        val shellState by shellViewModel.navigationState.collectAsStateWithLifecycle()
-        MahinAppShellContent(
-            shellState = shellState,
-            navController = navController,
-            modifier = modifier,
-            onLocalDataErased = onLocalDataErased,
-            screenOverrides = screenOverrides,
-        )
-    }
+    val shellViewModel: MahinAppShellViewModel = hiltViewModel()
+    val shellState by shellViewModel.navigationState.collectAsStateWithLifecycle()
+    MahinAppShellContent(
+        shellState = shellState,
+        navController = rememberNavController(),
+        modifier = modifier,
+        onLocalDataErased = onLocalDataErased,
+        screenOverrides = screenOverrides,
+    )
+}
+
+@VisibleForTesting
+@Composable
+internal fun MahinAppShellWithNavigationOverride(
+    shellNavigationStateOverride: ShellNavigationState,
+    modifier: Modifier = Modifier,
+    onLocalDataErased: () -> Unit = {},
+    screenOverrides: MahinShellScreenOverrides = MahinShellScreenOverrides.Default,
+) {
+    MahinAppShellContent(
+        shellState = shellNavigationStateOverride,
+        navController = rememberNavController(),
+        modifier = modifier,
+        onLocalDataErased = onLocalDataErased,
+        screenOverrides = screenOverrides,
+    )
 }
 
 @Composable
@@ -48,6 +54,9 @@ internal fun MahinAppShellContent(
 ) {
     val openHistory: () -> Unit = {
         navController.navigate(MahinTopLevelDestination.HISTORY_ROUTE) { launchSingleTop = true }
+    }
+    val openLearn: () -> Unit = {
+        navController.navigate(MahinTopLevelDestination.Learn.route) { launchSingleTop = true }
     }
     val openCycleCalendar: () -> Unit = {
         navController.navigate(MahinTopLevelDestination.Calendar.route) { launchSingleTop = true }
@@ -62,6 +71,7 @@ internal fun MahinAppShellContent(
                 navController = navController,
                 onLocalDataErased = onLocalDataErased,
                 onOpenHistory = openHistory,
+                onOpenLearn = openLearn,
                 onOpenCycleCalendar = openCycleCalendar,
                 screenOverrides = screenOverrides,
             )

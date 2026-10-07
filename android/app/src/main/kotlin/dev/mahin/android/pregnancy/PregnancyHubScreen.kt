@@ -47,8 +47,6 @@ fun PregnancyHubScreen(
                 onOutcomeSelected = viewModel::onOutcomeSelected,
                 onSupportContentToggle = viewModel::onSupportContentToggle,
                 onSaveOutcome = viewModel::saveOutcome,
-                onResumeCycle = viewModel::resumeCycleTracking,
-                onResumeTtc = viewModel::resumeTtc,
             ),
     )
 }

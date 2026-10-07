@@ -44,11 +44,13 @@ internal fun MahinShellBottomBar(
     )
 }
 
+@Suppress("LongParameterList")
 @Composable
 internal fun MahinShellNavHost(
     navController: NavHostController,
     onLocalDataErased: () -> Unit,
     onOpenHistory: () -> Unit,
+    onOpenLearn: () -> Unit,
     onOpenCycleCalendar: () -> Unit,
     screenOverrides: MahinShellScreenOverrides = MahinShellScreenOverrides.Default,
 ) {
@@ -63,7 +65,7 @@ internal fun MahinShellNavHost(
         popExitTransition = { fadeOut(fadeSpec) },
     ) {
         composable(MahinTopLevelDestination.Today.route) {
-            screenOverrides.today(onOpenHistory, onOpenCycleCalendar)
+            screenOverrides.today(onOpenHistory, onOpenLearn)
         }
         composable(MahinTopLevelDestination.Calendar.route) { screenOverrides.calendar() }
         composable(MahinTopLevelDestination.Log.route) { screenOverrides.log() }
@@ -93,7 +95,7 @@ internal fun MahinShellNavHost(
  * Production screens by default; tests supply tagged placeholders while keeping [MahinShellNavHost] routes.
  */
 data class MahinShellScreenOverrides(
-    val today: @Composable (onOpenHistory: () -> Unit, onOpenCycleCalendar: () -> Unit) -> Unit,
+    val today: @Composable (onOpenHistory: () -> Unit, onOpenLearn: () -> Unit) -> Unit,
     val calendar: @Composable () -> Unit,
     val log: @Composable () -> Unit,
     val cycleInsights: @Composable (onOpenHistory: () -> Unit) -> Unit,
@@ -111,10 +113,10 @@ data class MahinShellScreenOverrides(
     companion object {
         val Default: MahinShellScreenOverrides =
             MahinShellScreenOverrides(
-                today = { onOpenHistory, onOpenCycleCalendar ->
+                today = { onOpenHistory, onOpenLearn ->
                     TodayScreen(
                         onOpenHistory = onOpenHistory,
-                        onOpenCycleCalendar = onOpenCycleCalendar,
+                        onOpenLearn = onOpenLearn,
                     )
                 },
                 calendar = { CycleCalendarScreen() },

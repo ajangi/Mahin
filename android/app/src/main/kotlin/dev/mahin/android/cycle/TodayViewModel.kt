@@ -23,6 +23,7 @@ data class TodayUiState(
     val reproductiveMode: ReproductiveMode = ReproductiveMode.CYCLE_TRACKING,
     val pregnancyStatus: PregnancyStatusSnapshot? = null,
     val postPregnancyTransition: Boolean = false,
+    val postTransitionLearnLinkVisible: Boolean = false,
 )
 
 @HiltViewModel
@@ -57,11 +58,18 @@ class TodayViewModel
                                 asOfDate = LocalDate.now(),
                             )
                         }
+                    val learnVisible =
+                        if (mode == ReproductiveMode.POST_PREGNANCY_TRANSITION) {
+                            pregnancyRepository.postTransitionLearnLinkVisible()
+                        } else {
+                            false
+                        }
                     _uiState.update {
                         it.copy(
                             reproductiveMode = mode,
                             pregnancyStatus = if (mode == ReproductiveMode.PREGNANT) status else null,
                             postPregnancyTransition = mode == ReproductiveMode.POST_PREGNANCY_TRANSITION,
+                            postTransitionLearnLinkVisible = learnVisible,
                         )
                     }
                 }

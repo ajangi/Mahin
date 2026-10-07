@@ -216,7 +216,5 @@ object M14aGoldenFixtures {
             onOutcomeSelected = {},
             onSupportContentToggle = {},
             onSaveOutcome = {},
-            onResumeCycle = {},
-            onResumeTtc = {},
         )
 }

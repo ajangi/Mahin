@@ -29,6 +29,9 @@ internal fun ShellModeRouteEffect(
                 ShellRoutePolicy.tabRoutesForMode(lastMode) - ShellRoutePolicy.tabRoutesForMode(reproductiveMode)
             lastMode = reproductiveMode
             if (removedTabs.isNotEmpty()) {
+                removedTabs.forEach { route ->
+                    navController.clearBackStack(route)
+                }
                 val stayRoute =
                     currentRoute?.takeIf { route ->
                         !ShellRoutePolicy.isOrphanTabRoute(route, reproductiveMode) &&

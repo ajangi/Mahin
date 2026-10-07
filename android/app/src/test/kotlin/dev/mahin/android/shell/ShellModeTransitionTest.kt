@@ -122,7 +122,7 @@ class ShellModeTransitionTest {
         )
 
     @Test
-    fun pregnantToCycle_withCalendarSecondaryOpen_navigatesToTodayWithBars() {
+    fun pregnantToCycle_withCalendarSecondaryOpen_staysOnCalendarWithBars() {
         val shellState =
             mutableStateOf(
                 ShellNavigationState(
@@ -140,6 +140,7 @@ class ShellModeTransitionTest {
                         navController = navController,
                         onLocalDataErased = {},
                         onOpenHistory = {},
+                        onOpenLearn = {},
                         onOpenCycleCalendar = {
                             navController.navigate(MahinTopLevelDestination.Calendar.route)
                         },
@@ -181,6 +182,7 @@ class ShellModeTransitionTest {
                         navController = navController,
                         onLocalDataErased = {},
                         onOpenHistory = {},
+                        onOpenLearn = {},
                         onOpenCycleCalendar = {},
                         screenOverrides = stubOverrides,
                     )

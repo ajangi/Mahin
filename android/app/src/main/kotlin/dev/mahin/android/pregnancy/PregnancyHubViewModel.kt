@@ -209,18 +209,6 @@ class PregnancyHubViewModel
             }
         }
 
-        fun resumeCycleTracking() {
-            viewModelScope.launch {
-                repository.resumeTracking(ReproductiveMode.CYCLE_TRACKING)
-            }
-        }
-
-        fun resumeTtc() {
-            viewModelScope.launch {
-                repository.resumeTracking(ReproductiveMode.TRYING_TO_CONCEIVE)
-            }
-        }
-
         private suspend fun refreshKickCount(sessionId: String?) {
             if (sessionId == null) {
                 _uiState.update { it.copy(kickCount = 0) }

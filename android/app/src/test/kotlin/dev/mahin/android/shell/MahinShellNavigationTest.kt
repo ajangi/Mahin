@@ -17,6 +17,7 @@ import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
@@ -80,7 +81,17 @@ class MahinShellNavigationTest {
                     }
                 }
             },
-            plan = { Box(Modifier.fillMaxSize().testTag("screen_plan")) },
+            plan = {
+                var note by rememberSaveable { mutableStateOf("") }
+                Column {
+                    Box(Modifier.fillMaxSize().testTag("screen_plan"))
+                    OutlinedTextField(
+                        value = note,
+                        onValueChange = { note = it },
+                        modifier = Modifier.testTag("plan_state_field"),
+                    )
+                }
+            },
             learn = { Box(Modifier.fillMaxSize().testTag("screen_learn")) },
             history = { Box(Modifier.fillMaxSize().testTag("screen_history")) },
             settings = { onNavigateUp, onOpenHistory, _ ->
@@ -120,6 +131,7 @@ class MahinShellNavigationTest {
                         onOpenHistory = {
                             navController.navigate(MahinTopLevelDestination.HISTORY_ROUTE)
                         },
+                        onOpenLearn = {},
                         onOpenCycleCalendar = {
                             navController.navigate(MahinTopLevelDestination.Calendar.route)
                         },
@@ -214,6 +226,7 @@ class MahinShellNavigationTest {
                         onOpenHistory = {
                             navController.navigate(MahinTopLevelDestination.HISTORY_ROUTE)
                         },
+                        onOpenLearn = {},
                         onOpenCycleCalendar = {
                             navController.navigate(MahinTopLevelDestination.Calendar.route)
                         },
@@ -271,6 +284,7 @@ class MahinShellNavigationTest {
                         onOpenHistory = {
                             navController.navigate(MahinTopLevelDestination.HISTORY_ROUTE)
                         },
+                        onOpenLearn = {},
                         onOpenCycleCalendar = {
                             navController.navigate(MahinTopLevelDestination.Calendar.route)
                         },
@@ -298,7 +312,7 @@ class MahinShellNavigationTest {
     fun mahinAppShell_cycleInsightsHistoryButton_opensHistoryRoute() {
         composeRule.setContent {
             MahinTheme {
-                MahinAppShell(
+                MahinAppShellWithNavigationOverride(
                     shellNavigationStateOverride =
                         ShellNavigationState(
                             profileLoaded = true,
@@ -320,7 +334,7 @@ class MahinShellNavigationTest {
     fun mahinAppShell_pregnancyHubCalendarButton_opensCalendarSecondary() {
         composeRule.setContent {
             MahinTheme {
-                MahinAppShell(
+                MahinAppShellWithNavigationOverride(
                     shellNavigationStateOverride =
                         ShellNavigationState(
                             profileLoaded = true,
@@ -359,6 +373,7 @@ class MahinShellNavigationTest {
                         navController = navController,
                         onLocalDataErased = {},
                         onOpenHistory = {},
+                        onOpenLearn = {},
                         onOpenCycleCalendar = {},
                         screenOverrides =
                             testOverrides(
@@ -410,6 +425,7 @@ class MahinShellNavigationTest {
                         navController = navController,
                         onLocalDataErased = {},
                         onOpenHistory = {},
+                        onOpenLearn = {},
                         onOpenCycleCalendar = {},
                         screenOverrides = testOverrides(),
                     )
@@ -432,6 +448,47 @@ class MahinShellNavigationTest {
         }
         composeRule.onNodeWithTag("shell_bottom_bar").assertIsDisplayed()
         composeRule.onNodeWithTag("shell_top_bar").assertIsDisplayed()
+    }
+
+    @Test
+    fun modeChange_pregnantToCycle_clearsRemovedPlanTabSaveable() {
+        val shellState =
+            mutableStateOf(
+                ShellNavigationState(
+                    profileLoaded = true,
+                    reproductiveMode = ReproductiveMode.PREGNANT,
+                ),
+            )
+        val navHolder = arrayOfNulls<NavHostController>(1)
+        composeRule.setContent {
+            MahinTheme {
+                val navController = rememberNavController()
+                navHolder[0] = navController
+                MahinShellLayout(shellState.value, navController) {
+                    MahinShellNavHost(
+                        navController = navController,
+                        onLocalDataErased = {},
+                        onOpenHistory = {},
+                        onOpenLearn = {},
+                        onOpenCycleCalendar = {},
+                        screenOverrides = testOverrides(),
+                    )
+                }
+            }
+        }
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("برنامه").performClick()
+        composeRule.onNodeWithTag("plan_state_field").performTextInput("saved")
+        composeRule.runOnIdle {
+            shellState.value = shellState.value.copy(reproductiveMode = ReproductiveMode.CYCLE_TRACKING)
+        }
+        composeRule.waitForIdle()
+        composeRule.runOnIdle {
+            shellState.value = shellState.value.copy(reproductiveMode = ReproductiveMode.PREGNANT)
+        }
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("برنامه").performClick()
+        composeRule.onNodeWithTag("plan_state_field").assertTextEquals("")
     }
 
     @Test
@@ -489,6 +546,7 @@ class MahinShellNavigationTest {
                         onOpenHistory = {
                             navController.navigate(MahinTopLevelDestination.HISTORY_ROUTE)
                         },
+                        onOpenLearn = {},
                         onOpenCycleCalendar = {
                             navController.navigate(MahinTopLevelDestination.Calendar.route)
                         },

@@ -16,11 +16,14 @@ import androidx.compose.ui.res.stringResource
 import dev.mahin.android.R
 import dev.mahin.android.cycle.ReproductiveModeCard
 import dev.mahin.core.designsystem.MahinSpacing
+import dev.mahin.core.designsystem.MahinTypographyRole
 import dev.mahin.core.designsystem.component.MahinPrimaryButton
 import dev.mahin.core.designsystem.component.MahinScreenHeader
 import dev.mahin.core.designsystem.component.MahinSettingsEntry
 import dev.mahin.core.designsystem.component.MahinSettingsGroup
 import dev.mahin.core.designsystem.component.MahinShellSecondaryTopAppBar
+import dev.mahin.core.designsystem.component.MahinSurfaceCard
+import dev.mahin.core.designsystem.mahinTextStyle
 
 @Composable
 internal fun SettingsScreenContent(
@@ -102,27 +105,32 @@ private fun androidx.compose.foundation.lazy.LazyListScope.settingsGroups(
     settingsCoreGroups(callbacks)
     if (state.premiumActive || state.showPremiumPaywallEntry) {
         item {
-            MahinSettingsGroup(
-                title = stringResource(R.string.settings_group_premium),
-                entries =
-                    listOf(
-                        MahinSettingsEntry(
-                            label =
-                                if (state.premiumActive) {
-                                    stringResource(R.string.settings_premium_active)
-                                } else {
-                                    stringResource(R.string.settings_premium_entry)
-                                },
-                            onClick =
-                                if (state.premiumActive) {
-                                    {}
-                                } else {
-                                    callbacks.onOpenPremium
-                                },
+            if (state.premiumActive) {
+                MahinSurfaceCard(modifier = Modifier.padding(top = MahinSpacing.md)) {
+                    Text(
+                        text = stringResource(R.string.settings_group_premium),
+                        style = mahinTextStyle(MahinTypographyRole.Label),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_premium_active),
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(top = MahinSpacing.xs),
+                    )
+                }
+            } else {
+                MahinSettingsGroup(
+                    title = stringResource(R.string.settings_group_premium),
+                    entries =
+                        listOf(
+                            MahinSettingsEntry(
+                                label = stringResource(R.string.settings_premium_entry),
+                                onClick = callbacks.onOpenPremium,
+                            ),
                         ),
-                    ),
-                modifier = Modifier.padding(top = MahinSpacing.md),
-            )
+                    modifier = Modifier.padding(top = MahinSpacing.md),
+                )
+            }
         }
     }
     settingsOptionalGroups(state, callbacks)

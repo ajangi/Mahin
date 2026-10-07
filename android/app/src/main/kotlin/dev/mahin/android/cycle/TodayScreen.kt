@@ -31,7 +31,7 @@ import dev.mahin.domain.cycle.PredictionConfidence
 @Composable
 fun TodayScreen(
     onOpenHistory: () -> Unit = {},
-    onOpenCycleCalendar: () -> Unit = {},
+    onOpenLearn: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: TodayViewModel = hiltViewModel(),
 ) {
@@ -39,7 +39,7 @@ fun TodayScreen(
     TodayScreenContent(
         state = state,
         onOpenHistory = onOpenHistory,
-        onOpenCycleCalendar = onOpenCycleCalendar,
+        onOpenLearn = onOpenLearn,
         postPregnancyActions =
             PostPregnancyTransitionActions(
                 onResumeCycle = viewModel::resumeCycleTracking,
@@ -54,7 +54,7 @@ internal fun TodayScreenContent(
     state: TodayUiState,
     modifier: Modifier = Modifier,
     onOpenHistory: () -> Unit = {},
-    onOpenCycleCalendar: () -> Unit = {},
+    onOpenLearn: () -> Unit = {},
     postPregnancyActions: PostPregnancyTransitionActions? = null,
 ) {
     LazyColumn(
@@ -74,8 +74,9 @@ internal fun TodayScreenContent(
             item {
                 PostPregnancyTransitionSection(
                     actions = postPregnancyActions,
+                    showLearnLink = state.postTransitionLearnLinkVisible,
                     onOpenHistory = onOpenHistory,
-                    onOpenCycleCalendar = onOpenCycleCalendar,
+                    onOpenLearn = onOpenLearn,
                     modifier = Modifier.padding(top = MahinSpacing.md),
                 )
             }

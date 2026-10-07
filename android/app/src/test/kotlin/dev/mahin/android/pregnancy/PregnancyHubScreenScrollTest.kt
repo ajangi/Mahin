@@ -85,8 +85,6 @@ class PregnancyHubScreenScrollTest {
                                 onOutcomeSelected = {},
                                 onSupportContentToggle = {},
                                 onSaveOutcome = {},
-                                onResumeCycle = {},
-                                onResumeTtc = {},
                             ),
                     )
                 }

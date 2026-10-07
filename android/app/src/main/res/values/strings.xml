@@ -72,7 +72,6 @@
 
     <string name="calendar_title">تقویم چرخه</string>
     <string name="calendar_legend_hint">برای معنی رنگ‌ها، راهنمای زیر را ببینید.</string>
-    <string name="today_settings_heading">تنظیمات و داده</string>
     <string name="calendar_demo_title">تقویم جلالی</string>
     <string name="calendar_demo_body">تاریخ را برای ورودی انتخاب کنید. ذخیرهٔ داخلی همیشه میلادی ISO است.</string>
     <string name="calendar_demo_selection">انتخاب‌شده: %1$s/%2$s/%3$s</string>
@@ -240,8 +239,6 @@
     <string name="pregnancy_hub_title">پیگیری بارداری</string>
     <string name="pregnancy_hub_empty_title">بارداری فعال نیست</string>
     <string name="pregnancy_hub_empty_body">برای شروع بارداری، در تنظیمات › هدف ردیابی، حالت «بارداری» را انتخاب کنید.</string>
-    <string name="pregnancy_post_transition_today_title">مرحلهٔ بعد</string>
-    <string name="pregnancy_post_transition_today_body">وقتی آماده بودید می‌توانید دوباره پیگیری را از سر بگیرید. انتخاب‌های زیر فقط برای شماست.</string>
     <string name="settings_premium_active">پریمیوم فعال است</string>
     <string name="pregnancy_kick_section_title">شمارش لگد</string>
     <string name="pregnancy_kick_start">شروع جلسه</string>

@@ -1,6 +1,7 @@
 package dev.mahin.android.pregnancy
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -60,8 +61,6 @@ data class PregnancyHubActions(
     val onOutcomeSelected: (PregnancyOutcome) -> Unit,
     val onSupportContentToggle: (Boolean) -> Unit,
     val onSaveOutcome: () -> Unit,
-    val onResumeCycle: () -> Unit,
-    val onResumeTtc: () -> Unit,
 )
 
 @Composable
@@ -80,11 +79,7 @@ fun PregnancyHubScreenContent(
             )
         }
         state.postTransition -> {
-            MahinEmptyState(
-                title = stringResource(R.string.pregnancy_post_transition_today_title),
-                body = stringResource(R.string.pregnancy_post_transition_today_body),
-                modifier = modifier.padding(MahinSpacing.md),
-            )
+            Box(modifier = modifier.fillMaxSize())
         }
         !state.isPregnantMode || state.status == null -> {
             androidx.compose.foundation.layout.Column(modifier = modifier.padding(MahinSpacing.md)) {
