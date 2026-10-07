@@ -134,7 +134,8 @@ tasks.withType<Test>().configureEach {
             excludeTestsMatching("dev.mahin.android.golden.M14aFullScreenGoldenTest")
             excludeTestsMatching("dev.mahin.android.golden.M14bIconSheetGoldenTest")
             excludeTestsMatching("dev.mahin.android.golden.M14cShellGoldenTest")
-            excludeTestsMatching("dev.mahin.android.shell.MahinAppShellNavigationTest")
+            excludeTestsMatching("dev.mahin.android.shell.MahinShellNavigationTest")
+            excludeTestsMatching("dev.mahin.android.shell.ShellModeTransitionTest")
             excludeTestsMatching("dev.mahin.android.settings.SettingsScreenContentTest")
             excludeTestsMatching("dev.mahin.android.pregnancy.PregnancyPlanScreenTest")
             excludeTestsMatching("dev.mahin.android.ttc.TtcInsightsScreenScrollTest")
@@ -191,6 +192,11 @@ tasks.register("verifyReleaseApkNoEmulatorApiHost") {
                     needles.forEach { needle ->
                         check(!text.contains(needle)) {
                             "Release artifact ${entry.name} contains forbidden release string: $needle"
+                        }
+                    }
+                    if (entry.name.endsWith(".dex")) {
+                        check(!text.contains("IconCatalogueActivity")) {
+                            "Release artifact ${entry.name} contains debug demo IconCatalogueActivity"
                         }
                     }
                 }

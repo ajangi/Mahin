@@ -11,6 +11,7 @@ data class SettingsScreenCallbacks(
     val onOpenHealthConnect: () -> Unit,
     val onOpenAssistant: () -> Unit,
     val onOpenDataExport: () -> Unit,
+    val onOpenPremium: () -> Unit,
     val onOpenHistory: () -> Unit,
     val onResumeCycle: () -> Unit,
     val onResumeTtc: () -> Unit,

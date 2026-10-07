@@ -34,6 +34,7 @@ internal fun SettingsScreenContent(
             MahinShellSecondaryTopAppBar(
                 title = stringResource(R.string.settings_title),
                 onNavigateUp = callbacks.onNavigateUp,
+                navigationIconTestTag = "settings_top_bar_up",
             )
         },
     ) { innerPadding ->
@@ -99,17 +100,25 @@ private fun androidx.compose.foundation.lazy.LazyListScope.settingsGroups(
     callbacks: SettingsScreenCallbacks,
 ) {
     settingsCoreGroups(callbacks)
-    settingsOptionalGroups(state, callbacks)
     item {
         MahinSettingsGroup(
-            title = stringResource(R.string.settings_group_about),
+            title = stringResource(R.string.settings_group_premium),
             entries =
                 listOf(
                     MahinSettingsEntry(
-                        label = stringResource(R.string.settings_about_app),
-                        onClick = {},
+                        label = stringResource(R.string.settings_premium_entry),
+                        onClick = callbacks.onOpenPremium,
                     ),
                 ),
+            modifier = Modifier.padding(top = MahinSpacing.md),
+        )
+    }
+    settingsOptionalGroups(state, callbacks)
+    item {
+        Text(
+            text = stringResource(R.string.settings_about_app),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = MahinSpacing.md, bottom = MahinSpacing.lg),
         )
     }
@@ -210,12 +219,18 @@ private fun PostPregnancyResumeSection(
         MahinPrimaryButton(
             text = stringResource(R.string.pregnancy_resume_cycle),
             onClick = onResumeCycle,
-            modifier = Modifier.padding(top = MahinSpacing.md),
+            modifier =
+                Modifier
+                    .testTag("settings_resume_cycle")
+                    .padding(top = MahinSpacing.md),
         )
         MahinPrimaryButton(
             text = stringResource(R.string.pregnancy_resume_ttc),
             onClick = onResumeTtc,
-            modifier = Modifier.padding(top = MahinSpacing.sm),
+            modifier =
+                Modifier
+                    .testTag("settings_resume_ttc")
+                    .padding(top = MahinSpacing.sm),
         )
     }
 }

@@ -5,9 +5,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import dev.mahin.android.cycle.CycleFormatters
-import java.time.Instant
-import java.time.ZoneId
 
 @Composable
 fun PregnancyHubScreen(
@@ -31,21 +28,6 @@ fun PregnancyHubScreen(
                 contractionSessionActive = state.contractionSessionId != null,
                 contractionInProgress = state.openContractionEventId != null,
                 contractionElapsedSeconds = state.contractionElapsedSeconds,
-                appointments =
-                    state.appointments.map { entity ->
-                        val date =
-                            Instant
-                                .ofEpochMilli(entity.scheduledAtEpochMs)
-                                .atZone(ZoneId.systemDefault())
-                                .toLocalDate()
-                        PregnancyAppointmentListItem(
-                            title = entity.title,
-                            whenLabel = CycleFormatters.formatLocalDate(date),
-                        )
-                    },
-                newAppointmentTitle = state.newAppointmentTitle,
-                newAppointmentType = state.newAppointmentType,
-                newAppointmentJalali = state.newAppointmentJalali,
                 selectedOutcome = state.selectedOutcome,
                 wantsSupportContent = state.wantsSupportContent,
                 suppressCelebratoryNotifications = state.suppressCelebratoryNotifications,
@@ -56,10 +38,6 @@ fun PregnancyHubScreen(
         onOpenCycleCalendar = onOpenCycleCalendar,
         actions =
             PregnancyHubActions(
-                onNewAppointmentTitleChange = viewModel::onNewAppointmentTitleChange,
-                onNewAppointmentTypeSelected = viewModel::onNewAppointmentTypeSelected,
-                onNewAppointmentDateSelected = viewModel::onNewAppointmentDateSelected,
-                onAddAppointment = viewModel::addAppointment,
                 onStartKickSession = viewModel::startKickSession,
                 onStopKickSession = viewModel::stopKickSession,
                 onRecordKick = viewModel::recordKick,

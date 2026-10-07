@@ -24,7 +24,6 @@ import dev.mahin.core.designsystem.component.MahinPrimaryButton
 import dev.mahin.core.designsystem.component.MahinSettingsEntry
 import dev.mahin.core.designsystem.component.MahinSettingsGroup
 import dev.mahin.core.designsystem.mahinTextStyle
-import dev.mahin.core.model.PregnancyAppointmentType
 import dev.mahin.core.model.PregnancyOutcome
 import dev.mahin.domain.pregnancy.PregnancyStatusSnapshot
 
@@ -39,10 +38,6 @@ data class PregnancyHubContentState(
     val contractionSessionActive: Boolean,
     val contractionInProgress: Boolean,
     val contractionElapsedSeconds: Long,
-    val appointments: List<PregnancyAppointmentListItem>,
-    val newAppointmentTitle: String,
-    val newAppointmentType: PregnancyAppointmentType,
-    val newAppointmentJalali: dev.mahin.core.datetime.JalaliDate,
     val selectedOutcome: PregnancyOutcome?,
     val wantsSupportContent: Boolean,
     val suppressCelebratoryNotifications: Boolean,
@@ -56,10 +51,6 @@ data class PregnancyAppointmentListItem(
 )
 
 data class PregnancyHubActions(
-    val onNewAppointmentTitleChange: (String) -> Unit,
-    val onNewAppointmentTypeSelected: (PregnancyAppointmentType) -> Unit,
-    val onNewAppointmentDateSelected: (dev.mahin.core.datetime.JalaliDate) -> Unit,
-    val onAddAppointment: () -> Unit,
     val onStartKickSession: () -> Unit,
     val onStopKickSession: () -> Unit,
     val onRecordKick: () -> Unit,
@@ -89,14 +80,26 @@ fun PregnancyHubScreenContent(
             )
         }
         state.postTransition -> {
-            PostTransitionContent(actions = actions, modifier = modifier)
+            androidx.compose.foundation.layout.Column(modifier = modifier.padding(MahinSpacing.md)) {
+                PregnancyHubSecondaryLinks(
+                    onOpenHistory = onOpenHistory,
+                    onOpenCycleCalendar = onOpenCycleCalendar,
+                )
+                PostTransitionContent(actions = actions, modifier = Modifier)
+            }
         }
         !state.isPregnantMode || state.status == null -> {
-            MahinEmptyState(
-                title = stringResource(R.string.pregnancy_hub_empty_title),
-                body = stringResource(R.string.pregnancy_hub_empty_body),
-                modifier = modifier.padding(MahinSpacing.md),
-            )
+            androidx.compose.foundation.layout.Column(modifier = modifier.padding(MahinSpacing.md)) {
+                MahinEmptyState(
+                    title = stringResource(R.string.pregnancy_hub_empty_title),
+                    body = stringResource(R.string.pregnancy_hub_empty_body),
+                )
+                PregnancyHubSecondaryLinks(
+                    onOpenHistory = onOpenHistory,
+                    onOpenCycleCalendar = onOpenCycleCalendar,
+                    modifier = Modifier.padding(top = MahinSpacing.md),
+                )
+            }
         }
         else -> {
             ActivePregnancyHub(
@@ -353,6 +356,7 @@ private fun ContractionTimerSection(
 private fun PregnancyHubSecondaryLinks(
     onOpenHistory: (() -> Unit)?,
     onOpenCycleCalendar: (() -> Unit)?,
+    modifier: Modifier = Modifier,
 ) {
     if (onOpenHistory == null && onOpenCycleCalendar == null) return
     val entries =
@@ -377,7 +381,7 @@ private fun PregnancyHubSecondaryLinks(
     MahinSettingsGroup(
         title = stringResource(R.string.pregnancy_hub_links_heading),
         entries = entries,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
     )
 }
 

@@ -203,6 +203,10 @@
     <string name="settings_group_assistant">دستیار</string>
     <string name="settings_group_about">درباره</string>
     <string name="settings_about_app">ماهین — همراه چرخه و بارداری</string>
+    <string name="settings_group_premium">ماهین پریمیوم</string>
+    <string name="settings_premium_entry">مشاهدهٔ پلن پریمیوم</string>
+    <string name="pregnancy_plan_empty_title">برنامهٔ ویزیت‌ها</string>
+    <string name="pregnancy_plan_empty_body">وقتی بارداری فعال ثبت شود، قرارها و آزمایش‌ها را اینجا می‌توانید مدیریت کنید.</string>
     <string name="settings_history_entry">تاریخچهٔ پریود</string>
 
     <string name="pregnancy_hub_links_heading">پیوندهای مرتبط</string>

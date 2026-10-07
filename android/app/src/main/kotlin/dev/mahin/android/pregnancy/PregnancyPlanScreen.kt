@@ -13,6 +13,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mahin.android.R
 import dev.mahin.android.cycle.CycleFormatters
 import dev.mahin.core.designsystem.MahinSpacing
+import dev.mahin.core.designsystem.component.MahinEmptyState
 import dev.mahin.core.designsystem.component.MahinScreenHeader
 import java.time.Instant
 import java.time.ZoneId
@@ -20,69 +21,50 @@ import java.time.ZoneId
 @Composable
 fun PregnancyPlanScreen(
     modifier: Modifier = Modifier,
-    viewModel: PregnancyHubViewModel = hiltViewModel(),
+    viewModel: PregnancyAppointmentsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val contentState =
-        PregnancyHubContentState(
-            isLoading = state.isLoading,
-            isPregnantMode = state.isPregnantMode,
-            postTransition = state.postTransition,
-            status = state.status,
-            kickSessionActive = state.kickSessionId != null,
-            kickCount = state.kickCount,
-            kickElapsedSeconds = state.kickElapsedSeconds,
-            contractionSessionActive = state.contractionSessionId != null,
-            contractionInProgress = state.openContractionEventId != null,
-            contractionElapsedSeconds = state.contractionElapsedSeconds,
-            appointments =
-                state.appointments.map { entity ->
-                    val date =
-                        Instant
-                            .ofEpochMilli(entity.scheduledAtEpochMs)
-                            .atZone(ZoneId.systemDefault())
-                            .toLocalDate()
-                    PregnancyAppointmentListItem(
-                        title = entity.title,
-                        whenLabel = CycleFormatters.formatLocalDate(date),
-                    )
-                },
+    val listItems =
+        state.appointments.map { entity ->
+            val date =
+                Instant
+                    .ofEpochMilli(entity.scheduledAtEpochMs)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate()
+            PregnancyAppointmentListItem(
+                title = entity.title,
+                whenLabel = CycleFormatters.formatLocalDate(date),
+            )
+        }
+    val formState =
+        PregnancyAppointmentsFormState(
+            appointments = listItems,
             newAppointmentTitle = state.newAppointmentTitle,
             newAppointmentType = state.newAppointmentType,
             newAppointmentJalali = state.newAppointmentJalali,
-            selectedOutcome = state.selectedOutcome,
-            wantsSupportContent = state.wantsSupportContent,
-            suppressCelebratoryNotifications = state.suppressCelebratoryNotifications,
         )
-    val actions =
-        PregnancyHubActions(
+    val formActions =
+        PregnancyAppointmentsActions(
             onNewAppointmentTitleChange = viewModel::onNewAppointmentTitleChange,
             onNewAppointmentTypeSelected = viewModel::onNewAppointmentTypeSelected,
             onNewAppointmentDateSelected = viewModel::onNewAppointmentDateSelected,
             onAddAppointment = viewModel::addAppointment,
-            onStartKickSession = viewModel::startKickSession,
-            onStopKickSession = viewModel::stopKickSession,
-            onRecordKick = viewModel::recordKick,
-            onStartContractionSession = viewModel::startContractionSession,
-            onEndContractionSession = viewModel::endContractionSession,
-            onToggleContraction = viewModel::toggleContraction,
-            onOutcomeSelected = viewModel::onOutcomeSelected,
-            onSupportContentToggle = viewModel::onSupportContentToggle,
-            onSaveOutcome = viewModel::saveOutcome,
-            onResumeCycle = viewModel::resumeCycleTracking,
-            onResumeTtc = viewModel::resumeTtc,
         )
     PregnancyPlanScreenContent(
-        state = contentState,
-        actions = actions,
+        hasActivePregnancy = state.hasActivePregnancy,
+        isLoading = state.isLoading,
+        formState = formState,
+        formActions = formActions,
         modifier = modifier,
     )
 }
 
 @Composable
 fun PregnancyPlanScreenContent(
-    state: PregnancyHubContentState,
-    actions: PregnancyHubActions,
+    hasActivePregnancy: Boolean,
+    isLoading: Boolean,
+    formState: PregnancyAppointmentsFormState,
+    formActions: PregnancyAppointmentsActions,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -98,12 +80,26 @@ fun PregnancyPlanScreenContent(
                 subtitle = stringResource(R.string.pregnancy_appointments_title),
             )
         }
-        item {
-            PregnancyAppointmentsSection(
-                state = state,
-                actions = actions,
-                modifier = Modifier.padding(top = MahinSpacing.md),
-            )
+        when {
+            isLoading -> Unit
+            !hasActivePregnancy -> {
+                item {
+                    MahinEmptyState(
+                        title = stringResource(R.string.pregnancy_plan_empty_title),
+                        body = stringResource(R.string.pregnancy_plan_empty_body),
+                        modifier = Modifier.padding(top = MahinSpacing.md),
+                    )
+                }
+            }
+            else -> {
+                item {
+                    PregnancyAppointmentsSection(
+                        state = formState,
+                        actions = formActions,
+                        modifier = Modifier.padding(top = MahinSpacing.md),
+                    )
+                }
+            }
         }
     }
 }

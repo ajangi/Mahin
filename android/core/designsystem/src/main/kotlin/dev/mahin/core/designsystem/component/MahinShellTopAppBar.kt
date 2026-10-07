@@ -8,6 +8,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import dev.mahin.core.designsystem.MahinTypographyRole
@@ -53,6 +54,7 @@ fun MahinShellSecondaryTopAppBar(
     title: String,
     onNavigateUp: () -> Unit,
     modifier: Modifier = Modifier,
+    navigationIconTestTag: String? = null,
 ) {
     TopAppBar(
         modifier = modifier,
@@ -63,7 +65,10 @@ fun MahinShellSecondaryTopAppBar(
             )
         },
         navigationIcon = {
-            IconButton(onClick = onNavigateUp) {
+            IconButton(
+                onClick = onNavigateUp,
+                modifier = navigationIconTestTag?.let { Modifier.testTag(it) } ?: Modifier,
+            ) {
                 MahinIcon(icon = MahinIcons.Action.back)
             }
         },

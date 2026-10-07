@@ -1,7 +1,10 @@
 package dev.mahin.android.shell
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -16,45 +19,10 @@ import dev.mahin.android.pregnancy.PregnancyHubScreen
 import dev.mahin.android.pregnancy.PregnancyPlanScreen
 import dev.mahin.android.settings.SettingsScreen
 import dev.mahin.android.ttc.TtcInsightsScreen
+import dev.mahin.core.designsystem.MahinMotionDuration
 import dev.mahin.core.designsystem.component.MahinBottomNavigationBar
-import dev.mahin.core.designsystem.component.MahinShellSecondaryTopAppBar
-import dev.mahin.core.designsystem.component.MahinShellTopAppBar
+import dev.mahin.core.designsystem.mahinMotionDurationMs
 import dev.mahin.core.model.ReproductiveMode
-
-@Composable
-internal fun MahinShellTopBar(
-    currentRoute: String?,
-    topLevelRoutes: Set<String>,
-    showBottomBar: Boolean,
-    onNavigateUp: () -> Unit,
-    onOpenSettings: () -> Unit,
-) {
-    when (currentRoute) {
-        MahinTopLevelDestination.HISTORY_ROUTE ->
-            MahinShellSecondaryTopAppBar(
-                title = stringResource(dev.mahin.android.R.string.history_title),
-                onNavigateUp = onNavigateUp,
-            )
-        MahinTopLevelDestination.SETTINGS_ROUTE -> Unit
-        in topLevelRoutes -> {
-            val titleRes = MahinTopLevelDestination.titleResForRoute(currentRoute)
-            if (titleRes != null) {
-                MahinShellTopAppBar(
-                    title = stringResource(titleRes),
-                    onOpenSettings = onOpenSettings,
-                )
-            }
-        }
-        MahinTopLevelDestination.Calendar.route -> {
-            if (!showBottomBar) {
-                MahinShellSecondaryTopAppBar(
-                    title = stringResource(dev.mahin.android.R.string.calendar_title),
-                    onNavigateUp = onNavigateUp,
-                )
-            }
-        }
-    }
-}
 
 @Composable
 internal fun MahinShellBottomBar(
@@ -62,8 +30,10 @@ internal fun MahinShellBottomBar(
     destinations: List<MahinTopLevelDestination>,
     selectedRoute: String?,
     onTabSelected: (MahinTopLevelDestination) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     MahinBottomNavigationBar(
+        modifier = modifier,
         tabs = destinations.map { it.toNavTab() },
         selectedRoute = selectedRoute,
         modeAccent = reproductiveModeShellAccent(reproductiveMode),
@@ -80,37 +50,88 @@ internal fun MahinShellNavHost(
     onLocalDataErased: () -> Unit,
     onOpenHistory: () -> Unit,
     onOpenCycleCalendar: () -> Unit,
+    screenOverrides: MahinShellScreenOverrides = MahinShellScreenOverrides.Default,
 ) {
+    val fadeMs = mahinMotionDurationMs(MahinMotionDuration.FAST_MS)
+    val fadeSpec = tween<Float>(durationMillis = fadeMs)
     NavHost(
         navController = navController,
         startDestination = MahinTopLevelDestination.Today.route,
+        enterTransition = { fadeIn(fadeSpec) },
+        exitTransition = { fadeOut(fadeSpec) },
+        popEnterTransition = { fadeIn(fadeSpec) },
+        popExitTransition = { fadeOut(fadeSpec) },
     ) {
         composable(MahinTopLevelDestination.Today.route) {
-            TodayScreen()
+            screenOverrides.today()
         }
-        composable(MahinTopLevelDestination.Calendar.route) { CycleCalendarScreen() }
-        composable(MahinTopLevelDestination.Log.route) { LogScreen() }
+        composable(MahinTopLevelDestination.Calendar.route) { screenOverrides.calendar() }
+        composable(MahinTopLevelDestination.Log.route) { screenOverrides.log() }
         composable(MahinTopLevelDestination.CycleInsights.route) {
-            CycleInsightsScreen(onOpenHistory = onOpenHistory)
+            screenOverrides.cycleInsights(onOpenHistory)
         }
         composable(MahinTopLevelDestination.TtcInsights.route) {
-            TtcInsightsScreen(onOpenHistory = onOpenHistory)
+            screenOverrides.ttcInsights(onOpenHistory)
         }
         composable(MahinTopLevelDestination.PregnancyHub.route) {
-            PregnancyHubScreen(
-                onOpenHistory = onOpenHistory,
-                onOpenCycleCalendar = onOpenCycleCalendar,
-            )
+            screenOverrides.pregnancyHub(onOpenHistory, onOpenCycleCalendar)
         }
-        composable(MahinTopLevelDestination.Plan.route) { PregnancyPlanScreen() }
-        composable(MahinTopLevelDestination.Learn.route) { LearnScreen() }
-        composable(MahinTopLevelDestination.HISTORY_ROUTE) { HistoryScreen() }
+        composable(MahinTopLevelDestination.Plan.route) { screenOverrides.plan() }
+        composable(MahinTopLevelDestination.Learn.route) { screenOverrides.learn() }
+        composable(MahinTopLevelDestination.HISTORY_ROUTE) { screenOverrides.history() }
         composable(MahinTopLevelDestination.SETTINGS_ROUTE) {
-            SettingsScreen(
-                onNavigateUp = { navController.navigateUp() },
-                onOpenHistory = onOpenHistory,
-                onLocalDataErased = onLocalDataErased,
+            screenOverrides.settings(
+                { navController.navigateUp() },
+                onOpenHistory,
+                onLocalDataErased,
             )
         }
+    }
+}
+
+/**
+ * Production screens by default; tests supply tagged placeholders while keeping [MahinShellNavHost] routes.
+ */
+data class MahinShellScreenOverrides(
+    val today: @Composable () -> Unit,
+    val calendar: @Composable () -> Unit,
+    val log: @Composable () -> Unit,
+    val cycleInsights: @Composable (onOpenHistory: () -> Unit) -> Unit,
+    val ttcInsights: @Composable (onOpenHistory: () -> Unit) -> Unit,
+    val pregnancyHub: @Composable (onOpenHistory: () -> Unit, onOpenCycleCalendar: () -> Unit) -> Unit,
+    val plan: @Composable () -> Unit,
+    val learn: @Composable () -> Unit,
+    val history: @Composable () -> Unit,
+    val settings: @Composable (
+        onNavigateUp: () -> Unit,
+        onOpenHistory: () -> Unit,
+        onLocalDataErased: () -> Unit,
+    ) -> Unit,
+) {
+    companion object {
+        val Default: MahinShellScreenOverrides =
+            MahinShellScreenOverrides(
+                today = { TodayScreen() },
+                calendar = { CycleCalendarScreen() },
+                log = { LogScreen() },
+                cycleInsights = { onOpenHistory -> CycleInsightsScreen(onOpenHistory = onOpenHistory) },
+                ttcInsights = { onOpenHistory -> TtcInsightsScreen(onOpenHistory = onOpenHistory) },
+                pregnancyHub = { onOpenHistory, onOpenCycleCalendar ->
+                    PregnancyHubScreen(
+                        onOpenHistory = onOpenHistory,
+                        onOpenCycleCalendar = onOpenCycleCalendar,
+                    )
+                },
+                plan = { PregnancyPlanScreen() },
+                learn = { LearnScreen() },
+                history = { HistoryScreen() },
+                settings = { onNavigateUp, onOpenHistory, onLocalDataErased ->
+                    SettingsScreen(
+                        onNavigateUp = onNavigateUp,
+                        onOpenHistory = onOpenHistory,
+                        onLocalDataErased = onLocalDataErased,
+                    )
+                },
+            )
     }
 }

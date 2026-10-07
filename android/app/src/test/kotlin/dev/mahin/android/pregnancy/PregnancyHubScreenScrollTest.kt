@@ -10,9 +10,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
-import dev.mahin.core.datetime.JalaliDate
 import dev.mahin.core.designsystem.MahinTheme
-import dev.mahin.core.model.PregnancyAppointmentType
 import dev.mahin.core.model.PregnancyDatingSource
 import dev.mahin.domain.pregnancy.GestationalAge
 import dev.mahin.domain.pregnancy.PregnancyDatingSnapshot
@@ -72,20 +70,12 @@ class PregnancyHubScreenScrollTest {
                                 contractionSessionActive = false,
                                 contractionInProgress = false,
                                 contractionElapsedSeconds = 0L,
-                                appointments = emptyList(),
-                                newAppointmentTitle = "",
-                                newAppointmentType = PregnancyAppointmentType.CLINICIAN_VISIT,
-                                newAppointmentJalali = JalaliDate(1403, 10, 1),
                                 selectedOutcome = null,
                                 wantsSupportContent = false,
                                 suppressCelebratoryNotifications = false,
                             ),
                         actions =
                             PregnancyHubActions(
-                                onNewAppointmentTitleChange = {},
-                                onNewAppointmentTypeSelected = {},
-                                onNewAppointmentDateSelected = {},
-                                onAddAppointment = {},
                                 onStartKickSession = {},
                                 onStopKickSession = {},
                                 onRecordKick = {},

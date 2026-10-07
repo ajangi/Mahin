@@ -104,6 +104,12 @@ class M14cShellGoldenTest {
     @Test
     fun settings_populated_dark_scale13() = captureSettings(true, 1.3f)
 
+    @Test
+    fun settings_assistantOn_light_scale10() = captureSettings(false, 1f, assistantOn = true)
+
+    @Test
+    fun settings_assistantOn_light_scale13() = captureSettings(false, 1.3f, assistantOn = true)
+
     private fun captureShell(
         mode: ReproductiveMode,
         darkTheme: Boolean,
@@ -138,13 +144,14 @@ class M14cShellGoldenTest {
     private fun captureSettings(
         darkTheme: Boolean,
         fontScale: Float,
+        assistantOn: Boolean = false,
     ) {
         composeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
             SettingsScreenContent(
                 state =
                     SettingsUiState(
                         healthConnectEntryVisible = true,
-                        healthAssistantEntryVisible = false,
+                        healthAssistantEntryVisible = assistantOn,
                     ),
                 callbacks =
                     SettingsScreenCallbacks(
@@ -155,6 +162,7 @@ class M14cShellGoldenTest {
                         onOpenHealthConnect = {},
                         onOpenAssistant = {},
                         onOpenDataExport = {},
+                        onOpenPremium = {},
                         onOpenHistory = {},
                         onResumeCycle = {},
                         onResumeTtc = {},

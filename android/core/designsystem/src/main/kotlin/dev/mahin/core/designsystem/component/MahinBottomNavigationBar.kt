@@ -21,9 +21,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -74,7 +74,7 @@ fun MahinBottomNavigationBar(
                             modeAccent = modeAccent,
                         ),
                     onClick = { onTabSelected(tab) },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).testTag("shell_tab_${tab.route}"),
                 )
             }
         }
@@ -118,10 +118,9 @@ private fun MahinBottomNavItem(
                 .clip(RoundedCornerShape(MahinRadius.lg))
                 .background(pillColor)
                 .clickable(interactionSource = interactionSource, indication = null, onClick = onClick)
-                .semantics {
+                .semantics(mergeDescendants = true) {
                     role = Role.Tab
                     this.selected = selected
-                    contentDescription = label
                 }.padding(vertical = MahinSpacing.xs, horizontal = MahinSpacing.xxs),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,

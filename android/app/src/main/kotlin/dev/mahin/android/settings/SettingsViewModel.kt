@@ -1,8 +1,12 @@
 package dev.mahin.android.settings
 
+import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.mahin.android.premium.PremiumBillingCoordinator
+import dev.mahin.core.billing.BillingAdapter
+import dev.mahin.core.billing.BillingAdapterState
 import dev.mahin.core.config.FeatureFlagGateway
 import dev.mahin.core.config.FeatureFlagRepository
 import dev.mahin.core.config.MahinFeatureFlags
@@ -25,6 +29,8 @@ data class SettingsUiState(
     val postPregnancyTransition: Boolean = false,
     val healthConnectEntryVisible: Boolean = false,
     val healthAssistantEntryVisible: Boolean = false,
+    val showPaywall: Boolean = false,
+    val billingState: BillingAdapterState = BillingAdapterState.Idle,
 )
 
 @HiltViewModel
@@ -34,21 +40,17 @@ class SettingsViewModel
         private val pregnancyRepository: PregnancyTrackingRepository,
         private val featureFlagGateway: FeatureFlagGateway,
         private val featureFlagRepository: FeatureFlagRepository,
+        private val billingAdapter: BillingAdapter,
+        private val premiumBillingCoordinator: PremiumBillingCoordinator,
     ) : ViewModel() {
+        private val paywallVisible = MutableStateFlow(false)
         private val _uiState = MutableStateFlow(SettingsUiState())
         val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
         init {
             viewModelScope.launch {
                 featureFlagRepository.refreshFromRemote()
-                _uiState.update {
-                    it.copy(
-                        healthConnectEntryVisible =
-                            featureFlagGateway.isEnabled(MahinFeatureFlags.HEALTH_CONNECT),
-                        healthAssistantEntryVisible =
-                            featureFlagGateway.isEnabled(MahinFeatureFlags.HEALTH_ASSISTANT),
-                    )
-                }
+                refreshFeatureFlags()
             }
             viewModelScope.launch {
                 combine(
@@ -66,6 +68,29 @@ class SettingsViewModel
                         )
                     }
                 }
+            }
+            viewModelScope.launch {
+                combine(paywallVisible, billingAdapter.state) { showPaywall, billingState ->
+                    showPaywall to billingState
+                }.collect { (showPaywall, billingState) ->
+                    _uiState.update {
+                        it.copy(showPaywall = showPaywall, billingState = billingState)
+                    }
+                }
+            }
+            viewModelScope.launch {
+                premiumBillingCoordinator.warmUp()
+            }
+        }
+
+        private fun refreshFeatureFlags() {
+            _uiState.update {
+                it.copy(
+                    healthConnectEntryVisible =
+                        featureFlagGateway.isEnabled(MahinFeatureFlags.HEALTH_CONNECT),
+                    healthAssistantEntryVisible =
+                        featureFlagGateway.isEnabled(MahinFeatureFlags.HEALTH_ASSISTANT),
+                )
             }
         }
 
@@ -120,6 +145,43 @@ class SettingsViewModel
         fun resumeTtc() {
             viewModelScope.launch {
                 pregnancyRepository.resumeTracking(ReproductiveMode.TRYING_TO_CONCEIVE)
+            }
+        }
+
+        fun openPaywall() {
+            paywallVisible.value = true
+        }
+
+        fun dismissPaywall() {
+            paywallVisible.value = false
+        }
+
+        fun priceLabel(productId: String): String? {
+            val state = billingAdapter.state.value
+            if (state is BillingAdapterState.Ready) {
+                return state.products.firstOrNull { it.productId == productId }?.formattedPrice
+            }
+            return null
+        }
+
+        fun purchaseMonthly(activity: Activity) {
+            viewModelScope.launch {
+                premiumBillingCoordinator.purchaseMonthly(activity)
+                dismissPaywall()
+            }
+        }
+
+        fun purchaseAnnual(activity: Activity) {
+            viewModelScope.launch {
+                premiumBillingCoordinator.purchaseAnnual(activity)
+                dismissPaywall()
+            }
+        }
+
+        fun restorePurchases() {
+            viewModelScope.launch {
+                premiumBillingCoordinator.restorePurchases()
+                dismissPaywall()
             }
         }
     }

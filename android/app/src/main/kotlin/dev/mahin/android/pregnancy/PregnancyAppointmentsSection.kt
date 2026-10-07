@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import dev.mahin.android.R
+import dev.mahin.core.datetime.JalaliDate
 import dev.mahin.core.datetime.PersianCivilDateConverter
 import dev.mahin.core.designsystem.MahinSpacing
 import dev.mahin.core.designsystem.MahinTypographyRole
@@ -19,10 +20,24 @@ import dev.mahin.core.designsystem.component.MahinPrimaryButton
 import dev.mahin.core.designsystem.mahinTextStyle
 import dev.mahin.core.model.PregnancyAppointmentType
 
+data class PregnancyAppointmentsFormState(
+    val appointments: List<PregnancyAppointmentListItem>,
+    val newAppointmentTitle: String,
+    val newAppointmentType: PregnancyAppointmentType,
+    val newAppointmentJalali: JalaliDate,
+)
+
+data class PregnancyAppointmentsActions(
+    val onNewAppointmentTitleChange: (String) -> Unit,
+    val onNewAppointmentTypeSelected: (PregnancyAppointmentType) -> Unit,
+    val onNewAppointmentDateSelected: (JalaliDate) -> Unit,
+    val onAddAppointment: () -> Unit,
+)
+
 @Composable
 fun PregnancyAppointmentsSection(
-    state: PregnancyHubContentState,
-    actions: PregnancyHubActions,
+    state: PregnancyAppointmentsFormState,
+    actions: PregnancyAppointmentsActions,
     modifier: Modifier = Modifier,
 ) {
     Card(modifier = modifier.fillMaxWidth()) {
