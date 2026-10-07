@@ -18,7 +18,7 @@ Secondary routes: `history`, `settings` (no bottom bar; up via shell secondary t
 
 ### Shell (`MahinAppShell`, `MahinShellLayout`, `MahinShellNavHost`)
 - Profile-gated shell: loading state until `MahinAppShellViewModel` profile loads (no default cycle tabs on cold start).
-- `ShellModeRouteEffect` evicts orphan tab routes to Today; on mode change, calls `navController.clearBackStack(route)` for each removed tab, then `popUpTo(findStartDestination())` with `saveState = false`, then optional `restoreState` for a valid stay route (e.g. `cycle_insights` when pausing). Covered by `modeChange_pregnantToCycle_clearsRemovedPlanTabSaveable`.
+- `ShellModeRouteEffect` evicts orphan tab routes to Today; on mode change, calls `navController.clearBackStack(route)` for each removed tab, then `popUpTo(findStartDestination())` with `saveState = false`, then optional `restoreState` for a valid stay route (e.g. `cycle_insights` when pausing). Covered by `modeChange_pregnantToCycle_clearsRemovedPlanTabSaveable` (Plan state saved via Today tab switch, cleared after pregnant→cycle→pregnant) and control `planTabSaveable_restoresTextAfterTodaySwitchWithoutModeChange`.
 - Secondary top bar fallback (`else`) for orphan/history/calendar/settings titles via `ShellRoutePolicy`.
 - Tab switches: `FAST_MS` cross-fade on `MahinShellNavHost` (`mahinMotionDurationMs`, respects reduced motion).
 - `MahinShellScreenOverrides` for tests; `@VisibleForTesting` `MahinAppShellWithNavigationOverride` for shell wiring tests without Hilt profile.
@@ -95,7 +95,7 @@ cd android && ./gradlew lintDebug ktlintCheck detekt testDebugUnitTest assembleD
   :benchmark:assemble --no-daemon
 ```
 
-CI: see PR checks (recorded on final green head).
+CI: see PR checks on the merged head SHA (android job has `timeout-minutes: 45`; unit tests use a 20-minute Gradle timeout).
 
 ## Acceptance criteria (`prompts/M14c.md` + gatekeeper)
 

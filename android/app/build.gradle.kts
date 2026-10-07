@@ -1,4 +1,4 @@
-import java.io.ByteArrayOutputStream
+import java.time.Duration
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 
@@ -126,6 +126,10 @@ dependencies {
 }
 
 tasks.withType<Test>().configureEach {
+    timeout.set(Duration.ofMinutes(20))
+    testLogging {
+        events("started", "failed")
+    }
     if (name == "testReleaseUnitTest") {
         filter {
             excludeTestsMatching("dev.mahin.android.demo.CalendarDemoScreenScrollTest")
@@ -155,20 +159,40 @@ private val releaseApkForbiddenSubstrings =
         "10.0.2.2",
     )
 
+fun org.gradle.api.Project.resolveAapt2Executable(): File {
+    val buildToolsRoot = File(android.sdkDirectory, "build-tools")
+    val preferred = File(buildToolsRoot, android.buildToolsVersion)
+    val candidates =
+        buildList {
+            if (preferred.isDirectory) add(preferred)
+            buildToolsRoot
+                .listFiles()
+                ?.filter { it.isDirectory }
+                ?.sortedByDescending { it.name }
+                ?.forEach { if (it != preferred) add(it) }
+        }
+    return candidates
+        .map { File(it, "aapt2") }
+        .firstOrNull { it.isFile }
+        ?: error("aapt2 not found under ${buildToolsRoot.absolutePath}")
+}
+
 fun org.gradle.api.Project.dumpApkManifestText(apk: File): String {
-    val aapt2 =
-        File(
-            android.sdkDirectory,
-            "build-tools/${android.buildToolsVersion}/aapt2",
-        )
-    check(aapt2.isFile) { "aapt2 not found at ${aapt2.absolutePath}" }
-    val stdout = ByteArrayOutputStream()
-    exec {
-        executable = aapt2.absolutePath
-        args("dump", "xmltree", apk.absolutePath, "--file", "AndroidManifest.xml")
-        standardOutput = stdout
-    }
-    return stdout.toString(Charsets.UTF_8)
+    val aapt2 = resolveAapt2Executable()
+    val process =
+        ProcessBuilder(
+            aapt2.absolutePath,
+            "dump",
+            "xmltree",
+            apk.absolutePath,
+            "--file",
+            "AndroidManifest.xml",
+        ).redirectErrorStream(true)
+            .start()
+    val output = process.inputStream.bufferedReader(Charsets.UTF_8).readText()
+    val exit = process.waitFor()
+    check(exit == 0) { "aapt2 dump failed with exit $exit for ${apk.path}" }
+    return output
 }
 
 tasks.register("verifyReleaseApkNoEmulatorApiHost") {

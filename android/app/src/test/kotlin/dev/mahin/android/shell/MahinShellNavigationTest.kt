@@ -459,11 +459,9 @@ class MahinShellNavigationTest {
                     reproductiveMode = ReproductiveMode.PREGNANT,
                 ),
             )
-        val navHolder = arrayOfNulls<NavHostController>(1)
         composeRule.setContent {
             MahinTheme {
                 val navController = rememberNavController()
-                navHolder[0] = navController
                 MahinShellLayout(shellState.value, navController) {
                     MahinShellNavHost(
                         navController = navController,
@@ -479,6 +477,8 @@ class MahinShellNavigationTest {
         composeRule.waitForIdle()
         composeRule.onNodeWithText("برنامه").performClick()
         composeRule.onNodeWithTag("plan_state_field").performTextInput("saved")
+        composeRule.onNodeWithText("امروز").performClick()
+        composeRule.waitForIdle()
         composeRule.runOnIdle {
             shellState.value = shellState.value.copy(reproductiveMode = ReproductiveMode.CYCLE_TRACKING)
         }
@@ -489,6 +489,38 @@ class MahinShellNavigationTest {
         composeRule.waitForIdle()
         composeRule.onNodeWithText("برنامه").performClick()
         composeRule.onNodeWithTag("plan_state_field").assertTextEquals("")
+    }
+
+    @Test
+    fun planTabSaveable_restoresTextAfterTodaySwitchWithoutModeChange() {
+        composeRule.setContent {
+            MahinTheme {
+                val navController = rememberNavController()
+                MahinShellLayout(
+                    ShellNavigationState(
+                        profileLoaded = true,
+                        reproductiveMode = ReproductiveMode.PREGNANT,
+                    ),
+                    navController,
+                ) {
+                    MahinShellNavHost(
+                        navController = navController,
+                        onLocalDataErased = {},
+                        onOpenHistory = {},
+                        onOpenLearn = {},
+                        onOpenCycleCalendar = {},
+                        screenOverrides = testOverrides(),
+                    )
+                }
+            }
+        }
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("برنامه").performClick()
+        composeRule.onNodeWithTag("plan_state_field").performTextInput("saved")
+        composeRule.onNodeWithText("امروز").performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("برنامه").performClick()
+        composeRule.onNodeWithTag("plan_state_field").assertTextContains("saved")
     }
 
     @Test

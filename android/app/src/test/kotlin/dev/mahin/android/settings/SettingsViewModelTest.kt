@@ -61,6 +61,9 @@ class SettingsViewModelTest {
 
     @After
     fun tearDown() {
+        runBlocking {
+            SubscriptionPreferencesRepository(context).clear()
+        }
         database.close()
     }
 
@@ -151,6 +154,41 @@ class SettingsViewModelTest {
             awaitUntil { viewModel.uiState.value.reproductiveMode == ReproductiveMode.TRYING_TO_CONCEIVE }
             viewModel.onReproductiveModeSelected(ReproductiveMode.CYCLE_TRACKING)
             awaitUntil { viewModel.uiState.value.reproductiveMode == ReproductiveMode.CYCLE_TRACKING }
+        }
+    }
+
+    @Test
+    fun paywall_twoOpensWhileVisible_startConnectionOnce() {
+        val billingAdapter = CountingBillingAdapter()
+        val viewModel = createViewModel(billingAdapter = billingAdapter)
+        viewModel.openPaywall()
+        viewModel.openPaywall()
+        idle()
+        assertThat(billingAdapter.startConnectionCount).isEqualTo(1)
+    }
+
+    @Test
+    fun paywall_dismissDuringWarmUp_canReopen() {
+        runBlocking {
+            val billingAdapter = SlowBillingAdapter()
+            val viewModel = createViewModel(billingAdapter = billingAdapter)
+            viewModel.openPaywall()
+            viewModel.dismissPaywall()
+            viewModel.openPaywall()
+            awaitUntil { viewModel.uiState.value.showPaywall }
+        }
+    }
+
+    @Test
+    fun paywall_throwingWarmUp_stillAllowsReopen() {
+        runBlocking {
+            val billingAdapter = ThrowingBillingAdapter()
+            val viewModel = createViewModel(billingAdapter = billingAdapter)
+            viewModel.openPaywall()
+            awaitUntil { billingAdapter.startConnectionCount == 1 }
+            viewModel.dismissPaywall()
+            viewModel.openPaywall()
+            awaitUntil { viewModel.uiState.value.showPaywall }
         }
     }
 
@@ -270,7 +308,7 @@ class SettingsViewModelTest {
                 .GooglePlayBillingResponse("FREE", null)
     }
 
-    private class CountingBillingAdapter : BillingAdapter {
+    private open class CountingBillingAdapter : BillingAdapter {
         override val state = MutableStateFlow<BillingAdapterState>(BillingAdapterState.Idle)
         var startConnectionCount = 0
 
@@ -286,5 +324,19 @@ class SettingsViewModelTest {
             activityHost: Any,
             productId: String,
         ): BillingPurchaseReceipt? = null
+    }
+
+    private class SlowBillingAdapter : CountingBillingAdapter() {
+        override suspend fun startConnection() {
+            delay(500)
+            super.startConnection()
+        }
+    }
+
+    private class ThrowingBillingAdapter : CountingBillingAdapter() {
+        override suspend fun startConnection() {
+            startConnectionCount++
+            error("billing warm-up failed")
+        }
     }
 }

@@ -16,6 +16,7 @@ import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.domain.subscription.EntitlementTier
 import java.time.LocalDate
 import javax.inject.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -49,7 +50,7 @@ class SettingsViewModel
         private val entitlementRepository: EntitlementRepository,
     ) : ViewModel() {
         private val paywallVisible = MutableStateFlow(false)
-        private var paywallWarmUpInFlight = false
+        private var paywallWarmUpJob: Job? = null
         private val _uiState = MutableStateFlow(SettingsUiState())
         val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
@@ -163,13 +164,17 @@ class SettingsViewModel
         }
 
         fun openPaywall() {
-            if (paywallWarmUpInFlight) return
+            if (paywallVisible.value) return
             paywallVisible.value = true
-            viewModelScope.launch {
-                paywallWarmUpInFlight = true
-                premiumBillingCoordinator.warmUp()
-                paywallWarmUpInFlight = false
-            }
+            if (paywallWarmUpJob?.isActive == true) return
+            paywallWarmUpJob =
+                viewModelScope.launch {
+                    try {
+                        runCatching { premiumBillingCoordinator.warmUp() }
+                    } finally {
+                        paywallWarmUpJob = null
+                    }
+                }
         }
 
         fun dismissPaywall() {

@@ -24,6 +24,7 @@ import dev.mahin.core.designsystem.MahinTheme
 fun ComposeContentTestRule.captureMahinFullScreenGolden(
     darkTheme: Boolean,
     fontScale: Float,
+    beforeCapture: (ComposeContentTestRule.() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     setContent {
@@ -43,6 +44,8 @@ fun ComposeContentTestRule.captureMahinFullScreenGolden(
             }
         }
     }
+    waitForIdle()
+    beforeCapture?.invoke(this)
     waitForIdle()
     onRoot().captureRoboImage(roborazziOptions = MahinRoborazzi.options)
 }
