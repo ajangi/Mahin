@@ -9,10 +9,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 @Composable
 fun TtcInsightsScreen(
     modifier: Modifier = Modifier,
+    onOpenHistory: (() -> Unit)? = null,
     viewModel: TtcInsightsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     TtcInsightsScreenContent(
+        onOpenHistory = onOpenHistory,
         state =
             TtcInsightsContentState(
                 isLoading = state.isLoading,

@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -29,7 +30,10 @@ import dev.mahin.domain.fertility.FertilityInsightResult
 
 /** Stateless TTC insights for tests and [TtcInsightsScreen]. */
 @Composable
-internal fun TtcInsightsScreenContent(state: TtcInsightsContentState) {
+internal fun TtcInsightsScreenContent(
+    state: TtcInsightsContentState,
+    onOpenHistory: (() -> Unit)? = null,
+) {
     when {
         state.isLoading -> MahinLoadingState(modifier = state.modifier.fillMaxSize())
         !state.isTtcMode || state.insight == null ->
@@ -38,12 +42,15 @@ internal fun TtcInsightsScreenContent(state: TtcInsightsContentState) {
                 body = stringResource(R.string.ttc_insights_empty_body),
                 modifier = state.modifier.padding(MahinSpacing.md),
             )
-        else -> TtcInsightsLoadedContent(state)
+        else -> TtcInsightsLoadedContent(state = state, onOpenHistory = onOpenHistory)
     }
 }
 
 @Composable
-private fun TtcInsightsLoadedContent(state: TtcInsightsContentState) {
+private fun TtcInsightsLoadedContent(
+    state: TtcInsightsContentState,
+    onOpenHistory: (() -> Unit)?,
+) {
     val insight = state.insight ?: return
     val resources = LocalContext.current.resources
     val chartSummary = BbtChartA11y.summary(resources, state.bbtPoints)
@@ -102,8 +109,18 @@ private fun TtcInsightsLoadedContent(state: TtcInsightsContentState) {
                 text = disclaimer,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = MahinSpacing.md, bottom = MahinSpacing.lg),
+                modifier = Modifier.padding(top = MahinSpacing.md),
             )
+        }
+        if (onOpenHistory != null) {
+            item(key = "history") {
+                OutlinedButton(
+                    onClick = onOpenHistory,
+                    modifier = Modifier.padding(bottom = MahinSpacing.lg),
+                ) {
+                    Text(stringResource(R.string.cycle_insights_open_history))
+                }
+            }
         }
     }
 }

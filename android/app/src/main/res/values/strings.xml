@@ -191,7 +191,23 @@
     <string name="today_numeric_sample">نمونهٔ عدد: %1$s</string>
 
     <string name="nav_pregnancy_hub">بارداری</string>
+    <string name="nav_plan">برنامه</string>
     <string name="nav_learn">آموزش</string>
+
+    <string name="settings_title">تنظیمات</string>
+    <string name="settings_subtitle">حریم خصوصی، یادآوری‌ها و دادهٔ شما</string>
+    <string name="settings_group_privacy">حریم خصوصی و امنیت</string>
+    <string name="settings_group_notifications">اعلان‌ها</string>
+    <string name="settings_group_your_data">دادهٔ شما</string>
+    <string name="settings_group_integrations">اتصال‌ها</string>
+    <string name="settings_group_assistant">دستیار</string>
+    <string name="settings_group_about">درباره</string>
+    <string name="settings_about_app">ماهین — همراه چرخه و بارداری</string>
+    <string name="settings_history_entry">تاریخچهٔ پریود</string>
+
+    <string name="pregnancy_hub_links_heading">پیوندهای مرتبط</string>
+    <string name="pregnancy_open_cycle_calendar">تقویم چرخه</string>
+    <string name="pregnancy_open_past_cycles">چرخه‌های گذشته</string>
     <string name="learn_title">آموزش</string>
     <string name="learn_disclaimer">محتوای آموزشی از CMS تأییدشده می‌آید؛ این صفحه متن پزشکی تولید نمی‌کند.</string>
     <string name="learn_search_label">جستجو</string>

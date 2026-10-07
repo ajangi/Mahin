@@ -138,8 +138,6 @@ class M14aFullScreenGoldenTest {
         composeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
             TodayScreenContent(
                 state = M14aGoldenFixtures.todayPopulated(),
-                settingsEntries = emptyList(),
-                onModeSelected = {},
                 modifier = Modifier.fillMaxSize(),
             )
         }

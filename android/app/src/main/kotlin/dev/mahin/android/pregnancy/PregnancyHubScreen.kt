@@ -12,6 +12,8 @@ import java.time.ZoneId
 @Composable
 fun PregnancyHubScreen(
     modifier: Modifier = Modifier,
+    onOpenHistory: (() -> Unit)? = null,
+    onOpenCycleCalendar: (() -> Unit)? = null,
     viewModel: PregnancyHubViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -50,6 +52,8 @@ fun PregnancyHubScreen(
                 weeklyCmsTitle = state.weeklyCmsTitle,
                 weeklyCmsSummary = state.weeklyCmsSummary,
             ),
+        onOpenHistory = onOpenHistory,
+        onOpenCycleCalendar = onOpenCycleCalendar,
         actions =
             PregnancyHubActions(
                 onNewAppointmentTitleChange = viewModel::onNewAppointmentTitleChange,

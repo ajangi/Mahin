@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,12 +17,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import dev.mahin.android.R
 import dev.mahin.android.cycle.CycleFormatters
-import dev.mahin.core.datetime.PersianCivilDateConverter
 import dev.mahin.core.designsystem.MahinSpacing
 import dev.mahin.core.designsystem.MahinTypographyRole
 import dev.mahin.core.designsystem.component.MahinEmptyState
-import dev.mahin.core.designsystem.component.MahinJalaliDatePicker
 import dev.mahin.core.designsystem.component.MahinPrimaryButton
+import dev.mahin.core.designsystem.component.MahinSettingsEntry
+import dev.mahin.core.designsystem.component.MahinSettingsGroup
 import dev.mahin.core.designsystem.mahinTextStyle
 import dev.mahin.core.model.PregnancyAppointmentType
 import dev.mahin.core.model.PregnancyOutcome
@@ -79,6 +78,8 @@ fun PregnancyHubScreenContent(
     state: PregnancyHubContentState,
     actions: PregnancyHubActions,
     modifier: Modifier = Modifier,
+    onOpenHistory: (() -> Unit)? = null,
+    onOpenCycleCalendar: (() -> Unit)? = null,
 ) {
     when {
         state.isLoading -> {
@@ -102,6 +103,8 @@ fun PregnancyHubScreenContent(
                 state = state,
                 actions = actions,
                 modifier = modifier,
+                onOpenHistory = onOpenHistory,
+                onOpenCycleCalendar = onOpenCycleCalendar,
             )
         }
     }
@@ -112,6 +115,8 @@ private fun ActivePregnancyHub(
     state: PregnancyHubContentState,
     actions: PregnancyHubActions,
     modifier: Modifier = Modifier,
+    onOpenHistory: (() -> Unit)? = null,
+    onOpenCycleCalendar: (() -> Unit)? = null,
 ) {
     val status = state.status ?: return
     val disclaimer = stringResource(R.string.pregnancy_hub_safety_disclaimer)
@@ -148,7 +153,10 @@ private fun ActivePregnancyHub(
             ContractionTimerSection(state = state, actions = actions)
         }
         item {
-            AppointmentsSection(state = state, actions = actions)
+            PregnancyHubSecondaryLinks(
+                onOpenHistory = onOpenHistory,
+                onOpenCycleCalendar = onOpenCycleCalendar,
+            )
         }
         item {
             OutcomeSection(state = state, actions = actions)
@@ -342,56 +350,35 @@ private fun ContractionTimerSection(
 }
 
 @Composable
-private fun AppointmentsSection(
-    state: PregnancyHubContentState,
-    actions: PregnancyHubActions,
+private fun PregnancyHubSecondaryLinks(
+    onOpenHistory: (() -> Unit)?,
+    onOpenCycleCalendar: (() -> Unit)?,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(MahinSpacing.md)) {
-            Text(
-                text = stringResource(R.string.pregnancy_appointments_title),
-                style = mahinTextStyle(MahinTypographyRole.Label),
-            )
-            state.appointments.forEach { item ->
-                Text(
-                    text = "${item.title} — ${item.whenLabel}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(vertical = MahinSpacing.xxs),
+    if (onOpenHistory == null && onOpenCycleCalendar == null) return
+    val entries =
+        buildList {
+            onOpenCycleCalendar?.let {
+                add(
+                    MahinSettingsEntry(
+                        label = stringResource(R.string.pregnancy_open_cycle_calendar),
+                        onClick = it,
+                    ),
                 )
             }
-            OutlinedTextField(
-                value = state.newAppointmentTitle,
-                onValueChange = actions.onNewAppointmentTitleChange,
-                label = { Text(stringResource(R.string.pregnancy_appointment_title_label)) },
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(top = MahinSpacing.sm),
-            )
-            PregnancyAppointmentType.entries.forEach { type ->
-                FilterChip(
-                    selected = state.newAppointmentType == type,
-                    onClick = { actions.onNewAppointmentTypeSelected(type) },
-                    label = { Text(appointmentTypeLabel(type)) },
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = MahinSpacing.xxs),
+            onOpenHistory?.let {
+                add(
+                    MahinSettingsEntry(
+                        label = stringResource(R.string.pregnancy_open_past_cycles),
+                        onClick = it,
+                    ),
                 )
             }
-            MahinJalaliDatePicker(
-                selectedDate = state.newAppointmentJalali,
-                onDateSelected = actions.onNewAppointmentDateSelected,
-                converter = PersianCivilDateConverter,
-                initialVisibleMonth = state.newAppointmentJalali,
-            )
-            MahinPrimaryButton(
-                text = stringResource(R.string.pregnancy_appointment_save),
-                onClick = actions.onAddAppointment,
-                modifier = Modifier.padding(top = MahinSpacing.sm),
-            )
         }
-    }
+    MahinSettingsGroup(
+        title = stringResource(R.string.pregnancy_hub_links_heading),
+        entries = entries,
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 @Composable
@@ -501,14 +488,3 @@ private fun PostTransitionContent(
         )
     }
 }
-
-@Composable
-private fun appointmentTypeLabel(type: PregnancyAppointmentType): String =
-    when (type) {
-        PregnancyAppointmentType.CLINICIAN_VISIT -> stringResource(R.string.pregnancy_appointment_type_clinician)
-        PregnancyAppointmentType.ULTRASOUND -> stringResource(R.string.pregnancy_appointment_type_ultrasound)
-        PregnancyAppointmentType.LABORATORY -> stringResource(R.string.pregnancy_appointment_type_lab)
-        PregnancyAppointmentType.SCREENING -> stringResource(R.string.pregnancy_appointment_type_screening)
-        PregnancyAppointmentType.VACCINATION -> stringResource(R.string.pregnancy_appointment_type_vaccination)
-        PregnancyAppointmentType.CUSTOM -> stringResource(R.string.pregnancy_appointment_type_custom)
-    }
