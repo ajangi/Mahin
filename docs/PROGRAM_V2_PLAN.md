@@ -84,7 +84,7 @@ Ungated milestones (M14a–M18) can be executed by a cloud agent without further
 | # | Milestone | Gate | Prompt |
 |---|---|---|---|
 | M14a | Design foundations: screen specs, dark semantic colours (ADR 0020), motion, Numeric Display, golden harness + CI verify, benchmark skeleton. **No visible navigation change** | **accepted** — merge `4591b53` **2026-10-06** ([PR #31](https://github.com/ajangi/Mahin/pull/31)); owner approved specs/colours at review | `prompts/M14a.md` |
-| M14b | Icon set (8 families) + `MahinIllustration` with bundled placeholders and medical-image gating | owner review at PR; borderline icons listed for clinical review before release | `prompts/M14b.md` |
+| M14b | Icon set (8 families) + `MahinIllustration` with bundled placeholders and medical-image gating | **accepted** — merge `4a31e20` **2026-10-07** ([PR #33](https://github.com/ajangi/Mahin/pull/33)); borderline icons still need clinical review before release | `prompts/M14b.md` |
 | M14c | App shell: Mahin bottom bar (5 tabs per mode per PRD §5), top app bar, Settings screen | owner review at PR | `prompts/M14c.md` |
 | M15 | Today home & calendar redesign | none | `prompts/M15.md` |
 | M16 | Logging experience overhaul (local-only custom tags) | none | `prompts/M16.md` |

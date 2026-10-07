@@ -22,8 +22,8 @@ Cloud Agents update one milestone at a time. Do not pre-mark future milestones c
 Merging the V2 plan approves the M14a–M18 scope. Execute in order: M14a → M14b → M14c → M15 → M16 → M17 (as M17a, M17b) → M18 (as M18a, M18b).
 
 - M14a — Design foundations (screen specs, dark semantic colours, motion, Numeric Display, golden harness + CI verify, benchmark skeleton) — **accepted** ([PR #31](https://github.com/ajangi/Mahin/pull/31), squash-merge `4591b53880409d95aed32d40638ca385e75dc08a`, **2026-10-06**; owner Alireza approved dark colours at PR review)
-- M14b — Icon set & illustration slot — **approved, next** (not started)
-- M14c — App shell (5 tabs per mode, PRD §5) & Settings — **approved, not started**
+- M14b — Icon set & illustration slot — **accepted** ([PR #33](https://github.com/ajangi/Mahin/pull/33), squash-merge `4a31e20804eace306c5d98b2c0406b934e634baa`, **2026-10-07**; owner approved at merge)
+- M14c — App shell (5 tabs per mode, PRD §5) & Settings — **approved, next** (not started)
 - M15 — Today home & calendar redesign — **approved, not started**
 - M16 — Logging experience overhaul — **approved, not started**
 - M17 — Daily wellness, Learn magazine & guided programs (split into M17a/M17b before execution) — **approved, not started**

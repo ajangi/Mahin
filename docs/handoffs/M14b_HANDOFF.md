@@ -1,7 +1,9 @@
 # M14b Handoff — Icon set & illustration slot
 
 **Milestone:** M14b  
-**Status:** in review — gatekeeper round 2 on PR [#33](https://github.com/ajangi/Mahin/pull/33)  
+**Status:** **accepted** (squash-merge `4a31e20804eace306c5d98b2c0406b934e634baa` on `master` via [PR #33](https://github.com/ajangi/Mahin/pull/33), **2026-10-07**)  
+**Pre-merge PR tip:** `b9ed73f` — final green CI [run 37496000268](https://github.com/ajangi/Mahin/actions/runs/37496000268) (all 5 jobs)  
+**Owner:** approved at PR #33 merge (**2026-10-07**)  
 **Next milestone:** **M14c** only
 
 ## Implemented scope
@@ -33,7 +35,7 @@ None.
 
 | ADR | Summary |
 |-----|---------|
-| [0021](docs/adr/0021-m14b-icons-and-illustration-slot.md) | Icon registry + illustration slot — **Proposed (pending owner approval)** |
+| [0021](docs/adr/0021-m14b-icons-and-illustration-slot.md) | Icon registry + illustration slot — **Accepted** (owner **2026-10-07** at PR #33 merge) |
 
 ## Commands / results
 
@@ -62,7 +64,7 @@ cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug assemble
   --stacktrace --no-daemon
 ```
 
-CI: green on PR head — [run 37492766307](https://github.com/ajangi/Mahin/actions/runs/37492766307) (all 5 jobs; regen script sync commit on same branch).
+CI: green on PR #33 tip `b9ed73f` — [run 37496000268](https://github.com/ajangi/Mahin/actions/runs/37496000268) (all 5 jobs).
 
 ## Acceptance criteria (`prompts/M14b.md`)
 
@@ -73,7 +75,7 @@ CI: green on PR head — [run 37492766307](https://github.com/ajangi/Mahin/actio
 | fa descriptions + decorative `MahinIcon` | ✅ |
 | Medical gating via `MahinIllustration` + test fixtures | ✅ |
 | RTL mirroring tests + goldens | ✅ |
-| Design tokens + CI | ✅ [run 37492766307](https://github.com/ajangi/Mahin/actions/runs/37492766307) |
+| Design tokens + CI | ✅ [run 37496000268](https://github.com/ajangi/Mahin/actions/runs/37496000268) |
 
 ## Known limitations
 
@@ -83,7 +85,7 @@ CI: green on PR head — [run 37492766307](https://github.com/ajangi/Mahin/actio
 
 ## Unresolved questions
 
-- Owner approval of ADR 0021 and final icon artwork sign-off.
+- None for M14b (ADR 0021 accepted at PR #33 merge). Borderline icons still require **clinical review before release** (see below).
 
 ## Deferred items
 
