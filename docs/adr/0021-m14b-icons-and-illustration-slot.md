@@ -1,6 +1,6 @@
 # ADR 0021: M14b icon registry and illustration slot
 
-**Status:** Proposed — pending owner approval  
+**Status:** Accepted (owner approved at PR #33 merge, **2026-10-06**)  
 **Date:** 2026-10-06  
 **Milestone:** M14b
 
