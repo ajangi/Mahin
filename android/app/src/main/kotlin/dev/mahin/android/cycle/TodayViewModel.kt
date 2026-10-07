@@ -22,6 +22,7 @@ data class TodayUiState(
     val dashboard: CycleDashboard? = null,
     val reproductiveMode: ReproductiveMode = ReproductiveMode.CYCLE_TRACKING,
     val pregnancyStatus: PregnancyStatusSnapshot? = null,
+    val postPregnancyTransition: Boolean = false,
 )
 
 @HiltViewModel
@@ -29,7 +30,7 @@ class TodayViewModel
     @Inject
     constructor(
         repository: CycleTrackingRepository,
-        pregnancyRepository: PregnancyTrackingRepository,
+        private val pregnancyRepository: PregnancyTrackingRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(TodayUiState())
         val uiState: StateFlow<TodayUiState> = _uiState.asStateFlow()
@@ -60,9 +61,22 @@ class TodayViewModel
                         it.copy(
                             reproductiveMode = mode,
                             pregnancyStatus = if (mode == ReproductiveMode.PREGNANT) status else null,
+                            postPregnancyTransition = mode == ReproductiveMode.POST_PREGNANCY_TRANSITION,
                         )
                     }
                 }
+            }
+        }
+
+        fun resumeCycleTracking() {
+            viewModelScope.launch {
+                pregnancyRepository.resumeTracking(ReproductiveMode.CYCLE_TRACKING)
+            }
+        }
+
+        fun resumeTtc() {
+            viewModelScope.launch {
+                pregnancyRepository.resumeTracking(ReproductiveMode.TRYING_TO_CONCEIVE)
             }
         }
     }

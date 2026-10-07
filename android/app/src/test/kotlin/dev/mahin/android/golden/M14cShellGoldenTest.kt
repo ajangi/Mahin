@@ -2,13 +2,27 @@ package dev.mahin.android.golden
 
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performScrollToNode
+import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
+import com.github.takahirom.roborazzi.captureRoboImage
+import dev.mahin.core.designsystem.MahinTheme
+import dev.mahin.core.testing.roborazzi.MahinRoborazzi
 import dev.mahin.android.navigation.MahinTopLevelDestination
 import dev.mahin.android.settings.SettingsScreenCallbacks
 import dev.mahin.android.settings.SettingsScreenContent
@@ -141,33 +155,63 @@ class M14cShellGoldenTest {
         }
     }
 
+    @OptIn(ExperimentalRoborazziApi::class)
     private fun captureSettings(
         darkTheme: Boolean,
         fontScale: Float,
         assistantOn: Boolean = false,
     ) {
-        composeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
-            SettingsScreenContent(
-                state =
-                    SettingsUiState(
-                        healthConnectEntryVisible = true,
-                        healthAssistantEntryVisible = assistantOn,
-                    ),
-                callbacks =
-                    SettingsScreenCallbacks(
-                        onNavigateUp = {},
-                        onModeSelected = {},
-                        onOpenNotifications = {},
-                        onOpenPrivacy = {},
-                        onOpenHealthConnect = {},
-                        onOpenAssistant = {},
-                        onOpenDataExport = {},
-                        onOpenPremium = {},
-                        onOpenHistory = {},
-                        onResumeCycle = {},
-                        onResumeTtc = {},
-                    ),
-            )
+        if (assistantOn) {
+            composeRule.setContent {
+                val baseDensity = LocalDensity.current
+                CompositionLocalProvider(
+                    LocalLayoutDirection provides LayoutDirection.Rtl,
+                    LocalDensity provides Density(density = baseDensity.density, fontScale = fontScale),
+                ) {
+                    MahinTheme(darkTheme = darkTheme) {
+                        Box(Modifier.fillMaxSize()) {
+                            SettingsGoldenContent(assistantOn = true)
+                        }
+                    }
+                }
+            }
+            composeRule.waitForIdle()
+            composeRule
+                .onNodeWithTag("settings_screen_list")
+                .performScrollToNode(hasText("دستیار آموزشی (آزمایشی)"))
+            composeRule.waitForIdle()
+            composeRule.onRoot().captureRoboImage(roborazziOptions = MahinRoborazzi.options)
+        } else {
+            composeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
+                Box(Modifier.fillMaxSize()) {
+                    SettingsGoldenContent(assistantOn = false)
+                }
+            }
         }
+    }
+
+    @Composable
+    private fun SettingsGoldenContent(assistantOn: Boolean) {
+        SettingsScreenContent(
+            state =
+                SettingsUiState(
+                    healthConnectEntryVisible = true,
+                    healthAssistantEntryVisible = assistantOn,
+                ),
+            callbacks =
+                SettingsScreenCallbacks(
+                    onNavigateUp = {},
+                    onModeSelected = {},
+                    onOpenNotifications = {},
+                    onOpenPrivacy = {},
+                    onOpenHealthConnect = {},
+                    onOpenAssistant = {},
+                    onOpenDataExport = {},
+                    onOpenPremium = {},
+                    onOpenHistory = {},
+                    onResumeCycle = {},
+                    onResumeTtc = {},
+                ),
+        )
     }
 }

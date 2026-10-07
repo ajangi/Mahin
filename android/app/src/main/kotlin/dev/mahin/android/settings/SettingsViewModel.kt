@@ -7,11 +7,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.mahin.android.premium.PremiumBillingCoordinator
 import dev.mahin.core.billing.BillingAdapter
 import dev.mahin.core.billing.BillingAdapterState
+import dev.mahin.core.billing.EntitlementRepository
 import dev.mahin.core.config.FeatureFlagGateway
 import dev.mahin.core.config.FeatureFlagRepository
 import dev.mahin.core.config.MahinFeatureFlags
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
 import dev.mahin.core.model.ReproductiveMode
+import dev.mahin.domain.subscription.EntitlementTier
 import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +33,8 @@ data class SettingsUiState(
     val healthAssistantEntryVisible: Boolean = false,
     val showPaywall: Boolean = false,
     val billingState: BillingAdapterState = BillingAdapterState.Idle,
+    val premiumActive: Boolean = false,
+    val showPremiumPaywallEntry: Boolean = true,
 )
 
 @HiltViewModel
@@ -42,6 +46,7 @@ class SettingsViewModel
         private val featureFlagRepository: FeatureFlagRepository,
         private val billingAdapter: BillingAdapter,
         private val premiumBillingCoordinator: PremiumBillingCoordinator,
+        private val entitlementRepository: EntitlementRepository,
     ) : ViewModel() {
         private val paywallVisible = MutableStateFlow(false)
         private val _uiState = MutableStateFlow(SettingsUiState())
@@ -79,7 +84,15 @@ class SettingsViewModel
                 }
             }
             viewModelScope.launch {
-                premiumBillingCoordinator.warmUp()
+                entitlementRepository.entitlement.collect { snapshot ->
+                    val premium = snapshot.tier != EntitlementTier.FREE
+                    _uiState.update {
+                        it.copy(
+                            premiumActive = premium,
+                            showPremiumPaywallEntry = !premium,
+                        )
+                    }
+                }
             }
         }
 
@@ -149,7 +162,10 @@ class SettingsViewModel
         }
 
         fun openPaywall() {
-            paywallVisible.value = true
+            viewModelScope.launch {
+                premiumBillingCoordinator.warmUp()
+                paywallVisible.value = true
+            }
         }
 
         fun dismissPaywall() {

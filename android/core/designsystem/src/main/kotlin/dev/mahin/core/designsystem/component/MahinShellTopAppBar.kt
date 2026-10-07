@@ -35,7 +35,7 @@ fun MahinShellTopAppBar(
         },
         actions = {
             if (showSettingsAction) {
-                IconButton(onClick = onOpenSettings) {
+                IconButton(onClick = onOpenSettings, modifier = Modifier.testTag("shell_open_settings")) {
                     MahinIcon(icon = MahinIcons.Nav.settings)
                 }
             }

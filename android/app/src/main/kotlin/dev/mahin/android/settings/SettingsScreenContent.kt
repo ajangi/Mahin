@@ -100,18 +100,30 @@ private fun androidx.compose.foundation.lazy.LazyListScope.settingsGroups(
     callbacks: SettingsScreenCallbacks,
 ) {
     settingsCoreGroups(callbacks)
-    item {
-        MahinSettingsGroup(
-            title = stringResource(R.string.settings_group_premium),
-            entries =
-                listOf(
-                    MahinSettingsEntry(
-                        label = stringResource(R.string.settings_premium_entry),
-                        onClick = callbacks.onOpenPremium,
+    if (state.premiumActive || state.showPremiumPaywallEntry) {
+        item {
+            MahinSettingsGroup(
+                title = stringResource(R.string.settings_group_premium),
+                entries =
+                    listOf(
+                        MahinSettingsEntry(
+                            label =
+                                if (state.premiumActive) {
+                                    stringResource(R.string.settings_premium_active)
+                                } else {
+                                    stringResource(R.string.settings_premium_entry)
+                                },
+                            onClick =
+                                if (state.premiumActive) {
+                                    {}
+                                } else {
+                                    callbacks.onOpenPremium
+                                },
+                        ),
                     ),
-                ),
-            modifier = Modifier.padding(top = MahinSpacing.md),
-        )
+                modifier = Modifier.padding(top = MahinSpacing.md),
+            )
+        }
     }
     settingsOptionalGroups(state, callbacks)
     item {

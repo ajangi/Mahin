@@ -27,7 +27,7 @@ class ShellModeTransitionTest {
 
     private val stubOverrides =
         MahinShellScreenOverrides(
-            today = { Box(Modifier.testTag("screen_today").fillMaxSize()) },
+            today = { _, _ -> Box(Modifier.testTag("screen_today").fillMaxSize()) },
             calendar = { Box(Modifier.testTag("screen_calendar").fillMaxSize()) },
             log = { Box(Modifier.testTag("screen_log").fillMaxSize()) },
             cycleInsights = { Box(Modifier.testTag("screen_cycle_insights").fillMaxSize()) },
@@ -67,11 +67,11 @@ class ShellModeTransitionTest {
         )
 
     @Test
-    fun postPregnancyResumeToTtc_fromOrphanHub_navigatesToTodayWithBars() =
+    fun postPregnancyResumeToTtc_fromCycleInsights_navigatesToTodayWithBars() =
         transition(
             from = ReproductiveMode.POST_PREGNANCY_TRANSITION,
             to = ReproductiveMode.TRYING_TO_CONCEIVE,
-            startRoute = MahinTopLevelDestination.PregnancyHub.route,
+            startRoute = MahinTopLevelDestination.CycleInsights.route,
             expectScreen = "screen_today",
         )
 
@@ -85,19 +85,90 @@ class ShellModeTransitionTest {
         )
 
     @Test
-    fun pausedToCycle_fromOrphanPlan_navigatesToTodayWithBars() =
+    fun pausedToCycle_fromCycleInsights_staysOnInsightsWithBars() =
         transition(
             from = ReproductiveMode.TRACKING_PAUSED,
             to = ReproductiveMode.CYCLE_TRACKING,
-            startRoute = MahinTopLevelDestination.Plan.route,
+            startRoute = MahinTopLevelDestination.CycleInsights.route,
+            expectScreen = "screen_cycle_insights",
+        )
+
+    @Test
+    fun cycleToPregnant_fromCycleInsights_navigatesToTodayWithBars() =
+        transition(
+            from = ReproductiveMode.CYCLE_TRACKING,
+            to = ReproductiveMode.PREGNANT,
+            startRoute = MahinTopLevelDestination.CycleInsights.route,
             expectScreen = "screen_today",
         )
+
+    @Test
+    fun ttcToPregnant_fromTtcInsights_navigatesToTodayWithBars() =
+        transition(
+            from = ReproductiveMode.TRYING_TO_CONCEIVE,
+            to = ReproductiveMode.PREGNANT,
+            startRoute = MahinTopLevelDestination.TtcInsights.route,
+            expectScreen = "screen_today",
+        )
+
+    @Test
+    fun cycleToPaused_staysOnCycleInsights() =
+        transition(
+            from = ReproductiveMode.CYCLE_TRACKING,
+            to = ReproductiveMode.TRACKING_PAUSED,
+            startRoute = MahinTopLevelDestination.CycleInsights.route,
+            expectScreen = "screen_cycle_insights",
+            expectShellBars = true,
+        )
+
+    @Test
+    fun pregnantToCycle_withCalendarSecondaryOpen_navigatesToTodayWithBars() {
+        val shellState =
+            mutableStateOf(
+                ShellNavigationState(
+                    profileLoaded = true,
+                    reproductiveMode = ReproductiveMode.PREGNANT,
+                ),
+            )
+        val navHolder = arrayOfNulls<NavHostController>(1)
+        composeRule.setContent {
+            MahinTheme {
+                val navController = rememberNavController()
+                navHolder[0] = navController
+                MahinShellLayout(shellState.value, navController) {
+                    MahinShellNavHost(
+                        navController = navController,
+                        onLocalDataErased = {},
+                        onOpenHistory = {},
+                        onOpenCycleCalendar = {
+                            navController.navigate(MahinTopLevelDestination.Calendar.route)
+                        },
+                        screenOverrides = stubOverrides,
+                    )
+                }
+            }
+        }
+        composeRule.waitForIdle()
+        composeRule.runOnIdle { navHolder[0]!!.navigate(MahinTopLevelDestination.PregnancyHub.route) }
+        composeRule.waitForIdle()
+        composeRule.runOnIdle { navHolder[0]!!.navigate(MahinTopLevelDestination.Calendar.route) }
+        composeRule.waitForIdle()
+        composeRule.onNodeWithTag("screen_calendar").assertIsDisplayed()
+        composeRule.runOnIdle {
+            shellState.value = shellState.value.copy(reproductiveMode = ReproductiveMode.CYCLE_TRACKING)
+        }
+        composeRule.waitForIdle()
+        composeRule.onNodeWithTag("screen_calendar").assertIsDisplayed()
+        composeRule.onNodeWithTag("shell_bottom_bar").assertIsDisplayed()
+        composeRule.onNodeWithTag("shell_top_bar").assertIsDisplayed()
+    }
 
     private fun transition(
         from: ReproductiveMode,
         to: ReproductiveMode,
         startRoute: String,
         expectScreen: String,
+        expectShellBars: Boolean = true,
     ) {
         val shellState = mutableStateOf(ShellNavigationState(profileLoaded = true, reproductiveMode = from))
         val navHolder = arrayOfNulls<NavHostController>(1)
@@ -122,7 +193,9 @@ class ShellModeTransitionTest {
         composeRule.runOnIdle { shellState.value = shellState.value.copy(reproductiveMode = to) }
         composeRule.waitForIdle()
         composeRule.onNodeWithTag(expectScreen).assertIsDisplayed()
-        composeRule.onNodeWithTag("shell_bottom_bar").assertIsDisplayed()
-        composeRule.onNodeWithTag("shell_top_bar").assertIsDisplayed()
+        if (expectShellBars) {
+            composeRule.onNodeWithTag("shell_bottom_bar").assertIsDisplayed()
+            composeRule.onNodeWithTag("shell_top_bar").assertIsDisplayed()
+        }
     }
 }

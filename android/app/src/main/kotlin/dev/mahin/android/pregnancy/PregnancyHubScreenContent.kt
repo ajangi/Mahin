@@ -80,13 +80,11 @@ fun PregnancyHubScreenContent(
             )
         }
         state.postTransition -> {
-            androidx.compose.foundation.layout.Column(modifier = modifier.padding(MahinSpacing.md)) {
-                PregnancyHubSecondaryLinks(
-                    onOpenHistory = onOpenHistory,
-                    onOpenCycleCalendar = onOpenCycleCalendar,
-                )
-                PostTransitionContent(actions = actions, modifier = Modifier)
-            }
+            MahinEmptyState(
+                title = stringResource(R.string.pregnancy_post_transition_today_title),
+                body = stringResource(R.string.pregnancy_post_transition_today_body),
+                modifier = modifier.padding(MahinSpacing.md),
+            )
         }
         !state.isPregnantMode || state.status == null -> {
             androidx.compose.foundation.layout.Column(modifier = modifier.padding(MahinSpacing.md)) {
@@ -462,33 +460,5 @@ private fun RowSwitch(
     Column(modifier = Modifier.padding(top = MahinSpacing.sm)) {
         Text(text = label, style = MaterialTheme.typography.bodyMedium)
         Switch(checked = checked, onCheckedChange = onCheckedChange)
-    }
-}
-
-@Composable
-private fun PostTransitionContent(
-    actions: PregnancyHubActions,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .padding(MahinSpacing.md),
-    ) {
-        Text(
-            text = stringResource(R.string.pregnancy_post_transition_hint),
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        MahinPrimaryButton(
-            text = stringResource(R.string.pregnancy_resume_cycle),
-            onClick = actions.onResumeCycle,
-            modifier = Modifier.padding(top = MahinSpacing.md),
-        )
-        MahinPrimaryButton(
-            text = stringResource(R.string.pregnancy_resume_ttc),
-            onClick = actions.onResumeTtc,
-            modifier = Modifier.padding(top = MahinSpacing.sm),
-        )
     }
 }

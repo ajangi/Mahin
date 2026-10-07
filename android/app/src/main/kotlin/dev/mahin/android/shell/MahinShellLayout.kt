@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -39,18 +38,12 @@ fun MahinShellLayout(
     val currentRoute = navBackStackEntry?.destination?.route
     val showBottomBar = ShellRoutePolicy.showsShellBottomBar(currentRoute, reproductiveMode)
 
-    LaunchedEffect(reproductiveMode, shellState.profileLoaded, currentRoute) {
-        if (!shellState.profileLoaded) return@LaunchedEffect
-        val currentOrphan = ShellRoutePolicy.isOrphanTabRoute(currentRoute, reproductiveMode)
-        if (currentOrphan) {
-            navController.navigate(MahinTopLevelDestination.Today.route) {
-                popUpTo(navController.graph.findStartDestination().id) {
-                    saveState = false
-                }
-                launchSingleTop = true
-            }
-        }
-    }
+    ShellModeRouteEffect(
+        profileLoaded = shellState.profileLoaded,
+        reproductiveMode = reproductiveMode,
+        currentRoute = currentRoute,
+        navController = navController,
+    )
 
     val openSettings: () -> Unit = {
         navController.navigate(MahinTopLevelDestination.SETTINGS_ROUTE) { launchSingleTop = true }

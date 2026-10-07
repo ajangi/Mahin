@@ -197,8 +197,13 @@ tasks.register("verifyReleaseApkNoEmulatorApiHost") {
                         }
                     }
                     if (entry.name.endsWith(".dex")) {
-                        check(!text.contains("IconCatalogueActivity")) {
-                            "Release artifact ${entry.name} contains debug demo IconCatalogueActivity"
+                        check(!text.contains("dev/mahin/android/demo/")) {
+                            "Release artifact ${entry.name} contains debug demo package classes"
+                        }
+                    }
+                    if (entry.name == "AndroidManifest.xml") {
+                        check(!text.contains(".demo.")) {
+                            "Release manifest contains debug demo package component"
                         }
                     }
                 }

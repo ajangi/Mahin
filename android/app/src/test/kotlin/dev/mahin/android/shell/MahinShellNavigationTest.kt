@@ -1,5 +1,6 @@
 package dev.mahin.android.shell
 
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,7 +16,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -37,11 +39,11 @@ import org.robolectric.annotation.Config
 @Config(sdk = [33], qualifiers = "fa-rIR")
 class MahinShellNavigationTest {
     @get:Rule
-    val composeRule = createComposeRule()
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
 
-    private val testOverrides =
+    private fun testOverrides(onSwitchToPregnant: (() -> Unit)? = null): MahinShellScreenOverrides =
         MahinShellScreenOverrides(
-            today = { Box(Modifier.fillMaxSize().testTag("screen_today")) },
+            today = { _, _ -> Box(Modifier.fillMaxSize().testTag("screen_today")) },
             calendar = { Box(Modifier.fillMaxSize().testTag("screen_calendar")) },
             log = {
                 var note by rememberSaveable { mutableStateOf("") }
@@ -90,6 +92,11 @@ class MahinShellNavigationTest {
                     Button(onClick = onOpenHistory, modifier = Modifier.testTag("open_history_settings")) {
                         Text("data history")
                     }
+                    if (onSwitchToPregnant != null) {
+                        Button(onClick = onSwitchToPregnant, modifier = Modifier.testTag("settings_switch_pregnant")) {
+                            Text("pregnant")
+                        }
+                    }
                 }
             },
         )
@@ -116,7 +123,7 @@ class MahinShellNavigationTest {
                         onOpenCycleCalendar = {
                             navController.navigate(MahinTopLevelDestination.Calendar.route)
                         },
-                        screenOverrides = testOverrides,
+                        screenOverrides = testOverrides(),
                     )
                 }
             }
@@ -125,7 +132,7 @@ class MahinShellNavigationTest {
         composeRule.onNodeWithTag("log_state_field").performTextInput("a")
         composeRule.onNodeWithText("امروز").performClick()
         composeRule.onNodeWithText("ثبت").performClick()
-        composeRule.onNodeWithTag("log_state_field").assertIsDisplayed()
+        composeRule.onNodeWithTag("log_state_field").assertTextContains("a")
     }
 
     @Test
@@ -165,6 +172,28 @@ class MahinShellNavigationTest {
     }
 
     @Test
+    fun shell_history_systemBack_returnsToPreviousScreen() {
+        mountShell(ReproductiveMode.CYCLE_TRACKING, MahinTopLevelDestination.CycleInsights.route)
+        composeRule.onNodeWithTag("open_history_cycle").performClick()
+        composeRule.onNodeWithTag("screen_history").assertIsDisplayed()
+        pressSystemBack()
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodesWithTag("screen_cycle_insights").fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
+    @Test
+    fun shell_settings_systemBack_returnsToTab() {
+        mountShell(ReproductiveMode.CYCLE_TRACKING, MahinTopLevelDestination.Today.route)
+        composeRule.onNodeWithTag("shell_open_settings").performClick()
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodesWithTag("screen_settings").fetchSemanticsNodes().isNotEmpty()
+        }
+        pressSystemBack()
+        composeRule.onNodeWithTag("screen_today").assertIsDisplayed()
+    }
+
+    @Test
     fun shell_pregnancyHistoryAndCalendar_backWithUp() {
         val shellState =
             mutableStateOf(
@@ -188,7 +217,7 @@ class MahinShellNavigationTest {
                         onOpenCycleCalendar = {
                             navController.navigate(MahinTopLevelDestination.Calendar.route)
                         },
-                        screenOverrides = testOverrides,
+                        screenOverrides = testOverrides(),
                     )
                 }
             }
@@ -209,9 +238,7 @@ class MahinShellNavigationTest {
         composeRule.waitUntil(5_000) {
             composeRule.onAllNodesWithTag("screen_pregnancy_hub").fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.runOnIdle {
-            navHolder[0]!!.navigate(MahinTopLevelDestination.Calendar.route)
-        }
+        composeRule.onNodeWithTag("open_calendar_pregnancy").performClick()
         composeRule.waitUntil(5_000) {
             composeRule.onAllNodesWithTag("screen_calendar").fetchSemanticsNodes().isNotEmpty()
         }
@@ -224,7 +251,7 @@ class MahinShellNavigationTest {
     }
 
     @Test
-    fun modeChange_fromPregnancyHubToPostPregnancy_showsBarsOnToday() {
+    fun shell_pregnancyCalendar_systemBack_returnsToHub() {
         val shellState =
             mutableStateOf(
                 ShellNavigationState(
@@ -247,7 +274,144 @@ class MahinShellNavigationTest {
                         onOpenCycleCalendar = {
                             navController.navigate(MahinTopLevelDestination.Calendar.route)
                         },
-                        screenOverrides = testOverrides,
+                        screenOverrides = testOverrides(),
+                    )
+                }
+            }
+        }
+        composeRule.waitForIdle()
+        composeRule.runOnIdle { navHolder[0]!!.navigate(MahinTopLevelDestination.PregnancyHub.route) }
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodesWithTag("screen_pregnancy_hub").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithTag("open_calendar_pregnancy").performClick()
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodesWithTag("screen_calendar").fetchSemanticsNodes().isNotEmpty()
+        }
+        pressSystemBack()
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodesWithTag("screen_pregnancy_hub").fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
+    @Test
+    fun mahinAppShell_cycleInsightsHistoryButton_opensHistoryRoute() {
+        composeRule.setContent {
+            MahinTheme {
+                MahinAppShell(
+                    shellNavigationStateOverride =
+                        ShellNavigationState(
+                            profileLoaded = true,
+                            reproductiveMode = ReproductiveMode.CYCLE_TRACKING,
+                        ),
+                    screenOverrides = testOverrides(),
+                )
+            }
+        }
+        composeRule.onNodeWithText("تحلیل‌ها").performClick()
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodesWithTag("screen_cycle_insights").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithTag("open_history_cycle").performClick()
+        composeRule.onNodeWithTag("screen_history").assertIsDisplayed()
+    }
+
+    @Test
+    fun mahinAppShell_pregnancyHubCalendarButton_opensCalendarSecondary() {
+        composeRule.setContent {
+            MahinTheme {
+                MahinAppShell(
+                    shellNavigationStateOverride =
+                        ShellNavigationState(
+                            profileLoaded = true,
+                            reproductiveMode = ReproductiveMode.PREGNANT,
+                        ),
+                    screenOverrides = testOverrides(),
+                )
+            }
+        }
+        composeRule.onNodeWithText("بارداری").performClick()
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodesWithTag("screen_pregnancy_hub").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithTag("open_calendar_pregnancy").performClick()
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodesWithTag("screen_calendar").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithTag("screen_calendar").assertIsDisplayed()
+        composeRule.onNodeWithTag("shell_bottom_bar").assertDoesNotExist()
+    }
+
+    @Test
+    fun modeChange_fromCycleInsightsViaSettingsToPregnant_leavesValidTab() {
+        val shellState =
+            mutableStateOf(
+                ShellNavigationState(
+                    profileLoaded = true,
+                    reproductiveMode = ReproductiveMode.CYCLE_TRACKING,
+                ),
+            )
+        composeRule.setContent {
+            MahinTheme {
+                val navController = rememberNavController()
+                MahinShellLayout(shellState.value, navController) {
+                    MahinShellNavHost(
+                        navController = navController,
+                        onLocalDataErased = {},
+                        onOpenHistory = {},
+                        onOpenCycleCalendar = {},
+                        screenOverrides =
+                            testOverrides(
+                                onSwitchToPregnant = {
+                                    shellState.value =
+                                        shellState.value.copy(reproductiveMode = ReproductiveMode.PREGNANT)
+                                },
+                            ),
+                    )
+                }
+            }
+        }
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("تحلیل‌ها").performClick()
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodesWithTag("screen_cycle_insights").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithTag("shell_open_settings").performClick()
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodesWithTag("screen_settings").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithTag("settings_switch_pregnant").performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithTag("settings_top_bar_up").performClick()
+        composeRule.waitUntil(5_000) {
+            composeRule.onAllNodesWithTag("screen_today").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithTag("screen_today").assertIsDisplayed()
+        composeRule.onNodeWithTag("shell_bottom_bar").assertIsDisplayed()
+        composeRule.onNodeWithTag("shell_top_bar").assertIsDisplayed()
+    }
+
+    @Test
+    fun modeChange_fromPregnancyHubToPostPregnancy_showsBarsOnToday() {
+        val shellState =
+            mutableStateOf(
+                ShellNavigationState(
+                    profileLoaded = true,
+                    reproductiveMode = ReproductiveMode.PREGNANT,
+                ),
+            )
+        val navHolder = arrayOfNulls<NavHostController>(1)
+        composeRule.setContent {
+            MahinTheme {
+                val navController = rememberNavController()
+                navHolder[0] = navController
+                MahinShellLayout(shellState.value, navController) {
+                    MahinShellNavHost(
+                        navController = navController,
+                        onLocalDataErased = {},
+                        onOpenHistory = {},
+                        onOpenCycleCalendar = {},
+                        screenOverrides = testOverrides(),
                     )
                 }
             }
@@ -266,49 +430,6 @@ class MahinShellNavigationTest {
         composeRule.waitUntil(5_000) {
             composeRule.onAllNodesWithTag("screen_today").fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithTag("shell_bottom_bar").assertIsDisplayed()
-        composeRule.onNodeWithTag("shell_top_bar").assertIsDisplayed()
-    }
-
-    @Test
-    fun modeChange_fromCycleInsightsViaSettingsToPregnant_leavesValidTab() {
-        val shellState =
-            mutableStateOf(
-                ShellNavigationState(
-                    profileLoaded = true,
-                    reproductiveMode = ReproductiveMode.CYCLE_TRACKING,
-                ),
-            )
-        val navHolder = arrayOfNulls<NavHostController>(1)
-        composeRule.setContent {
-            MahinTheme {
-                val navController = rememberNavController()
-                navHolder[0] = navController
-                MahinShellLayout(shellState.value, navController) {
-                    MahinShellNavHost(
-                        navController = navController,
-                        onLocalDataErased = {},
-                        onOpenHistory = {},
-                        onOpenCycleCalendar = {},
-                        screenOverrides = testOverrides,
-                    )
-                }
-            }
-        }
-        composeRule.waitForIdle()
-        composeRule.runOnIdle { navHolder[0]!!.navigate(MahinTopLevelDestination.SETTINGS_ROUTE) }
-        composeRule.waitUntil(5_000) {
-            composeRule.onAllNodesWithTag("screen_settings").fetchSemanticsNodes().isNotEmpty()
-        }
-        composeRule.runOnIdle {
-            shellState.value = shellState.value.copy(reproductiveMode = ReproductiveMode.PREGNANT)
-        }
-        composeRule.waitForIdle()
-        composeRule.onNodeWithTag("settings_top_bar_up").performClick()
-        composeRule.waitUntil(5_000) {
-            composeRule.onAllNodesWithTag("screen_today").fetchSemanticsNodes().isNotEmpty()
-        }
-        composeRule.onNodeWithTag("screen_today").assertIsDisplayed()
         composeRule.onNodeWithTag("shell_bottom_bar").assertIsDisplayed()
         composeRule.onNodeWithTag("shell_top_bar").assertIsDisplayed()
     }
@@ -344,6 +465,11 @@ class MahinShellNavigationTest {
         composeRule.onNodeWithTag("should_not_show").assertDoesNotExist()
     }
 
+    private fun pressSystemBack() {
+        composeRule.activity.onBackPressedDispatcher.onBackPressed()
+        composeRule.waitForIdle()
+    }
+
     private fun mountShell(
         mode: ReproductiveMode,
         startRoute: String,
@@ -366,13 +492,15 @@ class MahinShellNavigationTest {
                         onOpenCycleCalendar = {
                             navController.navigate(MahinTopLevelDestination.Calendar.route)
                         },
-                        screenOverrides = testOverrides,
+                        screenOverrides = testOverrides(),
                     )
                 }
             }
         }
         composeRule.waitForIdle()
-        composeRule.runOnIdle { navHolder[0]!!.navigate(startRoute) }
-        composeRule.waitForIdle()
+        if (startRoute != MahinTopLevelDestination.Today.route) {
+            composeRule.runOnIdle { navHolder[0]!!.navigate(startRoute) }
+            composeRule.waitForIdle()
+        }
     }
 }

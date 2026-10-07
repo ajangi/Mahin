@@ -1,7 +1,7 @@
 # M14c Handoff — App shell & Settings
 
 **Milestone:** M14c  
-**Status:** ready for review (gatekeeper fixes on PR #35)  
+**Status:** ready for review (gatekeeper round 2, PR #35)  
 **Next milestone:** **M15** only
 
 ## Implemented scope
@@ -18,32 +18,33 @@ Secondary routes: `history`, `settings` (no bottom bar; up via shell secondary t
 
 ### Shell (`MahinAppShell`, `MahinShellLayout`, `MahinShellNavHost`)
 - Profile-gated shell: loading state until `MahinAppShellViewModel` profile loads (no default cycle tabs on cold start).
-- `LaunchedEffect(reproductiveMode)` evicts orphan tab routes to Today with `popUpTo(findStartDestination())` and `saveState = false` for removed tabs.
+- `LaunchedEffect(reproductiveMode)` evicts orphan tab routes to Today; on mode change, removed tabs’ saved state cleared via `popUpTo(findStartDestination())` with `saveState = false`, then optional `restoreState` for valid stay route (e.g. `cycle_insights` when pausing).
 - Secondary top bar fallback (`else`) for orphan/history/calendar/settings titles via `ShellRoutePolicy`.
 - Tab switches: `FAST_MS` cross-fade on `MahinShellNavHost` (`mahinMotionDurationMs`, respects reduced motion).
-- `MahinShellScreenOverrides` for tests injecting stub screens while exercising real NavHost save/restore.
+- `MahinShellScreenOverrides` for tests; `MahinAppShell.shellNavigationStateOverride` for shell wiring tests without Hilt profile.
 
 ### Settings (`settings/*`)
-- Groups: tracking goal, privacy, notifications, your data (history + export), **premium** (`MahinPaywallSheet`, same as Cycle Insights), integrations (Health Connect), assistant, about (non-clickable label).
+- Groups: tracking goal, privacy, notifications, your data (history + export), **premium** (`MahinPaywallSheet`; row hidden or “پریمیوم فعال است” when entitled; billing `warmUp` only on paywall open), integrations (Health Connect), assistant, about (non-clickable label).
 - Post-pregnancy resume cycle/TTC when `POST_PREGNANCY_TRANSITION`.
 - `SettingsViewModel` feature-flag gating for Health Connect and assistant.
 
 ### Today
-- Settings group and mode card removed; TTC hint (`today_ttc_hint`) retained on Today in TTC mode.
+- Settings group and mode card removed; TTC hint retained in TTC mode.
+- **`POST_PREGNANCY_TRANSITION`:** `PostPregnancyTransitionSection` on Today (neutral copy, resume cycle/TTC, support links). Hub post-transition shows pointer to Today only.
 
 ### Pregnancy
-- `PregnancyAppointmentsViewModel` + Plan tab (no duplicate hub VM ticker).
-- Plan empty state when no active pregnancy; hub secondary links (calendar, past cycles) on post-transition and empty hub states.
+- `PregnancyAppointmentsViewModel` + Plan tab.
+- Plan empty state when no active pregnancy; hub secondary links on empty hub states.
 
 ### Release safety
-- `verifyReleaseApkNoEmulatorApiHost` fails if release `.dex` contains `IconCatalogueActivity` (debug demo not in release).
+- `verifyReleaseApkNoEmulatorApiHost`: release `.dex` must not contain `dev/mahin/android/demo/`; merged release `AndroidManifest.xml` must not reference any `.demo.` component.
 
 ## Reachability audit (pre-M14c → post-M14c)
 
 | Former entry (pre-M14c) | Now reachable from |
 |-------------------------|-------------------|
 | Tab: Today | Tab: Today |
-| Tab: Calendar | Tab: Calendar (cycle/TTC/post-pregnancy/paused); Pregnancy hub › تقویم چرخه (pregnant, all hub states with links) |
+| Tab: Calendar | Tab: Calendar (cycle/TTC/post-pregnancy/paused); Pregnancy hub › تقویم چرخه (pregnant) |
 | Tab: Log | Tab: Log |
 | Tab: History | Insights (cycle/TTC) › تاریخچهٔ پریود; Pregnancy hub › چرخه‌های گذشته; Settings › تاریخچهٔ پریود |
 | Tab: Insights (cycle) | Tab: Insights (cycle, post-pregnancy, paused) |
@@ -58,8 +59,8 @@ Secondary routes: `history`, `settings` (no bottom bar; up via shell secondary t
 | Today › mode card | Settings › tracking goal |
 | Today › TTC hint | Today (TTC mode) |
 | Pregnancy hub › appointments | Tab: Plan |
-| Pregnancy hub › post-outcome resume | Hub; Settings resume actions when `POST_PREGNANCY_TRANSITION` |
-| Insights › premium paywall | Cycle Insights; **Settings › ماهین پریمیوم** (all modes) |
+| Pregnancy hub › post-outcome resume | **Today** (`PostPregnancyTransitionSection`); Settings resume actions when `POST_PREGNANCY_TRANSITION` |
+| Insights › premium paywall | Cycle Insights; Settings › ماهین پریمیوم |
 | Shell › settings | Top app bar › settings (top-level tabs) |
 
 ## Migrations
@@ -73,42 +74,55 @@ None.
 ## Notable files
 - `android/app/.../navigation/MahinTopLevelDestination.kt`, `ShellRoutePolicy.kt`
 - `android/app/.../shell/MahinAppShell.kt`, `MahinShellLayout.kt`, `MahinShellScaffold.kt`, `MahinAppShellViewModel.kt`
-- `android/app/.../settings/*`, `pregnancy/PregnancyAppointmentsViewModel.kt`, `PregnancyPlanScreen.kt`
+- `android/app/.../settings/*`, `pregnancy/PostPregnancyTransitionSection.kt`, `PregnancyAppointmentsViewModel.kt`
 - `android/core/designsystem/.../MahinBottomNavigationBar.kt`, `MahinShellTopAppBar.kt`
-- Tests: `MahinShellNavigationTest`, `ShellModeTransitionTest`, `SettingsScreenContentTest`, `SettingsViewModelTest`, `TodayScreenContentTest`, `MahinBottomNavigationBarA11yTest`
+- Tests: `MahinShellNavigationTest`, `ShellModeTransitionTest`, `MahinBottomNavigationBarA11yTest`, `SettingsScreenContentTest`, `SettingsViewModelTest`, `TodayScreenContentTest`, `PregnancyAppointmentsViewModelTest`, `M14cShellGoldenTest`
 
 ## Commands / results (local)
 
 ```bash
 python3 scripts/check_design_tokens.py          # PASS
 python3 scripts/security_checklist.py             # PASS
+npx @redocly/cli lint openapi/openapi.yaml      # PASS
+cd backend && ./gradlew ktlintCheck detekt test # BUILD SUCCESSFUL
+cd admin && npm ci && npm test && npm run build  # PASS
 cd android && ./gradlew lintDebug ktlintCheck detekt testDebugUnitTest assembleDebug assembleRelease \
   :core:network:testReleaseUnitTest \
   :core:network:verifyReleaseMahinApiBaseUrlHttps \
   :app:verifyReleaseApkNoEmulatorApiHost \
   :app:verifyRoborazziDebug \
   :core:designsystem:verifyRoborazziDebug \
-  --no-daemon
+  :benchmark:assemble --no-daemon
 ```
+
+CI: see PR checks (recorded on final green head).
 
 ## Acceptance criteria (`prompts/M14c.md` + gatekeeper)
 
-| Criterion | Status |
-|-----------|--------|
-| Mode-change eviction + loading gate + secondary top bar fallback | ✅ |
-| Real `MahinShellNavHost` navigation tests (restore, history paths, back/up) | ✅ |
-| Release APK scan for debug demo (not debug-only test) | ✅ |
-| Settings / Today UI + ViewModel flag tests | ✅ |
-| Premium row in Settings + paywall | ✅ |
-| Bottom nav a11y (single label, selected, 48dp, RTL) | ✅ |
-| Shell + Settings goldens (incl. assistant on) | ✅ (re-record assistant-on pair when baselines drift) |
+| Criterion | Verified by |
+|-----------|-------------|
+| `forMode` unit tests (5 tabs all modes) | `MahinTopLevelDestinationTest` |
+| Mode-change eviction + loading gate + secondary top bar | `ShellModeTransitionTest`, `MahinShellNavigationTest` |
+| Real NavHost: log restore, history paths, Up + system back, `MahinAppShell` button wiring | `MahinShellNavigationTest` |
+| Release APK / manifest demo scan | `verifyReleaseApkNoEmulatorApiHost` |
+| Settings UI callbacks + flags; ViewModel modes/paywall/premium/resume | `SettingsScreenContentTest`, `SettingsViewModelTest` |
+| Today without settings/mode card; post-outcome on Today | `TodayScreenContentTest` |
+| Bottom nav a11y (RTL x-order, LTR, selected, 48dp, all modes/tabs) | `MahinBottomNavigationBarA11yTest` |
+| Plan appointments VM | `PregnancyAppointmentsViewModelTest` |
+| Shell + Settings goldens | `M14cShellGoldenTest` + `verifyRoborazziDebug` |
 
 ## Golden re-records
 
 | Golden | Reason |
 |--------|--------|
-| `M14cShellGoldenTest.settings_assistantOn_*` (×2) | New Settings golden with assistant entry visible |
-| Prior M14c / M14a Today & hub goldens | Unchanged unless UI drift on re-run |
+| `M14aFullScreenGoldenTest.today_*` (×4) | Today lost settings group and mode card |
+| `M14aFullScreenGoldenTest.pregnancyHub_*` (×4) | Appointments moved to Plan; hub layout/links |
+| `M13PriorityScreensScreenshotTest.todayScreen_emptyRtlLight` | Today empty layout after M14c |
+| `M14cShellGoldenTest.settings_populated_*` (×4) | Premium group added; About heading removed |
+| `M14cShellGoldenTest.settings_assistantOn_*` (×2) | Taller frame so Assistant row visible at 1.3 scale |
+| **New** `M14cShellGoldenTest.shell_*` (20) | Shell baselines per mode (unchanged unless re-run drift) |
+
+Paths: `android/app/src/test/screenshots/dev.mahin.android.golden.*.png`
 
 ## Known limitations
 - **Backup & account:** No M5 backup/account UI; Settings group omitted.

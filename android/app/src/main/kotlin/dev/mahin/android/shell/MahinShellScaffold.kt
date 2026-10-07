@@ -63,7 +63,7 @@ internal fun MahinShellNavHost(
         popExitTransition = { fadeOut(fadeSpec) },
     ) {
         composable(MahinTopLevelDestination.Today.route) {
-            screenOverrides.today()
+            screenOverrides.today(onOpenHistory, onOpenCycleCalendar)
         }
         composable(MahinTopLevelDestination.Calendar.route) { screenOverrides.calendar() }
         composable(MahinTopLevelDestination.Log.route) { screenOverrides.log() }
@@ -93,7 +93,7 @@ internal fun MahinShellNavHost(
  * Production screens by default; tests supply tagged placeholders while keeping [MahinShellNavHost] routes.
  */
 data class MahinShellScreenOverrides(
-    val today: @Composable () -> Unit,
+    val today: @Composable (onOpenHistory: () -> Unit, onOpenCycleCalendar: () -> Unit) -> Unit,
     val calendar: @Composable () -> Unit,
     val log: @Composable () -> Unit,
     val cycleInsights: @Composable (onOpenHistory: () -> Unit) -> Unit,
@@ -111,7 +111,12 @@ data class MahinShellScreenOverrides(
     companion object {
         val Default: MahinShellScreenOverrides =
             MahinShellScreenOverrides(
-                today = { TodayScreen() },
+                today = { onOpenHistory, onOpenCycleCalendar ->
+                    TodayScreen(
+                        onOpenHistory = onOpenHistory,
+                        onOpenCycleCalendar = onOpenCycleCalendar,
+                    )
+                },
                 calendar = { CycleCalendarScreen() },
                 log = { LogScreen() },
                 cycleInsights = { onOpenHistory -> CycleInsightsScreen(onOpenHistory = onOpenHistory) },

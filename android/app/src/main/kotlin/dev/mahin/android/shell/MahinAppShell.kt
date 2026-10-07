@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import dev.mahin.android.navigation.MahinTopLevelDestination
 
@@ -12,12 +13,39 @@ import dev.mahin.android.navigation.MahinTopLevelDestination
 fun MahinAppShell(
     modifier: Modifier = Modifier,
     onLocalDataErased: () -> Unit = {},
-    shellViewModel: MahinAppShellViewModel = hiltViewModel(),
     screenOverrides: MahinShellScreenOverrides = MahinShellScreenOverrides.Default,
+    shellNavigationStateOverride: ShellNavigationState? = null,
 ) {
     val navController = rememberNavController()
-    val shellState by shellViewModel.navigationState.collectAsStateWithLifecycle()
+    if (shellNavigationStateOverride != null) {
+        MahinAppShellContent(
+            shellState = shellNavigationStateOverride,
+            navController = navController,
+            modifier = modifier,
+            onLocalDataErased = onLocalDataErased,
+            screenOverrides = screenOverrides,
+        )
+    } else {
+        val shellViewModel: MahinAppShellViewModel = hiltViewModel()
+        val shellState by shellViewModel.navigationState.collectAsStateWithLifecycle()
+        MahinAppShellContent(
+            shellState = shellState,
+            navController = navController,
+            modifier = modifier,
+            onLocalDataErased = onLocalDataErased,
+            screenOverrides = screenOverrides,
+        )
+    }
+}
 
+@Composable
+internal fun MahinAppShellContent(
+    shellState: ShellNavigationState,
+    navController: NavHostController,
+    modifier: Modifier = Modifier,
+    onLocalDataErased: () -> Unit = {},
+    screenOverrides: MahinShellScreenOverrides = MahinShellScreenOverrides.Default,
+) {
     val openHistory: () -> Unit = {
         navController.navigate(MahinTopLevelDestination.HISTORY_ROUTE) { launchSingleTop = true }
     }

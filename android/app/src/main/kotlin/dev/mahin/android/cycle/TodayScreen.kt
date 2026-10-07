@@ -15,6 +15,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mahin.android.R
+import dev.mahin.android.pregnancy.PostPregnancyTransitionActions
+import dev.mahin.android.pregnancy.PostPregnancyTransitionSection
 import dev.mahin.android.pregnancy.PregnancyTodayCard
 import dev.mahin.core.designsystem.MahinSpacing
 import dev.mahin.core.designsystem.MahinTypographyRole
@@ -28,12 +30,21 @@ import dev.mahin.domain.cycle.PredictionConfidence
 
 @Composable
 fun TodayScreen(
+    onOpenHistory: () -> Unit = {},
+    onOpenCycleCalendar: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: TodayViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     TodayScreenContent(
         state = state,
+        onOpenHistory = onOpenHistory,
+        onOpenCycleCalendar = onOpenCycleCalendar,
+        postPregnancyActions =
+            PostPregnancyTransitionActions(
+                onResumeCycle = viewModel::resumeCycleTracking,
+                onResumeTtc = viewModel::resumeTtc,
+            ),
         modifier = modifier,
     )
 }
@@ -42,6 +53,9 @@ fun TodayScreen(
 internal fun TodayScreenContent(
     state: TodayUiState,
     modifier: Modifier = Modifier,
+    onOpenHistory: () -> Unit = {},
+    onOpenCycleCalendar: () -> Unit = {},
+    postPregnancyActions: PostPregnancyTransitionActions? = null,
 ) {
     LazyColumn(
         modifier =
@@ -56,52 +70,64 @@ internal fun TodayScreenContent(
                 subtitle = stringResource(R.string.today_subtitle),
             )
         }
-        val dashboard = state.dashboard
-        if (dashboard == null) {
+        if (state.postPregnancyTransition && postPregnancyActions != null) {
             item {
-                MahinEmptyState(
-                    title = stringResource(R.string.today_empty_title),
-                    body = stringResource(R.string.today_empty_body),
+                PostPregnancyTransitionSection(
+                    actions = postPregnancyActions,
+                    onOpenHistory = onOpenHistory,
+                    onOpenCycleCalendar = onOpenCycleCalendar,
+                    modifier = Modifier.padding(top = MahinSpacing.md),
                 )
             }
-        } else if (state.reproductiveMode == ReproductiveMode.PREGNANT) {
-            val pregnancyStatus = state.pregnancyStatus
-            if (pregnancyStatus != null) {
+        }
+        if (!state.postPregnancyTransition) {
+            val dashboard = state.dashboard
+            if (dashboard == null) {
                 item {
-                    PregnancyTodayCard(
-                        status = pregnancyStatus,
-                        modifier = Modifier.padding(vertical = MahinSpacing.sm),
+                    MahinEmptyState(
+                        title = stringResource(R.string.today_empty_title),
+                        body = stringResource(R.string.today_empty_body),
                     )
                 }
+            } else if (state.reproductiveMode == ReproductiveMode.PREGNANT) {
+                val pregnancyStatus = state.pregnancyStatus
+                if (pregnancyStatus != null) {
+                    item {
+                        PregnancyTodayCard(
+                            status = pregnancyStatus,
+                            modifier = Modifier.padding(vertical = MahinSpacing.sm),
+                        )
+                    }
+                    item {
+                        Text(
+                            text = stringResource(R.string.pregnancy_mode_active_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            } else {
                 item {
+                    TodayPredictionCard(prediction = dashboard.prediction)
+                }
+                if (dashboard.onPeriodToday || dashboard.todayLog != null) {
+                    item {
+                        TodayStatusRow(
+                            onPeriodToday = dashboard.onPeriodToday,
+                            hasDailyLog = dashboard.todayLog != null,
+                        )
+                    }
+                }
+            }
+            if (state.reproductiveMode == ReproductiveMode.TRYING_TO_CONCEIVE) {
+                item {
+                    Spacer(modifier = Modifier.height(MahinSpacing.md))
                     Text(
-                        text = stringResource(R.string.pregnancy_mode_active_hint),
+                        text = stringResource(R.string.today_ttc_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-            }
-        } else {
-            item {
-                TodayPredictionCard(prediction = dashboard.prediction)
-            }
-            if (dashboard.onPeriodToday || dashboard.todayLog != null) {
-                item {
-                    TodayStatusRow(
-                        onPeriodToday = dashboard.onPeriodToday,
-                        hasDailyLog = dashboard.todayLog != null,
-                    )
-                }
-            }
-        }
-        if (state.reproductiveMode == ReproductiveMode.TRYING_TO_CONCEIVE) {
-            item {
-                Spacer(modifier = Modifier.height(MahinSpacing.md))
-                Text(
-                    text = stringResource(R.string.today_ttc_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
             }
         }
     }

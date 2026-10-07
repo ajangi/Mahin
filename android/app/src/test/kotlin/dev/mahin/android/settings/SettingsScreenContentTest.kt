@@ -1,6 +1,7 @@
 package dev.mahin.android.settings
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -9,6 +10,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import dev.mahin.core.designsystem.MahinTheme
 import dev.mahin.core.model.ReproductiveMode
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -23,18 +25,67 @@ class SettingsScreenContentTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun settings_showsNotificationPrivacyHistoryRows() {
+    fun settings_entryCallbacks_fireForNotificationsPrivacyHistoryIntegrationsAssistant() {
+        var openedNotifications = false
+        var openedPrivacy = false
+        var openedHistory = false
+        var openedHealthConnect = false
+        var openedAssistant = false
         composeRule.setContent {
             MahinTheme {
                 SettingsScreenContent(
-                    state = SettingsUiState(),
-                    callbacks = noopCallbacks(),
+                    state =
+                        SettingsUiState(
+                            healthConnectEntryVisible = true,
+                            healthAssistantEntryVisible = true,
+                        ),
+                    callbacks =
+                        noopCallbacks(
+                            onOpenNotifications = { openedNotifications = true },
+                            onOpenPrivacy = { openedPrivacy = true },
+                            onOpenHistory = { openedHistory = true },
+                            onOpenHealthConnect = { openedHealthConnect = true },
+                            onOpenAssistant = { openedAssistant = true },
+                        ),
                 )
             }
         }
         composeRule.onNodeWithTag("settings_screen_list").performScrollToNode(hasText("اعلان‌ها"))
-        composeRule.onNodeWithText("تنظیمات یادآوری و حریم اعلان").assertIsDisplayed()
-        composeRule.onNodeWithText("تاریخچهٔ پریود").assertIsDisplayed()
+        composeRule.onNodeWithText("تنظیمات یادآوری و حریم اعلان").performClick()
+        assertTrue(openedNotifications)
+
+        composeRule.onNodeWithTag("settings_screen_list").performScrollToNode(hasText("حریم خصوصی و امنیت"))
+        composeRule
+            .onNode(hasText("حریم خصوصی و امنیت") and hasClickAction())
+            .performClick()
+        assertTrue(openedPrivacy)
+
+        composeRule.onNodeWithTag("settings_screen_list").performScrollToNode(hasText("تاریخچهٔ پریود"))
+        composeRule.onNodeWithText("تاریخچهٔ پریود").performClick()
+        assertTrue(openedHistory)
+
+        composeRule.onNodeWithTag("settings_screen_list").performScrollToNode(hasText("Health Connect (اختیاری)"))
+        composeRule.onNodeWithText("Health Connect (اختیاری)").performClick()
+        assertTrue(openedHealthConnect)
+
+        composeRule.onNodeWithTag("settings_screen_list").performScrollToNode(hasText("دستیار آموزشی (آزمایشی)"))
+        composeRule.onNodeWithText("دستیار آموزشی (آزمایشی)").performClick()
+        assertTrue(openedAssistant)
+    }
+
+    @Test
+    fun settings_modeSelection_invokesCallback() {
+        var selected: ReproductiveMode? = null
+        composeRule.setContent {
+            MahinTheme {
+                SettingsScreenContent(
+                    state = SettingsUiState(reproductiveMode = ReproductiveMode.CYCLE_TRACKING),
+                    callbacks = noopCallbacks(onModeSelected = { selected = it }),
+                )
+            }
+        }
+        composeRule.onNodeWithText("قصد بارداری دارم").performClick()
+        assertEquals(ReproductiveMode.TRYING_TO_CONCEIVE, selected)
     }
 
     @Test
@@ -54,20 +105,6 @@ class SettingsScreenContentTest {
     }
 
     @Test
-    fun settings_healthConnectVisibleWhenFlagOn() {
-        composeRule.setContent {
-            MahinTheme {
-                SettingsScreenContent(
-                    state = SettingsUiState(healthConnectEntryVisible = true),
-                    callbacks = noopCallbacks(),
-                )
-            }
-        }
-        composeRule.onNodeWithTag("settings_screen_list").performScrollToNode(hasText("اتصال‌ها"))
-        composeRule.onNodeWithText("Health Connect (اختیاری)").assertIsDisplayed()
-    }
-
-    @Test
     fun settings_healthConnectHiddenWhenFlagOff() {
         composeRule.setContent {
             MahinTheme {
@@ -78,20 +115,6 @@ class SettingsScreenContentTest {
             }
         }
         composeRule.onNodeWithText("Health Connect (اختیاری)").assertDoesNotExist()
-    }
-
-    @Test
-    fun settings_assistantVisibleWhenFlagOn() {
-        composeRule.setContent {
-            MahinTheme {
-                SettingsScreenContent(
-                    state = SettingsUiState(healthAssistantEntryVisible = true),
-                    callbacks = noopCallbacks(),
-                )
-            }
-        }
-        composeRule.onNodeWithTag("settings_screen_list").performScrollToNode(hasText("دستیار"))
-        composeRule.onNodeWithText("دستیار آموزشی (آزمایشی)").assertIsDisplayed()
     }
 
     @Test
@@ -121,6 +144,20 @@ class SettingsScreenContentTest {
         composeRule.onNodeWithTag("settings_screen_list").performScrollToNode(hasText("ماهین پریمیوم"))
         composeRule.onNodeWithText("مشاهدهٔ پلن پریمیوم").performClick()
         assertTrue(opened)
+    }
+
+    @Test
+    fun settings_premiumActive_showsActiveLabel() {
+        composeRule.setContent {
+            MahinTheme {
+                SettingsScreenContent(
+                    state = SettingsUiState(premiumActive = true, showPremiumPaywallEntry = false),
+                    callbacks = noopCallbacks(),
+                )
+            }
+        }
+        composeRule.onNodeWithTag("settings_screen_list").performScrollToNode(hasText("ماهین پریمیوم"))
+        composeRule.onNodeWithText("پریمیوم فعال است").assertIsDisplayed()
     }
 
     @Test

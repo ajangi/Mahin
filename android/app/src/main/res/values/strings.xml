@@ -159,7 +159,7 @@
 
     <string name="ttc_insights_title">نمای باروری</string>
     <string name="ttc_insights_empty_title">حالت قصد بارداری فعال نیست</string>
-    <string name="ttc_insights_empty_body">از تب «امروز» هدف خود را به «قصد بارداری» تغییر دهید.</string>
+    <string name="ttc_insights_empty_body">برای فعال‌کردن این بخش، در تنظیمات › هدف ردیابی، «قصد بارداری» را انتخاب کنید.</string>
     <string name="ttc_fertility_estimate_title">تخمین پنجرهٔ باروری</string>
     <string name="ttc_logged_opk_dates">تست مثبت/اوج ثبت‌شده: %1$s</string>
     <string name="ttc_logged_egg_white_dates">ترشحات شفاف کش‌دار ثبت‌شده: %1$s</string>
@@ -239,7 +239,10 @@
     <string name="pregnancy_week_placeholder_maternal">[غیرپزشکی — جایگاه محتوا] تغییرات بدن: متن آموزشی از سامانهٔ محتوا بارگذاری می‌شود.</string>
     <string name="pregnancy_hub_title">پیگیری بارداری</string>
     <string name="pregnancy_hub_empty_title">بارداری فعال نیست</string>
-    <string name="pregnancy_hub_empty_body">از تب «امروز» حالت بارداری را شروع کنید.</string>
+    <string name="pregnancy_hub_empty_body">برای شروع بارداری، در تنظیمات › هدف ردیابی، حالت «بارداری» را انتخاب کنید.</string>
+    <string name="pregnancy_post_transition_today_title">مرحلهٔ بعد</string>
+    <string name="pregnancy_post_transition_today_body">وقتی آماده بودید می‌توانید دوباره پیگیری را از سر بگیرید. انتخاب‌های زیر فقط برای شماست.</string>
+    <string name="settings_premium_active">پریمیوم فعال است</string>
     <string name="pregnancy_kick_section_title">شمارش لگد</string>
     <string name="pregnancy_kick_start">شروع جلسه</string>
     <string name="pregnancy_kick_stop">پایان جلسه</string>
