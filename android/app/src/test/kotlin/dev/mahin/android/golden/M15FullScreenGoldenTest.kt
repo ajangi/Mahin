@@ -1,0 +1,104 @@
+package dev.mahin.android.golden
+
+import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.unit.dp
+import dev.mahin.android.cycle.CalendarDaySheetContent
+import dev.mahin.android.cycle.CycleCalendarScreenContent
+import dev.mahin.android.cycle.TodayScreenContent
+import dev.mahin.core.datetime.PersianCivilDateConverter
+import dev.mahin.core.testing.roborazzi.captureMahinFullScreenGolden
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+
+@RunWith(RobolectricTestRunner::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@Config(sdk = [33], qualifiers = "fa-rIR-w411dp-h891dp-xxhdpi")
+class M15FullScreenGoldenTest {
+    @get:Rule
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
+
+    @Test
+    fun today_firstDay_light_scale10() = captureToday(M15GoldenFixtures.todayFirstDay(), false, 1f)
+
+    @Test
+    fun today_firstDay_dark_scale13() = captureToday(M15GoldenFixtures.todayFirstDay(), true, 1.3f)
+
+    @Test
+    fun today_earlyCycle_light_scale10() = captureToday(M15GoldenFixtures.todayEarlyCycle(), false, 1f)
+
+    @Test
+    fun today_fertileWindow_light_scale10() = captureToday(M15GoldenFixtures.todayFertileWindow(), false, 1f)
+
+    @Test
+    fun today_overdue_dark_scale10() = captureToday(M15GoldenFixtures.todayOverdue(), true, 1f)
+
+    @Test
+    fun today_lowConfidence_light_scale13() = captureToday(M15GoldenFixtures.todayLowConfidence(), false, 1.3f)
+
+    @Test
+    fun today_pregnancyWeek_light_scale10() = captureToday(M15GoldenFixtures.todayPregnancyWeek(), false, 1f)
+
+    @Test
+    fun calendar_month_light_scale10() = captureCalendar(M15GoldenFixtures.calendarMonth(), false, 1f)
+
+    @Test
+    fun calendar_daySheet_light_scale10() = captureDaySheet(false, 1f)
+
+    private fun captureToday(
+        state: dev.mahin.android.cycle.TodayUiState,
+        darkTheme: Boolean,
+        fontScale: Float,
+    ) {
+        composeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
+            TodayScreenContent(state = state, modifier = Modifier.fillMaxSize())
+        }
+    }
+
+    private fun captureCalendar(
+        state: dev.mahin.android.cycle.CalendarUiState,
+        darkTheme: Boolean,
+        fontScale: Float,
+    ) {
+        composeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
+            CycleCalendarScreenContent(
+                state = state,
+                onDateSelected = {},
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .height(900.dp),
+            )
+        }
+    }
+
+    private fun captureDaySheet(
+        darkTheme: Boolean,
+        fontScale: Float,
+    ) {
+        val jalali = M15GoldenFixtures.calendarDaySheetOpen().selectedJalali
+        val gregorian = PersianCivilDateConverter.toGregorian(jalali)
+        composeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
+            CalendarDaySheetContent(
+                jalali = jalali,
+                gregorian = gregorian,
+                markers =
+                    dev.mahin.android.cycle.DayMarkers(
+                        fertileWindow = true,
+                    ),
+                onEditLog = {},
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+    }
+}

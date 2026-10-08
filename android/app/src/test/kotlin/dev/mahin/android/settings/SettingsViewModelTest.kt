@@ -180,6 +180,21 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun paywall_dismiss_cancelsWarmUpJob() {
+        val billingAdapter = SlowBillingAdapter()
+        val viewModel = createViewModel(billingAdapter = billingAdapter)
+        viewModel.openPaywall()
+        idle()
+        assertTrue(viewModel.uiState.value.showPaywall)
+        viewModel.dismissPaywall()
+        idle()
+        assertFalse(viewModel.uiState.value.showPaywall)
+        viewModel.openPaywall()
+        idle()
+        assertTrue(viewModel.uiState.value.showPaywall)
+    }
+
+    @Test
     fun paywall_throwingWarmUp_stillAllowsReopen() {
         runBlocking {
             val billingAdapter = ThrowingBillingAdapter()

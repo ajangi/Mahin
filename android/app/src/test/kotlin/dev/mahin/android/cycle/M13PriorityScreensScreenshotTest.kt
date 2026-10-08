@@ -93,6 +93,7 @@ class M13PriorityScreensScreenshotTest {
                         state =
                             CalendarUiState(
                                 selectedJalali = JalaliDate(1403, 6, 15),
+                                visibleMonth = JalaliDate(1403, 6, 15),
                             ),
                         onDateSelected = {},
                         modifier =

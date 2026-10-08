@@ -27,8 +27,8 @@ class ShellModeTransitionTest {
 
     private val stubOverrides =
         MahinShellScreenOverrides(
-            today = { _, _ -> Box(Modifier.testTag("screen_today").fillMaxSize()) },
-            calendar = { Box(Modifier.testTag("screen_calendar").fillMaxSize()) },
+            today = { _, _, _, _, _, _ -> Box(Modifier.testTag("screen_today").fillMaxSize()) },
+            calendar = { _ -> Box(Modifier.testTag("screen_calendar").fillMaxSize()) },
             log = { Box(Modifier.testTag("screen_log").fillMaxSize()) },
             cycleInsights = { Box(Modifier.testTag("screen_cycle_insights").fillMaxSize()) },
             ttcInsights = { Box(Modifier.testTag("screen_ttc_insights").fillMaxSize()) },
@@ -144,6 +144,9 @@ class ShellModeTransitionTest {
                         onOpenCycleCalendar = {
                             navController.navigate(MahinTopLevelDestination.Calendar.route)
                         },
+                        onOpenLogTab = {},
+                        onOpenPlan = {},
+                        onOpenPregnancyTab = {},
                         screenOverrides = stubOverrides,
                     )
                 }
@@ -184,6 +187,9 @@ class ShellModeTransitionTest {
                         onOpenHistory = {},
                         onOpenLearn = {},
                         onOpenCycleCalendar = {},
+                        onOpenLogTab = {},
+                        onOpenPlan = {},
+                        onOpenPregnancyTab = {},
                         screenOverrides = stubOverrides,
                     )
                 }

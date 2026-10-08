@@ -8,6 +8,7 @@ import dev.mahin.core.database.MahinDatabase
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.entity.CycleProfileEntity
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
+import dev.mahin.core.datastore.NotificationPreferencesRepository
 import dev.mahin.core.datastore.PregnancyTimerPreferencesRepository
 import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.PregnancyOutcome
@@ -15,6 +16,7 @@ import dev.mahin.core.model.ReproductiveMode
 import java.time.LocalDate
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -57,7 +59,7 @@ class TodayViewModelTest {
                     clinicalEddDate = null,
                     datingReason = null,
                 )
-            val viewModel = TodayViewModel(cycleRepository, pregnancyRepository)
+            val viewModel = TodayViewModel(cycleRepository, pregnancyRepository, notificationPrefs())
             pregnancyRepository.recordOutcome(
                 pregnancyId = pregnancy.id,
                 outcome = PregnancyOutcome.PREGNANCY_LOSS,
@@ -79,7 +81,7 @@ class TodayViewModelTest {
                     clinicalEddDate = null,
                     datingReason = null,
                 )
-            val viewModel = TodayViewModel(cycleRepository, pregnancyRepository)
+            val viewModel = TodayViewModel(cycleRepository, pregnancyRepository, notificationPrefs())
             pregnancyRepository.recordOutcome(
                 pregnancyId = pregnancy.id,
                 outcome = PregnancyOutcome.PREGNANCY_LOSS,
@@ -102,7 +104,7 @@ class TodayViewModelTest {
                     clinicalEddDate = null,
                     datingReason = null,
                 )
-            val viewModel = TodayViewModel(cycleRepository, pregnancyRepository)
+            val viewModel = TodayViewModel(cycleRepository, pregnancyRepository, notificationPrefs())
             pregnancyRepository.recordOutcome(
                 pregnancyId = pregnancy.id,
                 outcome = PregnancyOutcome.PREGNANCY_LOSS,
@@ -116,6 +118,27 @@ class TodayViewModelTest {
     }
 
     @Test
+    fun postTransitionLearnLinkHidden_whenSupportContentFalse() {
+        runTest {
+            seedPregnantProfile()
+            val pregnancy =
+                pregnancyRepository.startPregnancy(
+                    lmpDate = LocalDate.of(2025, 1, 1),
+                    clinicalEddDate = null,
+                    datingReason = null,
+                )
+            val viewModel = TodayViewModel(cycleRepository, pregnancyRepository, notificationPrefs())
+            pregnancyRepository.recordOutcome(
+                pregnancyId = pregnancy.id,
+                outcome = PregnancyOutcome.PREGNANCY_LOSS,
+                wantsSupportContent = false,
+            )
+            awaitUntil { viewModel.uiState.value.postPregnancyTransition }
+            assertThat(viewModel.uiState.value.postTransitionLearnLinkVisible).isFalse()
+        }
+    }
+
+    @Test
     fun postTransitionLearnLinkVisible_whenSupportContentRequested() {
         runBlocking {
             seedPregnantProfile()
@@ -125,7 +148,7 @@ class TodayViewModelTest {
                     clinicalEddDate = null,
                     datingReason = null,
                 )
-            val viewModel = TodayViewModel(cycleRepository, pregnancyRepository)
+            val viewModel = TodayViewModel(cycleRepository, pregnancyRepository, notificationPrefs())
             pregnancyRepository.recordOutcome(
                 pregnancyId = pregnancy.id,
                 outcome = PregnancyOutcome.PREGNANCY_LOSS,
@@ -133,6 +156,11 @@ class TodayViewModelTest {
             )
             awaitUntil { viewModel.uiState.value.postTransitionLearnLinkVisible }
         }
+    }
+
+    private fun notificationPrefs(): NotificationPreferencesRepository {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        return NotificationPreferencesRepository(context)
     }
 
     private suspend fun seedPregnantProfile() {

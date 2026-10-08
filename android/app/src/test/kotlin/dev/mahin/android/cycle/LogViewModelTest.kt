@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import dev.mahin.android.navigation.LogTabDateRequest
 import dev.mahin.core.database.MahinDatabase
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.entity.CycleProfileEntity
@@ -263,6 +264,7 @@ class LogViewModelTest {
             ttcRepository,
             pregnancyRepository,
             privacyRepository,
+            LogTabDateRequest(),
         )
     }
 

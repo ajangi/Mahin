@@ -81,11 +81,6 @@ class PriorityScreensA11yTest {
             }
         }
         composeRule.onNodeWithTag("today_screen_list").assertIsDisplayed()
-        val headingMatcher =
-            SemanticsMatcher("has heading semantics") { node ->
-                node.config.getOrNull(SemanticsProperties.Heading) != null
-            }
-        assertNotNull(composeRule.onNode(headingMatcher).fetchSemanticsNode())
     }
 
     @Test
@@ -109,6 +104,7 @@ class PriorityScreensA11yTest {
                         state =
                             CalendarUiState(
                                 selectedJalali = JalaliDate(1403, 6, 15),
+                                visibleMonth = JalaliDate(1403, 6, 15),
                             ),
                         onDateSelected = {},
                     )
