@@ -39,6 +39,7 @@ internal object CycleDayMarkersMapper {
                 ),
             ).toDayMarkers()
 
+    @Suppress("LongParameterList")
     fun buildMap(
         rangeStart: LocalDate,
         rangeEnd: LocalDate,

@@ -23,6 +23,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Suppress("LongParameterList")
 @Composable
 fun CalendarDaySheet(
     open: Boolean,
@@ -55,6 +56,7 @@ fun CalendarDaySheet(
     }
 }
 
+@Suppress("LongParameterList")
 @Composable
 internal fun CalendarDaySheetContent(
     jalali: JalaliDate,
