@@ -6,12 +6,12 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.invisibleToUser
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import org.junit.Assert.assertTrue
+import com.google.common.truth.Truth.assertThat
 import dev.mahin.android.R
 import dev.mahin.android.golden.M15GoldenFixtures
 import dev.mahin.core.datetime.PersianDigits
@@ -67,7 +67,7 @@ class TodayRingA11yTest {
                 .fetchSemanticsNode()
                 .config[SemanticsProperties.ContentDescription]
                 .joinToString()
-        assertTrue(description.contains("چرخه"))
-        assertTrue(description.contains(PersianDigits.format(cycleDay)))
+        assertThat(description).contains("چرخه")
+        assertThat(description).contains(PersianDigits.format(cycleDay))
     }
 }
