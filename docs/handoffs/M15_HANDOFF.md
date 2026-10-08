@@ -73,7 +73,7 @@ cd android && ./gradlew lintDebug ktlintCheck detekt testDebugUnitTest assembleD
 | All existing checks | PASS | Local CI-equivalent (see above) |
 
 ## Known limitations
-- `:app` `testDebugUnitTest` uses `maxParallelForks = 1` and a 30-minute Gradle task timeout so Robolectric + Compose goldens do not deadlock on CI (PR #37 run `37793958019` hit the prior 20-minute cap with parallel forks).
+- `:app` `testDebugUnitTest` uses `maxParallelForks = 1` and a 30-minute Gradle task timeout so Robolectric + Compose goldens do not deadlock on CI (PR #37 run `37793958019` hit the prior 20-minute cap with parallel forks). Android CI caps Gradle workers/RAM via `GRADLE_OPTS` after run `37798790966` lost the daemon during `designsystem:testDebugUnitTest`.
 - Week strip horizontal scroll only (no vertical month pager on Today).
 - Day sheet shared-element transition: reduced-motion respects sheet skip; full shared-axis deferred.
 - `TodayReminderSummary` uses planner snapshot; disabled categories yield no card.

@@ -111,6 +111,12 @@ jobs:
         run: echo "sdk.dir=${ANDROID_HOME}" > android/local.properties
       - name: Lint, unit tests, debug and release (minify) verification
         working-directory: android
+        env:
+          # Keep peak RAM below ubuntu-latest limits while lint, tests, and Roborazzi run in one invocation.
+          GRADLE_OPTS: >-
+            -Dorg.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=512m
+            -Dorg.gradle.workers.max=2
+            -Dorg.gradle.parallel=false
         run: |
           ./gradlew lintDebug ktlintCheck detekt test assembleDebug assembleRelease \
             :core:network:testReleaseUnitTest \
