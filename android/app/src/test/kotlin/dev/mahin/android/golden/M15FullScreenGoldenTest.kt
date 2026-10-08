@@ -1,13 +1,14 @@
+@file:OptIn(androidx.compose.animation.ExperimentalSharedTransitionApi::class)
+
 package dev.mahin.android.golden
 
 import androidx.activity.ComponentActivity
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import dev.mahin.android.cycle.CalendarDaySheetContent
 import dev.mahin.android.cycle.CycleCalendarScreenContent
 import dev.mahin.android.cycle.TodayScreenContent
-import dev.mahin.core.datetime.PersianCivilDateConverter
 import dev.mahin.core.testing.roborazzi.captureMahinFullScreenGolden
 import org.junit.Rule
 import org.junit.Test
@@ -116,18 +117,15 @@ class M15FullScreenGoldenTest {
         fontScale: Float,
     ) {
         val calendarState = M15GoldenFixtures.calendarDaySheetOpen()
-        val jalali = calendarState.selectedJalali
-        val gregorian = PersianCivilDateConverter.toGregorian(jalali)
         composeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
-            CalendarDaySheetContent(
-                jalali = jalali,
-                gregorian = gregorian,
-                markers =
-                    dev.mahin.android.cycle
-                        .DayMarkers(fertileWindow = true),
-                onEditLog = {},
-                modifier = Modifier.fillMaxSize(),
-            )
+            SharedTransitionLayout(modifier = Modifier.fillMaxSize()) {
+                CycleCalendarScreenContent(
+                    state = calendarState,
+                    sharedTransitionScope = this,
+                    onDateSelected = {},
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
         }
     }
 }

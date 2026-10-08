@@ -61,7 +61,7 @@ fun mahinRingGeometry(layoutDirection: LayoutDirection): MahinRingGeometry =
             )
     }
 
-@Suppress("LongParameterList")
+@Suppress("LongParameterList", "LongMethod")
 @Composable
 fun MahinCycleProgressRing(
     arcs: List<MahinRingArc>,

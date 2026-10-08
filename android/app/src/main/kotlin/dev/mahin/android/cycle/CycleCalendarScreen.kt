@@ -2,6 +2,8 @@ package dev.mahin.android.cycle
 
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -20,6 +22,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mahin.android.R
 import dev.mahin.core.datetime.JalaliDate
 import dev.mahin.core.datetime.PersianCivilDateConverter
+import dev.mahin.core.designsystem.LocalReducedMotion
 import dev.mahin.core.designsystem.MahinSpacing
 import dev.mahin.core.designsystem.component.MahinCalendarDayDecoration
 import dev.mahin.core.designsystem.component.MahinCalendarLegend
@@ -38,6 +41,7 @@ fun CycleCalendarScreen(
     SharedTransitionLayout(modifier = modifier) {
         CycleCalendarScreenContent(
             state = state,
+            sharedTransitionScope = this,
             onDateSelected = { viewModel.selectJalaliDate(it) },
             onDismissDaySheet = viewModel::dismissDaySheet,
             onToggleLegend = viewModel::toggleLegendExpanded,
@@ -49,7 +53,7 @@ fun CycleCalendarScreen(
 }
 
 @OptIn(ExperimentalSharedTransitionApi::class)
-@Suppress("LongParameterList")
+@Suppress("LongParameterList", "LongMethod")
 @Composable
 internal fun CycleCalendarScreenContent(
     state: CalendarUiState,
@@ -59,10 +63,13 @@ internal fun CycleCalendarScreenContent(
     onJumpToToday: () -> Unit = {},
     onVisibleMonthChanged: (JalaliDate) -> Unit = {},
     onOpenLogForDate: (LocalDate) -> Unit = {},
+    sharedTransitionScope: SharedTransitionScope? = null,
     modifier: Modifier = Modifier,
 ) {
     val converter = PersianCivilDateConverter
     val today = LocalDate.now()
+    val reducedMotion = LocalReducedMotion.current
+    val selectedGregorian = converter.toGregorian(state.selectedJalali)
     val palette =
         CalendarMarkerPalette(
             periodLogged = MahinCalendarMarkerTints.periodLogged(),
@@ -70,54 +77,82 @@ internal fun CycleCalendarScreenContent(
             ovulation = MahinCalendarMarkerTints.estimatedOvulation(),
         )
     val scroll = rememberScrollState()
-    Column(
+    Box(
         modifier =
             modifier
                 .fillMaxSize()
-                .verticalScroll(scroll)
-                .testTag("cycle_calendar_screen")
-                .padding(horizontal = MahinSpacing.md),
+                .testTag("cycle_calendar_screen"),
     ) {
-        Text(
-            text = stringResource(R.string.calendar_legend_hint),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = MahinSpacing.sm, bottom = MahinSpacing.sm),
-        )
-        MahinCalendarLegend(
-            expanded = state.legendExpanded,
-            onToggleExpanded = onToggleLegend,
-            modifier = Modifier.padding(bottom = MahinSpacing.sm),
-        )
-        MahinJalaliDatePicker(
-            selectedDate = state.selectedJalali,
-            onDateSelected = onDateSelected,
-            converter = converter,
-            visibleMonth = state.visibleMonth,
-            onVisibleMonthChanged = onVisibleMonthChanged,
-            dayDecoration = { date -> decorationFor(date, state.dayMarkers[date], today, palette) },
-            headerTrailing = {
-                TextButton(onClick = onJumpToToday) {
-                    Text(text = stringResource(R.string.calendar_jump_today))
-                }
-            },
-        )
-        Text(
-            text = stringResource(R.string.prediction_disclaimer),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = MahinSpacing.md, bottom = MahinSpacing.lg),
-        )
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scroll)
+                    .padding(horizontal = MahinSpacing.md),
+        ) {
+            Text(
+                text = stringResource(R.string.calendar_legend_hint),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = MahinSpacing.sm, bottom = MahinSpacing.sm),
+            )
+            MahinCalendarLegend(
+                expanded = state.legendExpanded,
+                onToggleExpanded = onToggleLegend,
+                modifier = Modifier.padding(bottom = MahinSpacing.sm),
+            )
+            MahinJalaliDatePicker(
+                selectedDate = state.selectedJalali,
+                onDateSelected = onDateSelected,
+                converter = converter,
+                visibleMonth = state.visibleMonth,
+                onVisibleMonthChanged = onVisibleMonthChanged,
+                dayDecoration = { date -> decorationFor(date, state.dayMarkers[date], today, palette) },
+                dayCellModifier = { date ->
+                    calendarDaySharedCellModifier(
+                        date = date,
+                        selectedGregorian = selectedGregorian,
+                        daySheetOpen = state.daySheetOpen,
+                        reducedMotion = reducedMotion,
+                        sharedTransitionScope = sharedTransitionScope,
+                    )
+                },
+                headerTrailing = {
+                    TextButton(onClick = onJumpToToday) {
+                        Text(text = stringResource(R.string.calendar_jump_today))
+                    }
+                },
+            )
+            Text(
+                text = stringResource(R.string.prediction_disclaimer),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = MahinSpacing.md, bottom = MahinSpacing.lg),
+            )
+        }
+        if (sharedTransitionScope != null) {
+            with(sharedTransitionScope) {
+                CalendarAnimatedDaySheet(
+                    open = state.daySheetOpen,
+                    selectedJalali = state.selectedJalali,
+                    selectedGregorian = selectedGregorian,
+                    markers = state.dayMarkers[selectedGregorian],
+                    logLines = state.dayLogs[selectedGregorian] ?: emptyList(),
+                    onDismiss = onDismissDaySheet,
+                    onEditLog = onOpenLogForDate,
+                )
+            }
+        } else if (state.daySheetOpen) {
+            CalendarDaySheet(
+                open = true,
+                selectedJalali = state.selectedJalali,
+                markers = state.dayMarkers[selectedGregorian],
+                logLines = state.dayLogs[selectedGregorian] ?: emptyList(),
+                onDismiss = onDismissDaySheet,
+                onEditLog = onOpenLogForDate,
+            )
+        }
     }
-    val gregorian = converter.toGregorian(state.selectedJalali)
-    CalendarDaySheet(
-        open = state.daySheetOpen,
-        selectedJalali = state.selectedJalali,
-        markers = state.dayMarkers[gregorian],
-        logLines = state.dayLogs[gregorian] ?: emptyList(),
-        onDismiss = onDismissDaySheet,
-        onEditLog = onOpenLogForDate,
-    )
 }
 
 data class DayMarkers(
@@ -133,6 +168,26 @@ internal data class CalendarMarkerPalette(
     val fertile: androidx.compose.ui.graphics.Color,
     val ovulation: androidx.compose.ui.graphics.Color,
 )
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+private fun calendarDaySharedCellModifier(
+    date: LocalDate,
+    selectedGregorian: LocalDate,
+    daySheetOpen: Boolean,
+    reducedMotion: Boolean,
+    sharedTransitionScope: SharedTransitionScope?,
+): Modifier {
+    if (reducedMotion || !daySheetOpen || date != selectedGregorian) return Modifier
+    val scope = LocalCalendarDaySheetTransitionScope.current ?: return Modifier
+    val stScope = sharedTransitionScope ?: return Modifier
+    return with(stScope) {
+        Modifier.sharedBounds(
+            sharedContentState = rememberSharedContentState(calendarDaySharedContentKey(date)),
+            animatedVisibilityScope = scope,
+        )
+    }
+}
 
 internal fun decorationFor(
     date: LocalDate,

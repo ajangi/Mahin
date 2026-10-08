@@ -112,6 +112,8 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.compose.material.icons)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation("androidx.compose.animation:animation")
     implementation(libs.hilt.android)
     implementation(libs.androidx.hilt.work)
     ksp(libs.androidx.hilt.compiler)

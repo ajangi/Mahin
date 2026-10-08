@@ -1,14 +1,40 @@
 # M15 Handoff — Today home & calendar redesign
 
 **Milestone:** M15  
-**Status:** draft PR — gatekeeper follow-up in progress  
+**Status:** draft PR #37 — gatekeeper items **1–15 complete** on branch head (awaiting final CI)  
 **Next milestone:** **M16** only
 
-## Gatekeeper follow-up (PR #37)
+## Gatekeeper checklist (1–15)
 
-Substantial fixes landed after gatekeeper review: ring geometry (full segment arcs, separate progress + today marker, reduced motion), `TodaySnapshot` segments from period/prediction data (no 21–45 clamp), shared `CycleDayMarkerBuilder`, calendar month `HorizontalPager` + controlled `visibleMonth`, scrollable calendar column, 32 M15 Roborazzi goldens, pregnancy week ring arcs, paywall job identity in `finally`, `LocalMahinDarkTheme` for marker tints.
+| # | Item | Status |
+|---|------|--------|
+| 1 | Ring geometry unit tests + RTL golden (`MahinRingGeometryTest`, `MahinCycleProgressRingRtlGoldenTest`) | **Done** |
+| 2 | `TodaySnapshotUseCaseTest` matrix + dedicated fertile + ovulation segments; pregnancy week in `PregnancyTodaySnapshotUseCaseTest` | **Done** |
+| 3 | TalkBack: ring CD + `TodayRingA11yTest` (no separate day semantics node) | **Done** |
+| 4 | 32 M15 Roborazzi goldens; day-sheet captures calendar + sheet overlay via `SharedTransitionLayout` | **Done** |
+| 5 | Calendar column scroll | **Done** (prior) |
+| 6 | `CalendarViewModelTest.jumpToToday` | **Done** |
+| 7 | Shared-element cell→sheet (`CalendarAnimatedDaySheet` + `sharedBounds`); skipped when `LocalReducedMotion` | **Done** |
+| 8 | Today pregnancy/cycle scope: trimester + dating chips, week card slot, appointment→Plan, kick/contraction→Pregnancy tab, swipeable week pager, pregnancy calendar strip, hidden daily-tip slot, M14b log icons | **Done** |
+| 9 | Contrast tests: text 4.5:1 + marker semantics 3.0:1 light/dark (`MahinCalendarMarkerContrastTest`) | **Done** |
+| 10 | `CycleDayMarkerBuilderTest` + `CycleDayMarkersMapperTest` | **Done** |
+| 11 | Paywall warm-up job identity + `paywall_secondOpenAfterCancel_startsWarmUpAgain` | **Done** |
+| 12 | Test hygiene: `CalendarUiPreferencesRepository.clear()` in `CalendarViewModelTest` tearDown; Room DB close | **Done** |
+| 13 | Full M15-related test list (below) | **Done** |
+| 14 | `TodayFirstFrameBenchmark` waits for ring CD or first-day CTA copy | **Done** |
+| 15 | PR body + this handoff aligned with implementation | **Done** (CI android duration filled after green run) |
 
-**Still open / partial:** shared-element cell→sheet transition; swipeable multi-week Today strip; full pregnancy Today cards (appointment→Plan, kick/contraction→Pregnancy tab, week CMS slot, dating chip UI); dedicated ring RTL golden; contrast ratio unit tests; several new navigation/preference tests; `TodayFirstFrameBenchmark` hero wait; full paywall cancellation propagation tests; test hygiene (DataStore clears); logged-summary per-tag M14b icons; day-sheet golden over calendar for all variants.
+## M15 test inventory (#13)
+
+| Area | Tests |
+|------|--------|
+| Ring / DS | `MahinRingGeometryTest`, `MahinCycleProgressRingRtlGoldenTest`, `MahinCalendarMarkerContrastTest`, `MahinDarkSemanticContrastTest` |
+| Domain | `TodaySnapshotUseCaseTest`, `CycleDayMarkerBuilderTest`, `PregnancyTodaySnapshotUseCaseTest` |
+| App mappers / VM | `CycleDayMarkersMapperTest`, `TodayLoggedSummaryMapperTest`, `CalendarViewModelTest`, `TodayViewModelTest` |
+| Compose / a11y | `TodayRingA11yTest`, `TodayScreenContentTest`, `PriorityScreensA11yTest` (Today heading), `M13PriorityScreensScreenshotTest` |
+| Goldens | `M15FullScreenGoldenTest` (32), updated `M14aFullScreenGoldenTest` / `M14cShellGoldenTest` as needed |
+| Settings | `SettingsViewModelTest` (paywall cancellation / reopen) |
+| Shell | `MahinShellNavigationTest` (M14c carry-over) |
 
 ## `maxParallelForks`
 
@@ -17,12 +43,19 @@ Substantial fixes landed after gatekeeper review: ring geometry (full segment ar
 ## Commands / results (local)
 
 ```bash
-cd android && ./gradlew :domain:cycle:test :app:testDebugUnitTest \
+cd android && ./gradlew ktlintCheck detekt \
+  :domain:cycle:test :domain:pregnancy:test \
+  :core:designsystem:test :app:testDebugUnitTest \
   :app:verifyRoborazziDebug :core:designsystem:verifyRoborazziDebug --no-daemon
-# BUILD SUCCESSFUL (verify Roborazzi after M15/M14a/M13 re-record)
+# Run on gatekeeper completion commit; see CI for authoritative android job duration.
 ```
 
-**Macrobenchmark:** not measured (no emulator).
+**Macrobenchmark:** `TodayFirstFrameBenchmark` compiles; emulator numbers not measured in Cloud Agent VM.
+
+## Limitations
+
+- Day-sheet shared-element uses in-tree overlay (not `ModalBottomSheet`) when `SharedTransitionLayout` is active; Today day sheet still uses modal sheet.
+- Marker contrast tests assert full-opacity health semantics vs surfaces (graphics); cell fill alphas remain as in `MahinCalendarMarkerTintAlphas`.
 
 ## Deferred
 

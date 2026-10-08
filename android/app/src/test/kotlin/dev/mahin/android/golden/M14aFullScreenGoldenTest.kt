@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.animation.ExperimentalSharedTransitionApi::class)
+
 package dev.mahin.android.golden
 
 import androidx.activity.ComponentActivity

@@ -12,25 +12,53 @@ object MahinCalendarMarkerTints {
     @Composable
     fun periodLogged(): Color {
         val extended = LocalMahinExtendedColors.current
-        return extended.healthPeriod.copy(alpha = if (LocalMahinDarkTheme.current) 0.55f else 0.45f)
+        return extended.healthPeriod.copy(
+            alpha =
+                if (LocalMahinDarkTheme.current) {
+                    MahinCalendarMarkerTintAlphas.DARK_PERIOD
+                } else {
+                    MahinCalendarMarkerTintAlphas.LIGHT_PERIOD
+                },
+        )
     }
 
     @Composable
     fun periodPredictedFill(): Color {
         val extended = LocalMahinExtendedColors.current
-        return extended.healthPeriod.copy(alpha = if (LocalMahinDarkTheme.current) 0.18f else 0.12f)
+        return extended.healthPeriod.copy(
+            alpha =
+                if (LocalMahinDarkTheme.current) {
+                    MahinCalendarMarkerTintAlphas.DARK_PERIOD_PREDICTED
+                } else {
+                    MahinCalendarMarkerTintAlphas.LIGHT_PERIOD_PREDICTED
+                },
+        )
     }
 
     @Composable
     fun fertileWindow(): Color {
         val extended = LocalMahinExtendedColors.current
-        return extended.healthFertility.copy(alpha = if (LocalMahinDarkTheme.current) 0.42f else 0.28f)
+        return extended.healthFertility.copy(
+            alpha =
+                if (LocalMahinDarkTheme.current) {
+                    MahinCalendarMarkerTintAlphas.DARK_FERTILE
+                } else {
+                    MahinCalendarMarkerTintAlphas.LIGHT_FERTILE
+                },
+        )
     }
 
     @Composable
     fun estimatedOvulation(): Color {
         val extended = LocalMahinExtendedColors.current
-        return extended.healthOvulation.copy(alpha = if (LocalMahinDarkTheme.current) 0.72f else 0.85f)
+        return extended.healthOvulation.copy(
+            alpha =
+                if (LocalMahinDarkTheme.current) {
+                    MahinCalendarMarkerTintAlphas.DARK_OVULATION
+                } else {
+                    MahinCalendarMarkerTintAlphas.LIGHT_OVULATION
+                },
+        )
     }
 
     @Composable

@@ -134,6 +134,71 @@ class TodaySnapshotUseCaseTest {
     }
 
     @Test
+    fun fertileWindow_setsInFertileFlagAndSegment() {
+        val fertileToday = LocalDate.of(2025, 3, 12)
+        val prediction =
+            CyclePredictionEngineV1.predict(
+                CyclePredictionInput(
+                    today = fertileToday,
+                    completedCycles =
+                        listOf(
+                            CompletedCycleSpan(anchor.minusDays(28), anchor.minusDays(24), anchor),
+                            CompletedCycleSpan(anchor.minusDays(56), anchor.minusDays(52), anchor.minusDays(28)),
+                        ),
+                    openPeriodStart = anchor,
+                    openPeriodEnd = anchor.plusDays(4),
+                    typicalCycleLengthDays = 28,
+                    typicalPeriodLengthDays = 5,
+                    regularity = dev.mahin.core.model.CycleRegularity.REGULAR,
+                ),
+            )
+        val snapshot =
+            TodaySnapshotUseCase.fromCycle(
+                CycleTodaySnapshotInput(
+                    today = fertileToday,
+                    prediction = prediction,
+                    periodAnchorStart = anchor,
+                    currentPeriod = PeriodSpanForSnapshot(anchor, anchor.plusDays(4)),
+                    typicalPeriodLengthDays = 5,
+                    onPeriodToday = false,
+                ),
+            ) as TodaySnapshot.Cycle
+        assertThat(snapshot.hero.isInFertileWindow).isTrue()
+        assertThat(
+            snapshot.hero.ringSegments.any { it.kind == CycleRingSegmentKind.FERTILE_WINDOW },
+        ).isTrue()
+    }
+
+    @Test
+    fun estimatedOvulation_addsOvulationSegment() {
+        val ovulationDay = LocalDate.of(2025, 3, 15)
+        val prediction =
+            CyclePredictionResult(
+                algorithmVersion = CycleDomainModule.PREDICTION_ALGORITHM_VERSION,
+                confidence = PredictionConfidence.MEDIUM,
+                cycleDay = 15,
+                nextPeriod = DateRangeEstimate(ovulationDay.plusDays(13), ovulationDay.plusDays(16)),
+                fertileWindow = DateRangeEstimate(ovulationDay.minusDays(2), ovulationDay.plusDays(1)),
+                estimatedOvulation = DateRangeEstimate(ovulationDay, ovulationDay),
+                insufficientDataReason = null,
+            )
+        val snapshot =
+            TodaySnapshotUseCase.fromCycle(
+                CycleTodaySnapshotInput(
+                    today = ovulationDay,
+                    prediction = prediction,
+                    periodAnchorStart = anchor,
+                    currentPeriod = PeriodSpanForSnapshot(anchor, anchor.plusDays(4)),
+                    typicalPeriodLengthDays = 5,
+                    onPeriodToday = false,
+                ),
+            ) as TodaySnapshot.Cycle
+        assertThat(
+            snapshot.hero.ringSegments.any { it.kind == CycleRingSegmentKind.ESTIMATED_OVULATION },
+        ).isTrue()
+    }
+
+    @Test
     fun irregular_lowConfidence_showsChip() {
         val prediction =
             CyclePredictionEngineV1.predict(

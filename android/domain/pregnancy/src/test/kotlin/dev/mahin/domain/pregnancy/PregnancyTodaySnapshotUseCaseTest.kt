@@ -19,5 +19,6 @@ class PregnancyTodaySnapshotUseCaseTest {
         assertThat(snapshot.hero.gestationalWeeks).isEqualTo(21)
         assertThat(snapshot.hero.trimester).isEqualTo(PregnancyTrimester.SECOND)
         assertThat(snapshot.hero.datingSource).isEqualTo(PregnancyDatingSource.LMP_PLUS_280_DAYS)
+        assertThat(snapshot.hero.displayWeekNumber).isEqualTo(22)
     }
 }

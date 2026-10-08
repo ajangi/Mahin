@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.animation.ExperimentalSharedTransitionApi::class)
+
 package dev.mahin.android.cycle
 
 import androidx.compose.runtime.CompositionLocalProvider
@@ -81,6 +83,11 @@ class PriorityScreensA11yTest {
             }
         }
         composeRule.onNodeWithTag("today_screen_list").assertIsDisplayed()
+        val headingMatcher =
+            SemanticsMatcher("has heading semantics") { node ->
+                node.config.getOrNull(SemanticsProperties.Heading) != null
+            }
+        composeRule.onNode(headingMatcher).assertIsDisplayed()
     }
 
     @Test

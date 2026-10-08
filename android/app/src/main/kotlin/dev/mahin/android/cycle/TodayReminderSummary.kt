@@ -16,6 +16,12 @@ data class TodayUpcomingReminder(
     val triggerAtEpochMs: Long,
 )
 
+/** Next pregnancy plan appointment (opens Plan tab). */
+data class TodayUpcomingAppointment(
+    val titleFa: String,
+    val scheduledAtEpochMs: Long,
+)
+
 internal object TodayReminderSummary {
     @Suppress("LongParameterList")
     fun nextUpcoming(

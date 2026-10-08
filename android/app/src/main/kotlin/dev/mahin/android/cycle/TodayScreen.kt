@@ -1,6 +1,5 @@
 package dev.mahin.android.cycle
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,8 +8,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -24,8 +25,10 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.invisibleToUser
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mahin.android.R
@@ -42,10 +45,12 @@ import dev.mahin.core.designsystem.icon.MahinIcon
 import dev.mahin.core.designsystem.icon.MahinIcons
 import dev.mahin.core.designsystem.mahinTextStyle
 import dev.mahin.core.media.illustration.MahinIllustration
+import dev.mahin.core.model.PregnancyDatingSource
 import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.domain.cycle.CycleTodayHero
 import dev.mahin.domain.cycle.TodaySnapshot
 import dev.mahin.domain.pregnancy.PregnancyTodayHero
+import dev.mahin.domain.pregnancy.PregnancyTrimester
 import java.time.LocalDate
 
 @Composable
@@ -75,7 +80,7 @@ fun TodayScreen(
     )
 }
 
-@Suppress("LongMethod", "LongParameterList")
+@Suppress("LongMethod", "LongParameterList", "CyclomaticComplexMethod")
 @Composable
 internal fun TodayScreenContent(
     state: TodayUiState,
@@ -99,10 +104,19 @@ internal fun TodayScreenContent(
     ) {
         item {
             Text(
+                text = stringResource(R.string.today_title),
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.semantics { heading() },
+            )
+            Text(
                 text = stringResource(R.string.today_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = MahinSpacing.xs),
             )
+        }
+        item {
+            TodayDailyTipSlot(visible = state.showDailyTipSlot)
         }
         if (state.postPregnancyTransition && postPregnancyActions != null) {
             item {
@@ -119,12 +133,31 @@ internal fun TodayScreenContent(
             when (state.reproductiveMode) {
                 ReproductiveMode.PREGNANT -> {
                     state.pregnancySnapshot?.hero?.let { hero ->
-                        item { TodayPregnancyHero(hero = hero, onOpenCalendar = actions.onOpenCalendar) }
                         item {
-                            TodayPregnancyQuickActions(
-                                onOpenPlan = actions.onOpenPlan,
-                                onOpenPregnancyTab = actions.onOpenPregnancyTab,
+                            TodayPregnancyHero(
+                                hero = hero,
+                                onOpenCalendar = actions.onOpenCalendar,
                             )
+                        }
+                        item {
+                            TodayPregnancyMetaChips(hero = hero)
+                        }
+                        item {
+                            TodayPregnancyWeekCard(weekNumber = hero.displayWeekNumber)
+                        }
+                        state.upcomingAppointment?.let { appointment ->
+                            item {
+                                TodayAppointmentCard(
+                                    title = appointment.titleFa,
+                                    onOpenPlan = actions.onOpenPlan,
+                                )
+                            }
+                        }
+                        item {
+                            TodayPregnancyToolActions(onOpenPregnancyTab = actions.onOpenPregnancyTab)
+                        }
+                        item {
+                            TodayPregnancyWeekStripEntry(onOpenCalendar = actions.onOpenCalendar)
                         }
                     }
                 }
@@ -141,8 +174,8 @@ internal fun TodayScreenContent(
                                 )
                             }
                             item {
-                                TodayWeekStrip(
-                                    days = state.weekStrip,
+                                TodaySwipeableWeekStrip(
+                                    weeks = state.weekStripWeeks.ifEmpty { listOf(state.weekStrip) },
                                     onDaySelected = onWeekDaySelected,
                                 )
                             }
@@ -326,25 +359,127 @@ private fun TodayPregnancyHero(
 }
 
 @Composable
-private fun TodayWeekStrip(
-    days: List<TodayWeekDay>,
+private fun TodaySwipeableWeekStrip(
+    weeks: List<List<TodayWeekDay>>,
     onDaySelected: (LocalDate) -> Unit,
 ) {
-    Row(
+    val pagerState = rememberPagerState(initialPage = weeks.size / 2, pageCount = { weeks.size })
+    Column(modifier = Modifier.fillMaxWidth().testTag("today_swipeable_week_strip")) {
+        HorizontalPager(state = pagerState, modifier = Modifier.fillMaxWidth()) { page ->
+            Row(
+                modifier = Modifier.fillMaxWidth().testTag("today_week_strip"),
+                horizontalArrangement = Arrangement.spacedBy(MahinSpacing.xs),
+            ) {
+                weeks[page].forEach { day ->
+                    FilterChip(
+                        selected = day.isSelected,
+                        onClick = { onDaySelected(day.date) },
+                        label = { Text(text = PersianDigits.format(day.jalali.day)) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TodayDailyTipSlot(visible: Boolean) {
+    if (!visible) {
+        Spacer(
+            modifier =
+                Modifier
+                    .testTag("today_daily_tip_slot")
+                    .size(0.dp),
+        )
+    }
+}
+
+@Composable
+private fun TodayPregnancyMetaChips(hero: PregnancyTodayHero) {
+    val trimesterLabel =
+        when (hero.trimester) {
+            PregnancyTrimester.FIRST -> stringResource(R.string.pregnancy_trimester_first)
+            PregnancyTrimester.SECOND -> stringResource(R.string.pregnancy_trimester_second)
+            PregnancyTrimester.THIRD -> stringResource(R.string.pregnancy_trimester_third)
+        }
+    val datingLabel =
+        when (hero.datingSource) {
+            PregnancyDatingSource.LMP_PLUS_280_DAYS -> stringResource(R.string.today_dating_source_lmp)
+            PregnancyDatingSource.CLINICAL_OR_ULTRASOUND -> stringResource(R.string.today_dating_source_clinical)
+        }
+    Row(horizontalArrangement = Arrangement.spacedBy(MahinSpacing.sm)) {
+        FilterChip(selected = true, onClick = {}, enabled = false, label = { Text(trimesterLabel) })
+        FilterChip(
+            selected = false,
+            onClick = {},
+            enabled = false,
+            label = { Text(datingLabel) },
+            modifier = Modifier.testTag("today_pregnancy_dating_chip"),
+        )
+    }
+}
+
+@Composable
+private fun TodayPregnancyWeekCard(weekNumber: Int) {
+    MahinSurfaceCard(modifier = Modifier.padding(vertical = MahinSpacing.sm).testTag("today_pregnancy_week_card")) {
+        Text(
+            text = stringResource(R.string.pregnancy_week_card_title, PersianDigits.format(weekNumber)),
+            style = MaterialTheme.typography.titleSmall,
+        )
+        Text(
+            text = stringResource(R.string.pregnancy_week_placeholder_fetal),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = MahinSpacing.xs),
+        )
+    }
+}
+
+@Composable
+private fun TodayAppointmentCard(
+    title: String,
+    onOpenPlan: () -> Unit,
+) {
+    MahinSurfaceCard(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .testTag("today_week_strip"),
-        horizontalArrangement = Arrangement.spacedBy(MahinSpacing.xs),
+                .padding(vertical = MahinSpacing.sm)
+                .testTag("today_appointment_card"),
     ) {
-        days.forEach { day ->
-            FilterChip(
-                selected = day.isSelected,
-                onClick = { onDaySelected(day.date) },
-                label = { Text(text = PersianDigits.format(day.jalali.day)) },
-            )
+        Text(text = stringResource(R.string.today_appointment_card_title), style = MaterialTheme.typography.labelMedium)
+        Text(text = title, style = MaterialTheme.typography.bodyMedium)
+        Button(onClick = onOpenPlan, modifier = Modifier.padding(top = MahinSpacing.sm)) {
+            Text(text = stringResource(R.string.today_open_plan))
         }
+    }
+}
+
+@Composable
+private fun TodayPregnancyToolActions(onOpenPregnancyTab: () -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(MahinSpacing.sm)) {
+        Button(
+            onClick = onOpenPregnancyTab,
+            modifier = Modifier.testTag("today_kick_counter_action"),
+        ) {
+            Text(text = stringResource(R.string.today_kick_counter_action))
+        }
+        Button(
+            onClick = onOpenPregnancyTab,
+            modifier = Modifier.testTag("today_contraction_timer_action"),
+        ) {
+            Text(text = stringResource(R.string.today_contraction_timer_action))
+        }
+    }
+}
+
+@Composable
+private fun TodayPregnancyWeekStripEntry(onOpenCalendar: () -> Unit) {
+    Button(
+        onClick = onOpenCalendar,
+        modifier = Modifier.padding(top = MahinSpacing.sm).testTag("today_pregnancy_calendar_strip"),
+    ) {
+        Text(text = stringResource(R.string.today_pregnancy_week_strip))
     }
 }
 
@@ -433,17 +568,6 @@ private fun TodayUpcomingCard(
             style = mahinTextStyle(MahinTypographyRole.Label),
         )
         Text(text = title, style = MaterialTheme.typography.bodyMedium)
-    }
-}
-
-@Composable
-private fun TodayPregnancyQuickActions(
-    onOpenPlan: () -> Unit,
-    onOpenPregnancyTab: () -> Unit,
-) {
-    Row(horizontalArrangement = Arrangement.spacedBy(MahinSpacing.sm)) {
-        Button(onClick = onOpenPlan) { Text(text = stringResource(R.string.today_open_plan)) }
-        Button(onClick = onOpenPregnancyTab) { Text(text = stringResource(R.string.today_open_pregnancy_tools)) }
     }
 }
 

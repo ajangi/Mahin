@@ -33,6 +33,10 @@ data class TodayUiState(
     val weekStrip: List<TodayWeekDay> = emptyList(),
     val loggedSummary: TodayLoggedSummary? = null,
     val upcomingReminder: TodayUpcomingReminder? = null,
+    val upcomingAppointment: TodayUpcomingAppointment? = null,
+    /** M17 CMS slot; always hidden in M15 but container is present for layout tests. */
+    val showDailyTipSlot: Boolean = false,
+    val weekStripWeeks: List<List<TodayWeekDay>> = emptyList(),
     val showConfidenceSheet: Boolean = false,
     val daySheetDate: LocalDate? = null,
     val daySheetMarkers: DayMarkers? = null,

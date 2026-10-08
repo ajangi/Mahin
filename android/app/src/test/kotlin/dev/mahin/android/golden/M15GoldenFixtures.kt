@@ -4,6 +4,7 @@ import dev.mahin.android.cycle.CalendarUiState
 import dev.mahin.android.cycle.TodayLoggedChip
 import dev.mahin.android.cycle.TodayLoggedSummary
 import dev.mahin.android.cycle.TodayUiState
+import dev.mahin.android.cycle.TodayUpcomingAppointment
 import dev.mahin.android.cycle.TodayWeekDay
 import dev.mahin.core.database.cycle.CycleDashboard
 import dev.mahin.core.datetime.PersianCivilDateConverter
@@ -89,6 +90,7 @@ object M15GoldenFixtures {
                 daysUntilEdd = 100,
                 displayWeekNumber = 22,
             )
+        val weekStrip = buildWeekStrip()
         return TodayUiState(
             reproductiveMode = ReproductiveMode.PREGNANT,
             pregnancySnapshot =
@@ -101,9 +103,17 @@ object M15GoldenFixtures {
                             daysUntilEdd = 100,
                             datingSource = PregnancyDatingSource.LMP_PLUS_280_DAYS,
                             displayWeekNumber = 22,
+                            totalGestationalDays = 280,
                         ),
                 ),
             pregnancyStatus = status,
+            weekStrip = weekStrip,
+            weekStripWeeks = listOf(weekStrip),
+            upcomingAppointment =
+                TodayUpcomingAppointment(
+                    titleFa = "سونوگرافی",
+                    scheduledAtEpochMs = 1_700_000_000_000L,
+                ),
         )
     }
 
@@ -165,6 +175,7 @@ object M15GoldenFixtures {
                 ),
             todaySnapshot = TodaySnapshot.Cycle(hero),
             weekStrip = buildWeekStrip(),
+            weekStripWeeks = listOf(buildWeekStrip()),
             loggedSummary =
                 TodayLoggedSummary(
                     chips =

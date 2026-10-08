@@ -87,6 +87,13 @@
     <string name="today_open_plan">نوبت‌ها</string>
     <string name="today_open_pregnancy_tools">ابزار بارداری</string>
     <string name="today_pregnancy_ga">هفته %1$s + %2$s روز</string>
+    <string name="today_dating_source_lmp">تخمین LMP (۲۸۰ روز)</string>
+    <string name="today_dating_source_clinical">تاریخ پزشکی/سونو</string>
+    <string name="today_appointment_card_title">قرار بعدی</string>
+    <string name="today_kick_counter_action">شمارش لگد</string>
+    <string name="today_contraction_timer_action">زمان‌سنج انقباض</string>
+    <string name="today_daily_tip_slot_label">نکتهٔ روزانه (محتوا از سامانه)</string>
+    <string name="today_pregnancy_week_strip">هفتهٔ بارداری در تقویم</string>
 
     <string name="calendar_title">تقویم چرخه</string>
     <string name="calendar_legend_hint">برای معنی رنگ‌ها، راهنمای زیر را ببینید.</string>

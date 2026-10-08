@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.animation.ExperimentalSharedTransitionApi::class)
+
 package dev.mahin.android.cycle
 
 import androidx.activity.ComponentActivity

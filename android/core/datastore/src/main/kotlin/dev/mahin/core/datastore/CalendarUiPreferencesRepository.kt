@@ -38,4 +38,8 @@ class CalendarUiPreferencesRepository
                 prefs[CalendarUiPreferenceKeys.legendCollapsed] = collapsed
             }
         }
+
+        suspend fun clear() {
+            dataStore.edit { it.clear() }
+        }
     }

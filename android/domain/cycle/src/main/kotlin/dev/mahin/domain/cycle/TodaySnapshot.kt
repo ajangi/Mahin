@@ -56,7 +56,6 @@ data class CycleTodaySnapshotInput(
  */
 object TodaySnapshotUseCase {
     private const val DEFAULT_CYCLE_LENGTH = 28
-    private const val DEFAULT_PERIOD_LENGTH = 5
 
     fun fromCycle(input: CycleTodaySnapshotInput): TodaySnapshot {
         if (input.periodAnchorStart == null && input.prediction.cycleDay == null) {

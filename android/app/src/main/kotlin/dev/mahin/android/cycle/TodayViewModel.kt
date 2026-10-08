@@ -48,11 +48,14 @@ class TodayViewModel
                     val snapshot = buildCycleSnapshot(dashboard, periods, anchor)
                     Triple(dashboard, periods, snapshot)
                 }.collect { (dashboard, periods, snapshot) ->
+                    val now = LocalDate.now()
                     _uiState.update { state ->
                         state.copy(
                             dashboard = dashboard,
                             todaySnapshot = snapshot,
                             loggedSummary = dashboard.todayLog?.let { TodayLoggedSummaryMapper.fromEntity(it) },
+                            weekStrip = buildWeekStrip(now),
+                            weekStripWeeks = buildWeekStripWeeks(now),
                             daySheetMarkers =
                                 state.daySheetDate?.let { date ->
                                     buildDayMarkers(date, periods, dashboard)
@@ -96,6 +99,7 @@ class TodayViewModel
                             postPregnancyTransition = mode == ReproductiveMode.POST_PREGNANCY_TRANSITION,
                             postTransitionLearnLinkVisible = learnVisible,
                             weekStrip = buildWeekStrip(LocalDate.now()),
+                            weekStripWeeks = buildWeekStripWeeks(LocalDate.now()),
                         )
                     }
                 }
@@ -108,32 +112,47 @@ class TodayViewModel
                     pregnancyRepository.observeActivePregnancy(),
                 ) { prefs, dashboard, profile, pregnancy ->
                     val mode = profile?.reproductiveMode ?: ReproductiveMode.CYCLE_TRACKING
-                    val appointments =
+                    val appointmentEntities =
                         if (pregnancy != null && mode == ReproductiveMode.PREGNANT) {
-                            pregnancyRepository
-                                .upcomingAppointments(
-                                    pregnancyId = pregnancy.id,
-                                    fromEpochMs = System.currentTimeMillis(),
-                                    limit = 8,
-                                ).map {
-                                    AppointmentReminderSeed(
-                                        appointmentId = it.id,
-                                        scheduledAtEpochMs = it.scheduledAtEpochMs,
-                                        reminderEnabled = it.reminderEnabled,
-                                    )
-                                }
+                            pregnancyRepository.upcomingAppointments(
+                                pregnancyId = pregnancy.id,
+                                fromEpochMs = System.currentTimeMillis(),
+                                limit = 8,
+                            )
                         } else {
                             emptyList()
                         }
-                    TodayReminderSummary.nextUpcoming(
-                        snapshot = prefs,
-                        dashboard = dashboard,
-                        reproductiveMode = mode,
-                        pregnancy = pregnancy,
-                        appointments = appointments,
-                    )
-                }.collect { reminder ->
-                    _uiState.update { it.copy(upcomingReminder = reminder) }
+                    val appointmentSeeds =
+                        appointmentEntities.map {
+                            AppointmentReminderSeed(
+                                appointmentId = it.id,
+                                scheduledAtEpochMs = it.scheduledAtEpochMs,
+                                reminderEnabled = it.reminderEnabled,
+                            )
+                        }
+                    val reminder =
+                        TodayReminderSummary.nextUpcoming(
+                            snapshot = prefs,
+                            dashboard = dashboard,
+                            reproductiveMode = mode,
+                            pregnancy = pregnancy,
+                            appointments = appointmentSeeds,
+                        )
+                    val nextAppointment =
+                        appointmentEntities.firstOrNull()?.let {
+                            TodayUpcomingAppointment(
+                                titleFa = it.title,
+                                scheduledAtEpochMs = it.scheduledAtEpochMs,
+                            )
+                        }
+                    reminder to nextAppointment
+                }.collect { (reminder, appointment) ->
+                    _uiState.update {
+                        it.copy(
+                            upcomingReminder = reminder,
+                            upcomingAppointment = appointment,
+                        )
+                    }
                 }
             }
         }
@@ -175,16 +194,25 @@ class TodayViewModel
             return null
         }
 
-        private fun buildWeekStrip(center: LocalDate) =
-            (0..6).map { offset ->
+        private fun buildWeekStrip(center: LocalDate) = weekDaysForCenter(center)
+
+        private fun buildWeekStripWeeks(center: LocalDate): List<List<TodayWeekDay>> =
+            (-2..2).map { weekOffset ->
+                weekDaysForCenter(center.plusWeeks(weekOffset.toLong()))
+            }
+
+        private fun weekDaysForCenter(center: LocalDate): List<TodayWeekDay> {
+            val today = LocalDate.now()
+            return (0..6).map { offset ->
                 val date = center.minusDays(3).plusDays(offset.toLong())
                 TodayWeekDay(
                     date = date,
                     jalali = converter.toJalali(date),
-                    isToday = date == center,
+                    isToday = date == today,
                     isSelected = false,
                 )
             }
+        }
 
         fun onWeekDaySelected(date: LocalDate) {
             viewModelScope.launch {

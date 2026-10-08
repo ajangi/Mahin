@@ -71,7 +71,7 @@ fun MahinJalaliDatePicker(
     onVisibleMonthChanged: ((JalaliDate) -> Unit)? = null,
     dayBackgroundColor: (LocalDate) -> Color? = { null },
     dayDecoration: (LocalDate) -> MahinCalendarDayDecoration? = { null },
-    dayCellModifier: (LocalDate) -> Modifier = { Modifier },
+    dayCellModifier: @Composable (LocalDate) -> Modifier = { Modifier },
     headerTrailing: @Composable (() -> Unit)? = null,
 ) {
     val monthNames = stringArrayResource(R.array.ds_jalali_month_names)
@@ -224,7 +224,7 @@ private fun JalaliMonthGrid(
     converter: CivilDateConverter,
     dayBackgroundColor: (LocalDate) -> Color?,
     dayDecoration: (LocalDate) -> MahinCalendarDayDecoration?,
-    dayCellModifier: (LocalDate) -> Modifier = { Modifier },
+    dayCellModifier: @Composable (LocalDate) -> Modifier = { Modifier },
 ) {
     val daysInMonth = JalaliCalendar.daysInMonth(visibleYear, visibleMonth)
     val firstGregorian = converter.toGregorian(JalaliDate(visibleYear, visibleMonth, 1))
