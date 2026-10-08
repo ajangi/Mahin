@@ -19,15 +19,14 @@ import org.robolectric.annotation.GraphicsMode
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [33], qualifiers = "fa-rIR-w411dp-h891dp-xxhdpi")
 class MahinCycleProgressRingRtlGoldenTest {
-    @get:Rule
-    val composeRule = createAndroidComposeRule<ComponentActivity>()
+    private val androidComposeRule = createAndroidComposeRule<ComponentActivity>()
 
     @get:Rule
-    val viewModelStoreRule = ViewModelStoreClearingRule(composeRule)
+    val composeRule = ViewModelStoreClearingRule.withCompose(androidComposeRule)
 
     @Test
     fun cycleRing_rtl_segmentArcs_light_scale10() {
-        composeRule.captureMahinFullScreenGolden(darkTheme = false, fontScale = 1f) {
+        androidComposeRule.captureMahinFullScreenGolden(darkTheme = false, fontScale = 1f) {
             MahinCycleProgressRing(
                 arcs =
                     listOf(

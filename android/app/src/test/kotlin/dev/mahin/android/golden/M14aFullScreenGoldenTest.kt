@@ -35,11 +35,10 @@ import org.robolectric.annotation.GraphicsMode
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [33], qualifiers = "fa-rIR-w411dp-h891dp-xxhdpi")
 class M14aFullScreenGoldenTest {
-    @get:Rule
-    val composeRule = createAndroidComposeRule<ComponentActivity>()
+    private val androidComposeRule = createAndroidComposeRule<ComponentActivity>()
 
     @get:Rule
-    val viewModelStoreRule = ViewModelStoreClearingRule(composeRule)
+    val composeRule = ViewModelStoreClearingRule.withCompose(androidComposeRule)
 
     @Test
     fun today_populated_light_scale10() = captureToday(darkTheme = false, fontScale = 1f)
@@ -141,7 +140,7 @@ class M14aFullScreenGoldenTest {
         darkTheme: Boolean,
         fontScale: Float,
     ) {
-        composeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
+        androidComposeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
             TodayScreenContent(
                 state = M14aGoldenFixtures.todayPopulated(),
                 modifier = Modifier.fillMaxSize(),
@@ -153,7 +152,7 @@ class M14aFullScreenGoldenTest {
         darkTheme: Boolean,
         fontScale: Float,
     ) {
-        composeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
+        androidComposeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
             CycleCalendarScreenContent(
                 state = M14aGoldenFixtures.calendarPopulated(),
                 onDateSelected = {},
@@ -170,7 +169,7 @@ class M14aFullScreenGoldenTest {
         darkTheme: Boolean,
         fontScale: Float,
     ) {
-        composeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
+        androidComposeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
             LogScreenContent(
                 state = M14aGoldenFixtures.logPopulated(),
                 actions = M14aGoldenFixtures.logScreenActions(),
@@ -183,7 +182,7 @@ class M14aFullScreenGoldenTest {
         darkTheme: Boolean,
         fontScale: Float,
     ) {
-        composeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
+        androidComposeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
             HistoryScreenContent(
                 periods = M14aGoldenFixtures.historyPopulated(),
                 modifier = Modifier.fillMaxSize(),
@@ -195,7 +194,7 @@ class M14aFullScreenGoldenTest {
         darkTheme: Boolean,
         fontScale: Float,
     ) {
-        composeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
+        androidComposeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
             OnboardingWelcomeScreen(
                 onContinue = {},
                 modifier = Modifier.fillMaxSize(),
@@ -207,7 +206,7 @@ class M14aFullScreenGoldenTest {
         darkTheme: Boolean,
         fontScale: Float,
     ) {
-        composeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
+        androidComposeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
             CycleInsightsScreenContent(
                 state = M14aGoldenFixtures.cycleInsightsPopulated(),
                 onUnlockPremium = {},
@@ -221,7 +220,7 @@ class M14aFullScreenGoldenTest {
         darkTheme: Boolean,
         fontScale: Float,
     ) {
-        composeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
+        androidComposeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
             LearnScreenContent(
                 state = M14aGoldenFixtures.learnPopulated(),
                 onQueryChange = {},
@@ -236,7 +235,7 @@ class M14aFullScreenGoldenTest {
         darkTheme: Boolean,
         fontScale: Float,
     ) {
-        composeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
+        androidComposeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
             PregnancyHubScreenContent(
                 state = M14aGoldenFixtures.pregnancyHubPopulated(),
                 actions = M14aGoldenFixtures.pregnancyHubActions(),

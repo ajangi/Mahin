@@ -22,11 +22,10 @@ import org.robolectric.annotation.GraphicsMode
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [33], qualifiers = "fa-rIR-w411dp-h891dp-xxhdpi")
 class M15FullScreenGoldenTest {
-    @get:Rule
-    val composeRule = createAndroidComposeRule<ComponentActivity>()
+    private val androidComposeRule = createAndroidComposeRule<ComponentActivity>()
 
     @get:Rule
-    val viewModelStoreRule = ViewModelStoreClearingRule(composeRule)
+    val composeRule = ViewModelStoreClearingRule.withCompose(androidComposeRule)
 
     @Test fun today_firstDay_light_scale10() = captureToday(M15GoldenFixtures.todayFirstDay(), false, 1f)
 
@@ -97,7 +96,7 @@ class M15FullScreenGoldenTest {
         darkTheme: Boolean,
         fontScale: Float,
     ) {
-        composeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
+        androidComposeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
             TodayScreenContent(state = state, modifier = Modifier.fillMaxSize())
         }
     }
@@ -107,7 +106,7 @@ class M15FullScreenGoldenTest {
         darkTheme: Boolean,
         fontScale: Float,
     ) {
-        composeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
+        androidComposeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
             CycleCalendarScreenContent(
                 state = state,
                 onDateSelected = {},
@@ -121,7 +120,7 @@ class M15FullScreenGoldenTest {
         fontScale: Float,
     ) {
         val calendarState = M15GoldenFixtures.calendarDaySheetOpen()
-        composeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
+        androidComposeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
             SharedTransitionLayout(modifier = Modifier.fillMaxSize()) {
                 CycleCalendarScreenContent(
                     state = calendarState,

@@ -1,5 +1,6 @@
 package dev.mahin.core.testing
 
+import android.annotation.SuppressLint
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelStore
 
@@ -7,6 +8,7 @@ import androidx.lifecycle.ViewModelStore
 class ViewModelStoreTestHarness {
     private val store = ViewModelStore()
 
+    @SuppressLint("RestrictedApi")
     fun <T : ViewModel> hold(viewModel: T): T {
         val key = viewModel::class.java.canonicalName ?: viewModel::class.java.name
         store.put(key, viewModel)

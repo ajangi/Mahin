@@ -29,17 +29,16 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], qualifiers = "fa-rIR", manifest = Config.NONE)
 class TodayScreenBehaviorTest {
-    @get:Rule(order = 0)
-    val composeRule = createAndroidComposeRule<ComponentActivity>()
+    private val androidComposeRule = createAndroidComposeRule<ComponentActivity>()
 
-    @get:Rule(order = 1)
-    val viewModelStoreRule = ViewModelStoreClearingRule(composeRule)
+    @get:Rule
+    val composeRule = ViewModelStoreClearingRule.withCompose(androidComposeRule)
 
     @Test
     fun quickLogChip_tap_invokesOnOpenLogForDateWithToday() {
         val today = LocalDate.now()
         var opened: LocalDate? = null
-        composeRule.setContent {
+        androidComposeRule.setContent {
             MahinTheme {
                 TodayScreenContent(
                     state = M15GoldenFixtures.todayFertileWindow(),
@@ -47,15 +46,15 @@ class TodayScreenBehaviorTest {
                 )
             }
         }
-        composeRule.onNodeWithTag("today_screen_list").performScrollToNode(hasTestTag("today_quick_log_row"))
-        composeRule.onAllNodesWithTag("today_quick_log_chip")[0].performClick()
-        composeRule.waitForIdle()
+        androidComposeRule.onNodeWithTag("today_screen_list").performScrollToNode(hasTestTag("today_quick_log_row"))
+        androidComposeRule.onAllNodesWithTag("today_quick_log_chip")[0].performClick()
+        androidComposeRule.waitForIdle()
         assertThat(opened).isEqualTo(today)
     }
 
     @Test
     fun weekStripTap_updatesSelectedSemantics() {
-        composeRule.setContent {
+        androidComposeRule.setContent {
             MahinTheme {
                 var state by remember { mutableStateOf(M15GoldenFixtures.todayFertileWindow()) }
                 TodayScreenContent(
@@ -79,26 +78,26 @@ class TodayScreenBehaviorTest {
             }
         }
         val target = M15GoldenFixtures.todayFertileWindow().weekStripWeeks.first()[3]
-        composeRule.onNodeWithTag("today_screen_list").performScrollToNode(hasTestTag("today_week_strip"))
-        composeRule.onNodeWithText(PersianDigits.format(target.jalali.day)).performClick()
-        composeRule.waitForIdle()
-        composeRule.onNodeWithText(PersianDigits.format(target.jalali.day)).assertIsSelected()
+        androidComposeRule.onNodeWithTag("today_screen_list").performScrollToNode(hasTestTag("today_week_strip"))
+        androidComposeRule.onNodeWithText(PersianDigits.format(target.jalali.day)).performClick()
+        androidComposeRule.waitForIdle()
+        androidComposeRule.onNodeWithText(PersianDigits.format(target.jalali.day)).assertIsSelected()
     }
 
     @Test
     fun dailyTipSlot_whenVisible_rendersSlotContent() {
-        composeRule.setContent {
+        androidComposeRule.setContent {
             MahinTheme {
                 TodayScreenContent(state = TodayUiState(showDailyTipSlot = true))
             }
         }
-        composeRule.onNodeWithTag("today_daily_tip_slot").assertIsDisplayed()
+        androidComposeRule.onNodeWithTag("today_daily_tip_slot").assertIsDisplayed()
     }
 
     @Test
     fun daySheet_showsLogLinesForSelectedDay() {
         val logLine = "خستگی · شاد"
-        composeRule.setContent {
+        androidComposeRule.setContent {
             MahinTheme {
                 TodayScreenContent(
                     state =
@@ -111,7 +110,7 @@ class TodayScreenBehaviorTest {
                 )
             }
         }
-        composeRule.onNodeWithTag("calendar_day_sheet_log_line").assertIsDisplayed()
-        composeRule.onNodeWithText(logLine).assertIsDisplayed()
+        androidComposeRule.onNodeWithTag("calendar_day_sheet_log_line").assertIsDisplayed()
+        androidComposeRule.onNodeWithText(logLine).assertIsDisplayed()
     }
 }

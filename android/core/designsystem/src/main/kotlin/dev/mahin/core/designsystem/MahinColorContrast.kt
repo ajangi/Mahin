@@ -2,6 +2,7 @@ package dev.mahin.core.designsystem
 
 import androidx.compose.ui.graphics.Color
 import kotlin.math.pow
+import kotlin.math.roundToInt
 
 /** WCAG 2.x relative luminance for sRGB hex colours (`#RRGGBB`). */
 fun relativeLuminance(hex: String): Double {
@@ -16,16 +17,46 @@ fun relativeLuminance(hex: String): Double {
     return 0.2126 * r + 0.7152 * g + 0.0722 * b
 }
 
+/** Straight-alpha sRGB composite of [foreground] over [background]. */
+fun compositeSrgbOver(
+    foreground: Color,
+    background: Color,
+): Color {
+    val a = foreground.alpha.coerceIn(0f, 1f)
+    if (a <= 0f) return background
+    if (a >= 1f) return foreground.copy(alpha = 1f)
+
+    fun blend(
+        f: Float,
+        b: Float,
+    ): Float = f * a + b * (1f - a)
+    return Color(
+        red = blend(foreground.red, background.red),
+        green = blend(foreground.green, background.green),
+        blue = blend(foreground.blue, background.blue),
+        alpha = 1f,
+    )
+}
+
+fun colorToHex(color: Color): String {
+    val rendered =
+        if (color.alpha < 1f) {
+            error("colorToHex requires opaque colours; composite over the background first")
+        } else {
+            color
+        }
+    val r = (rendered.red * 255f).roundToInt().coerceIn(0, 255)
+    val g = (rendered.green * 255f).roundToInt().coerceIn(0, 255)
+    val b = (rendered.blue * 255f).roundToInt().coerceIn(0, 255)
+    return "#%02X%02X%02X".format(r, g, b)
+}
+
 fun contrastRatioBetweenColors(
     foreground: Color,
     background: Color,
-): Double = contrastRatio(colorToHex(foreground), colorToHex(background))
-
-fun colorToHex(color: Color): String {
-    val r = (color.red * 255f).toInt().coerceIn(0, 255)
-    val g = (color.green * 255f).toInt().coerceIn(0, 255)
-    val b = (color.blue * 255f).toInt().coerceIn(0, 255)
-    return "#%02X%02X%02X".format(r, g, b)
+): Double {
+    val renderedForeground = compositeSrgbOver(foreground, background)
+    return contrastRatio(colorToHex(renderedForeground), colorToHex(background))
 }
 
 fun hexToColor(hex: String): Color {
@@ -69,7 +100,11 @@ fun compositeHexOver(
     fun blend(
         f: Int,
         b: Int,
-    ): Int = ((f * a) + (b * (1f - a))).toInt().coerceIn(0, 255)
+    ): Int =
+        kotlin.math
+            .round((f * a) + (b * (1f - a)))
+            .toInt()
+            .coerceIn(0, 255)
 
     return "#%02X%02X%02X".format(blend(fr, br), blend(fg, bg), blend(fb, bb))
 }

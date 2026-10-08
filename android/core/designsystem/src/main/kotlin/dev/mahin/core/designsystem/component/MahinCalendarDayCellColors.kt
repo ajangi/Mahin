@@ -1,48 +1,61 @@
 package dev.mahin.core.designsystem.component
 
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
+import dev.mahin.core.designsystem.compositeSrgbOver
 import dev.mahin.core.designsystem.contrastRatioBetweenColors
 
-/** Blends a semi-transparent marker fill over [surface] (same as [JalaliDayCell]). */
-fun blendCalendarMarkerFill(
-    surface: Color,
-    markerFill: Color,
-): Color =
-    if (markerFill.alpha <= 0f) {
-        surface
-    } else {
-        lerp(surface, markerFill.copy(alpha = 1f), markerFill.alpha)
-    }
+data class MahinCalendarDayCellColors(
+    val label: Color,
+    val ovulationMarker: Color?,
+)
 
-private val calendarLabelCandidates =
+/** Straight-alpha composite of semi-transparent [markerFill] over [parentBackground] (sRGB). */
+fun blendCalendarMarkerFillSrgb(
+    parentBackground: Color,
+    markerFill: Color,
+): Color = compositeSrgbOver(markerFill, parentBackground)
+
+private val labelCandidates =
     listOf(
         Color.White,
         Color.Black.copy(alpha = 0.87f),
     )
 
-private val calendarMarkerCandidates =
+private val markerCandidates =
     listOf(
         Color.White,
         Color.Black,
     )
 
-/** Day number colour on a blended marker fill; requires ≥4.5:1 when possible. */
-fun mahinCalendarDayLabelOnBlendedFill(blendedFill: Color): Color =
-    calendarLabelCandidates
-        .filter { contrastRatioBetweenColors(it, blendedFill) >= 4.5 }
-        .maxByOrNull { contrastRatioBetweenColors(it, blendedFill) }
-        ?: calendarLabelCandidates.maxBy { contrastRatioBetweenColors(it, blendedFill) }
-
-/** Ovulation corner marker on a blended fill; requires ≥3.0:1 when possible. */
-fun mahinCalendarOvulationMarkerOnBlendedFill(blendedFill: Color): Color =
-    calendarMarkerCandidates
-        .filter { contrastRatioBetweenColors(it, blendedFill) >= 3.0 }
-        .maxByOrNull { contrastRatioBetweenColors(it, blendedFill) }
-        ?: calendarMarkerCandidates.maxBy { contrastRatioBetweenColors(it, blendedFill) }
+/**
+ * Label and ovulation-marker colours for a decorated (non-selected) day cell.
+ * [parentBackground] is the visible area behind the cell (not an Oklab lerp target).
+ */
+fun mahinCalendarDayCellColors(
+    parentBackground: Color,
+    markerFill: Color,
+    estimatedOvulation: Boolean,
+): MahinCalendarDayCellColors {
+    val blended = blendCalendarMarkerFillSrgb(parentBackground, markerFill)
+    val label =
+        labelCandidates
+            .filter { contrastRatioBetweenColors(it, blended) >= 4.5 }
+            .maxByOrNull { contrastRatioBetweenColors(it, blended) }
+            ?: labelCandidates.maxBy { contrastRatioBetweenColors(it, blended) }
+    val marker =
+        if (estimatedOvulation) {
+            markerCandidates
+                .filter { contrastRatioBetweenColors(it, blended) >= 3.0 }
+                .maxByOrNull { contrastRatioBetweenColors(it, blended) }
+                ?: markerCandidates.maxBy { contrastRatioBetweenColors(it, blended) }
+        } else {
+            null
+        }
+    return MahinCalendarDayCellColors(label = label, ovulationMarker = marker)
+}
 
 /** Legacy luminance threshold (must not be used in production UI). */
-internal fun mahinCalendarDayLabelLuminanceThreshold(blendedFill: Color): Color =
+fun mahinCalendarDayLabelLuminanceThreshold(blendedFill: Color): Color =
     if (blendedFill.luminance() < 0.5f) {
         Color.White
     } else {

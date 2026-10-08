@@ -2,9 +2,9 @@ package dev.mahin.core.designsystem
 
 import com.google.common.truth.Truth.assertThat
 import dev.mahin.core.designsystem.component.MahinCalendarMarkerTintAlphas
+import dev.mahin.core.designsystem.component.blendCalendarMarkerFillSrgb
+import dev.mahin.core.designsystem.component.mahinCalendarDayCellColors
 import dev.mahin.core.designsystem.component.mahinCalendarDayLabelLuminanceThreshold
-import dev.mahin.core.designsystem.component.mahinCalendarDayLabelOnBlendedFill
-import dev.mahin.core.designsystem.component.mahinCalendarOvulationMarkerOnBlendedFill
 import dev.mahin.core.model.MahinTokenHex
 import org.junit.Test
 
@@ -41,67 +41,76 @@ class MahinCalendarMarkerContrastTest {
 
     @Test
     fun lightTheme_dayNumberText_onBlendedFills_meetsContrast() {
-        lightSurfaces.forEach { surface ->
+        lightSurfaces.forEach { surfaceHex ->
+            val parent = hexToColor(surfaceHex)
             lightFills.forEach { (health, alpha) ->
-                val blended = compositeHexOver(health, alpha, surface)
-                val blendedColor = hexToColor(blended)
-                val text = mahinCalendarDayLabelOnBlendedFill(blendedColor)
-                assertThat(contrastRatioBetweenColors(text, blendedColor)).isAtLeast(4.5)
+                val blendedHex = compositeHexOver(health, alpha, surfaceHex)
+                val blended = hexToColor(blendedHex)
+                val markerFill = hexToColor(health).copy(alpha = alpha)
+                val colors = mahinCalendarDayCellColors(parent, markerFill, estimatedOvulation = false)
+                assertThat(contrastRatioBetweenColors(colors.label, blended)).isAtLeast(4.5)
             }
         }
     }
 
     @Test
     fun darkTheme_dayNumberText_onBlendedFills_meetsContrast() {
-        darkSurfaces.forEach { surface ->
+        darkSurfaces.forEach { surfaceHex ->
+            val parent = hexToColor(surfaceHex)
             darkFills.forEach { (health, alpha) ->
-                val blended = compositeHexOver(health, alpha, surface)
-                val blendedColor = hexToColor(blended)
-                val text = mahinCalendarDayLabelOnBlendedFill(blendedColor)
-                assertThat(contrastRatioBetweenColors(text, blendedColor)).isAtLeast(4.5)
+                val blendedHex = compositeHexOver(health, alpha, surfaceHex)
+                val blended = hexToColor(blendedHex)
+                val markerFill = hexToColor(health).copy(alpha = alpha)
+                val colors = mahinCalendarDayCellColors(parent, markerFill, estimatedOvulation = false)
+                assertThat(contrastRatioBetweenColors(colors.label, blended)).isAtLeast(4.5)
             }
         }
     }
 
     @Test
     fun ovulationMarker_onOvulationFill_meetsGraphicsContrast_lightAndDark() {
-        lightSurfaces.forEach { surface ->
-            val blended =
-                compositeHexOver(
-                    MahinTokenHex.LIGHT_HEALTH_OVULATION,
-                    MahinCalendarMarkerTintAlphas.LIGHT_OVULATION,
-                    surface,
-                )
-            val blendedColor = hexToColor(blended)
-            val marker = mahinCalendarOvulationMarkerOnBlendedFill(blendedColor)
-            assertThat(contrastRatioBetweenColors(marker, blendedColor)).isAtLeast(3.0)
+        lightSurfaces.forEach { surfaceHex ->
+            val parent = hexToColor(surfaceHex)
+            val health = MahinTokenHex.LIGHT_HEALTH_OVULATION
+            val alpha = MahinCalendarMarkerTintAlphas.LIGHT_OVULATION
+            val blendedHex = compositeHexOver(health, alpha, surfaceHex)
+            val blended = hexToColor(blendedHex)
+            val markerFill = hexToColor(health).copy(alpha = alpha)
+            val colors = mahinCalendarDayCellColors(parent, markerFill, estimatedOvulation = true)
+            assertThat(colors.ovulationMarker).isNotNull()
+            assertThat(contrastRatioBetweenColors(colors.ovulationMarker!!, blended)).isAtLeast(3.0)
         }
-        darkSurfaces.forEach { surface ->
-            val blended =
-                compositeHexOver(
-                    MahinTokenHex.DARK_HEALTH_OVULATION,
-                    MahinCalendarMarkerTintAlphas.DARK_OVULATION,
-                    surface,
-                )
-            val blendedColor = hexToColor(blended)
-            val marker = mahinCalendarOvulationMarkerOnBlendedFill(blendedColor)
-            assertThat(contrastRatioBetweenColors(marker, blendedColor)).isAtLeast(3.0)
+        darkSurfaces.forEach { surfaceHex ->
+            val parent = hexToColor(surfaceHex)
+            val health = MahinTokenHex.DARK_HEALTH_OVULATION
+            val alpha = MahinCalendarMarkerTintAlphas.DARK_OVULATION
+            val blendedHex = compositeHexOver(health, alpha, surfaceHex)
+            val blended = hexToColor(blendedHex)
+            val markerFill = hexToColor(health).copy(alpha = alpha)
+            val colors = mahinCalendarDayCellColors(parent, markerFill, estimatedOvulation = true)
+            assertThat(colors.ovulationMarker).isNotNull()
+            assertThat(contrastRatioBetweenColors(colors.ovulationMarker!!, blended)).isAtLeast(3.0)
         }
     }
 
     @Test
     fun dayLabel_usesContrastHelper_notLuminanceThreshold_onOvulationFills() {
-        lightSurfaces.forEach { surface ->
+        lightSurfaces.forEach { surfaceHex ->
+            val parent = hexToColor(surfaceHex)
+            val health = MahinTokenHex.LIGHT_HEALTH_OVULATION
+            val alpha = MahinCalendarMarkerTintAlphas.LIGHT_OVULATION
             val blended =
-                compositeHexOver(
-                    MahinTokenHex.LIGHT_HEALTH_OVULATION,
-                    MahinCalendarMarkerTintAlphas.LIGHT_OVULATION,
-                    surface,
-                )
-            val blendedColor = hexToColor(blended)
-            val production = mahinCalendarDayLabelOnBlendedFill(blendedColor)
-            val threshold = mahinCalendarDayLabelLuminanceThreshold(blendedColor)
-            assertThat(colorToHex(production)).isNotEqualTo(colorToHex(threshold))
+                blendCalendarMarkerFillSrgb(parent, hexToColor(health).copy(alpha = alpha))
+            val production =
+                mahinCalendarDayCellColors(
+                    parent,
+                    hexToColor(health).copy(alpha = alpha),
+                    estimatedOvulation = false,
+                ).label
+            val threshold = mahinCalendarDayLabelLuminanceThreshold(blended)
+            assertThat(colorToHex(compositeSrgbOver(production, blended))).isNotEqualTo(
+                colorToHex(compositeSrgbOver(threshold, blended)),
+            )
         }
     }
 }

@@ -21,16 +21,15 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], qualifiers = "fa-rIR", manifest = Config.NONE)
 class CalendarDaySheetBackTest {
-    @get:Rule
-    val composeRule = createAndroidComposeRule<ComponentActivity>()
+    private val androidComposeRule = createAndroidComposeRule<ComponentActivity>()
 
     @get:Rule
-    val viewModelStoreRule = ViewModelStoreClearingRule(composeRule)
+    val composeRule = ViewModelStoreClearingRule.withCompose(androidComposeRule)
 
     @Test
     fun systemBack_closesDaySheet_andCalendarRemainsVisible() {
         var state by mutableStateOf(M15GoldenFixtures.calendarDaySheetOpen())
-        composeRule.setContent {
+        androidComposeRule.setContent {
             MahinTheme {
                 SharedTransitionLayout {
                     CycleCalendarScreenContent(
@@ -42,13 +41,13 @@ class CalendarDaySheetBackTest {
                 }
             }
         }
-        composeRule.onNodeWithTag("calendar_day_sheet_overlay").assertExists()
-        composeRule.onNodeWithTag("cycle_calendar_screen").assertExists()
-        composeRule.runOnIdle {
-            composeRule.activity.onBackPressedDispatcher.onBackPressed()
+        androidComposeRule.onNodeWithTag("calendar_day_sheet_overlay").assertExists()
+        androidComposeRule.onNodeWithTag("cycle_calendar_screen").assertExists()
+        androidComposeRule.runOnIdle {
+            androidComposeRule.activity.onBackPressedDispatcher.onBackPressed()
         }
-        composeRule.waitForIdle()
-        composeRule.onNodeWithTag("calendar_day_sheet_overlay").assertDoesNotExist()
-        composeRule.onNodeWithTag("cycle_calendar_screen").assertExists()
+        androidComposeRule.waitForIdle()
+        androidComposeRule.onNodeWithTag("calendar_day_sheet_overlay").assertDoesNotExist()
+        androidComposeRule.onNodeWithTag("cycle_calendar_screen").assertExists()
     }
 }

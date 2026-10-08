@@ -116,6 +116,7 @@ internal fun CycleCalendarScreenContent(
                 converter = converter,
                 visibleMonth = state.visibleMonth,
                 onVisibleMonthChanged = onVisibleMonthChanged,
+                hideDayCellsFromAccessibility = state.daySheetOpen,
                 dayDecoration = { date -> decorationFor(date, state.dayMarkers[date], today, palette) },
                 dayCellModifier = { date ->
                     calendarDaySharedCellModifier(

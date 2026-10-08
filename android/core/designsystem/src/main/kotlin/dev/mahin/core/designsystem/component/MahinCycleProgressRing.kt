@@ -61,15 +61,6 @@ fun mahinRingGeometry(layoutDirection: LayoutDirection): MahinRingGeometry =
             )
     }
 
-/** Degrees for [androidx.compose.ui.graphics.drawscope.rotate] so the today marker aligns with [drawArc] at [fraction]. */
-fun mahinRingTodayMarkerRotationDegrees(
-    geometry: MahinRingGeometry,
-    fraction: Float,
-): Float {
-    val f = fraction.coerceIn(0f, 1f)
-    return geometry.startAngle + f * geometry.sweepTotal + 90f
-}
-
 @Suppress("LongParameterList", "LongMethod")
 @Composable
 fun MahinCycleProgressRing(
@@ -173,7 +164,6 @@ fun MahinCycleProgressRing(
                 )
             }
             todayMarkerFraction?.let { fraction ->
-                val center = Offset(canvasSize.width / 2f, canvasSize.height / 2f)
                 val markerPoint = mahinRingTodayMarkerPoint(side, geometry, fraction)
                 val markerRadius = stroke * 0.55f
                 drawCircle(

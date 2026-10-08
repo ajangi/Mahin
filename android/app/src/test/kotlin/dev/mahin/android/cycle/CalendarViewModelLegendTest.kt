@@ -13,6 +13,7 @@ import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.core.testing.ViewModelStoreTestHarness
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -80,11 +81,16 @@ class CalendarViewModelLegendTest {
             val viewModel = createViewModel()
             viewModel.selectJalaliDate(JalaliDate(1403, 12, 10))
             awaitUntil { !viewModel.uiState.value.legendExpanded }
+            ShadowLooper.idleMainLooper()
+            assertThat(calendarPrefs.observeLegendAutoCollapsedOnce().first()).isTrue()
+            assertThat(calendarPrefs.observeLegendCollapsed().first()).isTrue()
             viewModel.toggleLegendExpanded()
             awaitUntil { viewModel.uiState.value.legendExpanded }
+            assertThat(calendarPrefs.observeLegendCollapsed().first()).isFalse()
             viewModel.selectJalaliDate(JalaliDate(1403, 12, 11))
             awaitUntil { viewModel.uiState.value.legendExpanded }
-            assertThat(viewModel.uiState.value.legendAutoCollapsedOnce).isTrue()
+            assertThat(calendarPrefs.observeLegendAutoCollapsedOnce().first()).isTrue()
+            assertThat(calendarPrefs.observeLegendCollapsed().first()).isFalse()
         }
     }
 

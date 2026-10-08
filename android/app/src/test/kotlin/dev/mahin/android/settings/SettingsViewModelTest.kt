@@ -184,7 +184,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun paywall_dismiss_cancelsWarmUpJob_andPropagatesCancellation() {
+    fun paywall_dismiss_recordsCancellationExceptionInBillingAdapter() {
         val billingAdapter = CancellableWarmUpBillingAdapter()
         val viewModel = createViewModel(billingAdapter = billingAdapter)
         viewModel.openPaywall()

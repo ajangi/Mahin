@@ -5,7 +5,9 @@ package dev.mahin.android.cycle
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performSemanticsAction
 import com.google.common.truth.Truth.assertThat
@@ -38,11 +40,25 @@ class CalendarDaySheetGridA11yTest {
                 }
             }
         }
-        val dayCellVisible =
-            runCatching {
-                composeRule.onNodeWithTag("jalali_day_cell").assertExists()
-            }.isSuccess
-        assertThat(dayCellVisible).isFalse()
+        composeRule.onAllNodesWithTag("jalali_day_cell").assertCountEquals(0)
+    }
+
+    @Test
+    fun daySheetClosed_calendarDayCellsAreInAccessibilityTree() {
+        val state = M15GoldenFixtures.calendarDaySheetOpen().copy(daySheetOpen = false)
+        composeRule.setContent {
+            MahinTheme {
+                SharedTransitionLayout {
+                    CycleCalendarScreenContent(
+                        state = state,
+                        sharedTransitionScope = this,
+                        onDateSelected = {},
+                        onDismissDaySheet = {},
+                    )
+                }
+            }
+        }
+        assertThat(composeRule.onAllNodesWithTag("jalali_day_cell").fetchSemanticsNodes().size).isGreaterThan(0)
     }
 
     @Test

@@ -40,11 +40,10 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], qualifiers = "fa-rIR")
 class MahinShellNavigationTest {
-    @get:Rule
-    val composeRule = createAndroidComposeRule<ComponentActivity>()
+    private val androidComposeRule = createAndroidComposeRule<ComponentActivity>()
 
     @get:Rule
-    val viewModelStoreRule = ViewModelStoreClearingRule(composeRule)
+    val composeRule = ViewModelStoreClearingRule.withCompose(androidComposeRule)
 
     private fun testOverrides(onSwitchToPregnant: (() -> Unit)? = null): MahinShellScreenOverrides =
         MahinShellScreenOverrides(
@@ -125,7 +124,7 @@ class MahinShellNavigationTest {
                     reproductiveMode = ReproductiveMode.CYCLE_TRACKING,
                 ),
             )
-        composeRule.setContent {
+        androidComposeRule.setContent {
             MahinTheme {
                 val navController = rememberNavController()
                 MahinShellLayout(shellState.value, navController) {
@@ -147,69 +146,69 @@ class MahinShellNavigationTest {
                 }
             }
         }
-        composeRule.onNodeWithText("ثبت").performClick()
-        composeRule.onNodeWithTag("log_state_field").performTextInput("a")
-        composeRule.onNodeWithText("امروز").performClick()
-        composeRule.onNodeWithText("ثبت").performClick()
-        composeRule.onNodeWithTag("log_state_field").assertTextContains("a")
+        androidComposeRule.onNodeWithText("ثبت").performClick()
+        androidComposeRule.onNodeWithTag("log_state_field").performTextInput("a")
+        androidComposeRule.onNodeWithText("امروز").performClick()
+        androidComposeRule.onNodeWithText("ثبت").performClick()
+        androidComposeRule.onNodeWithTag("log_state_field").assertTextContains("a")
     }
 
     @Test
     fun shell_historyReachable_fromCycleInsights() {
         mountShell(ReproductiveMode.CYCLE_TRACKING, MahinTopLevelDestination.CycleInsights.route)
-        composeRule.onNodeWithTag("open_history_cycle").performClick()
-        composeRule.onNodeWithTag("screen_history").assertIsDisplayed()
-        composeRule.onNodeWithTag("shell_top_bar_up").assertIsDisplayed()
+        androidComposeRule.onNodeWithTag("open_history_cycle").performClick()
+        androidComposeRule.onNodeWithTag("screen_history").assertIsDisplayed()
+        androidComposeRule.onNodeWithTag("shell_top_bar_up").assertIsDisplayed()
     }
 
     @Test
     fun shell_historyReachable_fromTtcInsights() {
         mountShell(ReproductiveMode.TRYING_TO_CONCEIVE, MahinTopLevelDestination.TtcInsights.route)
-        composeRule.waitUntil(5_000) {
-            composeRule.onAllNodesWithTag("screen_ttc_insights").fetchSemanticsNodes().isNotEmpty()
+        androidComposeRule.waitUntil(5_000) {
+            androidComposeRule.onAllNodesWithTag("screen_ttc_insights").fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithTag("open_history_ttc").performClick()
-        composeRule.onNodeWithTag("screen_history").assertIsDisplayed()
-        composeRule.onNodeWithTag("shell_top_bar_up").performClick()
-        composeRule.waitUntil(5_000) {
-            composeRule.onAllNodesWithTag("screen_ttc_insights").fetchSemanticsNodes().isNotEmpty()
+        androidComposeRule.onNodeWithTag("open_history_ttc").performClick()
+        androidComposeRule.onNodeWithTag("screen_history").assertIsDisplayed()
+        androidComposeRule.onNodeWithTag("shell_top_bar_up").performClick()
+        androidComposeRule.waitUntil(5_000) {
+            androidComposeRule.onAllNodesWithTag("screen_ttc_insights").fetchSemanticsNodes().isNotEmpty()
         }
     }
 
     @Test
     fun shell_historyReachable_fromSettings() {
         mountShell(ReproductiveMode.CYCLE_TRACKING, MahinTopLevelDestination.SETTINGS_ROUTE)
-        composeRule.waitUntil(5_000) {
-            composeRule.onAllNodesWithTag("screen_settings").fetchSemanticsNodes().isNotEmpty()
+        androidComposeRule.waitUntil(5_000) {
+            androidComposeRule.onAllNodesWithTag("screen_settings").fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithTag("open_history_settings").performClick()
-        composeRule.onNodeWithTag("screen_history").assertIsDisplayed()
-        composeRule.onNodeWithTag("shell_top_bar_up").performClick()
-        composeRule.waitUntil(5_000) {
-            composeRule.onAllNodesWithTag("screen_settings").fetchSemanticsNodes().isNotEmpty()
+        androidComposeRule.onNodeWithTag("open_history_settings").performClick()
+        androidComposeRule.onNodeWithTag("screen_history").assertIsDisplayed()
+        androidComposeRule.onNodeWithTag("shell_top_bar_up").performClick()
+        androidComposeRule.waitUntil(5_000) {
+            androidComposeRule.onAllNodesWithTag("screen_settings").fetchSemanticsNodes().isNotEmpty()
         }
     }
 
     @Test
     fun shell_history_systemBack_returnsToPreviousScreen() {
         mountShell(ReproductiveMode.CYCLE_TRACKING, MahinTopLevelDestination.CycleInsights.route)
-        composeRule.onNodeWithTag("open_history_cycle").performClick()
-        composeRule.onNodeWithTag("screen_history").assertIsDisplayed()
+        androidComposeRule.onNodeWithTag("open_history_cycle").performClick()
+        androidComposeRule.onNodeWithTag("screen_history").assertIsDisplayed()
         pressSystemBack()
-        composeRule.waitUntil(5_000) {
-            composeRule.onAllNodesWithTag("screen_cycle_insights").fetchSemanticsNodes().isNotEmpty()
+        androidComposeRule.waitUntil(5_000) {
+            androidComposeRule.onAllNodesWithTag("screen_cycle_insights").fetchSemanticsNodes().isNotEmpty()
         }
     }
 
     @Test
     fun shell_settings_systemBack_returnsToTab() {
         mountShell(ReproductiveMode.CYCLE_TRACKING, MahinTopLevelDestination.Today.route)
-        composeRule.onNodeWithTag("shell_open_settings").performClick()
-        composeRule.waitUntil(5_000) {
-            composeRule.onAllNodesWithTag("screen_settings").fetchSemanticsNodes().isNotEmpty()
+        androidComposeRule.onNodeWithTag("shell_open_settings").performClick()
+        androidComposeRule.waitUntil(5_000) {
+            androidComposeRule.onAllNodesWithTag("screen_settings").fetchSemanticsNodes().isNotEmpty()
         }
         pressSystemBack()
-        composeRule.onNodeWithTag("screen_today").assertIsDisplayed()
+        androidComposeRule.onNodeWithTag("screen_today").assertIsDisplayed()
     }
 
     @Test
@@ -222,7 +221,7 @@ class MahinShellNavigationTest {
                 ),
             )
         val navHolder = arrayOfNulls<NavHostController>(1)
-        composeRule.setContent {
+        androidComposeRule.setContent {
             MahinTheme {
                 val navController = rememberNavController()
                 navHolder[0] = navController
@@ -245,31 +244,31 @@ class MahinShellNavigationTest {
                 }
             }
         }
-        composeRule.waitForIdle()
-        composeRule.runOnIdle {
+        androidComposeRule.waitForIdle()
+        androidComposeRule.runOnIdle {
             navHolder[0]!!.navigate(MahinTopLevelDestination.PregnancyHub.route)
         }
-        composeRule.waitUntil(5_000) {
-            composeRule.onAllNodesWithTag("screen_pregnancy_hub").fetchSemanticsNodes().isNotEmpty()
+        androidComposeRule.waitUntil(5_000) {
+            androidComposeRule.onAllNodesWithTag("screen_pregnancy_hub").fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithTag("open_history_pregnancy").performClick()
-        composeRule.waitUntil(5_000) {
-            composeRule.onAllNodesWithTag("screen_history").fetchSemanticsNodes().isNotEmpty()
+        androidComposeRule.onNodeWithTag("open_history_pregnancy").performClick()
+        androidComposeRule.waitUntil(5_000) {
+            androidComposeRule.onAllNodesWithTag("screen_history").fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithTag("screen_history").assertIsDisplayed()
-        composeRule.onNodeWithTag("shell_top_bar_up").performClick()
-        composeRule.waitUntil(5_000) {
-            composeRule.onAllNodesWithTag("screen_pregnancy_hub").fetchSemanticsNodes().isNotEmpty()
+        androidComposeRule.onNodeWithTag("screen_history").assertIsDisplayed()
+        androidComposeRule.onNodeWithTag("shell_top_bar_up").performClick()
+        androidComposeRule.waitUntil(5_000) {
+            androidComposeRule.onAllNodesWithTag("screen_pregnancy_hub").fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithTag("open_calendar_pregnancy").performClick()
-        composeRule.waitUntil(5_000) {
-            composeRule.onAllNodesWithTag("screen_calendar").fetchSemanticsNodes().isNotEmpty()
+        androidComposeRule.onNodeWithTag("open_calendar_pregnancy").performClick()
+        androidComposeRule.waitUntil(5_000) {
+            androidComposeRule.onAllNodesWithTag("screen_calendar").fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithTag("screen_calendar").assertIsDisplayed()
-        composeRule.onNodeWithTag("shell_bottom_bar").assertDoesNotExist()
-        composeRule.onNodeWithTag("shell_top_bar_up").performClick()
-        composeRule.waitUntil(5_000) {
-            composeRule.onAllNodesWithTag("screen_pregnancy_hub").fetchSemanticsNodes().isNotEmpty()
+        androidComposeRule.onNodeWithTag("screen_calendar").assertIsDisplayed()
+        androidComposeRule.onNodeWithTag("shell_bottom_bar").assertDoesNotExist()
+        androidComposeRule.onNodeWithTag("shell_top_bar_up").performClick()
+        androidComposeRule.waitUntil(5_000) {
+            androidComposeRule.onAllNodesWithTag("screen_pregnancy_hub").fetchSemanticsNodes().isNotEmpty()
         }
     }
 
@@ -283,7 +282,7 @@ class MahinShellNavigationTest {
                 ),
             )
         val navHolder = arrayOfNulls<NavHostController>(1)
-        composeRule.setContent {
+        androidComposeRule.setContent {
             MahinTheme {
                 val navController = rememberNavController()
                 navHolder[0] = navController
@@ -306,24 +305,24 @@ class MahinShellNavigationTest {
                 }
             }
         }
-        composeRule.waitForIdle()
-        composeRule.runOnIdle { navHolder[0]!!.navigate(MahinTopLevelDestination.PregnancyHub.route) }
-        composeRule.waitUntil(5_000) {
-            composeRule.onAllNodesWithTag("screen_pregnancy_hub").fetchSemanticsNodes().isNotEmpty()
+        androidComposeRule.waitForIdle()
+        androidComposeRule.runOnIdle { navHolder[0]!!.navigate(MahinTopLevelDestination.PregnancyHub.route) }
+        androidComposeRule.waitUntil(5_000) {
+            androidComposeRule.onAllNodesWithTag("screen_pregnancy_hub").fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithTag("open_calendar_pregnancy").performClick()
-        composeRule.waitUntil(5_000) {
-            composeRule.onAllNodesWithTag("screen_calendar").fetchSemanticsNodes().isNotEmpty()
+        androidComposeRule.onNodeWithTag("open_calendar_pregnancy").performClick()
+        androidComposeRule.waitUntil(5_000) {
+            androidComposeRule.onAllNodesWithTag("screen_calendar").fetchSemanticsNodes().isNotEmpty()
         }
         pressSystemBack()
-        composeRule.waitUntil(5_000) {
-            composeRule.onAllNodesWithTag("screen_pregnancy_hub").fetchSemanticsNodes().isNotEmpty()
+        androidComposeRule.waitUntil(5_000) {
+            androidComposeRule.onAllNodesWithTag("screen_pregnancy_hub").fetchSemanticsNodes().isNotEmpty()
         }
     }
 
     @Test
     fun mahinAppShell_cycleInsightsHistoryButton_opensHistoryRoute() {
-        composeRule.setContent {
+        androidComposeRule.setContent {
             MahinTheme {
                 MahinAppShellWithNavigationOverride(
                     shellNavigationStateOverride =
@@ -335,17 +334,17 @@ class MahinShellNavigationTest {
                 )
             }
         }
-        composeRule.onNodeWithText("تحلیل‌ها").performClick()
-        composeRule.waitUntil(5_000) {
-            composeRule.onAllNodesWithTag("screen_cycle_insights").fetchSemanticsNodes().isNotEmpty()
+        androidComposeRule.onNodeWithText("تحلیل‌ها").performClick()
+        androidComposeRule.waitUntil(5_000) {
+            androidComposeRule.onAllNodesWithTag("screen_cycle_insights").fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithTag("open_history_cycle").performClick()
-        composeRule.onNodeWithTag("screen_history").assertIsDisplayed()
+        androidComposeRule.onNodeWithTag("open_history_cycle").performClick()
+        androidComposeRule.onNodeWithTag("screen_history").assertIsDisplayed()
     }
 
     @Test
     fun mahinAppShell_pregnancyHubCalendarButton_opensCalendarSecondary() {
-        composeRule.setContent {
+        androidComposeRule.setContent {
             MahinTheme {
                 MahinAppShellWithNavigationOverride(
                     shellNavigationStateOverride =
@@ -357,16 +356,16 @@ class MahinShellNavigationTest {
                 )
             }
         }
-        composeRule.onNodeWithText("بارداری").performClick()
-        composeRule.waitUntil(5_000) {
-            composeRule.onAllNodesWithTag("screen_pregnancy_hub").fetchSemanticsNodes().isNotEmpty()
+        androidComposeRule.onNodeWithText("بارداری").performClick()
+        androidComposeRule.waitUntil(5_000) {
+            androidComposeRule.onAllNodesWithTag("screen_pregnancy_hub").fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithTag("open_calendar_pregnancy").performClick()
-        composeRule.waitUntil(5_000) {
-            composeRule.onAllNodesWithTag("screen_calendar").fetchSemanticsNodes().isNotEmpty()
+        androidComposeRule.onNodeWithTag("open_calendar_pregnancy").performClick()
+        androidComposeRule.waitUntil(5_000) {
+            androidComposeRule.onAllNodesWithTag("screen_calendar").fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithTag("screen_calendar").assertIsDisplayed()
-        composeRule.onNodeWithTag("shell_bottom_bar").assertDoesNotExist()
+        androidComposeRule.onNodeWithTag("screen_calendar").assertIsDisplayed()
+        androidComposeRule.onNodeWithTag("shell_bottom_bar").assertDoesNotExist()
     }
 
     @Test
@@ -378,7 +377,7 @@ class MahinShellNavigationTest {
                     reproductiveMode = ReproductiveMode.CYCLE_TRACKING,
                 ),
             )
-        composeRule.setContent {
+        androidComposeRule.setContent {
             MahinTheme {
                 val navController = rememberNavController()
                 MahinShellLayout(shellState.value, navController) {
@@ -402,24 +401,24 @@ class MahinShellNavigationTest {
                 }
             }
         }
-        composeRule.waitForIdle()
-        composeRule.onNodeWithText("تحلیل‌ها").performClick()
-        composeRule.waitUntil(5_000) {
-            composeRule.onAllNodesWithTag("screen_cycle_insights").fetchSemanticsNodes().isNotEmpty()
+        androidComposeRule.waitForIdle()
+        androidComposeRule.onNodeWithText("تحلیل‌ها").performClick()
+        androidComposeRule.waitUntil(5_000) {
+            androidComposeRule.onAllNodesWithTag("screen_cycle_insights").fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithTag("shell_open_settings").performClick()
-        composeRule.waitUntil(5_000) {
-            composeRule.onAllNodesWithTag("screen_settings").fetchSemanticsNodes().isNotEmpty()
+        androidComposeRule.onNodeWithTag("shell_open_settings").performClick()
+        androidComposeRule.waitUntil(5_000) {
+            androidComposeRule.onAllNodesWithTag("screen_settings").fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithTag("settings_switch_pregnant").performClick()
-        composeRule.waitForIdle()
-        composeRule.onNodeWithTag("settings_top_bar_up").performClick()
-        composeRule.waitUntil(5_000) {
-            composeRule.onAllNodesWithTag("screen_today").fetchSemanticsNodes().isNotEmpty()
+        androidComposeRule.onNodeWithTag("settings_switch_pregnant").performClick()
+        androidComposeRule.waitForIdle()
+        androidComposeRule.onNodeWithTag("settings_top_bar_up").performClick()
+        androidComposeRule.waitUntil(5_000) {
+            androidComposeRule.onAllNodesWithTag("screen_today").fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithTag("screen_today").assertIsDisplayed()
-        composeRule.onNodeWithTag("shell_bottom_bar").assertIsDisplayed()
-        composeRule.onNodeWithTag("shell_top_bar").assertIsDisplayed()
+        androidComposeRule.onNodeWithTag("screen_today").assertIsDisplayed()
+        androidComposeRule.onNodeWithTag("shell_bottom_bar").assertIsDisplayed()
+        androidComposeRule.onNodeWithTag("shell_top_bar").assertIsDisplayed()
     }
 
     @Test
@@ -432,7 +431,7 @@ class MahinShellNavigationTest {
                 ),
             )
         val navHolder = arrayOfNulls<NavHostController>(1)
-        composeRule.setContent {
+        androidComposeRule.setContent {
             MahinTheme {
                 val navController = rememberNavController()
                 navHolder[0] = navController
@@ -451,22 +450,22 @@ class MahinShellNavigationTest {
                 }
             }
         }
-        composeRule.waitForIdle()
-        composeRule.runOnIdle {
+        androidComposeRule.waitForIdle()
+        androidComposeRule.runOnIdle {
             navHolder[0]!!.navigate(MahinTopLevelDestination.PregnancyHub.route)
         }
-        composeRule.waitUntil(5_000) {
-            composeRule.onAllNodesWithTag("screen_pregnancy_hub").fetchSemanticsNodes().isNotEmpty()
+        androidComposeRule.waitUntil(5_000) {
+            androidComposeRule.onAllNodesWithTag("screen_pregnancy_hub").fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.runOnIdle {
+        androidComposeRule.runOnIdle {
             shellState.value =
                 shellState.value.copy(reproductiveMode = ReproductiveMode.POST_PREGNANCY_TRANSITION)
         }
-        composeRule.waitUntil(5_000) {
-            composeRule.onAllNodesWithTag("screen_today").fetchSemanticsNodes().isNotEmpty()
+        androidComposeRule.waitUntil(5_000) {
+            androidComposeRule.onAllNodesWithTag("screen_today").fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithTag("shell_bottom_bar").assertIsDisplayed()
-        composeRule.onNodeWithTag("shell_top_bar").assertIsDisplayed()
+        androidComposeRule.onNodeWithTag("shell_bottom_bar").assertIsDisplayed()
+        androidComposeRule.onNodeWithTag("shell_top_bar").assertIsDisplayed()
     }
 
     @Test
@@ -478,7 +477,7 @@ class MahinShellNavigationTest {
                     reproductiveMode = ReproductiveMode.PREGNANT,
                 ),
             )
-        composeRule.setContent {
+        androidComposeRule.setContent {
             MahinTheme {
                 val navController = rememberNavController()
                 MahinShellLayout(shellState.value, navController) {
@@ -496,26 +495,26 @@ class MahinShellNavigationTest {
                 }
             }
         }
-        composeRule.waitForIdle()
-        composeRule.onNodeWithText("برنامه").performClick()
-        composeRule.onNodeWithTag("plan_state_field").performTextInput("saved")
-        composeRule.onNodeWithText("امروز").performClick()
-        composeRule.waitForIdle()
-        composeRule.runOnIdle {
+        androidComposeRule.waitForIdle()
+        androidComposeRule.onNodeWithText("برنامه").performClick()
+        androidComposeRule.onNodeWithTag("plan_state_field").performTextInput("saved")
+        androidComposeRule.onNodeWithText("امروز").performClick()
+        androidComposeRule.waitForIdle()
+        androidComposeRule.runOnIdle {
             shellState.value = shellState.value.copy(reproductiveMode = ReproductiveMode.CYCLE_TRACKING)
         }
-        composeRule.waitForIdle()
-        composeRule.runOnIdle {
+        androidComposeRule.waitForIdle()
+        androidComposeRule.runOnIdle {
             shellState.value = shellState.value.copy(reproductiveMode = ReproductiveMode.PREGNANT)
         }
-        composeRule.waitForIdle()
-        composeRule.onNodeWithText("برنامه").performClick()
-        composeRule.onNodeWithTag("plan_state_field").assertTextEquals("")
+        androidComposeRule.waitForIdle()
+        androidComposeRule.onNodeWithText("برنامه").performClick()
+        androidComposeRule.onNodeWithTag("plan_state_field").assertTextEquals("")
     }
 
     @Test
     fun planTabSaveable_restoresTextAfterTodaySwitchWithoutModeChange() {
-        composeRule.setContent {
+        androidComposeRule.setContent {
             MahinTheme {
                 val navController = rememberNavController()
                 MahinShellLayout(
@@ -539,32 +538,32 @@ class MahinShellNavigationTest {
                 }
             }
         }
-        composeRule.waitForIdle()
-        composeRule.onNodeWithText("برنامه").performClick()
-        composeRule.onNodeWithTag("plan_state_field").performTextInput("saved")
-        composeRule.onNodeWithText("امروز").performClick()
-        composeRule.waitForIdle()
-        composeRule.onNodeWithText("برنامه").performClick()
-        composeRule.onNodeWithTag("plan_state_field").assertTextContains("saved")
+        androidComposeRule.waitForIdle()
+        androidComposeRule.onNodeWithText("برنامه").performClick()
+        androidComposeRule.onNodeWithTag("plan_state_field").performTextInput("saved")
+        androidComposeRule.onNodeWithText("امروز").performClick()
+        androidComposeRule.waitForIdle()
+        androidComposeRule.onNodeWithText("برنامه").performClick()
+        androidComposeRule.onNodeWithTag("plan_state_field").assertTextContains("saved")
     }
 
     @Test
     fun shell_bottomBarTabs_exposeSelectedState() {
         mountShell(ReproductiveMode.CYCLE_TRACKING, MahinTopLevelDestination.Today.route)
-        composeRule.onNodeWithTag("shell_tab_today").assertIsSelected()
-        composeRule.onNodeWithTag("shell_tab_calendar").performClick()
-        composeRule.onNodeWithTag("shell_tab_calendar").assertIsSelected()
+        androidComposeRule.onNodeWithTag("shell_tab_today").assertIsSelected()
+        androidComposeRule.onNodeWithTag("shell_tab_calendar").performClick()
+        androidComposeRule.onNodeWithTag("shell_tab_calendar").assertIsSelected()
     }
 
     @Test
     fun shell_tabs_meetMinimumTouchTarget() {
         mountShell(ReproductiveMode.CYCLE_TRACKING, MahinTopLevelDestination.Today.route)
-        composeRule.onNodeWithTag("shell_tab_today").assertHeightIsAtLeast(48.dp)
+        androidComposeRule.onNodeWithTag("shell_tab_today").assertHeightIsAtLeast(48.dp)
     }
 
     @Test
     fun shell_profileNotLoaded_showsLoadingNotWrongTabs() {
-        composeRule.setContent {
+        androidComposeRule.setContent {
             MahinTheme {
                 val navController = rememberNavController()
                 MahinShellLayout(
@@ -575,13 +574,13 @@ class MahinShellNavigationTest {
                 }
             }
         }
-        composeRule.onNodeWithTag("shell_loading").assertIsDisplayed()
-        composeRule.onNodeWithTag("should_not_show").assertDoesNotExist()
+        androidComposeRule.onNodeWithTag("shell_loading").assertIsDisplayed()
+        androidComposeRule.onNodeWithTag("should_not_show").assertDoesNotExist()
     }
 
     private fun pressSystemBack() {
-        composeRule.activity.onBackPressedDispatcher.onBackPressed()
-        composeRule.waitForIdle()
+        androidComposeRule.activity.onBackPressedDispatcher.onBackPressed()
+        androidComposeRule.waitForIdle()
     }
 
     private fun mountShell(
@@ -589,7 +588,7 @@ class MahinShellNavigationTest {
         startRoute: String,
     ) {
         val navHolder = arrayOfNulls<NavHostController>(1)
-        composeRule.setContent {
+        androidComposeRule.setContent {
             MahinTheme {
                 val navController = rememberNavController()
                 navHolder[0] = navController
@@ -615,10 +614,10 @@ class MahinShellNavigationTest {
                 }
             }
         }
-        composeRule.waitForIdle()
+        androidComposeRule.waitForIdle()
         if (startRoute != MahinTopLevelDestination.Today.route) {
-            composeRule.runOnIdle { navHolder[0]!!.navigate(startRoute) }
-            composeRule.waitForIdle()
+            androidComposeRule.runOnIdle { navHolder[0]!!.navigate(startRoute) }
+            androidComposeRule.waitForIdle()
         }
     }
 }
