@@ -21,6 +21,7 @@ import dev.mahin.android.shell.reproductiveModeShellAccent
 import dev.mahin.core.designsystem.component.MahinBottomNavigationBar
 import dev.mahin.core.designsystem.component.MahinShellTopAppBar
 import dev.mahin.core.model.ReproductiveMode
+import dev.mahin.core.testing.ViewModelStoreClearingRule
 import dev.mahin.core.testing.roborazzi.captureMahinFullScreenGolden
 import org.junit.Rule
 import org.junit.Test
@@ -35,6 +36,9 @@ import org.robolectric.annotation.GraphicsMode
 class M14cShellGoldenTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
+
+    @get:Rule
+    val viewModelStoreRule = ViewModelStoreClearingRule(composeRule)
 
     @Test
     fun shell_cycle_light_scale10() = captureShell(ReproductiveMode.CYCLE_TRACKING, false, 1f)

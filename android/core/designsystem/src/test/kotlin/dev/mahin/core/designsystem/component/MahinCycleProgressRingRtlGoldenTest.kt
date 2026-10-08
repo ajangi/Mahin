@@ -6,6 +6,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import dev.mahin.core.testing.ViewModelStoreClearingRule
 import dev.mahin.core.testing.roborazzi.captureMahinFullScreenGolden
 import org.junit.Rule
 import org.junit.Test
@@ -20,6 +21,9 @@ import org.robolectric.annotation.GraphicsMode
 class MahinCycleProgressRingRtlGoldenTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
+
+    @get:Rule
+    val viewModelStoreRule = ViewModelStoreClearingRule(composeRule)
 
     @Test
     fun cycleRing_rtl_segmentArcs_light_scale10() {

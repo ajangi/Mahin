@@ -30,6 +30,7 @@ import androidx.navigation.compose.rememberNavController
 import dev.mahin.android.navigation.MahinTopLevelDestination
 import dev.mahin.core.designsystem.MahinTheme
 import dev.mahin.core.model.ReproductiveMode
+import dev.mahin.core.testing.ViewModelStoreClearingRule
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -41,6 +42,9 @@ import org.robolectric.annotation.Config
 class MahinShellNavigationTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
+
+    @get:Rule
+    val viewModelStoreRule = ViewModelStoreClearingRule(composeRule)
 
     private fun testOverrides(onSwitchToPregnant: (() -> Unit)? = null): MahinShellScreenOverrides =
         MahinShellScreenOverrides(

@@ -18,6 +18,7 @@ import com.github.takahirom.roborazzi.captureRoboImage
 import dev.mahin.android.onboarding.OnboardingWelcomeScreen
 import dev.mahin.core.datetime.JalaliDate
 import dev.mahin.core.designsystem.MahinTheme
+import dev.mahin.core.testing.ViewModelStoreClearingRule
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,6 +37,9 @@ import org.robolectric.annotation.GraphicsMode
 class M13PriorityScreensScreenshotTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
+
+    @get:Rule
+    val viewModelStoreRule = ViewModelStoreClearingRule(composeRule)
 
     @Test
     fun todayScreen_emptyRtlLight() {

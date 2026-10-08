@@ -123,7 +123,7 @@ class TodayViewModelTest {
     }
 
     @Test
-    fun postTransitionLearnLinkHidden_whenSupportContentFalse() {
+    fun postTransitionLearnLinkHidden_whenSupportContentFalse() =
         runBlocking {
             seedPregnantProfile()
             val pregnancy =
@@ -141,7 +141,61 @@ class TodayViewModelTest {
             awaitUntil { viewModel.uiState.value.postPregnancyTransition }
             assertThat(viewModel.uiState.value.postTransitionLearnLinkVisible).isFalse()
         }
-    }
+
+    @Test
+    fun onWeekDaySelected_marksSelectedDayInWeekStripWeeks() =
+        runBlocking {
+            seedCycleProfile()
+            val viewModel = TodayViewModel(cycleRepository, pregnancyRepository, notificationPrefs())
+            awaitUntil {
+                val ui = viewModel.uiState.value
+                ui.weekStripWeeks.isNotEmpty()
+            }
+            val weeks = viewModel.uiState.value.weekStripWeeks
+            val target = weeks.first()[3]
+            viewModel.onWeekDaySelected(target.date)
+            awaitUntil {
+                val stripWeeks = viewModel.uiState.value.weekStripWeeks
+                val flat = stripWeeks.flatten()
+                flat.any { it.date == target.date && it.isSelected }
+            }
+            val selectedCount =
+                viewModel.uiState.value.weekStripWeeks
+                    .flatten()
+                    .count { it.isSelected }
+            assertThat(selectedCount).isEqualTo(1)
+        }
+
+    @Test
+    fun onWeekDaySelected_populatesDaySheetLogLines() =
+        runBlocking {
+            seedCycleProfile()
+            val logDate = LocalDate.now()
+            database.dailyLogDao().upsert(
+                dev.mahin.core.database.entity.DailyLogEntity(
+                    id = "log-1",
+                    logDate = logDate,
+                    moodTags = "شاد",
+                    symptomTags = "خستگی",
+                    painSeverity = null,
+                    note = null,
+                    updatedAtEpochMs = 0L,
+                ),
+            )
+            val viewModel = TodayViewModel(cycleRepository, pregnancyRepository, notificationPrefs())
+            awaitUntil {
+                val ui = viewModel.uiState.value
+                ui.weekStripWeeks.isNotEmpty()
+            }
+            viewModel.onWeekDaySelected(logDate)
+            awaitUntil {
+                val ui = viewModel.uiState.value
+                ui.daySheetLogLines.isNotEmpty()
+            }
+            val logLines = viewModel.uiState.value.daySheetLogLines
+            val firstLine = logLines.first()
+            assertThat(firstLine).contains("خستگی")
+        }
 
     @Test
     fun postTransitionLearnLinkVisible_whenSupportContentRequested() {
@@ -166,6 +220,30 @@ class TodayViewModelTest {
     private fun notificationPrefs(): NotificationPreferencesRepository {
         val context = ApplicationProvider.getApplicationContext<Context>()
         return NotificationPreferencesRepository(context)
+    }
+
+    private suspend fun seedCycleProfile() {
+        database.cycleProfileDao().upsert(
+            CycleProfileEntity(
+                reproductiveMode = ReproductiveMode.CYCLE_TRACKING,
+                typicalCycleLengthDays = 28,
+                typicalPeriodLengthDays = 5,
+                regularity = CycleRegularity.REGULAR,
+                onboardingCompleted = true,
+                updatedAtEpochMs = 0L,
+            ),
+        )
+        val anchor = LocalDate.now().minusDays(13)
+        database.periodRecordDao().upsert(
+            dev.mahin.core.database.entity.PeriodRecordEntity(
+                id = "period-1",
+                startDate = anchor,
+                endDate = anchor.plusDays(4),
+                note = null,
+                createdAtEpochMs = 0L,
+                updatedAtEpochMs = 0L,
+            ),
+        )
     }
 
     private suspend fun seedPregnantProfile() {

@@ -18,6 +18,7 @@ import dev.mahin.android.insights.CycleInsightsScreenContent
 import dev.mahin.android.learn.LearnScreenContent
 import dev.mahin.android.onboarding.OnboardingWelcomeScreen
 import dev.mahin.android.pregnancy.PregnancyHubScreenContent
+import dev.mahin.core.testing.ViewModelStoreClearingRule
 import dev.mahin.core.testing.roborazzi.captureMahinFullScreenGolden
 import org.junit.Rule
 import org.junit.Test
@@ -36,6 +37,9 @@ import org.robolectric.annotation.GraphicsMode
 class M14aFullScreenGoldenTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
+
+    @get:Rule
+    val viewModelStoreRule = ViewModelStoreClearingRule(composeRule)
 
     @Test
     fun today_populated_light_scale10() = captureToday(darkTheme = false, fontScale = 1f)

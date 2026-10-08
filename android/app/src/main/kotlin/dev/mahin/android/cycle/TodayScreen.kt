@@ -399,7 +399,8 @@ private fun TodayDailyTipSlot(visible: Boolean) {
             modifier =
                 Modifier
                     .testTag("today_daily_tip_slot")
-                    .size(0.dp),
+                    .fillMaxWidth()
+                    .height(1.dp),
         )
     }
 }

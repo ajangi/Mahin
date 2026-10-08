@@ -101,7 +101,10 @@ internal fun CalendarDaySheetContent(
                 Text(
                     text = line,
                     style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = MahinSpacing.xs),
+                    modifier =
+                        Modifier
+                            .padding(top = MahinSpacing.xs)
+                            .testTag("calendar_day_sheet_log_line"),
                 )
             }
         }

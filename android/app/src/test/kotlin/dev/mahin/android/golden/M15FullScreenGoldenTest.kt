@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import dev.mahin.android.cycle.CycleCalendarScreenContent
 import dev.mahin.android.cycle.TodayScreenContent
+import dev.mahin.core.testing.ViewModelStoreClearingRule
 import dev.mahin.core.testing.roborazzi.captureMahinFullScreenGolden
 import org.junit.Rule
 import org.junit.Test
@@ -23,6 +24,9 @@ import org.robolectric.annotation.GraphicsMode
 class M15FullScreenGoldenTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
+
+    @get:Rule
+    val viewModelStoreRule = ViewModelStoreClearingRule(composeRule)
 
     @Test fun today_firstDay_light_scale10() = captureToday(M15GoldenFixtures.todayFirstDay(), false, 1f)
 

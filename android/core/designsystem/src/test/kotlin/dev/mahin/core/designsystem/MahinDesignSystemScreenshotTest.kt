@@ -19,6 +19,7 @@ import dev.mahin.core.designsystem.component.MahinEmptyState
 import dev.mahin.core.designsystem.component.MahinJalaliDatePicker
 import dev.mahin.core.designsystem.component.MahinLoadingState
 import dev.mahin.core.designsystem.component.MahinScreenHeader
+import dev.mahin.core.testing.ViewModelStoreClearingRule
 import dev.mahin.core.testing.roborazzi.MahinRoborazzi
 import org.junit.Rule
 import org.junit.Test
@@ -34,6 +35,9 @@ import org.robolectric.annotation.GraphicsMode
 class MahinDesignSystemScreenshotTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
+
+    @get:Rule
+    val viewModelStoreRule = ViewModelStoreClearingRule(composeRule)
 
     @Test
     fun emptyStateRtlLight() {
