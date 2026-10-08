@@ -209,10 +209,11 @@ class SettingsViewModelTest {
 
     @Test
     fun paywall_secondOpenAfterCancel_startsWarmUpAgain() {
-        val billingAdapter = SlowBillingAdapter()
+        val billingAdapter = CountingBillingAdapter()
         val viewModel = createViewModel(billingAdapter = billingAdapter)
         viewModel.openPaywall()
         idle()
+        assertThat(billingAdapter.startConnectionCount).isEqualTo(1)
         viewModel.dismissPaywall()
         idle()
         viewModel.openPaywall()
