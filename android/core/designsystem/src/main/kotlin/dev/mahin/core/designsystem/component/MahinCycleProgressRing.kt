@@ -1,6 +1,7 @@
 package dev.mahin.core.designsystem.component
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,10 +16,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import dev.mahin.core.designsystem.LocalReducedMotion
 import dev.mahin.core.designsystem.MahinMotionDuration
@@ -37,6 +41,26 @@ data class MahinRingArc(
     val strokeWidthFraction: Float = 0.09f,
 )
 
+data class MahinRingGeometry(
+    val startAngle: Float,
+    val sweepTotal: Float,
+)
+
+/** 12 o'clock start; LTR sweeps clockwise, RTL counter-clockwise (mirrored). */
+fun mahinRingGeometry(layoutDirection: LayoutDirection): MahinRingGeometry =
+    when (layoutDirection) {
+        LayoutDirection.Rtl ->
+            MahinRingGeometry(
+                startAngle = -90f,
+                sweepTotal = -270f,
+            )
+        else ->
+            MahinRingGeometry(
+                startAngle = -90f,
+                sweepTotal = 270f,
+            )
+    }
+
 @Suppress("LongParameterList")
 @Composable
 fun MahinCycleProgressRing(
@@ -45,22 +69,30 @@ fun MahinCycleProgressRing(
     modifier: Modifier = Modifier,
     size: Dp = 220.dp,
     trackColor: Color = Color.Transparent,
+    progressColor: Color? = null,
+    todayMarkerFraction: Float? = null,
+    todayMarkerColor: Color = Color.White,
     contentDescription: String? = null,
     content: @Composable () -> Unit,
 ) {
     val reducedMotion = LocalReducedMotion.current
-    val target = progressFraction.coerceIn(0f, 1f)
+    val layoutDirection = LocalLayoutDirection.current
+    val geometry = mahinRingGeometry(layoutDirection)
+    val targetProgress = progressFraction.coerceIn(0f, 1f)
+    val duration =
+        if (reducedMotion) {
+            0
+        } else {
+            mahinMotionDurationMs(MahinMotionDuration.NORMAL_MS)
+        }
     val animatedProgress by animateFloatAsState(
-        targetValue = if (reducedMotion) target else target,
-        animationSpec =
-            androidx.compose.animation.core.tween(
-                durationMillis = mahinMotionDurationMs(MahinMotionDuration.NORMAL_MS),
-            ),
-        label = "cycleRingProgress",
+        targetValue = targetProgress,
+        animationSpec = tween(durationMillis = duration),
+        label = "cycleRingProgressFill",
     )
     val semanticsModifier =
         if (contentDescription != null) {
-            Modifier.semantics { this.contentDescription = contentDescription }
+            Modifier.clearAndSetSemantics { this.contentDescription = contentDescription }
         } else {
             Modifier
         }
@@ -78,8 +110,8 @@ fun MahinCycleProgressRing(
             val diameter = side - stroke
             val topLeft = Offset(stroke / 2f, stroke / 2f)
             val arcSize = Size(diameter, diameter)
-            val startAngle = 135f
-            val sweepTotal = 270f
+            val sweepTotal = geometry.sweepTotal
+            val startAngle = geometry.startAngle
             if (trackColor.alpha > 0f) {
                 drawArc(
                     color = trackColor,
@@ -92,7 +124,7 @@ fun MahinCycleProgressRing(
                 )
             }
             arcs.forEach { arc ->
-                val sweep = (arc.endFraction - arc.startFraction).coerceAtLeast(0f) * sweepTotal * animatedProgress
+                val segmentSweep = (arc.endFraction - arc.startFraction).coerceAtLeast(0f) * sweepTotal
                 val arcStart = startAngle + arc.startFraction * sweepTotal
                 val pathEffect =
                     if (arc.style == MahinRingArcStyle.Dashed) {
@@ -103,7 +135,7 @@ fun MahinCycleProgressRing(
                 drawArc(
                     color = arc.color,
                     startAngle = arcStart,
-                    sweepAngle = sweep,
+                    sweepAngle = segmentSweep,
                     useCenter = false,
                     topLeft = topLeft,
                     size = arcSize,
@@ -114,6 +146,32 @@ fun MahinCycleProgressRing(
                             pathEffect = pathEffect,
                         ),
                 )
+            }
+            val fillColor = progressColor
+            if (fillColor != null && animatedProgress > 0f) {
+                drawArc(
+                    color = fillColor.copy(alpha = 0.35f),
+                    startAngle = startAngle,
+                    sweepAngle = sweepTotal * animatedProgress,
+                    useCenter = false,
+                    topLeft = topLeft,
+                    size = arcSize,
+                    style = Stroke(width = stroke * 0.55f, cap = StrokeCap.Round),
+                )
+            }
+            todayMarkerFraction?.let { fraction ->
+                val angleDegrees = startAngle + fraction.coerceIn(0f, 1f) * sweepTotal
+                val radius = diameter / 2f
+                val center = Offset(topLeft.x + radius + stroke / 2f, topLeft.y + radius + stroke / 2f)
+                val markerRadius = stroke * 0.55f
+                rotate(angleDegrees, center) {
+                    val markerCenter = Offset(center.x, center.y - radius)
+                    drawCircle(
+                        color = todayMarkerColor,
+                        radius = markerRadius,
+                        center = markerCenter,
+                    )
+                }
             }
         }
         content()

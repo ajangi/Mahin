@@ -91,7 +91,7 @@
     <string name="calendar_title">تقویم چرخه</string>
     <string name="calendar_legend_hint">برای معنی رنگ‌ها، راهنمای زیر را ببینید.</string>
     <string name="calendar_jump_today">برو به امروز</string>
-    <string name="calendar_day_sheet_title">روز %1$s — %2$s</string>
+    <string name="calendar_day_sheet_title">روز %1$s %2$s %3$s</string>
     <string name="calendar_day_sheet_gregorian">میلادی: %1$s</string>
     <string name="calendar_day_sheet_edit">ویرایش ثبت</string>
     <string name="calendar_day_sheet_no_markers">بدون نشانهٔ پیش‌بینی برای این روز.</string>

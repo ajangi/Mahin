@@ -20,8 +20,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.invisibleToUser
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -204,6 +207,7 @@ private fun TodayFirstDayCta(onLogFirstPeriod: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun TodayCycleHero(
     hero: CycleTodayHero,
@@ -235,12 +239,16 @@ private fun TodayCycleHero(
                 arcs = TodayCycleHeroMapper.ringArcs(hero),
                 progressFraction = TodayCycleHeroMapper.progressFraction(hero),
                 trackColor = TodayCycleHeroMapper.trackColor(),
+                progressColor = MaterialTheme.colorScheme.primary,
+                todayMarkerFraction = TodayCycleHeroMapper.todayMarkerFraction(hero),
+                todayMarkerColor = MaterialTheme.colorScheme.primary,
                 contentDescription = a11y,
             ) {
                 cycleDay?.let {
                     Text(
                         text = stringResource(R.string.today_cycle_day_numeric, PersianDigits.format(it)),
                         style = mahinTextStyle(MahinTypographyRole.NumericDisplay),
+                        modifier = Modifier.semantics { invisibleToUser() },
                     )
                 }
             }
@@ -272,6 +280,7 @@ private fun TodayCycleHero(
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun TodayPregnancyHero(
     hero: PregnancyTodayHero,
@@ -285,14 +294,21 @@ private fun TodayPregnancyHero(
         )
     MahinSurfaceCard(modifier = Modifier.padding(vertical = MahinSpacing.sm)) {
         Column {
+            val weekProgress = (hero.gestationalWeeks * 7 + hero.gestationalDays).toFloat() / hero.totalGestationalDays
             MahinCycleProgressRing(
-                arcs = emptyList(),
-                progressFraction =
-                    (hero.gestationalWeeks * 7 + hero.gestationalDays).toFloat() / hero.totalGestationalDays,
+                arcs = TodayPregnancyRingMapper.weekArcs(hero),
+                progressFraction = weekProgress.coerceIn(0f, 1f),
                 trackColor = TodayCycleHeroMapper.trackColor(),
+                progressColor = MaterialTheme.colorScheme.secondary,
+                todayMarkerFraction = weekProgress.coerceIn(0f, 1f),
+                todayMarkerColor = MaterialTheme.colorScheme.secondary,
                 contentDescription = gaLabel,
             ) {
-                Text(text = gaLabel, style = mahinTextStyle(MahinTypographyRole.NumericDisplay))
+                Text(
+                    text = gaLabel,
+                    style = mahinTextStyle(MahinTypographyRole.NumericDisplay),
+                    modifier = Modifier.semantics { invisibleToUser() },
+                )
             }
             Text(
                 text =

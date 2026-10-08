@@ -25,6 +25,7 @@ class TodaySnapshotUseCaseTest {
                             insufficientDataReason = "no_period_anchor",
                         ),
                     periodAnchorStart = null,
+                    currentPeriod = null,
                     typicalPeriodLengthDays = 5,
                     onPeriodToday = false,
                 ),
@@ -56,11 +57,16 @@ class TodaySnapshotUseCaseTest {
                     today = today,
                     prediction = prediction,
                     periodAnchorStart = anchor,
+                    currentPeriod = PeriodSpanForSnapshot(anchor, anchor.plusDays(4)),
                     typicalPeriodLengthDays = 5,
                     onPeriodToday = false,
                 ),
             ) as TodaySnapshot.Cycle
         assertThat(snapshot.hero.cycleDay).isEqualTo(14)
+        val logged =
+            snapshot.hero.ringSegments.first { it.kind == CycleRingSegmentKind.LOGGED_PERIOD }
+        assertThat(logged.startDay).isEqualTo(1)
+        assertThat(logged.endDay).isEqualTo(5)
         assertThat(snapshot.hero.isInFertileWindow).isTrue()
         assertThat(snapshot.hero.isOverdue).isFalse()
         assertThat(
@@ -86,6 +92,7 @@ class TodaySnapshotUseCaseTest {
                     today = today,
                     prediction = prediction,
                     periodAnchorStart = anchor,
+                    currentPeriod = PeriodSpanForSnapshot(anchor, null),
                     typicalPeriodLengthDays = 5,
                     onPeriodToday = false,
                 ),
@@ -117,6 +124,7 @@ class TodaySnapshotUseCaseTest {
                     today = lateToday,
                     prediction = prediction,
                     periodAnchorStart = anchor,
+                    currentPeriod = null,
                     typicalPeriodLengthDays = 5,
                     onPeriodToday = false,
                 ),
@@ -149,8 +157,9 @@ class TodaySnapshotUseCaseTest {
                     today = today,
                     prediction = prediction,
                     periodAnchorStart = anchor,
+                    currentPeriod = PeriodSpanForSnapshot(anchor, null),
                     typicalPeriodLengthDays = 5,
-                    onPeriodToday = false,
+                    onPeriodToday = true,
                 ),
             ) as TodaySnapshot.Cycle
         assertThat(snapshot.hero.confidence).isEqualTo(PredictionConfidence.LOW)

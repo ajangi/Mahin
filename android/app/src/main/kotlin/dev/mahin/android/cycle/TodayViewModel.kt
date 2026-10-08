@@ -11,6 +11,7 @@ import dev.mahin.core.datastore.NotificationPreferencesRepository
 import dev.mahin.core.datetime.PersianCivilDateConverter
 import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.domain.cycle.CycleTodaySnapshotInput
+import dev.mahin.domain.cycle.PeriodSpanForSnapshot
 import dev.mahin.domain.cycle.TodaySnapshotUseCase
 import dev.mahin.domain.pregnancy.PregnancyDatingEngineV1
 import dev.mahin.domain.pregnancy.PregnancyTodaySnapshotUseCase
@@ -44,7 +45,7 @@ class TodayViewModel
                     repository.observePeriods(),
                 ) { dashboard, periods ->
                     val anchor = resolveAnchor(periods, dashboard)
-                    val snapshot = buildCycleSnapshot(dashboard, anchor)
+                    val snapshot = buildCycleSnapshot(dashboard, periods, anchor)
                     Triple(dashboard, periods, snapshot)
                 }.collect { (dashboard, periods, snapshot) ->
                     _uiState.update { state ->
@@ -146,16 +147,33 @@ class TodayViewModel
 
         private fun buildCycleSnapshot(
             dashboard: CycleDashboard,
+            periods: List<PeriodRecordEntity>,
             anchor: LocalDate?,
         ) = TodaySnapshotUseCase.fromCycle(
             CycleTodaySnapshotInput(
                 today = LocalDate.now(),
                 prediction = dashboard.prediction,
                 periodAnchorStart = anchor,
+                currentPeriod = resolveCurrentPeriod(periods, anchor),
                 typicalPeriodLengthDays = dashboard.profile?.typicalPeriodLengthDays,
                 onPeriodToday = dashboard.onPeriodToday,
             ),
         )
+
+        private fun resolveCurrentPeriod(
+            periods: List<PeriodRecordEntity>,
+            anchor: LocalDate?,
+        ): PeriodSpanForSnapshot? {
+            val open = periods.firstOrNull { it.endDate == null }
+            if (open != null) {
+                return PeriodSpanForSnapshot(open.startDate, open.endDate)
+            }
+            val latest = periods.maxByOrNull { it.startDate } ?: return null
+            if (anchor != null && latest.startDate == anchor) {
+                return PeriodSpanForSnapshot(latest.startDate, latest.endDate)
+            }
+            return null
+        }
 
         private fun buildWeekStrip(center: LocalDate) =
             (0..6).map { offset ->
@@ -216,30 +234,17 @@ class TodayViewModel
             periods: List<PeriodRecordEntity>,
             dashboard: CycleDashboard?,
         ): DayMarkers {
-            val logged =
-                periods.any { record ->
-                    !date.isBefore(record.startDate) &&
-                        (record.endDate == null || !date.isAfter(record.endDate))
+            val prediction = dashboard?.prediction ?: return DayMarkers()
+            val logDates =
+                buildSet {
+                    if (dashboard.todayLog != null) add(LocalDate.now())
                 }
-            val prediction = dashboard?.prediction
-            val predicted =
-                prediction?.nextPeriod?.let { range ->
-                    !date.isBefore(range.earliest) && !date.isAfter(range.latest)
-                } == true
-            val fertile =
-                prediction?.fertileWindow?.let { range ->
-                    !date.isBefore(range.earliest) && !date.isAfter(range.latest)
-                } == true
-            val ovulation =
-                prediction?.estimatedOvulation?.let { range ->
-                    !date.isBefore(range.earliest) && !date.isAfter(range.latest)
-                } == true
-            return DayMarkers(
-                loggedPeriod = logged,
-                predictedPeriod = predicted && !logged,
-                fertileWindow = fertile,
-                estimatedOvulation = ovulation,
-                hasLogEntries = date == LocalDate.now() && dashboard?.todayLog != null,
+            return CycleDayMarkersMapper.forDate(
+                date = date,
+                today = LocalDate.now(),
+                periods = periods,
+                prediction = prediction,
+                datesWithLogEntries = logDates,
             )
         }
     }

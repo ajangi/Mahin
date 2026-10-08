@@ -1,8 +1,12 @@
 package dev.mahin.android.cycle
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -16,6 +20,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mahin.android.R
 import dev.mahin.core.datetime.JalaliDate
 import dev.mahin.core.datetime.PersianCivilDateConverter
+import dev.mahin.core.designsystem.LocalReducedMotion
 import dev.mahin.core.designsystem.MahinSpacing
 import dev.mahin.core.designsystem.component.MahinCalendarDayDecoration
 import dev.mahin.core.designsystem.component.MahinCalendarLegend
@@ -23,6 +28,7 @@ import dev.mahin.core.designsystem.component.MahinCalendarMarkerTints
 import dev.mahin.core.designsystem.component.MahinJalaliDatePicker
 import java.time.LocalDate
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun CycleCalendarScreen(
     modifier: Modifier = Modifier,
@@ -30,17 +36,20 @@ fun CycleCalendarScreen(
     viewModel: CalendarViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    CycleCalendarScreenContent(
-        state = state,
-        onDateSelected = { viewModel.selectJalaliDate(it) },
-        onDismissDaySheet = viewModel::dismissDaySheet,
-        onToggleLegend = viewModel::toggleLegendExpanded,
-        onJumpToToday = viewModel::jumpToToday,
-        onOpenLogForDate = onOpenLogForDate,
-        modifier = modifier,
-    )
+    SharedTransitionLayout(modifier = modifier) {
+        CycleCalendarScreenContent(
+            state = state,
+            onDateSelected = { viewModel.selectJalaliDate(it) },
+            onDismissDaySheet = viewModel::dismissDaySheet,
+            onToggleLegend = viewModel::toggleLegendExpanded,
+            onJumpToToday = viewModel::jumpToToday,
+            onVisibleMonthChanged = viewModel::onVisibleMonthChanged,
+            onOpenLogForDate = onOpenLogForDate,
+        )
+    }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Suppress("LongParameterList")
 @Composable
 internal fun CycleCalendarScreenContent(
@@ -49,6 +58,7 @@ internal fun CycleCalendarScreenContent(
     onDismissDaySheet: () -> Unit = {},
     onToggleLegend: () -> Unit = {},
     onJumpToToday: () -> Unit = {},
+    onVisibleMonthChanged: (JalaliDate) -> Unit = {},
     onOpenLogForDate: (LocalDate) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -60,10 +70,12 @@ internal fun CycleCalendarScreenContent(
             fertile = MahinCalendarMarkerTints.fertileWindow(),
             ovulation = MahinCalendarMarkerTints.estimatedOvulation(),
         )
+    val scroll = rememberScrollState()
     Column(
         modifier =
             modifier
                 .fillMaxSize()
+                .verticalScroll(scroll)
                 .testTag("cycle_calendar_screen")
                 .padding(horizontal = MahinSpacing.md),
     ) {
@@ -82,7 +94,8 @@ internal fun CycleCalendarScreenContent(
             selectedDate = state.selectedJalali,
             onDateSelected = onDateSelected,
             converter = converter,
-            initialVisibleMonth = state.visibleMonth,
+            visibleMonth = state.visibleMonth,
+            onVisibleMonthChanged = onVisibleMonthChanged,
             dayDecoration = { date -> decorationFor(date, state.dayMarkers[date], today, palette) },
             headerTrailing = {
                 TextButton(onClick = onJumpToToday) {
@@ -97,10 +110,12 @@ internal fun CycleCalendarScreenContent(
             modifier = Modifier.padding(top = MahinSpacing.md, bottom = MahinSpacing.lg),
         )
     }
+    val gregorian = converter.toGregorian(state.selectedJalali)
     CalendarDaySheet(
         open = state.daySheetOpen,
         selectedJalali = state.selectedJalali,
-        markers = state.dayMarkers[converter.toGregorian(state.selectedJalali)],
+        markers = state.dayMarkers[gregorian],
+        logLines = state.dayLogs[gregorian] ?: emptyList(),
         onDismiss = onDismissDaySheet,
         onEditLog = onOpenLogForDate,
     )
@@ -131,8 +146,8 @@ internal fun decorationFor(
     val fill =
         when {
             m.loggedPeriod -> palette.periodLogged
-            m.fertileWindow -> palette.fertile
             m.estimatedOvulation -> palette.ovulation
+            m.fertileWindow -> palette.fertile
             else -> null
         }
     return MahinCalendarDayDecoration(

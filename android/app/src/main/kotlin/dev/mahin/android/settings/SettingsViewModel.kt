@@ -168,7 +168,7 @@ class SettingsViewModel
             if (paywallVisible.value) return
             paywallVisible.value = true
             if (paywallWarmUpJob?.isActive == true) return
-            paywallWarmUpJob =
+            val job =
                 viewModelScope.launch {
                     try {
                         premiumBillingCoordinator.warmUp()
@@ -177,9 +177,12 @@ class SettingsViewModel
                     } catch (_: Exception) {
                         // Billing warm-up is best-effort; paywall stays open.
                     } finally {
-                        paywallWarmUpJob = null
+                        if (paywallWarmUpJob === this.coroutineContext[kotlinx.coroutines.Job]) {
+                            paywallWarmUpJob = null
+                        }
                     }
                 }
+            paywallWarmUpJob = job
         }
 
         fun dismissPaywall() {

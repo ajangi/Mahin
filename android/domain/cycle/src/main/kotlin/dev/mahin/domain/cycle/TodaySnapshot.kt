@@ -37,10 +37,16 @@ sealed interface TodaySnapshot {
     ) : TodaySnapshot
 }
 
+data class PeriodSpanForSnapshot(
+    val startDate: LocalDate,
+    val endDate: LocalDate?,
+)
+
 data class CycleTodaySnapshotInput(
     val today: LocalDate,
     val prediction: CyclePredictionResult,
     val periodAnchorStart: LocalDate?,
+    val currentPeriod: PeriodSpanForSnapshot?,
     val typicalPeriodLengthDays: Int?,
     val onPeriodToday: Boolean,
 )
@@ -63,10 +69,8 @@ object TodaySnapshotUseCase {
     private fun buildCycleHero(input: CycleTodaySnapshotInput): CycleTodayHero {
         val prediction = input.prediction
         val cycleDay = prediction.cycleDay
-        val periodLength = (input.typicalPeriodLengthDays ?: DEFAULT_PERIOD_LENGTH).coerceAtLeast(1)
         val cycleLength =
             estimateCycleLengthDays(
-                anchor = input.periodAnchorStart,
                 today = input.today,
                 cycleDay = cycleDay,
                 nextPeriod = prediction.nextPeriod,
@@ -83,7 +87,7 @@ object TodaySnapshotUseCase {
             prediction.fertileWindow?.let { range ->
                 !input.today.isBefore(range.earliest) && !input.today.isAfter(range.latest)
             } == true
-        val segments = buildRingSegments(input, cycleLength, periodLength)
+        val segments = buildRingSegments(input, cycleLength)
         val showChip =
             prediction.confidence == PredictionConfidence.LOW ||
                 prediction.confidence == PredictionConfidence.INSUFFICIENT_DATA
@@ -100,14 +104,13 @@ object TodaySnapshotUseCase {
     }
 
     private fun estimateCycleLengthDays(
-        anchor: LocalDate?,
         today: LocalDate,
         cycleDay: Int?,
         nextPeriod: DateRangeEstimate?,
     ): Int {
-        if (anchor != null && cycleDay != null && nextPeriod != null) {
+        if (cycleDay != null && nextPeriod != null) {
             val daysToEarliest = ChronoUnit.DAYS.between(today, nextPeriod.earliest).toInt()
-            return (cycleDay + daysToEarliest).coerceIn(21, 45)
+            return (cycleDay + daysToEarliest).coerceAtLeast(cycleDay)
         }
         return DEFAULT_CYCLE_LENGTH
     }
@@ -115,25 +118,36 @@ object TodaySnapshotUseCase {
     private fun buildRingSegments(
         input: CycleTodaySnapshotInput,
         cycleLength: Int,
-        periodLength: Int,
     ): List<CycleRingSegment> {
         val segments = mutableListOf<CycleRingSegment>()
-        val loggedEnd = periodLength.coerceAtMost(cycleLength)
-        segments +=
-            CycleRingSegment(
-                kind = CycleRingSegmentKind.LOGGED_PERIOD,
-                startDay = 1,
-                endDay = loggedEnd,
-            )
-        val predictedStart = (cycleLength - periodLength + 1).coerceAtLeast(1)
-        segments +=
-            CycleRingSegment(
-                kind = CycleRingSegmentKind.PREDICTED_PERIOD,
-                startDay = predictedStart,
-                endDay = cycleLength,
-            )
+        val anchor = input.periodAnchorStart
+        input.currentPeriod?.let { period ->
+            val loggedEnd =
+                when {
+                    period.endDate != null -> period.endDate
+                    else -> input.today
+                }
+            calendarRangeToCycleDays(anchor, period.startDate, loggedEnd, cycleLength)?.let { (start, end) ->
+                segments +=
+                    CycleRingSegment(
+                        kind = CycleRingSegmentKind.LOGGED_PERIOD,
+                        startDay = start,
+                        endDay = end,
+                    )
+            }
+        }
+        input.prediction.nextPeriod?.let { range ->
+            calendarRangeToCycleDays(anchor, range.earliest, range.latest, cycleLength)?.let { (start, end) ->
+                segments +=
+                    CycleRingSegment(
+                        kind = CycleRingSegmentKind.PREDICTED_PERIOD,
+                        startDay = start,
+                        endDay = end,
+                    )
+            }
+        }
         input.prediction.fertileWindow?.let { range ->
-            dateRangeToCycleDays(input.periodAnchorStart, range, cycleLength)?.let { (start, end) ->
+            calendarRangeToCycleDays(anchor, range.earliest, range.latest, cycleLength)?.let { (start, end) ->
                 segments +=
                     CycleRingSegment(
                         kind = CycleRingSegmentKind.FERTILE_WINDOW,
@@ -143,7 +157,7 @@ object TodaySnapshotUseCase {
             }
         }
         input.prediction.estimatedOvulation?.let { range ->
-            dateRangeToCycleDays(input.periodAnchorStart, range, cycleLength)?.let { (start, end) ->
+            calendarRangeToCycleDays(anchor, range.earliest, range.latest, cycleLength)?.let { (start, end) ->
                 segments +=
                     CycleRingSegment(
                         kind = CycleRingSegmentKind.ESTIMATED_OVULATION,
@@ -155,14 +169,15 @@ object TodaySnapshotUseCase {
         return segments
     }
 
-    private fun dateRangeToCycleDays(
+    private fun calendarRangeToCycleDays(
         anchor: LocalDate?,
-        range: DateRangeEstimate,
+        rangeStart: LocalDate,
+        rangeEnd: LocalDate,
         cycleLength: Int,
     ): Pair<Int, Int>? {
         if (anchor == null) return null
-        val start = (ChronoUnit.DAYS.between(anchor, range.earliest) + 1).toInt()
-        val end = (ChronoUnit.DAYS.between(anchor, range.latest) + 1).toInt()
+        val start = (ChronoUnit.DAYS.between(anchor, rangeStart) + 1).toInt()
+        val end = (ChronoUnit.DAYS.between(anchor, rangeEnd) + 1).toInt()
         if (end < 1 || start > cycleLength) return null
         return start.coerceAtLeast(1) to end.coerceAtMost(cycleLength)
     }

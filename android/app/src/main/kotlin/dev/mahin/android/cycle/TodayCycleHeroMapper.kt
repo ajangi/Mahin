@@ -39,7 +39,13 @@ internal object TodayCycleHeroMapper {
     fun trackColor(): androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
 
     fun progressFraction(hero: CycleTodayHero): Float {
+        if (hero.isOverdue) return 1f
         val day = hero.cycleDay ?: return 0f
+        return (day.toFloat() / hero.cycleLengthDays.coerceAtLeast(1)).coerceIn(0f, 1f)
+    }
+
+    fun todayMarkerFraction(hero: CycleTodayHero): Float? {
+        val day = hero.cycleDay ?: return null
         return (day.toFloat() / hero.cycleLengthDays.coerceAtLeast(1)).coerceIn(0f, 1f)
     }
 }

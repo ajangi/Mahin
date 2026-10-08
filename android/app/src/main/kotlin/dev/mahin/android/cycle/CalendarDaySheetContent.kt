@@ -28,6 +28,7 @@ fun CalendarDaySheet(
     open: Boolean,
     selectedJalali: JalaliDate,
     markers: DayMarkers?,
+    logLines: List<String> = emptyList(),
     onDismiss: () -> Unit,
     onEditLog: (LocalDate) -> Unit,
 ) {
@@ -47,6 +48,7 @@ fun CalendarDaySheet(
             jalali = selectedJalali,
             gregorian = gregorian,
             markers = markers,
+            logLines = logLines,
             onEditLog = { onEditLog(gregorian) },
             modifier = Modifier.testTag("calendar_day_sheet"),
         )
@@ -58,15 +60,19 @@ internal fun CalendarDaySheetContent(
     jalali: JalaliDate,
     gregorian: LocalDate,
     markers: DayMarkers?,
+    logLines: List<String> = emptyList(),
     onEditLog: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val monthNames = androidx.compose.ui.res.stringArrayResource(dev.mahin.core.designsystem.R.array.ds_jalali_month_names)
+    val monthName = monthNames[jalali.month - 1]
     Column(modifier = modifier.fillMaxWidth().padding(MahinSpacing.lg)) {
         Text(
             text =
                 stringResource(
                     R.string.calendar_day_sheet_title,
                     PersianDigits.format(jalali.day),
+                    monthName,
                     PersianDigits.format(jalali.year),
                 ),
             style = MaterialTheme.typography.titleMedium,
@@ -85,6 +91,15 @@ internal fun CalendarDaySheetContent(
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(top = MahinSpacing.md),
         )
+        if (logLines.isNotEmpty()) {
+            logLines.forEach { line ->
+                Text(
+                    text = line,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = MahinSpacing.xs),
+                )
+            }
+        }
         if (markers?.fertileWindow == true || markers?.estimatedOvulation == true) {
             Text(
                 text = stringResource(R.string.today_fertile_not_contraception),

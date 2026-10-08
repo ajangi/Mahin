@@ -4,10 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.mahin.core.database.cycle.CycleTrackingRepository
+import dev.mahin.core.database.entity.DailyLogEntity
 import dev.mahin.core.datastore.CalendarUiPreferencesRepository
 import dev.mahin.core.datetime.JalaliDate
 import dev.mahin.core.datetime.PersianCivilDateConverter
-import dev.mahin.domain.cycle.DateRangeEstimate
 import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,8 +21,10 @@ data class CalendarUiState(
     val selectedJalali: JalaliDate,
     val visibleMonth: JalaliDate,
     val dayMarkers: Map<LocalDate, DayMarkers> = emptyMap(),
+    val dayLogs: Map<LocalDate, List<String>> = emptyMap(),
     val legendExpanded: Boolean = true,
     val daySheetOpen: Boolean = false,
+    val legendAutoCollapsedOnce: Boolean = false,
 )
 
 @HiltViewModel
@@ -46,7 +48,12 @@ class CalendarViewModel
         init {
             viewModelScope.launch {
                 calendarUiPreferencesRepository.observeLegendCollapsed().collect { collapsed ->
-                    _uiState.update { it.copy(legendExpanded = !collapsed) }
+                    _uiState.update {
+                        it.copy(
+                            legendExpanded = !collapsed,
+                            legendAutoCollapsedOnce = collapsed,
+                        )
+                    }
                 }
             }
             viewModelScope.launch {
@@ -57,37 +64,20 @@ class CalendarViewModel
                     repository.observePeriods(),
                     repository.observeDailyLogs(rangeStart, rangeEnd),
                 ) { dashboard, periods, logs ->
-                    val markers = mutableMapOf<LocalDate, DayMarkers>()
-                    periods.forEach { record ->
-                        var day = record.startDate
-                        val end = record.endDate ?: record.startDate
-                        while (!day.isAfter(end)) {
-                            markers[day] = (markers[day] ?: DayMarkers()).copy(loggedPeriod = true)
-                            day = day.plusDays(1)
-                        }
-                    }
-                    dashboard.prediction.nextPeriod?.let { range ->
-                        addRange(markers, range) { existing ->
-                            existing.copy(predictedPeriod = true)
-                        }
-                    }
-                    dashboard.prediction.fertileWindow?.let { range ->
-                        addRange(markers, range) { existing ->
-                            existing.copy(fertileWindow = true)
-                        }
-                    }
-                    dashboard.prediction.estimatedOvulation?.let { range ->
-                        addRange(markers, range) { existing ->
-                            existing.copy(estimatedOvulation = true)
-                        }
-                    }
-                    logs.forEach { log ->
-                        val existing = markers[log.logDate] ?: DayMarkers()
-                        markers[log.logDate] = existing.copy(hasLogEntries = true)
-                    }
-                    markers
-                }.collect { markers ->
-                    _uiState.update { it.copy(dayMarkers = markers) }
+                    val logDates = logs.map { it.logDate }.toSet()
+                    val markers =
+                        CycleDayMarkersMapper.buildMap(
+                            rangeStart = rangeStart,
+                            rangeEnd = rangeEnd,
+                            today = today,
+                            periods = periods,
+                            prediction = dashboard.prediction,
+                            datesWithLogEntries = logDates,
+                        )
+                    val logSummaries = logs.groupBy { it.logDate }.mapValues { (_, entries) -> entries.map { it.toSummaryLine() } }
+                    markers to logSummaries
+                }.collect { (markers, logSummaries) ->
+                    _uiState.update { it.copy(dayMarkers = markers, dayLogs = logSummaries) }
                 }
             }
         }
@@ -96,17 +86,19 @@ class CalendarViewModel
             _uiState.update {
                 it.copy(
                     selectedJalali = date,
+                    visibleMonth = JalaliDate(date.year, date.month, 1),
                     daySheetOpen = true,
                 )
             }
+            maybeAutoCollapseLegend()
         }
 
         fun dismissDaySheet() {
             _uiState.update { it.copy(daySheetOpen = false) }
         }
 
-        fun setVisibleMonth(month: JalaliDate) {
-            _uiState.update { it.copy(visibleMonth = month) }
+        fun onVisibleMonthChanged(month: JalaliDate) {
+            _uiState.update { it.copy(visibleMonth = JalaliDate(month.year, month.month, 1)) }
         }
 
         fun jumpToToday() {
@@ -114,7 +106,7 @@ class CalendarViewModel
             _uiState.update {
                 it.copy(
                     selectedJalali = jalali,
-                    visibleMonth = jalali,
+                    visibleMonth = JalaliDate(jalali.year, jalali.month, 1),
                 )
             }
         }
@@ -126,16 +118,18 @@ class CalendarViewModel
             }
         }
 
-        private fun addRange(
-            markers: MutableMap<LocalDate, DayMarkers>,
-            range: DateRangeEstimate,
-            transform: (DayMarkers) -> DayMarkers,
-        ) {
-            var day = range.earliest
-            while (!day.isAfter(range.latest)) {
-                val existing = markers[day] ?: DayMarkers()
-                markers[day] = transform(existing)
-                day = day.plusDays(1)
+        private fun maybeAutoCollapseLegend() {
+            viewModelScope.launch {
+                if (!_uiState.value.legendAutoCollapsedOnce && _uiState.value.legendExpanded) {
+                    calendarUiPreferencesRepository.setLegendCollapsed(true)
+                }
             }
         }
+
+        private fun DailyLogEntity.toSummaryLine(): String =
+            buildList {
+                if (symptomTags.isNotBlank()) add(symptomTags)
+                if (moodTags.isNotBlank()) add(moodTags)
+                if (!note.isNullOrBlank()) add("…")
+            }.joinToString(" · ")
     }

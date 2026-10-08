@@ -3,6 +3,8 @@ package dev.mahin.core.designsystem.component
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,12 +24,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.launch
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringArrayResource
@@ -62,51 +68,82 @@ fun MahinJalaliDatePicker(
     modifier: Modifier = Modifier,
     converter: CivilDateConverter = PersianCivilDateConverter,
     initialVisibleMonth: JalaliDate = selectedDate ?: converter.toJalali(LocalDate.now()),
+    visibleMonth: JalaliDate? = null,
+    onVisibleMonthChanged: ((JalaliDate) -> Unit)? = null,
     dayBackgroundColor: (LocalDate) -> Color? = { null },
     dayDecoration: (LocalDate) -> MahinCalendarDayDecoration? = { null },
+    dayCellModifier: (LocalDate) -> Modifier = { Modifier },
     headerTrailing: @Composable (() -> Unit)? = null,
 ) {
-    var visibleYear by remember(initialVisibleMonth) { mutableStateOf(initialVisibleMonth.year) }
-    var visibleMonth by remember(initialVisibleMonth) { mutableStateOf(initialVisibleMonth.month) }
     val monthNames = stringArrayResource(R.array.ds_jalali_month_names)
+    val controlledMonth = visibleMonth ?: initialVisibleMonth
+    val pagerState =
+        rememberPagerState(
+            initialPage = jalaliMonthPageIndex(controlledMonth),
+            pageCount = { JALALI_MONTH_PAGE_COUNT },
+        )
+    LaunchedEffect(visibleMonth) {
+        visibleMonth?.let { target ->
+            val page = jalaliMonthPageIndex(target)
+            if (pagerState.currentPage != page) {
+                pagerState.scrollToPage(page)
+            }
+        }
+    }
+    LaunchedEffect(pagerState, onVisibleMonthChanged) {
+        if (onVisibleMonthChanged == null) return@LaunchedEffect
+        snapshotFlow { pagerState.currentPage }.collect { page ->
+            onVisibleMonthChanged(jalaliMonthFromPageIndex(page))
+        }
+    }
+    val currentMonth = jalaliMonthFromPageIndex(pagerState.currentPage)
+    val scope = rememberCoroutineScope()
     Column(
         modifier = modifier.fillMaxWidth().padding(MahinSpacing.md),
         verticalArrangement = Arrangement.spacedBy(MahinSpacing.md),
     ) {
         JalaliMonthHeader(
             monthNames = monthNames,
-            visibleYear = visibleYear,
-            visibleMonth = visibleMonth,
+            visibleYear = currentMonth.year,
+            visibleMonth = currentMonth.month,
             trailing = headerTrailing,
             onPreviousMonth = {
-                if (visibleMonth == 1) {
-                    visibleMonth = 12
-                    visibleYear -= 1
-                } else {
-                    visibleMonth -= 1
-                }
+                val target = (pagerState.currentPage - 1).coerceAtLeast(0)
+                scope.launch { pagerState.animateScrollToPage(target) }
             },
             onNextMonth = {
-                if (visibleMonth == 12) {
-                    visibleMonth = 1
-                    visibleYear += 1
-                } else {
-                    visibleMonth += 1
-                }
+                val target = (pagerState.currentPage + 1).coerceAtMost(JALALI_MONTH_PAGE_COUNT - 1)
+                scope.launch { pagerState.animateScrollToPage(target) }
             },
         )
         JalaliWeekdayHeaderRow()
-        JalaliMonthGrid(
-            visibleYear = visibleYear,
-            visibleMonth = visibleMonth,
-            selectedDate = selectedDate,
-            onDateSelected = onDateSelected,
-            converter = converter,
-            dayBackgroundColor = dayBackgroundColor,
-            dayDecoration = dayDecoration,
-        )
+        HorizontalPager(state = pagerState, modifier = Modifier.fillMaxWidth()) { page ->
+            val month = jalaliMonthFromPageIndex(page)
+            JalaliMonthGrid(
+                visibleYear = month.year,
+                visibleMonth = month.month,
+                selectedDate = selectedDate,
+                onDateSelected = onDateSelected,
+                converter = converter,
+                dayBackgroundColor = dayBackgroundColor,
+                dayDecoration = dayDecoration,
+                dayCellModifier = dayCellModifier,
+            )
+        }
         JalaliGregorianDetailLine(selectedDate = selectedDate, converter = converter)
     }
+}
+
+private const val JALALI_MONTH_BASE_YEAR = 1370
+private const val JALALI_MONTH_PAGE_COUNT = 12 * 80
+
+private fun jalaliMonthPageIndex(date: JalaliDate): Int =
+    (date.year - JALALI_MONTH_BASE_YEAR) * 12 + (date.month - 1)
+
+private fun jalaliMonthFromPageIndex(page: Int): JalaliDate {
+    val year = JALALI_MONTH_BASE_YEAR + page / 12
+    val month = (page % 12) + 1
+    return JalaliDate(year, month, 1)
 }
 
 @Suppress("LongParameterList")
@@ -189,6 +226,7 @@ private fun JalaliMonthGrid(
     converter: CivilDateConverter,
     dayBackgroundColor: (LocalDate) -> Color?,
     dayDecoration: (LocalDate) -> MahinCalendarDayDecoration?,
+    dayCellModifier: (LocalDate) -> Modifier = { Modifier },
 ) {
     val daysInMonth = JalaliCalendar.daysInMonth(visibleYear, visibleMonth)
     val firstGregorian = converter.toGregorian(JalaliDate(visibleYear, visibleMonth, 1))
@@ -222,6 +260,7 @@ private fun JalaliMonthGrid(
                                 converter = converter,
                                 markerColor = dayBackgroundColor(gregorian),
                                 decoration = dayDecoration(gregorian),
+                                modifier = dayCellModifier(gregorian),
                             )
                         }
                     }
@@ -264,6 +303,7 @@ private fun JalaliDayCell(
     converter: CivilDateConverter,
     markerColor: Color? = null,
     decoration: MahinCalendarDayDecoration? = null,
+    modifier: Modifier = Modifier,
 ) {
     val monthNames = stringArrayResource(R.array.ds_jalali_month_names)
     val monthName = monthNames[date.month - 1]
@@ -289,25 +329,30 @@ private fun JalaliDayCell(
         }
     val shape = RoundedCornerShape(MahinRadius.sm)
     val borderModifier =
-        if (!selected && decoration?.predictedPeriodOutline == true) {
-            Modifier.border(
-                width = 1.dp,
-                color = MahinCalendarMarkerTints.periodPredictedBorder(),
-                shape = shape,
-            )
-        } else if (!selected && decoration?.isToday == true) {
-            Modifier.border(
-                width = 2.dp,
-                color = MaterialTheme.colorScheme.primary,
-                shape = shape,
-            )
-        } else {
-            Modifier
+        run {
+            var mod: Modifier = Modifier
+            if (!selected && decoration?.predictedPeriodOutline == true) {
+                mod =
+                    mod.border(
+                        width = 1.dp,
+                        color = MahinCalendarMarkerTints.periodPredictedBorder(),
+                        shape = shape,
+                    )
+            }
+            if (!selected && decoration?.isToday == true) {
+                mod =
+                    mod.border(
+                        width = 2.dp,
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = shape,
+                    )
+            }
+            mod
         }
 
     Surface(
         modifier =
-            Modifier
+            modifier
                 .fillMaxWidth()
                 .aspectRatio(1f)
                 .mahinMinimumTouchTarget()
@@ -340,8 +385,8 @@ private fun JalaliDayCell(
                         Modifier
                             .align(Alignment.TopEnd)
                             .padding(3.dp)
-                            .size(6.dp)
-                            .clip(CircleShape)
+                            .size(7.dp)
+                            .clip(RoundedCornerShape(1.dp))
                             .background(MahinCalendarMarkerTints.estimatedOvulation()),
                 )
             }
