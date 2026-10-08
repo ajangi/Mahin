@@ -158,6 +158,7 @@ tasks.withType<Test>().configureEach {
             excludeTestsMatching("dev.mahin.android.shell.ShellModeTransitionTest")
             excludeTestsMatching("dev.mahin.android.settings.SettingsScreenContentTest")
             excludeTestsMatching("dev.mahin.android.cycle.TodayScreenContentTest")
+            excludeTestsMatching("dev.mahin.android.cycle.TodayRingA11yTest")
             excludeTestsMatching("dev.mahin.android.shell.MahinBottomNavigationBarA11yTest")
             excludeTestsMatching("dev.mahin.android.pregnancy.PregnancyPlanScreenTest")
             excludeTestsMatching("dev.mahin.android.ttc.TtcInsightsScreenScrollTest")

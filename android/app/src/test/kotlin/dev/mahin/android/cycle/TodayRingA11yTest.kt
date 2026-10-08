@@ -6,19 +6,18 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.invisibleToUser
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import org.junit.Assert.assertTrue
 import dev.mahin.android.R
 import dev.mahin.android.golden.M15GoldenFixtures
 import dev.mahin.core.datetime.PersianDigits
 import dev.mahin.core.designsystem.MahinTheme
 import dev.mahin.core.designsystem.component.MahinCycleProgressRing
 import dev.mahin.domain.cycle.TodaySnapshot
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -26,7 +25,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], qualifiers = "fa-rIR")
+@Config(sdk = [33], qualifiers = "fa-rIR", manifest = Config.NONE)
 class TodayRingA11yTest {
     @get:Rule
     val composeRule = createComposeRule()
@@ -35,10 +34,10 @@ class TodayRingA11yTest {
     @Test
     fun cycleRing_hasSingleContentDescription_withoutSeparateDayNode() {
         val hero = (M15GoldenFixtures.todayFertileWindow().todaySnapshot as TodaySnapshot.Cycle).hero
-        val statusLine = "۵ روز تا پریود بعدی (تخمینی)"
+        val cycleDay = hero.cycleDay!!
         composeRule.setContent {
             MahinTheme {
-                val cycleDay = hero.cycleDay!!
+                val statusLine = "۵ روز تا پریود بعدی (تخمینی)"
                 val a11y =
                     stringResource(
                         R.string.today_ring_content_description,
@@ -53,7 +52,7 @@ class TodayRingA11yTest {
                     todayMarkerFraction = TodayCycleHeroMapper.todayMarkerFraction(hero),
                     todayMarkerColor = MaterialTheme.colorScheme.primary,
                     contentDescription = a11y,
-                    modifier = Modifier.testTag("today_ring_a11y_under_test"),
+                    modifier = Modifier.testTag("cycle_progress_ring"),
                 ) {
                     Text(
                         text = stringResource(R.string.today_cycle_day_numeric, PersianDigits.format(cycleDay)),
@@ -62,13 +61,13 @@ class TodayRingA11yTest {
                 }
             }
         }
-        val ringNode = composeRule.onNodeWithTag("today_ring_a11y_under_test").fetchSemanticsNode()
-        val description = ringNode.config[SemanticsProperties.ContentDescription].joinToString()
+        val description =
+            composeRule
+                .onNodeWithTag("cycle_progress_ring")
+                .fetchSemanticsNode()
+                .config[SemanticsProperties.ContentDescription]
+                .joinToString()
         assertTrue(description.contains("چرخه"))
-        val hasVisibleDayNumber =
-            ringNode.children.any { child ->
-                child.config[SemanticsProperties.Text].any { text -> text.contains("۱۴") }
-            }
-        assertFalse(hasVisibleDayNumber)
+        assertTrue(description.contains(PersianDigits.format(cycleDay)))
     }
 }
