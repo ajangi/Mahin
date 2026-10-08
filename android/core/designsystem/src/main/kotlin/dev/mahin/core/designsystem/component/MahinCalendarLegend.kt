@@ -1,10 +1,13 @@
 package dev.mahin.core.designsystem.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -18,13 +21,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import dev.mahin.core.designsystem.LocalMahinExtendedColors
 import dev.mahin.core.designsystem.MahinSpacing
 import dev.mahin.core.designsystem.R
 
 @Composable
-fun MahinCalendarLegend(modifier: Modifier = Modifier) {
-    val extended = LocalMahinExtendedColors.current
+fun MahinCalendarLegend(
+    modifier: Modifier = Modifier,
+    expanded: Boolean = true,
+    onToggleExpanded: (() -> Unit)? = null,
+) {
     val description = stringResource(R.string.ds_calendar_legend_content_description)
     Column(
         modifier =
@@ -32,24 +37,65 @@ fun MahinCalendarLegend(modifier: Modifier = Modifier) {
                 .semantics { contentDescription = description },
         verticalArrangement = Arrangement.spacedBy(MahinSpacing.xs),
     ) {
-        LegendRow(
-            color = extended.healthPeriod.copy(alpha = 0.45f),
-            label = stringResource(R.string.ds_calendar_legend_period_logged),
-        )
-        LegendRow(
-            color = extended.healthPeriod.copy(alpha = 0.2f),
-            label = stringResource(R.string.ds_calendar_legend_period_predicted),
-        )
-        LegendRow(
-            color = extended.healthFertility.copy(alpha = 0.25f),
-            label = stringResource(R.string.ds_calendar_legend_fertile),
-        )
-        Text(
-            text = stringResource(R.string.ds_calendar_legend_disclaimer),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = MahinSpacing.xs),
-        )
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .then(
+                        if (onToggleExpanded != null) {
+                            Modifier.clickable(onClick = onToggleExpanded)
+                        } else {
+                            Modifier
+                        },
+                    ),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.ds_calendar_legend_title),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            if (onToggleExpanded != null) {
+                Text(
+                    text =
+                        stringResource(
+                            if (expanded) {
+                                R.string.ds_calendar_legend_collapse
+                            } else {
+                                R.string.ds_calendar_legend_expand
+                            },
+                        ),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+        if (expanded) {
+            LegendRow(
+                color = MahinCalendarMarkerTints.periodLogged(),
+                label = stringResource(R.string.ds_calendar_legend_period_logged),
+            )
+            LegendRow(
+                color = MahinCalendarMarkerTints.periodPredictedFill(),
+                label = stringResource(R.string.ds_calendar_legend_period_predicted),
+                outline = true,
+            )
+            LegendRow(
+                color = MahinCalendarMarkerTints.fertileWindow(),
+                label = stringResource(R.string.ds_calendar_legend_fertile),
+            )
+            LegendRow(
+                color = MahinCalendarMarkerTints.estimatedOvulation(),
+                label = stringResource(R.string.ds_calendar_legend_ovulation),
+            )
+            Text(
+                text = stringResource(R.string.ds_calendar_legend_disclaimer),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = MahinSpacing.xs),
+            )
+        }
     }
 }
 
@@ -57,6 +103,7 @@ fun MahinCalendarLegend(modifier: Modifier = Modifier) {
 private fun LegendRow(
     color: androidx.compose.ui.graphics.Color,
     label: String,
+    outline: Boolean = false,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -67,7 +114,13 @@ private fun LegendRow(
                 Modifier
                     .size(14.dp)
                     .clip(CircleShape)
-                    .background(color),
+                    .then(
+                        if (outline) {
+                            Modifier.border(1.dp, MahinCalendarMarkerTints.periodPredictedBorder(), CircleShape)
+                        } else {
+                            Modifier
+                        },
+                    ).background(color),
         )
         Text(
             text = label,

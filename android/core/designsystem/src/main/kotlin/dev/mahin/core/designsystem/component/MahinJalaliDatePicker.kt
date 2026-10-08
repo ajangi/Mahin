@@ -1,5 +1,7 @@
 package dev.mahin.core.designsystem.component
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,6 +10,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
@@ -34,6 +38,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import dev.mahin.core.datetime.CivilDateConverter
 import dev.mahin.core.datetime.JalaliCalendar
 import dev.mahin.core.datetime.JalaliDate
@@ -58,6 +63,8 @@ fun MahinJalaliDatePicker(
     converter: CivilDateConverter = PersianCivilDateConverter,
     initialVisibleMonth: JalaliDate = selectedDate ?: converter.toJalali(LocalDate.now()),
     dayBackgroundColor: (LocalDate) -> Color? = { null },
+    dayDecoration: (LocalDate) -> MahinCalendarDayDecoration? = { null },
+    headerTrailing: @Composable (() -> Unit)? = null,
 ) {
     var visibleYear by remember(initialVisibleMonth) { mutableStateOf(initialVisibleMonth.year) }
     var visibleMonth by remember(initialVisibleMonth) { mutableStateOf(initialVisibleMonth.month) }
@@ -70,6 +77,7 @@ fun MahinJalaliDatePicker(
             monthNames = monthNames,
             visibleYear = visibleYear,
             visibleMonth = visibleMonth,
+            trailing = headerTrailing,
             onPreviousMonth = {
                 if (visibleMonth == 1) {
                     visibleMonth = 12
@@ -95,16 +103,19 @@ fun MahinJalaliDatePicker(
             onDateSelected = onDateSelected,
             converter = converter,
             dayBackgroundColor = dayBackgroundColor,
+            dayDecoration = dayDecoration,
         )
         JalaliGregorianDetailLine(selectedDate = selectedDate, converter = converter)
     }
 }
 
+@Suppress("LongParameterList")
 @Composable
 private fun JalaliMonthHeader(
     monthNames: Array<String>,
     visibleYear: Int,
     visibleMonth: Int,
+    trailing: @Composable (() -> Unit)?,
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
 ) {
@@ -128,14 +139,17 @@ private fun JalaliMonthHeader(
             color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
         )
-        IconButton(
-            onClick = onNextMonth,
-            modifier = Modifier.mahinMinimumTouchTarget(),
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                contentDescription = stringResource(R.string.ds_date_picker_next_month),
-            )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            trailing?.invoke()
+            IconButton(
+                onClick = onNextMonth,
+                modifier = Modifier.mahinMinimumTouchTarget(),
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                    contentDescription = stringResource(R.string.ds_date_picker_next_month),
+                )
+            }
         }
     }
 }
@@ -174,6 +188,7 @@ private fun JalaliMonthGrid(
     onDateSelected: (JalaliDate) -> Unit,
     converter: CivilDateConverter,
     dayBackgroundColor: (LocalDate) -> Color?,
+    dayDecoration: (LocalDate) -> MahinCalendarDayDecoration?,
 ) {
     val daysInMonth = JalaliCalendar.daysInMonth(visibleYear, visibleMonth)
     val firstGregorian = converter.toGregorian(JalaliDate(visibleYear, visibleMonth, 1))
@@ -199,12 +214,14 @@ private fun JalaliMonthGrid(
                         if (date == null) {
                             Box(modifier = Modifier.fillMaxWidth().aspectRatio(1f))
                         } else {
+                            val gregorian = converter.toGregorian(date)
                             JalaliDayCell(
                                 date = date,
                                 selected = date == selectedDate,
                                 onClick = { onDateSelected(date) },
                                 converter = converter,
-                                markerColor = dayBackgroundColor(converter.toGregorian(date)),
+                                markerColor = dayBackgroundColor(gregorian),
+                                decoration = dayDecoration(gregorian),
                             )
                         }
                     }
@@ -238,6 +255,7 @@ private fun JalaliGregorianDetailLine(
     )
 }
 
+@Suppress("LongParameterList", "LongMethod")
 @Composable
 private fun JalaliDayCell(
     date: JalaliDate,
@@ -245,6 +263,7 @@ private fun JalaliDayCell(
     onClick: () -> Unit,
     converter: CivilDateConverter,
     markerColor: Color? = null,
+    decoration: MahinCalendarDayDecoration? = null,
 ) {
     val monthNames = stringArrayResource(R.array.ds_jalali_month_names)
     val monthName = monthNames[date.month - 1]
@@ -255,17 +274,35 @@ private fun JalaliDayCell(
             "${PersianDigits.format(date.day)} $monthName ${PersianDigits.format(date.year)} — " +
                 PersianDigits.format(g.format(DateTimeFormatter.ISO_LOCAL_DATE))
         }
-    val backgroundColor =
-        if (selected) {
-            MaterialTheme.colorScheme.primary
-        } else {
-            markerColor ?: MaterialTheme.colorScheme.surface
+    val fill =
+        when {
+            selected -> MaterialTheme.colorScheme.primary
+            decoration?.fillColor != null -> decoration.fillColor
+            markerColor != null -> markerColor
+            else -> MaterialTheme.colorScheme.surface
         }
     val contentColor =
         if (selected) {
             MaterialTheme.colorScheme.onPrimary
         } else {
             MaterialTheme.colorScheme.onSurface
+        }
+    val shape = RoundedCornerShape(MahinRadius.sm)
+    val borderModifier =
+        if (!selected && decoration?.predictedPeriodOutline == true) {
+            Modifier.border(
+                width = 1.dp,
+                color = MahinCalendarMarkerTints.periodPredictedBorder(),
+                shape = shape,
+            )
+        } else if (!selected && decoration?.isToday == true) {
+            Modifier.border(
+                width = 2.dp,
+                color = MaterialTheme.colorScheme.primary,
+                shape = shape,
+            )
+        } else {
+            Modifier
         }
 
     Surface(
@@ -274,17 +311,40 @@ private fun JalaliDayCell(
                 .fillMaxWidth()
                 .aspectRatio(1f)
                 .mahinMinimumTouchTarget()
-                .clip(RoundedCornerShape(MahinRadius.sm))
+                .clip(shape)
+                .then(borderModifier)
                 .semantics {
                     role = Role.Button
                     this.selected = selected
                     contentDescription = description
                 }.clickable(onClick = onClick),
-        color = backgroundColor,
-        shape = RoundedCornerShape(MahinRadius.sm),
+        color = fill,
+        shape = shape,
     ) {
         Box(contentAlignment = Alignment.Center) {
             Text(text = dayLabel, style = MaterialTheme.typography.bodyMedium, color = contentColor)
+            if (decoration?.hasLogEntries == true) {
+                Box(
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 4.dp)
+                            .size(5.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary),
+                )
+            }
+            if (decoration?.estimatedOvulation == true) {
+                Box(
+                    modifier =
+                        Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(3.dp)
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(MahinCalendarMarkerTints.estimatedOvulation()),
+                )
+            }
         }
     }
 }
