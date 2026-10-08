@@ -1,7 +1,7 @@
 # M15 Handoff — Today home & calendar redesign
 
 **Milestone:** M15  
-**Status:** draft PR #37 — gatekeeper items **1–15 complete** on branch head (awaiting final CI)  
+**Status:** draft PR #37 — gatekeeper items **1–15 complete**; CI **5/5 green** on `09d9d16`  
 **Next milestone:** **M16** only
 
 ## Gatekeeper checklist (1–15)
