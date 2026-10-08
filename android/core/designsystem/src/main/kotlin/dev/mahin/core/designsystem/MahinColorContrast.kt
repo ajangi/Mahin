@@ -25,3 +25,30 @@ fun contrastRatio(
     val darker = minOf(l1, l2)
     return (lighter + 0.05) / (darker + 0.05)
 }
+
+/** Alpha-composites [foregroundHex] over [backgroundHex] in sRGB (straight alpha). */
+fun compositeHexOver(
+    foregroundHex: String,
+    foregroundAlpha: Float,
+    backgroundHex: String,
+): String {
+    fun channel(
+        hex: String,
+        start: Int,
+    ): Int = hex.removePrefix("#").substring(start, start + 2).toInt(16)
+
+    val a = foregroundAlpha.coerceIn(0f, 1f)
+    val br = channel(backgroundHex, 0)
+    val bg = channel(backgroundHex, 2)
+    val bb = channel(backgroundHex, 4)
+    val fr = channel(foregroundHex, 0)
+    val fg = channel(foregroundHex, 2)
+    val fb = channel(foregroundHex, 4)
+
+    fun blend(
+        f: Int,
+        b: Int,
+    ): Int = ((f * a) + (b * (1f - a))).toInt().coerceIn(0, 255)
+
+    return "#%02X%02X%02X".format(blend(fr, br), blend(fg, bg), blend(fb, bb))
+}

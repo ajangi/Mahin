@@ -106,6 +106,9 @@
     <string name="calendar_day_sheet_predicted_period">پریود تخمینی</string>
     <string name="calendar_day_sheet_fertile">پنجرهٔ باروری تخمینی</string>
     <string name="calendar_day_sheet_ovulation">تخمک‌گذاری تخمینی</string>
+    <string name="calendar_day_sheet_dismiss">بستن جزئیات روز</string>
+    <string name="calendar_day_sheet_pane_title">جزئیات روز تقویم</string>
+    <string name="today_ring_status_days_until_period">پریود بعدی حدود %1$s روز دیگر، تخمینی</string>
     <string name="calendar_day_sheet_neutral">ثبت یا پیش‌بینی ویژه‌ای برای این روز نیست.</string>
     <string name="calendar_demo_title">تقویم جلالی</string>
     <string name="calendar_demo_body">تاریخ را برای ورودی انتخاب کنید. ذخیرهٔ داخلی همیشه میلادی ISO است.</string>

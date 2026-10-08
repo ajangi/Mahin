@@ -43,6 +43,16 @@ object M15GoldenFixtures {
             overdue = false,
         )
 
+    fun todayRingTalkBack(): TodayUiState =
+        cycleState(
+            cycleDay = 14,
+            daysUntil = 5,
+            confidence = PredictionConfidence.MEDIUM,
+            showChip = false,
+            inFertile = false,
+            overdue = false,
+        )
+
     fun todayFertileWindow(): TodayUiState =
         cycleState(
             cycleDay = 14,

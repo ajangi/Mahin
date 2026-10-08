@@ -37,6 +37,24 @@ class CycleDayMarkersMapperTest {
     }
 
     @Test
+    fun forDate_marksOvulationAndLogDot() {
+        val ovulationDay = anchor.plusDays(14)
+        val markers =
+            CycleDayMarkersMapper.forDate(
+                date = ovulationDay,
+                today = today,
+                periods = emptyList(),
+                prediction =
+                    prediction().copy(
+                        estimatedOvulation = DateRangeEstimate(ovulationDay, ovulationDay),
+                    ),
+                datesWithLogEntries = setOf(ovulationDay),
+            )
+        assertThat(markers.estimatedOvulation).isTrue()
+        assertThat(markers.hasLogEntries).isTrue()
+    }
+
+    @Test
     fun buildMap_returnsDayMarkersPerDate() {
         val map =
             CycleDayMarkersMapper.buildMap(

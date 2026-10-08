@@ -8,6 +8,7 @@ import dev.mahin.core.database.MahinDatabase
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.entity.CycleProfileEntity
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
+import dev.mahin.core.datastore.CalendarUiPreferencesRepository
 import dev.mahin.core.datastore.NotificationPreferencesRepository
 import dev.mahin.core.datastore.PregnancyTimerPreferencesRepository
 import dev.mahin.core.model.CycleRegularity
@@ -16,7 +17,6 @@ import dev.mahin.core.model.ReproductiveMode
 import java.time.LocalDate
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -46,6 +46,11 @@ class TodayViewModelTest {
 
     @After
     fun tearDown() {
+        runBlocking {
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            NotificationPreferencesRepository(context).clear()
+            CalendarUiPreferencesRepository(context).clear()
+        }
         database.close()
     }
 
@@ -119,7 +124,7 @@ class TodayViewModelTest {
 
     @Test
     fun postTransitionLearnLinkHidden_whenSupportContentFalse() {
-        runTest {
+        runBlocking {
             seedPregnantProfile()
             val pregnancy =
                 pregnancyRepository.startPregnancy(

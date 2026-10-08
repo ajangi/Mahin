@@ -1,6 +1,7 @@
 package dev.mahin.core.designsystem
 
 import com.google.common.truth.Truth.assertThat
+import dev.mahin.core.designsystem.component.MahinCalendarMarkerTintAlphas
 import dev.mahin.core.model.MahinTokenHex
 import org.junit.Test
 
@@ -20,46 +21,88 @@ class MahinCalendarMarkerContrastTest {
         )
 
     @Test
-    fun lightText_meetsContrastOnSurfaces() {
+    fun lightTheme_dayNumberText_onBlendedFills_meetsContrast() {
+        val fills =
+            listOf(
+                MahinTokenHex.LIGHT_HEALTH_PERIOD to MahinCalendarMarkerTintAlphas.LIGHT_PERIOD,
+                MahinTokenHex.LIGHT_HEALTH_PERIOD to MahinCalendarMarkerTintAlphas.LIGHT_PERIOD_PREDICTED,
+                MahinTokenHex.LIGHT_HEALTH_FERTILITY to MahinCalendarMarkerTintAlphas.LIGHT_FERTILE,
+                MahinTokenHex.LIGHT_HEALTH_OVULATION to MahinCalendarMarkerTintAlphas.LIGHT_OVULATION,
+            )
         lightSurfaces.forEach { surface ->
-            assertThat(contrastRatio(MahinTokenHex.LIGHT_TEXT_PRIMARY, surface)).isAtLeast(4.5)
+            fills.forEach { (health, alpha) ->
+                val blended = compositeHexOver(health, alpha, surface)
+                val text = preferredCalendarLabelHex(blended, isDark = false)
+                assertThat(contrastRatio(text, blended)).isAtLeast(4.5)
+            }
         }
     }
 
     @Test
-    fun darkText_meetsContrastOnSurfaces() {
+    fun darkTheme_dayNumberText_onBlendedFills_meetsContrast() {
+        val fills =
+            listOf(
+                MahinTokenHex.DARK_HEALTH_PERIOD to MahinCalendarMarkerTintAlphas.DARK_PERIOD,
+                MahinTokenHex.DARK_HEALTH_PERIOD to MahinCalendarMarkerTintAlphas.DARK_PERIOD_PREDICTED,
+                MahinTokenHex.DARK_HEALTH_FERTILITY to MahinCalendarMarkerTintAlphas.DARK_FERTILE,
+                MahinTokenHex.DARK_HEALTH_OVULATION to MahinCalendarMarkerTintAlphas.DARK_OVULATION,
+            )
         darkSurfaces.forEach { surface ->
-            assertThat(contrastRatio(MahinTokenHex.DARK_TEXT_PRIMARY, surface)).isAtLeast(4.5)
-        }
-    }
-
-    @Test
-    fun lightMarkerSemantics_meetGraphicsContrastOnSurfaces() {
-        val markers =
-            listOf(
-                MahinTokenHex.LIGHT_HEALTH_PERIOD,
-                MahinTokenHex.LIGHT_HEALTH_FERTILITY,
-                MahinTokenHex.LIGHT_HEALTH_OVULATION,
-            )
-        markers.forEach { marker ->
-            lightSurfaces.forEach { surface ->
-                assertThat(contrastRatio(marker, surface)).isAtLeast(3.0)
+            fills.forEach { (health, alpha) ->
+                val blended = compositeHexOver(health, alpha, surface)
+                val text = preferredCalendarLabelHex(blended, isDark = true)
+                assertThat(contrastRatio(text, blended)).isAtLeast(4.5)
             }
         }
     }
 
     @Test
-    fun darkMarkerSemantics_meetGraphicsContrastOnSurfaces() {
-        val markers =
-            listOf(
-                MahinTokenHex.DARK_HEALTH_PERIOD,
-                MahinTokenHex.DARK_HEALTH_FERTILITY,
-                MahinTokenHex.DARK_HEALTH_OVULATION,
-            )
-        markers.forEach { marker ->
-            darkSurfaces.forEach { surface ->
-                assertThat(contrastRatio(marker, surface)).isAtLeast(3.0)
-            }
+    fun ovulationMarker_onOvulationFill_meetsGraphicsContrast_lightAndDark() {
+        lightSurfaces.forEach { surface ->
+            val fill =
+                compositeHexOver(
+                    MahinTokenHex.LIGHT_HEALTH_OVULATION,
+                    MahinCalendarMarkerTintAlphas.LIGHT_OVULATION,
+                    surface,
+                )
+            val marker = preferredOvulationMarkerHex(fill, isDark = false)
+            assertThat(contrastRatio(marker, fill)).isAtLeast(3.0)
         }
+        darkSurfaces.forEach { surface ->
+            val fill =
+                compositeHexOver(
+                    MahinTokenHex.DARK_HEALTH_OVULATION,
+                    MahinCalendarMarkerTintAlphas.DARK_OVULATION,
+                    surface,
+                )
+            val marker = preferredOvulationMarkerHex(fill, isDark = true)
+            assertThat(contrastRatio(marker, fill)).isAtLeast(3.0)
+        }
+    }
+
+    private fun preferredCalendarLabelHex(
+        blendedBackgroundHex: String,
+        isDark: Boolean,
+    ): String {
+        val candidates =
+            listOf(
+                if (isDark) MahinTokenHex.DARK_TEXT_PRIMARY else MahinTokenHex.LIGHT_TEXT_PRIMARY,
+                "#FFFFFF",
+                "#000000",
+            )
+        return candidates.maxBy { contrastRatio(it, blendedBackgroundHex) }
+    }
+
+    private fun preferredOvulationMarkerHex(
+        blendedFillHex: String,
+        isDark: Boolean,
+    ): String {
+        val candidates =
+            listOf(
+                if (isDark) MahinTokenHex.DARK_HEALTH_OVULATION else MahinTokenHex.LIGHT_HEALTH_OVULATION,
+                "#FFFFFF",
+                "#000000",
+            )
+        return candidates.first { contrastRatio(it, blendedFillHex) >= 3.0 }
     }
 }

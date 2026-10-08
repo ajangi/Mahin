@@ -24,6 +24,8 @@
     <string name="ds_calendar_legend_expand">نمایش</string>
     <string name="ds_calendar_legend_disclaimer">رنگ‌ها فقط برای راهنمایی هستند؛ تخمین جایگزین تشخیص نیست.</string>
     <string name="ds_calendar_legend_content_description">راهنمای رنگ تقویم چرخه</string>
+    <string name="ds_calendar_legend_state_expanded">راهنما باز است</string>
+    <string name="ds_calendar_legend_state_collapsed">راهنما بسته است</string>
     <string name="ds_weekday_sat">ش</string>
     <string name="ds_weekday_sun">ی</string>
     <string name="ds_weekday_mon">د</string>

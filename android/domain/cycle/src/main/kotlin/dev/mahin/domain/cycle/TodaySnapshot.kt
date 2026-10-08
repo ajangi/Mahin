@@ -70,8 +70,7 @@ object TodaySnapshotUseCase {
         val cycleDay = prediction.cycleDay
         val cycleLength =
             estimateCycleLengthDays(
-                today = input.today,
-                cycleDay = cycleDay,
+                periodAnchorStart = input.periodAnchorStart,
                 nextPeriod = prediction.nextPeriod,
             )
         val daysUntil =
@@ -103,13 +102,13 @@ object TodaySnapshotUseCase {
     }
 
     private fun estimateCycleLengthDays(
-        today: LocalDate,
-        cycleDay: Int?,
+        periodAnchorStart: LocalDate?,
         nextPeriod: DateRangeEstimate?,
     ): Int {
-        if (cycleDay != null && nextPeriod != null) {
-            val daysToEarliest = ChronoUnit.DAYS.between(today, nextPeriod.earliest).toInt()
-            return (cycleDay + daysToEarliest).coerceAtLeast(cycleDay)
+        if (periodAnchorStart != null && nextPeriod != null) {
+            return (ChronoUnit.DAYS.between(periodAnchorStart, nextPeriod.latest) + 1)
+                .toInt()
+                .coerceAtLeast(1)
         }
         return DEFAULT_CYCLE_LENGTH
     }

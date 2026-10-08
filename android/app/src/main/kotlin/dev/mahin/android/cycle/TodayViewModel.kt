@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.mahin.core.database.cycle.CycleDashboard
 import dev.mahin.core.database.cycle.CycleTrackingRepository
+import dev.mahin.core.database.entity.DailyLogEntity
 import dev.mahin.core.database.entity.PeriodRecordEntity
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
 import dev.mahin.core.datastore.NotificationPreferencesRepository
@@ -218,11 +219,17 @@ class TodayViewModel
             viewModelScope.launch {
                 val periods = repository.observePeriods().first()
                 val dashboard = _uiState.value.dashboard
+                val logLines = logSummaryLineForDate(date)
                 _uiState.update { state ->
                     state.copy(
                         daySheetDate = date,
                         daySheetMarkers = buildDayMarkers(date, periods, dashboard),
+                        daySheetLogLines = logLines,
                         weekStrip = state.weekStrip.map { day -> day.copy(isSelected = day.date == date) },
+                        weekStripWeeks =
+                            state.weekStripWeeks.map { week ->
+                                week.map { day -> day.copy(isSelected = day.date == date) }
+                            },
                     )
                 }
             }
@@ -232,7 +239,12 @@ class TodayViewModel
             _uiState.update {
                 it.copy(
                     daySheetDate = null,
+                    daySheetLogLines = emptyList(),
                     weekStrip = it.weekStrip.map { day -> day.copy(isSelected = false) },
+                    weekStripWeeks =
+                        it.weekStripWeeks.map { week ->
+                            week.map { day -> day.copy(isSelected = false) }
+                        },
                 )
             }
         }
@@ -256,6 +268,16 @@ class TodayViewModel
                 pregnancyRepository.resumeTracking(ReproductiveMode.TRYING_TO_CONCEIVE)
             }
         }
+
+        private suspend fun logSummaryLineForDate(date: LocalDate): List<String> =
+            repository.getDailyLogForDate(date)?.toSummaryLine()?.let { listOf(it) } ?: emptyList()
+
+        private fun DailyLogEntity.toSummaryLine(): String? =
+            buildList {
+                if (symptomTags.isNotBlank()) add(symptomTags)
+                if (moodTags.isNotBlank()) add(moodTags)
+                if (!note.isNullOrBlank()) add("…")
+            }.joinToString(" · ").takeIf { it.isNotBlank() }
 
         private fun buildDayMarkers(
             date: LocalDate,

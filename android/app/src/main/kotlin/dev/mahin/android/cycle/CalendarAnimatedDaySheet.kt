@@ -1,5 +1,6 @@
 package dev.mahin.android.cycle
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -20,7 +21,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.dismiss
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.paneTitle
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import dev.mahin.android.R
 import dev.mahin.core.datetime.JalaliDate
 import dev.mahin.core.designsystem.LocalReducedMotion
 import java.time.LocalDate
@@ -51,6 +59,9 @@ internal fun SharedTransitionScope.CalendarAnimatedDaySheet(
         } else {
             slideOutVertically { fullHeight -> fullHeight } + fadeOut()
         }
+    val dismissLabel = stringResource(R.string.calendar_day_sheet_dismiss)
+    val sheetPaneTitle = stringResource(R.string.calendar_day_sheet_pane_title)
+    BackHandler(enabled = open, onBack = onDismiss)
     AnimatedVisibility(
         visible = open,
         enter = enter,
@@ -58,7 +69,11 @@ internal fun SharedTransitionScope.CalendarAnimatedDaySheet(
         modifier =
             Modifier
                 .fillMaxSize()
-                .testTag("calendar_day_sheet_overlay"),
+                .testTag("calendar_day_sheet_overlay")
+                .semantics {
+                    isTraversalGroup = true
+                    paneTitle = sheetPaneTitle
+                },
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Box(
@@ -66,7 +81,14 @@ internal fun SharedTransitionScope.CalendarAnimatedDaySheet(
                     Modifier
                         .fillMaxSize()
                         .background(Color.Black.copy(alpha = 0.32f))
-                        .clickable(onClick = onDismiss),
+                        .testTag("calendar_day_sheet_scrim")
+                        .semantics {
+                            contentDescription = dismissLabel
+                            dismiss {
+                                onDismiss()
+                                true
+                            }
+                        }.clickable(onClick = onDismiss),
             )
             Box(modifier = Modifier.align(Alignment.BottomCenter)) {
                 CompositionLocalProvider(
@@ -79,7 +101,7 @@ internal fun SharedTransitionScope.CalendarAnimatedDaySheet(
                                 .sharedBounds(
                                     sharedContentState = rememberSharedContentState(sharedKey),
                                     animatedVisibilityScope = this@AnimatedVisibility,
-                                ),
+                                ).semantics { isTraversalGroup = true },
                         shape = MaterialTheme.shapes.extraLarge,
                         tonalElevation = 8.dp,
                     ) {

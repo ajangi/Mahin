@@ -27,6 +27,7 @@ import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.domain.subscription.EntitlementTier
 import java.time.LocalDate
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
@@ -181,7 +182,7 @@ class SettingsViewModelTest {
 
     @Test
     fun paywall_dismiss_cancelsWarmUpJob() {
-        val billingAdapter = SlowBillingAdapter()
+        val billingAdapter = CancellableWarmUpBillingAdapter()
         val viewModel = createViewModel(billingAdapter = billingAdapter)
         viewModel.openPaywall()
         idle()
@@ -189,9 +190,18 @@ class SettingsViewModelTest {
         viewModel.dismissPaywall()
         idle()
         assertFalse(viewModel.uiState.value.showPaywall)
+        assertTrue(billingAdapter.cancelRecordedInFinally)
+    }
+
+    @Test
+    fun paywall_dismiss_propagatesCancellationException() {
+        val billingAdapter = CancellableWarmUpBillingAdapter()
+        val viewModel = createViewModel(billingAdapter = billingAdapter)
         viewModel.openPaywall()
         idle()
-        assertTrue(viewModel.uiState.value.showPaywall)
+        viewModel.dismissPaywall()
+        idle()
+        assertTrue(billingAdapter.cancelRecordedInFinally)
     }
 
     @Test
@@ -209,16 +219,16 @@ class SettingsViewModelTest {
 
     @Test
     fun paywall_secondOpenAfterCancel_startsWarmUpAgain() {
-        val billingAdapter = CountingBillingAdapter()
-        val viewModel = createViewModel(billingAdapter = billingAdapter)
-        viewModel.openPaywall()
-        idle()
-        assertThat(billingAdapter.startConnectionCount).isEqualTo(1)
-        viewModel.dismissPaywall()
-        idle()
-        viewModel.openPaywall()
-        idle()
-        assertThat(billingAdapter.startConnectionCount).isEqualTo(2)
+        runBlocking {
+            val billingAdapter = SlowBillingAdapter()
+            val viewModel = createViewModel(billingAdapter = billingAdapter)
+            viewModel.openPaywall()
+            awaitUntil(timeoutMs = 5_000) { billingAdapter.startConnectionCount == 1 }
+            viewModel.dismissPaywall()
+            idle()
+            viewModel.openPaywall()
+            awaitUntil(timeoutMs = 5_000) { billingAdapter.startConnectionCount == 2 }
+        }
     }
 
     @Test
@@ -357,8 +367,21 @@ class SettingsViewModelTest {
 
     private class SlowBillingAdapter : CountingBillingAdapter() {
         override suspend fun startConnection() {
+            startConnectionCount++
             delay(500)
-            super.startConnection()
+        }
+    }
+
+    private class CancellableWarmUpBillingAdapter : CountingBillingAdapter() {
+        var cancelRecordedInFinally = false
+
+        override suspend fun startConnection() {
+            try {
+                delay(Long.MAX_VALUE)
+            } catch (cancelled: CancellationException) {
+                cancelRecordedInFinally = true
+                throw cancelled
+            }
         }
     }
 

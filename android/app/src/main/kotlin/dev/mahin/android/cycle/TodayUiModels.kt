@@ -40,6 +40,7 @@ data class TodayUiState(
     val showConfidenceSheet: Boolean = false,
     val daySheetDate: LocalDate? = null,
     val daySheetMarkers: DayMarkers? = null,
+    val daySheetLogLines: List<String> = emptyList(),
     val postPregnancyTransition: Boolean = false,
     val postTransitionLearnLinkVisible: Boolean = false,
 )

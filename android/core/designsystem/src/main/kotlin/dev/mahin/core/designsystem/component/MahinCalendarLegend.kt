@@ -11,19 +11,24 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import dev.mahin.core.designsystem.MahinSpacing
 import dev.mahin.core.designsystem.R
+import dev.mahin.core.designsystem.mahinMinimumTouchTarget
 
+@Suppress("LongMethod")
 @Composable
 fun MahinCalendarLegend(
     modifier: Modifier = Modifier,
@@ -31,6 +36,8 @@ fun MahinCalendarLegend(
     onToggleExpanded: (() -> Unit)? = null,
 ) {
     val description = stringResource(R.string.ds_calendar_legend_content_description)
+    val expandedStateDescription = stringResource(R.string.ds_calendar_legend_state_expanded)
+    val collapsedStateDescription = stringResource(R.string.ds_calendar_legend_state_collapsed)
     Column(
         modifier =
             modifier
@@ -43,7 +50,17 @@ fun MahinCalendarLegend(
                     .fillMaxWidth()
                     .then(
                         if (onToggleExpanded != null) {
-                            Modifier.clickable(onClick = onToggleExpanded)
+                            Modifier
+                                .mahinMinimumTouchTarget()
+                                .clickable(onClick = onToggleExpanded)
+                                .semantics {
+                                    stateDescription =
+                                        if (expanded) {
+                                            expandedStateDescription
+                                        } else {
+                                            collapsedStateDescription
+                                        }
+                                }.testTag("calendar_legend_toggle")
                         } else {
                             Modifier
                         },
@@ -88,6 +105,7 @@ fun MahinCalendarLegend(
             LegendRow(
                 color = MahinCalendarMarkerTints.estimatedOvulation(),
                 label = stringResource(R.string.ds_calendar_legend_ovulation),
+                ovulationMarker = true,
             )
             Text(
                 text = stringResource(R.string.ds_calendar_legend_disclaimer),
@@ -104,6 +122,7 @@ private fun LegendRow(
     color: androidx.compose.ui.graphics.Color,
     label: String,
     outline: Boolean = false,
+    ovulationMarker: Boolean = false,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -113,7 +132,7 @@ private fun LegendRow(
             modifier =
                 Modifier
                     .size(14.dp)
-                    .clip(CircleShape)
+                    .clip(if (ovulationMarker) RoundedCornerShape(1.dp) else CircleShape)
                     .then(
                         if (outline) {
                             Modifier.border(1.dp, MahinCalendarMarkerTints.periodPredictedBorder(), CircleShape)

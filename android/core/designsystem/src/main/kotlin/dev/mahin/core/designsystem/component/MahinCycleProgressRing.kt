@@ -1,13 +1,14 @@
 package dev.mahin.core.designsystem.component
 
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -61,6 +62,15 @@ fun mahinRingGeometry(layoutDirection: LayoutDirection): MahinRingGeometry =
             )
     }
 
+/** Degrees for [androidx.compose.ui.graphics.drawscope.rotate] so the today marker aligns with [drawArc] at [fraction]. */
+fun mahinRingTodayMarkerRotationDegrees(
+    geometry: MahinRingGeometry,
+    fraction: Float,
+): Float {
+    val f = fraction.coerceIn(0f, 1f)
+    return geometry.startAngle + f * geometry.sweepTotal + 90f
+}
+
 @Suppress("LongParameterList", "LongMethod")
 @Composable
 fun MahinCycleProgressRing(
@@ -85,11 +95,14 @@ fun MahinCycleProgressRing(
         } else {
             mahinMotionDurationMs(MahinMotionDuration.NORMAL_MS)
         }
-    val animatedProgress by animateFloatAsState(
-        targetValue = targetProgress,
-        animationSpec = tween(durationMillis = duration),
-        label = "cycleRingProgressFill",
-    )
+    val animatedProgress = remember { Animatable(0f) }
+    LaunchedEffect(targetProgress, reducedMotion, duration) {
+        if (reducedMotion || duration == 0) {
+            animatedProgress.snapTo(targetProgress)
+        } else {
+            animatedProgress.animateTo(targetProgress, animationSpec = tween(durationMillis = duration))
+        }
+    }
     val semanticsModifier =
         if (contentDescription != null) {
             Modifier.clearAndSetSemantics { this.contentDescription = contentDescription }
@@ -148,11 +161,11 @@ fun MahinCycleProgressRing(
                 )
             }
             val fillColor = progressColor
-            if (fillColor != null && animatedProgress > 0f) {
+            if (fillColor != null && animatedProgress.value > 0f) {
                 drawArc(
                     color = fillColor.copy(alpha = 0.35f),
                     startAngle = startAngle,
-                    sweepAngle = sweepTotal * animatedProgress,
+                    sweepAngle = sweepTotal * animatedProgress.value,
                     useCenter = false,
                     topLeft = topLeft,
                     size = arcSize,
@@ -160,7 +173,7 @@ fun MahinCycleProgressRing(
                 )
             }
             todayMarkerFraction?.let { fraction ->
-                val angleDegrees = startAngle + fraction.coerceIn(0f, 1f) * sweepTotal
+                val angleDegrees = mahinRingTodayMarkerRotationDegrees(geometry, fraction)
                 val radius = diameter / 2f
                 val center = Offset(topLeft.x + radius + stroke / 2f, topLeft.y + radius + stroke / 2f)
                 val markerRadius = stroke * 0.55f

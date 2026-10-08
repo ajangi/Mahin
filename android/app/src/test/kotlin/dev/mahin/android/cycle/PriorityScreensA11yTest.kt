@@ -78,6 +78,10 @@ class PriorityScreensA11yTest {
         composeRule.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 MahinTheme {
+                    dev.mahin.core.designsystem.component.MahinShellTopAppBar(
+                        title = "امروز",
+                        onOpenSettings = {},
+                    )
                     TodayScreenContent(state = TodayUiState())
                 }
             }

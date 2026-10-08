@@ -34,6 +34,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -173,6 +176,7 @@ private fun JalaliMonthHeader(
             style = mahinTextStyle(MahinTypographyRole.Title),
             color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
+            modifier = Modifier.testTag("jalali_month_header_label"),
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
             trailing?.invoke()
@@ -292,7 +296,7 @@ private fun JalaliGregorianDetailLine(
     )
 }
 
-@Suppress("LongParameterList", "LongMethod")
+@Suppress("LongParameterList", "LongMethod", "CyclomaticComplexMethod")
 @Composable
 private fun JalaliDayCell(
     date: JalaliDate,
@@ -312,18 +316,30 @@ private fun JalaliDayCell(
             "${PersianDigits.format(date.day)} $monthName ${PersianDigits.format(date.year)} — " +
                 PersianDigits.format(g.format(DateTimeFormatter.ISO_LOCAL_DATE))
         }
+    val surfaceColor = MaterialTheme.colorScheme.surface
     val fill =
         when {
             selected -> MaterialTheme.colorScheme.primary
             decoration?.fillColor != null -> decoration.fillColor
             markerColor != null -> markerColor
-            else -> MaterialTheme.colorScheme.surface
+            else -> surfaceColor
+        }
+    val blendedFill =
+        if (!selected && decoration?.fillColor != null) {
+            lerp(surfaceColor, decoration.fillColor.copy(alpha = 1f), decoration.fillColor.alpha)
+        } else {
+            fill
         }
     val contentColor =
-        if (selected) {
-            MaterialTheme.colorScheme.onPrimary
-        } else {
-            MaterialTheme.colorScheme.onSurface
+        when {
+            selected -> MaterialTheme.colorScheme.onPrimary
+            decoration?.fillColor != null ->
+                if (blendedFill.luminance() < 0.5f) {
+                    Color.White
+                } else {
+                    Color.Black.copy(alpha = 0.87f)
+                }
+            else -> MaterialTheme.colorScheme.onSurface
         }
     val shape = RoundedCornerShape(MahinRadius.sm)
     val borderModifier =
@@ -378,6 +394,12 @@ private fun JalaliDayCell(
                 )
             }
             if (decoration?.estimatedOvulation == true) {
+                val markerOnFill =
+                    if (decoration.fillColor != null) {
+                        if (blendedFill.luminance() < 0.45f) Color.White else Color.Black
+                    } else {
+                        MahinCalendarMarkerTints.estimatedOvulation().copy(alpha = 1f)
+                    }
                 Box(
                     modifier =
                         Modifier
@@ -385,7 +407,7 @@ private fun JalaliDayCell(
                             .padding(3.dp)
                             .size(7.dp)
                             .clip(RoundedCornerShape(1.dp))
-                            .background(MahinCalendarMarkerTints.estimatedOvulation()),
+                            .background(markerOnFill),
                 )
             }
         }

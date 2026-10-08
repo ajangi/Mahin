@@ -25,7 +25,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.invisibleToUser
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -104,15 +103,9 @@ internal fun TodayScreenContent(
     ) {
         item {
             Text(
-                text = stringResource(R.string.today_title),
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.semantics { heading() },
-            )
-            Text(
                 text = stringResource(R.string.today_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = MahinSpacing.xs),
             )
         }
         item {
@@ -217,6 +210,7 @@ internal fun TodayScreenContent(
             open = true,
             selectedJalali = converter.toJalali(date),
             markers = state.daySheetMarkers,
+            logLines = state.daySheetLogLines,
             onDismiss = onDismissDaySheet,
             onEditLog = actions.onOpenLogForDate,
         )
@@ -241,6 +235,7 @@ private fun TodayFirstDayCta(onLogFirstPeriod: () -> Unit) {
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
+@Suppress("LongMethod")
 @Composable
 private fun TodayCycleHero(
     hero: CycleTodayHero,
@@ -258,15 +253,30 @@ private fun TodayCycleHero(
                 )
             else -> stringResource(R.string.today_status_tracking)
         }
+    val a11yStatusLine =
+        when {
+            hero.isOverdue -> stringResource(R.string.today_status_overdue)
+            daysUntil != null && daysUntil >= 0 ->
+                stringResource(
+                    R.string.today_ring_status_days_until_period,
+                    PersianDigits.format(daysUntil),
+                )
+            else -> stringResource(R.string.today_status_tracking)
+        }
     val a11y =
         cycleDay?.let {
             stringResource(
                 R.string.today_ring_content_description,
                 PersianDigits.format(it),
-                statusLine,
+                a11yStatusLine,
             )
         }
-    MahinSurfaceCard(modifier = Modifier.padding(vertical = MahinSpacing.sm)) {
+    MahinSurfaceCard(
+        modifier =
+            Modifier
+                .testTag("today_cycle_hero")
+                .padding(vertical = MahinSpacing.sm),
+    ) {
         Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
             MahinCycleProgressRing(
                 arcs = TodayCycleHeroMapper.ringArcs(hero),
@@ -384,7 +394,7 @@ private fun TodaySwipeableWeekStrip(
 
 @Composable
 private fun TodayDailyTipSlot(visible: Boolean) {
-    if (!visible) {
+    if (visible) {
         Spacer(
             modifier =
                 Modifier

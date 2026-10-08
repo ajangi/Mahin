@@ -18,6 +18,7 @@ private val Context.calendarUiDataStore: DataStore<Preferences> by preferencesDa
 
 private object CalendarUiPreferenceKeys {
     val legendCollapsed = booleanPreferencesKey("legend_collapsed")
+    val legendAutoCollapsedOnce = booleanPreferencesKey("legend_auto_collapsed_once")
 }
 
 @Singleton
@@ -33,9 +34,21 @@ class CalendarUiPreferencesRepository
                 prefs[CalendarUiPreferenceKeys.legendCollapsed] == true
             }
 
+        fun observeLegendAutoCollapsedOnce(): Flow<Boolean> =
+            dataStore.data.map { prefs ->
+                prefs[CalendarUiPreferenceKeys.legendAutoCollapsedOnce] == true
+            }
+
         suspend fun setLegendCollapsed(collapsed: Boolean) {
             dataStore.edit { prefs ->
                 prefs[CalendarUiPreferenceKeys.legendCollapsed] = collapsed
+            }
+        }
+
+        suspend fun markLegendAutoCollapsedOnce() {
+            dataStore.edit { prefs ->
+                prefs[CalendarUiPreferenceKeys.legendAutoCollapsedOnce] = true
+                prefs[CalendarUiPreferenceKeys.legendCollapsed] = true
             }
         }
 

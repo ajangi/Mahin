@@ -2,6 +2,7 @@ package dev.mahin.domain.cycle
 
 import com.google.common.truth.Truth.assertThat
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import org.junit.Test
 
 class TodaySnapshotUseCaseTest {
@@ -69,9 +70,37 @@ class TodaySnapshotUseCaseTest {
         assertThat(logged.endDay).isEqualTo(5)
         assertThat(snapshot.hero.isInFertileWindow).isTrue()
         assertThat(snapshot.hero.isOverdue).isFalse()
-        assertThat(
-            snapshot.hero.ringSegments.any { it.kind == CycleRingSegmentKind.FERTILE_WINDOW },
-        ).isTrue()
+        assertSegmentMatchesPrediction(
+            anchor = anchor,
+            prediction = prediction,
+            segment =
+                snapshot.hero.ringSegments.first {
+                    it.kind == CycleRingSegmentKind.PREDICTED_PERIOD
+                },
+            range = prediction.nextPeriod!!,
+        )
+        assertSegmentMatchesPrediction(
+            anchor = anchor,
+            prediction = prediction,
+            segment =
+                snapshot.hero.ringSegments.first {
+                    it.kind == CycleRingSegmentKind.FERTILE_WINDOW
+                },
+            range = prediction.fertileWindow!!,
+        )
+        assertSegmentMatchesPrediction(
+            anchor = anchor,
+            prediction = prediction,
+            segment =
+                snapshot.hero.ringSegments.first {
+                    it.kind == CycleRingSegmentKind.ESTIMATED_OVULATION
+                },
+            range = prediction.estimatedOvulation!!,
+        )
+        assertThat(snapshot.hero.cycleLengthDays)
+            .isEqualTo(
+                cycleDayFor(anchor, prediction.nextPeriod!!.latest),
+            )
     }
 
     @Test
@@ -131,6 +160,12 @@ class TodaySnapshotUseCaseTest {
             ) as TodaySnapshot.Cycle
         assertThat(snapshot.hero.isOverdue).isTrue()
         assertThat(snapshot.hero.daysUntilNextPeriodEarliest).isLessThan(0)
+        val predicted =
+            snapshot.hero.ringSegments.first { it.kind == CycleRingSegmentKind.PREDICTED_PERIOD }
+        assertThat(predicted.endDay)
+            .isEqualTo(cycleDayFor(anchor, prediction.nextPeriod!!.latest))
+        assertThat(snapshot.hero.cycleLengthDays)
+            .isEqualTo(cycleDayFor(anchor, prediction.nextPeriod!!.latest))
     }
 
     @Test
@@ -164,9 +199,15 @@ class TodaySnapshotUseCaseTest {
                 ),
             ) as TodaySnapshot.Cycle
         assertThat(snapshot.hero.isInFertileWindow).isTrue()
-        assertThat(
-            snapshot.hero.ringSegments.any { it.kind == CycleRingSegmentKind.FERTILE_WINDOW },
-        ).isTrue()
+        assertSegmentMatchesPrediction(
+            anchor = anchor,
+            prediction = prediction,
+            segment =
+                snapshot.hero.ringSegments.first {
+                    it.kind == CycleRingSegmentKind.FERTILE_WINDOW
+                },
+            range = prediction.fertileWindow!!,
+        )
     }
 
     @Test
@@ -193,9 +234,19 @@ class TodaySnapshotUseCaseTest {
                     onPeriodToday = false,
                 ),
             ) as TodaySnapshot.Cycle
-        assertThat(
-            snapshot.hero.ringSegments.any { it.kind == CycleRingSegmentKind.ESTIMATED_OVULATION },
-        ).isTrue()
+        assertSegmentMatchesPrediction(
+            anchor = anchor,
+            prediction = prediction,
+            segment =
+                snapshot.hero.ringSegments.first {
+                    it.kind == CycleRingSegmentKind.ESTIMATED_OVULATION
+                },
+            range = prediction.estimatedOvulation!!,
+        )
+        val predicted =
+            snapshot.hero.ringSegments.first { it.kind == CycleRingSegmentKind.PREDICTED_PERIOD }
+        assertThat(predicted.endDay)
+            .isEqualTo(cycleDayFor(anchor, prediction.nextPeriod!!.latest))
     }
 
     @Test
@@ -229,5 +280,23 @@ class TodaySnapshotUseCaseTest {
             ) as TodaySnapshot.Cycle
         assertThat(snapshot.hero.confidence).isEqualTo(PredictionConfidence.LOW)
         assertThat(snapshot.hero.showConfidenceChip).isTrue()
+    }
+
+    private fun cycleDayFor(
+        anchor: LocalDate,
+        date: LocalDate,
+    ): Int = (ChronoUnit.DAYS.between(anchor, date) + 1).toInt()
+
+    private fun assertSegmentMatchesPrediction(
+        anchor: LocalDate,
+        prediction: CyclePredictionResult,
+        segment: CycleRingSegment,
+        range: DateRangeEstimate,
+    ) {
+        assertThat(segment.startDay).isEqualTo(cycleDayFor(anchor, range.earliest))
+        assertThat(segment.endDay).isEqualTo(cycleDayFor(anchor, range.latest))
+        assertThat(segment.endDay).isAtMost(
+            cycleDayFor(anchor, prediction.nextPeriod!!.latest),
+        )
     }
 }

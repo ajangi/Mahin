@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import dev.mahin.android.golden.M15GoldenFixtures
 import dev.mahin.android.pregnancy.PostPregnancyTransitionActions
 import dev.mahin.core.designsystem.MahinTheme
 import dev.mahin.core.model.ReproductiveMode
@@ -39,8 +40,29 @@ class TodayScreenContentTest {
             MahinTheme {
                 TodayScreenContent(
                     state =
-                        dev.mahin.android.golden.M15GoldenFixtures.todayFertileWindow().copy(
+                        TodayUiState(
                             reproductiveMode = ReproductiveMode.TRYING_TO_CONCEIVE,
+                            todaySnapshot =
+                                M15GoldenFixtures
+                                    .todayFirstDay()
+                                    .todaySnapshot,
+                        ),
+                )
+            }
+        }
+        composeRule
+            .onNodeWithText("برای ثبت BBT، تست تخمک‌گذاری و سایر نشانه‌ها به تب «ثبت» یا «باروری» بروید.")
+            .assertExists()
+    }
+
+    @Test
+    fun today_fertileWindow_showsNonContraceptionCopy() {
+        composeRule.setContent {
+            MahinTheme {
+                TodayScreenContent(
+                    state =
+                        dev.mahin.android.golden.M15GoldenFixtures.todayFertileWindow().copy(
+                            reproductiveMode = ReproductiveMode.CYCLE_TRACKING,
                         ),
                 )
             }

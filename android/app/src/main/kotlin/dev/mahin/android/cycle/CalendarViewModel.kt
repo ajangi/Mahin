@@ -47,11 +47,16 @@ class CalendarViewModel
 
         init {
             viewModelScope.launch {
-                calendarUiPreferencesRepository.observeLegendCollapsed().collect { collapsed ->
+                combine(
+                    calendarUiPreferencesRepository.observeLegendCollapsed(),
+                    calendarUiPreferencesRepository.observeLegendAutoCollapsedOnce(),
+                ) { collapsed, autoOnce ->
+                    collapsed to autoOnce
+                }.collect { (collapsed, autoOnce) ->
                     _uiState.update {
                         it.copy(
                             legendExpanded = !collapsed,
-                            legendAutoCollapsedOnce = collapsed,
+                            legendAutoCollapsedOnce = autoOnce,
                         )
                     }
                 }
@@ -119,7 +124,7 @@ class CalendarViewModel
         private fun maybeAutoCollapseLegend() {
             viewModelScope.launch {
                 if (!_uiState.value.legendAutoCollapsedOnce && _uiState.value.legendExpanded) {
-                    calendarUiPreferencesRepository.setLegendCollapsed(true)
+                    calendarUiPreferencesRepository.markLegendAutoCollapsedOnce()
                 }
             }
         }
