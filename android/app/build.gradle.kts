@@ -67,6 +67,12 @@ android {
                 signingConfig = releaseSigning
             }
         }
+        create("benchmark") {
+            initWith(getByName("release"))
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("release")
+            isDebuggable = false
+        }
     }
 }
 
@@ -139,6 +145,7 @@ tasks.withType<Test>().configureEach {
             excludeTestsMatching("dev.mahin.android.golden.M14aFullScreenGoldenTest")
             excludeTestsMatching("dev.mahin.android.golden.M14bIconSheetGoldenTest")
             excludeTestsMatching("dev.mahin.android.golden.M14cShellGoldenTest")
+            excludeTestsMatching("dev.mahin.android.golden.M15FullScreenGoldenTest")
             excludeTestsMatching("dev.mahin.android.shell.MahinShellNavigationTest")
             excludeTestsMatching("dev.mahin.android.shell.ShellModeTransitionTest")
             excludeTestsMatching("dev.mahin.android.settings.SettingsScreenContentTest")

@@ -5,41 +5,59 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.mahin.core.database.cycle.CycleDashboard
 import dev.mahin.core.database.cycle.CycleTrackingRepository
+import dev.mahin.core.database.entity.PeriodRecordEntity
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
+import dev.mahin.core.datastore.NotificationPreferencesRepository
+import dev.mahin.core.datetime.PersianCivilDateConverter
 import dev.mahin.core.model.ReproductiveMode
+import dev.mahin.domain.cycle.CycleTodaySnapshotInput
+import dev.mahin.domain.cycle.TodaySnapshotUseCase
 import dev.mahin.domain.pregnancy.PregnancyDatingEngineV1
-import dev.mahin.domain.pregnancy.PregnancyStatusSnapshot
+import dev.mahin.domain.pregnancy.PregnancyTodaySnapshotUseCase
+import dev.mahin.domain.reminders.AppointmentReminderSeed
 import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
-data class TodayUiState(
-    val dashboard: CycleDashboard? = null,
-    val reproductiveMode: ReproductiveMode = ReproductiveMode.CYCLE_TRACKING,
-    val pregnancyStatus: PregnancyStatusSnapshot? = null,
-    val postPregnancyTransition: Boolean = false,
-    val postTransitionLearnLinkVisible: Boolean = false,
-)
 
 @HiltViewModel
 class TodayViewModel
     @Inject
     constructor(
-        repository: CycleTrackingRepository,
+        private val repository: CycleTrackingRepository,
         private val pregnancyRepository: PregnancyTrackingRepository,
+        private val notificationPreferencesRepository: NotificationPreferencesRepository,
     ) : ViewModel() {
+        private val converter = PersianCivilDateConverter
         private val _uiState = MutableStateFlow(TodayUiState())
         val uiState: StateFlow<TodayUiState> = _uiState.asStateFlow()
 
         init {
             viewModelScope.launch {
-                repository.observeDashboard().collect { dashboard ->
-                    _uiState.update { it.copy(dashboard = dashboard) }
+                combine(
+                    repository.observeDashboard(),
+                    repository.observePeriods(),
+                ) { dashboard, periods ->
+                    val anchor = resolveAnchor(periods, dashboard)
+                    val snapshot = buildCycleSnapshot(dashboard, anchor)
+                    Triple(dashboard, periods, snapshot)
+                }.collect { (dashboard, periods, snapshot) ->
+                    _uiState.update { state ->
+                        state.copy(
+                            dashboard = dashboard,
+                            todaySnapshot = snapshot,
+                            loggedSummary = dashboard.todayLog?.let { TodayLoggedSummaryMapper.fromEntity(it) },
+                            daySheetMarkers =
+                                state.daySheetDate?.let { date ->
+                                    buildDayMarkers(date, periods, dashboard)
+                                },
+                        )
+                    }
                 }
             }
             viewModelScope.launch {
@@ -68,12 +86,117 @@ class TodayViewModel
                         it.copy(
                             reproductiveMode = mode,
                             pregnancyStatus = if (mode == ReproductiveMode.PREGNANT) status else null,
+                            pregnancySnapshot =
+                                if (mode == ReproductiveMode.PREGNANT && status != null) {
+                                    PregnancyTodaySnapshotUseCase.fromStatus(status)
+                                } else {
+                                    null
+                                },
                             postPregnancyTransition = mode == ReproductiveMode.POST_PREGNANCY_TRANSITION,
                             postTransitionLearnLinkVisible = learnVisible,
+                            weekStrip = buildWeekStrip(LocalDate.now()),
                         )
                     }
                 }
             }
+            viewModelScope.launch {
+                combine(
+                    notificationPreferencesRepository.observeSnapshot(),
+                    repository.observeDashboard(),
+                    pregnancyRepository.observeProfile(),
+                    pregnancyRepository.observeActivePregnancy(),
+                ) { prefs, dashboard, profile, pregnancy ->
+                    val mode = profile?.reproductiveMode ?: ReproductiveMode.CYCLE_TRACKING
+                    val appointments =
+                        if (pregnancy != null && mode == ReproductiveMode.PREGNANT) {
+                            pregnancyRepository
+                                .upcomingAppointments(
+                                    pregnancyId = pregnancy.id,
+                                    fromEpochMs = System.currentTimeMillis(),
+                                    limit = 8,
+                                ).map {
+                                    AppointmentReminderSeed(
+                                        appointmentId = it.id,
+                                        scheduledAtEpochMs = it.scheduledAtEpochMs,
+                                        reminderEnabled = it.reminderEnabled,
+                                    )
+                                }
+                        } else {
+                            emptyList()
+                        }
+                    TodayReminderSummary.nextUpcoming(
+                        snapshot = prefs,
+                        dashboard = dashboard,
+                        reproductiveMode = mode,
+                        pregnancy = pregnancy,
+                        appointments = appointments,
+                    )
+                }.collect { reminder ->
+                    _uiState.update { it.copy(upcomingReminder = reminder) }
+                }
+            }
+        }
+
+        private fun resolveAnchor(
+            periods: List<PeriodRecordEntity>,
+            dashboard: CycleDashboard,
+        ): LocalDate? =
+            periods.firstOrNull { it.endDate == null }?.startDate ?: dashboard.openPeriodStart
+                ?: periods.maxByOrNull { it.startDate }?.startDate
+
+        private fun buildCycleSnapshot(
+            dashboard: CycleDashboard,
+            anchor: LocalDate?,
+        ) = TodaySnapshotUseCase.fromCycle(
+            CycleTodaySnapshotInput(
+                today = LocalDate.now(),
+                prediction = dashboard.prediction,
+                periodAnchorStart = anchor,
+                typicalPeriodLengthDays = dashboard.profile?.typicalPeriodLengthDays,
+                onPeriodToday = dashboard.onPeriodToday,
+            ),
+        )
+
+        private fun buildWeekStrip(center: LocalDate) =
+            (0..6).map { offset ->
+                val date = center.minusDays(3).plusDays(offset.toLong())
+                TodayWeekDay(
+                    date = date,
+                    jalali = converter.toJalali(date),
+                    isToday = date == center,
+                    isSelected = false,
+                )
+            }
+
+        fun onWeekDaySelected(date: LocalDate) {
+            viewModelScope.launch {
+                val periods = repository.observePeriods().first()
+                val dashboard = _uiState.value.dashboard
+                _uiState.update { state ->
+                    state.copy(
+                        daySheetDate = date,
+                        daySheetMarkers = buildDayMarkers(date, periods, dashboard),
+                        weekStrip = state.weekStrip.map { day -> day.copy(isSelected = day.date == date) },
+                    )
+                }
+            }
+        }
+
+        fun dismissDaySheet() {
+            _uiState.update {
+                it.copy(
+                    daySheetDate = null,
+                    weekStrip = it.weekStrip.map { day -> day.copy(isSelected = false) },
+                )
+            }
+        }
+
+        fun openConfidenceSheet() {
+            _uiState.update { it.copy(showConfidenceSheet = true) }
+        }
+
+        fun dismissConfidenceSheet() {
+            _uiState.update { it.copy(showConfidenceSheet = false) }
         }
 
         fun resumeCycleTracking() {
@@ -86,5 +209,37 @@ class TodayViewModel
             viewModelScope.launch {
                 pregnancyRepository.resumeTracking(ReproductiveMode.TRYING_TO_CONCEIVE)
             }
+        }
+
+        private fun buildDayMarkers(
+            date: LocalDate,
+            periods: List<PeriodRecordEntity>,
+            dashboard: CycleDashboard?,
+        ): DayMarkers {
+            val logged =
+                periods.any { record ->
+                    !date.isBefore(record.startDate) &&
+                        (record.endDate == null || !date.isAfter(record.endDate))
+                }
+            val prediction = dashboard?.prediction
+            val predicted =
+                prediction?.nextPeriod?.let { range ->
+                    !date.isBefore(range.earliest) && !date.isAfter(range.latest)
+                } == true
+            val fertile =
+                prediction?.fertileWindow?.let { range ->
+                    !date.isBefore(range.earliest) && !date.isAfter(range.latest)
+                } == true
+            val ovulation =
+                prediction?.estimatedOvulation?.let { range ->
+                    !date.isBefore(range.earliest) && !date.isAfter(range.latest)
+                } == true
+            return DayMarkers(
+                loggedPeriod = logged,
+                predictedPeriod = predicted && !logged,
+                fertileWindow = fertile,
+                estimatedOvulation = ovulation,
+                hasLogEntries = date == LocalDate.now() && dashboard?.todayLog != null,
+            )
         }
     }

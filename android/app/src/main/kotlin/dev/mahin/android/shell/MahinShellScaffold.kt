@@ -12,6 +12,7 @@ import dev.mahin.android.cycle.CycleCalendarScreen
 import dev.mahin.android.cycle.HistoryScreen
 import dev.mahin.android.cycle.LogScreen
 import dev.mahin.android.cycle.TodayScreen
+import dev.mahin.android.cycle.TodayScreenActions
 import dev.mahin.android.insights.CycleInsightsScreen
 import dev.mahin.android.learn.LearnScreen
 import dev.mahin.android.navigation.MahinTopLevelDestination
@@ -23,6 +24,7 @@ import dev.mahin.core.designsystem.MahinMotionDuration
 import dev.mahin.core.designsystem.component.MahinBottomNavigationBar
 import dev.mahin.core.designsystem.mahinMotionDurationMs
 import dev.mahin.core.model.ReproductiveMode
+import java.time.LocalDate
 
 @Composable
 internal fun MahinShellBottomBar(
@@ -52,6 +54,9 @@ internal fun MahinShellNavHost(
     onOpenHistory: () -> Unit,
     onOpenLearn: () -> Unit,
     onOpenCycleCalendar: () -> Unit,
+    onOpenLogTab: (LocalDate?) -> Unit,
+    onOpenPlan: () -> Unit,
+    onOpenPregnancyTab: () -> Unit,
     screenOverrides: MahinShellScreenOverrides = MahinShellScreenOverrides.Default,
 ) {
     val fadeMs = mahinMotionDurationMs(MahinMotionDuration.FAST_MS)
@@ -65,9 +70,18 @@ internal fun MahinShellNavHost(
         popExitTransition = { fadeOut(fadeSpec) },
     ) {
         composable(MahinTopLevelDestination.Today.route) {
-            screenOverrides.today(onOpenHistory, onOpenLearn)
+            screenOverrides.today(
+                onOpenHistory,
+                onOpenLearn,
+                onOpenLogTab,
+                onOpenPlan,
+                onOpenPregnancyTab,
+                onOpenCycleCalendar,
+            )
         }
-        composable(MahinTopLevelDestination.Calendar.route) { screenOverrides.calendar() }
+        composable(MahinTopLevelDestination.Calendar.route) {
+            screenOverrides.calendar(onOpenLogTab)
+        }
         composable(MahinTopLevelDestination.Log.route) { screenOverrides.log() }
         composable(MahinTopLevelDestination.CycleInsights.route) {
             screenOverrides.cycleInsights(onOpenHistory)
@@ -95,8 +109,15 @@ internal fun MahinShellNavHost(
  * Production screens by default; tests supply tagged placeholders while keeping [MahinShellNavHost] routes.
  */
 data class MahinShellScreenOverrides(
-    val today: @Composable (onOpenHistory: () -> Unit, onOpenLearn: () -> Unit) -> Unit,
-    val calendar: @Composable () -> Unit,
+    val today: @Composable (
+        onOpenHistory: () -> Unit,
+        onOpenLearn: () -> Unit,
+        onOpenLogTab: (LocalDate?) -> Unit,
+        onOpenPlan: () -> Unit,
+        onOpenPregnancyTab: () -> Unit,
+        onOpenCalendar: () -> Unit,
+    ) -> Unit,
+    val calendar: @Composable (onOpenLogForDate: (LocalDate) -> Unit) -> Unit,
     val log: @Composable () -> Unit,
     val cycleInsights: @Composable (onOpenHistory: () -> Unit) -> Unit,
     val ttcInsights: @Composable (onOpenHistory: () -> Unit) -> Unit,
@@ -113,13 +134,21 @@ data class MahinShellScreenOverrides(
     companion object {
         val Default: MahinShellScreenOverrides =
             MahinShellScreenOverrides(
-                today = { onOpenHistory, onOpenLearn ->
+                today = { onOpenHistory, onOpenLearn, onOpenLogTab, onOpenPlan, onOpenPregnancyTab, onOpenCalendar ->
                     TodayScreen(
                         onOpenHistory = onOpenHistory,
                         onOpenLearn = onOpenLearn,
+                        actions =
+                            TodayScreenActions(
+                                onOpenLogForDate = { date -> onOpenLogTab(date) },
+                                onOpenLogTab = { onOpenLogTab(null) },
+                                onOpenPlan = onOpenPlan,
+                                onOpenPregnancyTab = onOpenPregnancyTab,
+                                onOpenCalendar = onOpenCalendar,
+                            ),
                     )
                 },
-                calendar = { CycleCalendarScreen() },
+                calendar = { onOpenLogForDate -> CycleCalendarScreen(onOpenLogForDate = onOpenLogForDate) },
                 log = { LogScreen() },
                 cycleInsights = { onOpenHistory -> CycleInsightsScreen(onOpenHistory = onOpenHistory) },
                 ttcInsights = { onOpenHistory -> TtcInsightsScreen(onOpenHistory = onOpenHistory) },

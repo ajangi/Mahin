@@ -25,7 +25,8 @@ class TodayFirstFrameBenchmark {
         ) {
             pressHome()
             startActivityAndWait()
-            // Today is the default start destination; additional navigation lands in M14c.
+            device.waitForIdle()
+            // Today M15 hero is the default start destination (shell → Today tab).
         }
     }
 }

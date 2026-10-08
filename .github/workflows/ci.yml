@@ -127,6 +127,7 @@ jobs:
           name: android-reports
           path: |
             android/**/build/reports/**
+            android/**/build/test-results/**
             android/**/build/outputs/apk/**
             android/**/build/outputs/mapping/**
           if-no-files-found: ignore
