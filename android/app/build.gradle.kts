@@ -132,7 +132,9 @@ dependencies {
 }
 
 tasks.withType<Test>().configureEach {
-    timeout.set(Duration.ofMinutes(20))
+    // Robolectric + Compose screenshot tests deadlock when forked in parallel on CI.
+    maxParallelForks = 1
+    timeout.set(Duration.ofMinutes(30))
     testLogging {
         events("started", "failed")
     }

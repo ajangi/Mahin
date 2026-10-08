@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.mahin.core.designsystem.MahinTheme
+import dev.mahin.core.designsystem.ProvideReducedMotion
 
 /**
  * Renders [content] as a full-screen fa-IR RTL surface under [MahinTheme] and captures a Roborazzi golden.
@@ -38,8 +39,10 @@ fun ComposeContentTestRule.captureMahinFullScreenGolden(
                 ),
         ) {
             MahinTheme(darkTheme = darkTheme) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    content()
+                ProvideReducedMotion(reducedMotion = true) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        content()
+                    }
                 }
             }
         }
