@@ -138,6 +138,10 @@ tasks.withType<Test>().configureEach {
     testLogging {
         events("started", "failed")
     }
+    if (name == "testBenchmarkUnitTest") {
+        // Benchmark build type is for macrobenchmark APK assembly only; Robolectric tests target debug.
+        enabled = false
+    }
     if (name == "testReleaseUnitTest") {
         filter {
             excludeTestsMatching("dev.mahin.android.demo.CalendarDemoScreenScrollTest")
