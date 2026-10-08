@@ -1,7 +1,7 @@
 # M14c Handoff — App shell & Settings
 
 **Milestone:** M14c  
-**Status:** ready for review (gatekeeper round 3, PR #35)  
+**Status:** **accepted** (gatekeeper round 5; [PR #35](https://github.com/ajangi/Mahin/pull/35), squash-merge `d951c201efcec6e9565f6cdce8251a4d33ce8569` on `master`, **2026-10-08**)  
 **Next milestone:** **M15** only
 
 ## Implemented scope
@@ -78,24 +78,29 @@ None.
 - `android/core/designsystem/.../MahinBottomNavigationBar.kt`, `MahinShellTopAppBar.kt`
 - Tests: `MahinShellNavigationTest`, `ShellModeTransitionTest`, `MahinBottomNavigationBarA11yTest`, `SettingsScreenContentTest`, `SettingsViewModelTest`, `TodayScreenContentTest`, `TodayViewModelTest`, `PregnancyAppointmentsViewModelTest`, `M14cShellGoldenTest`
 
-## Commands / results (local)
+## Commands / CI
+
+Repo CI (`.github/workflows/ci.yml`) — same commands agents should use before claiming green:
 
 ```bash
-python3 scripts/check_design_tokens.py          # PASS
-python3 scripts/security_checklist.py             # PASS
-npx @redocly/cli lint openapi/openapi.yaml      # PASS
-cd backend && ./gradlew ktlintCheck detekt test # BUILD SUCCESSFUL
-cd admin && npm ci && npm test && npm run build  # PASS
-cd android && ./gradlew lintDebug ktlintCheck detekt testDebugUnitTest assembleDebug assembleRelease \
+python3 scripts/check_design_tokens.py
+python3 scripts/security_checklist.py
+npx @redocly/cli lint openapi/openapi.yaml
+cd backend && ./gradlew ktlintCheck detekt test
+cd admin && npm ci && npm test && npm run build
+cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug assembleRelease \
   :core:network:testReleaseUnitTest \
   :core:network:verifyReleaseMahinApiBaseUrlHttps \
   :app:verifyReleaseApkNoEmulatorApiHost \
   :app:verifyRoborazziDebug \
   :core:designsystem:verifyRoborazziDebug \
-  :benchmark:assemble --no-daemon
+  :benchmark:assemble \
+  --stacktrace --no-daemon
 ```
 
-CI: see PR checks on the merged head SHA (android job has `timeout-minutes: 45`; unit tests use a 20-minute Gradle timeout).
+**M14c merge:** [PR #35](https://github.com/ajangi/Mahin/pull/35) → `d951c20` on `master`. Android job uses `timeout-minutes: 45`; `:app` unit tests use a 20-minute Gradle `Test` timeout.
+
+**Local note:** A full Android CI-equivalent run (especially `test` + both `verifyRoborazziDebug` tasks + release assembly) is typically **~20–30+ minutes** on CI hardware, not a couple of minutes on a warm cache.
 
 ## Acceptance criteria (`prompts/M14c.md` + gatekeeper)
 
@@ -118,11 +123,13 @@ CI: see PR checks on the merged head SHA (android job has `timeout-minutes: 45`;
 | `M14aFullScreenGoldenTest.today_*` (×4) | Today lost settings group and mode card |
 | `M14aFullScreenGoldenTest.pregnancyHub_*` (×4) | Appointments moved to Plan; hub layout/links |
 | `M13PriorityScreensScreenshotTest.todayScreen_emptyRtlLight` | Today empty layout after M14c |
-| `M14cShellGoldenTest.settings_populated_*` (×4, **1.0 scale only**) | Premium group visible at default font scale; 1.3-scale Premium row stays below fold (unchanged) |
-| `M14cShellGoldenTest.settings_assistantOn_*` (×2) | Scrolls settings list to Assistant row, then captures (differs from populated at same scale) |
-| **New** `M14cShellGoldenTest.shell_*` (20) | Shell baselines per mode (unchanged unless re-run drift) |
+| `M14cShellGoldenTest.settings_populated_*` (×4) | Premium group in Settings list |
+| `M14cShellGoldenTest.settings_assistantOn_*` (×2) | Scroll to Assistant row, then capture |
+| `M14cShellGoldenTest.shell_*` (×20) | Shell chrome per mode × light/dark × font scale 1.0/1.3 |
 
-Paths: `android/app/src/test/screenshots/dev.mahin.android.golden.*.png`
+**Committed M14c Roborazzi baselines:** **26** PNGs under `android/app/src/test/screenshots/` (`dev.mahin.android.golden.M14cShellGoldenTest.*.png`): 6 Settings + 20 shell mode captures.
+
+Related non-M14c golden updates on the same PR: `M14aFullScreenGoldenTest` today/pregnancyHub (×8), `M13PriorityScreensScreenshotTest.todayScreen_emptyRtlLight` (×1).
 
 ## Known limitations
 - **Backup & account:** No M5 backup/account UI; Settings group omitted.
@@ -135,6 +142,18 @@ Paths: `android/app/src/test/screenshots/dev.mahin.android.golden.*.png`
 ## Deferred
 - Today/Calendar/Log content redesign → **M15** / **M16**
 - Plan timeline/checklists → **M18**
+
+## Carry-over to M15 (non-blocking follow-ups from M14c review)
+
+- Dispose test `ViewModel`s and close DBs after Compose content disposal in Robolectric tests.
+- `TodayViewModelTest`: explicit case with post-transition **Learn** link hidden when `wantsSupportContent` is false.
+- Paywall warm-up: rethrow `CancellationException`; consider cancelling warm-up `Job` on dismiss.
+- Gradle 9 deprecations; move `aapt2` manifest scan out of `build.gradle.kts` `doLast` into a proper task type.
+- Upload Android **test-results** artifacts in CI (not only lint/detekt reports).
+- Shell top bar titles still duplicate in-screen headers on some tabs (M15 layout pass).
+- Settings **backup & account** group once M5 exposes UI.
+- Real TalkBack / traversal test beyond semantics selected-state checks.
+- Watch android CI duration vs the 45-minute job timeout after M15 work lands.
 
 ## Next milestone
 **M15** only.
