@@ -76,11 +76,7 @@ class PriorityScreensA11yTest {
         composeRule.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 MahinTheme {
-                    TodayScreenContent(
-                        state = TodayUiState(),
-                        settingsEntries = emptyList(),
-                        onModeSelected = {},
-                    )
+                    TodayScreenContent(state = TodayUiState())
                 }
             }
         }

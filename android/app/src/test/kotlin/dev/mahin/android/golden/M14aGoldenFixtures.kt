@@ -15,7 +15,6 @@ import dev.mahin.core.database.cycle.CycleDashboard
 import dev.mahin.core.database.entity.PeriodRecordEntity
 import dev.mahin.core.datetime.JalaliDate
 import dev.mahin.core.datetime.PersianCivilDateConverter
-import dev.mahin.core.model.PregnancyAppointmentType
 import dev.mahin.core.model.PregnancyDatingSource
 import dev.mahin.domain.cycle.CyclePredictionResult
 import dev.mahin.domain.cycle.DateRangeEstimate
@@ -200,10 +199,6 @@ object M14aGoldenFixtures {
             contractionSessionActive = false,
             contractionInProgress = false,
             contractionElapsedSeconds = 0L,
-            appointments = emptyList(),
-            newAppointmentTitle = "",
-            newAppointmentType = PregnancyAppointmentType.CLINICIAN_VISIT,
-            newAppointmentJalali = JalaliDate(1403, 10, 1),
             selectedOutcome = null,
             wantsSupportContent = false,
             suppressCelebratoryNotifications = false,
@@ -212,10 +207,6 @@ object M14aGoldenFixtures {
 
     fun pregnancyHubActions(): PregnancyHubActions =
         PregnancyHubActions(
-            onNewAppointmentTitleChange = {},
-            onNewAppointmentTypeSelected = {},
-            onNewAppointmentDateSelected = {},
-            onAddAppointment = {},
             onStartKickSession = {},
             onStopKickSession = {},
             onRecordKick = {},
@@ -225,7 +216,5 @@ object M14aGoldenFixtures {
             onOutcomeSelected = {},
             onSupportContentToggle = {},
             onSaveOutcome = {},
-            onResumeCycle = {},
-            onResumeTtc = {},
         )
 }

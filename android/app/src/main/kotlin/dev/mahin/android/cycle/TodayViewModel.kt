@@ -3,9 +3,6 @@ package dev.mahin.android.cycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dev.mahin.core.config.FeatureFlagGateway
-import dev.mahin.core.config.FeatureFlagRepository
-import dev.mahin.core.config.MahinFeatureFlags
 import dev.mahin.core.database.cycle.CycleDashboard
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
@@ -25,11 +22,8 @@ data class TodayUiState(
     val dashboard: CycleDashboard? = null,
     val reproductiveMode: ReproductiveMode = ReproductiveMode.CYCLE_TRACKING,
     val pregnancyStatus: PregnancyStatusSnapshot? = null,
-    val hasActivePregnancy: Boolean = false,
-    val showPregnancyStartSheet: Boolean = false,
-    val modeChangeBlockedMessage: Boolean = false,
-    val healthConnectEntryVisible: Boolean = false,
-    val healthAssistantEntryVisible: Boolean = false,
+    val postPregnancyTransition: Boolean = false,
+    val postTransitionLearnLinkVisible: Boolean = false,
 )
 
 @HiltViewModel
@@ -38,24 +32,11 @@ class TodayViewModel
     constructor(
         repository: CycleTrackingRepository,
         private val pregnancyRepository: PregnancyTrackingRepository,
-        private val featureFlagGateway: FeatureFlagGateway,
-        private val featureFlagRepository: FeatureFlagRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(TodayUiState())
         val uiState: StateFlow<TodayUiState> = _uiState.asStateFlow()
 
         init {
-            viewModelScope.launch {
-                featureFlagRepository.refreshFromRemote()
-                _uiState.update {
-                    it.copy(
-                        healthConnectEntryVisible =
-                            featureFlagGateway.isEnabled(MahinFeatureFlags.HEALTH_CONNECT),
-                        healthAssistantEntryVisible =
-                            featureFlagGateway.isEnabled(MahinFeatureFlags.HEALTH_ASSISTANT),
-                    )
-                }
-            }
             viewModelScope.launch {
                 repository.observeDashboard().collect { dashboard ->
                     _uiState.update { it.copy(dashboard = dashboard) }
@@ -77,60 +58,33 @@ class TodayViewModel
                                 asOfDate = LocalDate.now(),
                             )
                         }
+                    val learnVisible =
+                        if (mode == ReproductiveMode.POST_PREGNANCY_TRANSITION) {
+                            pregnancyRepository.postTransitionLearnLinkVisible()
+                        } else {
+                            false
+                        }
                     _uiState.update {
                         it.copy(
                             reproductiveMode = mode,
-                            pregnancyStatus = status,
-                            hasActivePregnancy = pregnancy != null && mode == ReproductiveMode.PREGNANT,
+                            pregnancyStatus = if (mode == ReproductiveMode.PREGNANT) status else null,
+                            postPregnancyTransition = mode == ReproductiveMode.POST_PREGNANCY_TRANSITION,
+                            postTransitionLearnLinkVisible = learnVisible,
                         )
                     }
                 }
             }
         }
 
-        fun onReproductiveModeSelected(mode: ReproductiveMode) {
+        fun resumeCycleTracking() {
             viewModelScope.launch {
-                val state = _uiState.value
-                if (state.hasActivePregnancy && mode != ReproductiveMode.PREGNANT) {
-                    _uiState.update { it.copy(modeChangeBlockedMessage = true) }
-                    return@launch
-                }
-                _uiState.update { it.copy(modeChangeBlockedMessage = false) }
-                when (mode) {
-                    ReproductiveMode.PREGNANT -> {
-                        if (state.hasActivePregnancy) {
-                            pregnancyRepository.updateReproductiveMode(ReproductiveMode.PREGNANT)
-                        } else {
-                            _uiState.update { it.copy(showPregnancyStartSheet = true) }
-                        }
-                    }
-                    ReproductiveMode.CYCLE_TRACKING,
-                    ReproductiveMode.TRYING_TO_CONCEIVE,
-                    -> pregnancyRepository.updateReproductiveMode(mode)
-                    else -> Unit
-                }
+                pregnancyRepository.resumeTracking(ReproductiveMode.CYCLE_TRACKING)
             }
         }
 
-        fun dismissPregnancyStartSheet() {
-            _uiState.update { it.copy(showPregnancyStartSheet = false) }
-        }
-
-        fun confirmPregnancyStart(
-            lmpDate: LocalDate,
-            clinicalEdd: LocalDate?,
-        ) {
+        fun resumeTtc() {
             viewModelScope.launch {
-                pregnancyRepository.startPregnancy(
-                    lmpDate = lmpDate,
-                    clinicalEddDate = clinicalEdd,
-                    datingReason = null,
-                )
-                _uiState.update { it.copy(showPregnancyStartSheet = false) }
+                pregnancyRepository.resumeTracking(ReproductiveMode.TRYING_TO_CONCEIVE)
             }
-        }
-
-        fun dismissModeBlockedMessage() {
-            _uiState.update { it.copy(modeChangeBlockedMessage = false) }
         }
     }

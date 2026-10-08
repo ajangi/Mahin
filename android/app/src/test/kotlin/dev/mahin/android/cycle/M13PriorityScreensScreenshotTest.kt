@@ -42,8 +42,6 @@ class M13PriorityScreensScreenshotTest {
                 MahinTheme(darkTheme = false) {
                     TodayScreenContent(
                         state = TodayUiState(),
-                        settingsEntries = emptyList(),
-                        onModeSelected = {},
                         modifier = Modifier.fillMaxSize(),
                     )
                 }

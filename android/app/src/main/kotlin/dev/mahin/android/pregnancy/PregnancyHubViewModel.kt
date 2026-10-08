@@ -5,25 +5,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.mahin.core.content.ContentRepository
-import dev.mahin.core.database.entity.PregnancyAppointmentEntity
 import dev.mahin.core.database.entity.PregnancyRecordEntity
-import dev.mahin.core.database.pregnancy.PregnancyAppointmentInput
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
 import dev.mahin.core.datastore.ContractionTimerSnapshot
 import dev.mahin.core.datastore.KickTimerSnapshot
-import dev.mahin.core.datastore.NotificationPreferencesRepository
 import dev.mahin.core.datastore.PregnancyTimerPreferencesRepository
-import dev.mahin.core.datetime.JalaliDate
-import dev.mahin.core.datetime.PersianCivilDateConverter
-import dev.mahin.core.model.PregnancyAppointmentType
 import dev.mahin.core.model.PregnancyOutcome
 import dev.mahin.core.model.ReproductiveMode
-import dev.mahin.core.notifications.ReminderCoordinator
 import dev.mahin.domain.pregnancy.PregnancyDatingEngineV1
 import dev.mahin.domain.pregnancy.PregnancyStatusSnapshot
-import dev.mahin.domain.reminders.ReminderCategory
 import java.time.LocalDate
-import java.time.ZoneId
 import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -31,10 +22,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -51,10 +38,6 @@ data class PregnancyHubUiState(
     val contractionSessionId: String? = null,
     val openContractionEventId: String? = null,
     val contractionElapsedSeconds: Long = 0L,
-    val appointments: List<PregnancyAppointmentEntity> = emptyList(),
-    val newAppointmentTitle: String = "",
-    val newAppointmentType: PregnancyAppointmentType = PregnancyAppointmentType.CLINICIAN_VISIT,
-    val newAppointmentJalali: JalaliDate = PersianCivilDateConverter.toJalali(LocalDate.now()),
     val selectedOutcome: PregnancyOutcome? = null,
     val wantsSupportContent: Boolean = false,
     val suppressCelebratoryNotifications: Boolean = false,
@@ -69,8 +52,6 @@ class PregnancyHubViewModel
         private val repository: PregnancyTrackingRepository,
         private val timerPreferences: PregnancyTimerPreferencesRepository,
         private val contentRepository: ContentRepository,
-        private val notificationPreferencesRepository: NotificationPreferencesRepository,
-        private val reminderCoordinator: ReminderCoordinator,
         savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
         private var lastFetchedWeek: Int? = null
@@ -89,11 +70,7 @@ class PregnancyHubViewModel
                     timerPreferences.observeContractionTimer(),
                 ) { profile, pregnancy, kickTimer, contractionTimer ->
                     HubInputs(profile?.reproductiveMode, pregnancy, kickTimer, contractionTimer)
-                }.flatMapLatest { inputs ->
-                    val appointmentFlow =
-                        inputs.pregnancy?.let { repository.observeAppointments(it.id) } ?: flowOf(emptyList())
-                    appointmentFlow.map { appointments -> inputs to appointments }
-                }.collect { (inputs, appointments) ->
+                }.collect { inputs ->
                     val mode = inputs.mode
                     val pregnancy = inputs.pregnancy
                     val kickTimer = inputs.kickTimer
@@ -127,7 +104,6 @@ class PregnancyHubViewModel
                             kickSessionId = kickSessionId,
                             contractionSessionId = contractionSessionId,
                             openContractionEventId = openContractionEventId,
-                            appointments = appointments,
                             suppressCelebratoryNotifications = suppressCelebratory,
                         )
                     }
@@ -148,48 +124,6 @@ class PregnancyHubViewModel
                     viewModelScope.launch { refreshKickCount(kickSessionId) }
                     restartTicker(kickTimer, contractionTimer)
                 }
-            }
-        }
-
-        fun onNewAppointmentTitleChange(value: String) {
-            _uiState.update { it.copy(newAppointmentTitle = value) }
-        }
-
-        fun onNewAppointmentTypeSelected(type: PregnancyAppointmentType) {
-            _uiState.update { it.copy(newAppointmentType = type) }
-        }
-
-        fun onNewAppointmentDateSelected(jalali: JalaliDate) {
-            _uiState.update { it.copy(newAppointmentJalali = jalali) }
-        }
-
-        fun addAppointment() {
-            viewModelScope.launch {
-                val state = _uiState.value
-                val pregnancy = state.activePregnancy ?: return@launch
-                val title = state.newAppointmentTitle.trim()
-                if (title.isEmpty()) return@launch
-                val date = PersianCivilDateConverter.toGregorian(state.newAppointmentJalali)
-                val epochMs = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                val appointmentRemindersEnabled =
-                    notificationPreferencesRepository
-                        .observeCategoryEnabled(ReminderCategory.APPOINTMENT)
-                        .first()
-                repository.upsertAppointment(
-                    PregnancyAppointmentInput(
-                        id = null,
-                        pregnancyId = pregnancy.id,
-                        appointmentType = state.newAppointmentType,
-                        title = title,
-                        scheduledAtEpochMs = epochMs,
-                        location = null,
-                        clinicianName = null,
-                        note = null,
-                        reminderEnabled = appointmentRemindersEnabled,
-                    ),
-                )
-                reminderCoordinator.requestRefresh()
-                _uiState.update { it.copy(newAppointmentTitle = "") }
             }
         }
 
@@ -272,18 +206,6 @@ class PregnancyHubViewModel
                     wantsSupportContent = if (state.wantsSupportContent) true else null,
                 )
                 _uiState.update { it.copy(selectedOutcome = null, wantsSupportContent = false) }
-            }
-        }
-
-        fun resumeCycleTracking() {
-            viewModelScope.launch {
-                repository.resumeTracking(ReproductiveMode.CYCLE_TRACKING)
-            }
-        }
-
-        fun resumeTtc() {
-            viewModelScope.launch {
-                repository.resumeTracking(ReproductiveMode.TRYING_TO_CONCEIVE)
             }
         }
 

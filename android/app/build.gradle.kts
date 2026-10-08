@@ -1,3 +1,4 @@
+import java.time.Duration
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 
@@ -125,6 +126,10 @@ dependencies {
 }
 
 tasks.withType<Test>().configureEach {
+    timeout.set(Duration.ofMinutes(20))
+    testLogging {
+        events("started", "failed")
+    }
     if (name == "testReleaseUnitTest") {
         filter {
             excludeTestsMatching("dev.mahin.android.demo.CalendarDemoScreenScrollTest")
@@ -133,6 +138,13 @@ tasks.withType<Test>().configureEach {
             excludeTestsMatching("dev.mahin.android.cycle.M13PriorityScreensScreenshotTest")
             excludeTestsMatching("dev.mahin.android.golden.M14aFullScreenGoldenTest")
             excludeTestsMatching("dev.mahin.android.golden.M14bIconSheetGoldenTest")
+            excludeTestsMatching("dev.mahin.android.golden.M14cShellGoldenTest")
+            excludeTestsMatching("dev.mahin.android.shell.MahinShellNavigationTest")
+            excludeTestsMatching("dev.mahin.android.shell.ShellModeTransitionTest")
+            excludeTestsMatching("dev.mahin.android.settings.SettingsScreenContentTest")
+            excludeTestsMatching("dev.mahin.android.cycle.TodayScreenContentTest")
+            excludeTestsMatching("dev.mahin.android.shell.MahinBottomNavigationBarA11yTest")
+            excludeTestsMatching("dev.mahin.android.pregnancy.PregnancyPlanScreenTest")
             excludeTestsMatching("dev.mahin.android.ttc.TtcInsightsScreenScrollTest")
             excludeTestsMatching("dev.mahin.android.pregnancy.PregnancyHubScreenScrollTest")
             excludeTestsMatching("dev.mahin.android.pregnancy.PregnancyStartSheetScrollTest")
@@ -147,12 +159,62 @@ private val releaseApkForbiddenSubstrings =
         "10.0.2.2",
     )
 
+fun org.gradle.api.Project.resolveAapt2Executable(): File {
+    val buildToolsRoot = File(android.sdkDirectory, "build-tools")
+    val preferred = File(buildToolsRoot, android.buildToolsVersion)
+    val candidates =
+        buildList {
+            if (preferred.isDirectory) add(preferred)
+            buildToolsRoot
+                .listFiles()
+                ?.filter { it.isDirectory }
+                ?.sortedByDescending { it.name }
+                ?.forEach { if (it != preferred) add(it) }
+        }
+    return candidates
+        .map { File(it, "aapt2") }
+        .firstOrNull { it.isFile }
+        ?: error("aapt2 not found under ${buildToolsRoot.absolutePath}")
+}
+
+fun org.gradle.api.Project.dumpApkManifestText(apk: File): String {
+    val aapt2 = resolveAapt2Executable()
+    val process =
+        ProcessBuilder(
+            aapt2.absolutePath,
+            "dump",
+            "xmltree",
+            apk.absolutePath,
+            "--file",
+            "AndroidManifest.xml",
+        ).redirectErrorStream(true)
+            .start()
+    val output = process.inputStream.bufferedReader(Charsets.UTF_8).readText()
+    val exit = process.waitFor()
+    check(exit == 0) { "aapt2 dump failed with exit $exit for ${apk.path}" }
+    return output
+}
+
 tasks.register("verifyReleaseApkNoEmulatorApiHost") {
     group = "verification"
     description =
         "Fails if the minified release APK ships dev API hosts, cleartext dev network config, or emulator base URL strings."
-    dependsOn("assembleRelease")
+    dependsOn("assembleRelease", "assembleDebug")
     doLast {
+        val debugDir =
+            layout.buildDirectory
+                .dir("outputs/apk/debug")
+                .get()
+                .asFile
+        val debugApk =
+            debugDir
+                .listFiles()
+                ?.firstOrNull { it.isFile && it.extension == "apk" }
+        check(debugApk != null) { "Expected a debug APK under ${debugDir.path}" }
+        check(dumpApkManifestText(debugApk).contains(".demo.")) {
+            "Debug manifest dump smoke check failed: expected a .demo. component (verifies aapt2 manifest scan)"
+        }
+
         val releaseDir =
             layout.buildDirectory
                 .dir("outputs/apk/release")
@@ -163,6 +225,9 @@ tasks.register("verifyReleaseApkNoEmulatorApiHost") {
                 .listFiles()
                 ?.firstOrNull { it.isFile && it.extension == "apk" }
         check(apk != null) { "Expected a release APK under ${releaseDir.path}" }
+        check(!dumpApkManifestText(apk).contains(".demo.")) {
+            "Release manifest contains debug demo package component"
+        }
         ZipFile(apk).use { zip ->
             zip
                 .entries()
@@ -187,6 +252,11 @@ tasks.register("verifyReleaseApkNoEmulatorApiHost") {
                     needles.forEach { needle ->
                         check(!text.contains(needle)) {
                             "Release artifact ${entry.name} contains forbidden release string: $needle"
+                        }
+                    }
+                    if (entry.name.endsWith(".dex")) {
+                        check(!text.contains("dev/mahin/android/demo/")) {
+                            "Release artifact ${entry.name} contains debug demo package classes"
                         }
                     }
                 }

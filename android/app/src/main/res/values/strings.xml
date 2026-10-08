@@ -72,7 +72,6 @@
 
     <string name="calendar_title">تقویم چرخه</string>
     <string name="calendar_legend_hint">برای معنی رنگ‌ها، راهنمای زیر را ببینید.</string>
-    <string name="today_settings_heading">تنظیمات و داده</string>
     <string name="calendar_demo_title">تقویم جلالی</string>
     <string name="calendar_demo_body">تاریخ را برای ورودی انتخاب کنید. ذخیرهٔ داخلی همیشه میلادی ISO است.</string>
     <string name="calendar_demo_selection">انتخاب‌شده: %1$s/%2$s/%3$s</string>
@@ -159,7 +158,7 @@
 
     <string name="ttc_insights_title">نمای باروری</string>
     <string name="ttc_insights_empty_title">حالت قصد بارداری فعال نیست</string>
-    <string name="ttc_insights_empty_body">از تب «امروز» هدف خود را به «قصد بارداری» تغییر دهید.</string>
+    <string name="ttc_insights_empty_body">برای فعال‌کردن این بخش، در تنظیمات › هدف ردیابی، «قصد بارداری» را انتخاب کنید.</string>
     <string name="ttc_fertility_estimate_title">تخمین پنجرهٔ باروری</string>
     <string name="ttc_logged_opk_dates">تست مثبت/اوج ثبت‌شده: %1$s</string>
     <string name="ttc_logged_egg_white_dates">ترشحات شفاف کش‌دار ثبت‌شده: %1$s</string>
@@ -191,7 +190,27 @@
     <string name="today_numeric_sample">نمونهٔ عدد: %1$s</string>
 
     <string name="nav_pregnancy_hub">بارداری</string>
+    <string name="nav_plan">برنامه</string>
     <string name="nav_learn">آموزش</string>
+
+    <string name="settings_title">تنظیمات</string>
+    <string name="settings_subtitle">حریم خصوصی، یادآوری‌ها و دادهٔ شما</string>
+    <string name="settings_group_privacy">حریم خصوصی و امنیت</string>
+    <string name="settings_group_notifications">اعلان‌ها</string>
+    <string name="settings_group_your_data">دادهٔ شما</string>
+    <string name="settings_group_integrations">اتصال‌ها</string>
+    <string name="settings_group_assistant">دستیار</string>
+    <string name="settings_group_about">درباره</string>
+    <string name="settings_about_app">ماهین — همراه چرخه و بارداری</string>
+    <string name="settings_group_premium">ماهین پریمیوم</string>
+    <string name="settings_premium_entry">مشاهدهٔ پلن پریمیوم</string>
+    <string name="pregnancy_plan_empty_title">برنامهٔ ویزیت‌ها</string>
+    <string name="pregnancy_plan_empty_body">وقتی بارداری فعال ثبت شود، قرارها و آزمایش‌ها را اینجا می‌توانید مدیریت کنید.</string>
+    <string name="settings_history_entry">تاریخچهٔ پریود</string>
+
+    <string name="pregnancy_hub_links_heading">پیوندهای مرتبط</string>
+    <string name="pregnancy_open_cycle_calendar">تقویم چرخه</string>
+    <string name="pregnancy_open_past_cycles">چرخه‌های گذشته</string>
     <string name="learn_title">آموزش</string>
     <string name="learn_disclaimer">محتوای آموزشی از CMS تأییدشده می‌آید؛ این صفحه متن پزشکی تولید نمی‌کند.</string>
     <string name="learn_search_label">جستجو</string>
@@ -219,7 +238,8 @@
     <string name="pregnancy_week_placeholder_maternal">[غیرپزشکی — جایگاه محتوا] تغییرات بدن: متن آموزشی از سامانهٔ محتوا بارگذاری می‌شود.</string>
     <string name="pregnancy_hub_title">پیگیری بارداری</string>
     <string name="pregnancy_hub_empty_title">بارداری فعال نیست</string>
-    <string name="pregnancy_hub_empty_body">از تب «امروز» حالت بارداری را شروع کنید.</string>
+    <string name="pregnancy_hub_empty_body">برای شروع بارداری، در تنظیمات › هدف ردیابی، حالت «بارداری» را انتخاب کنید.</string>
+    <string name="settings_premium_active">پریمیوم فعال است</string>
     <string name="pregnancy_kick_section_title">شمارش لگد</string>
     <string name="pregnancy_kick_start">شروع جلسه</string>
     <string name="pregnancy_kick_stop">پایان جلسه</string>
