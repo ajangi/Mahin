@@ -106,12 +106,7 @@ class CalendarViewModel
 
         fun jumpToToday() {
             val jalali = converter.toJalali(LocalDate.now())
-            _uiState.update {
-                it.copy(
-                    selectedJalali = jalali,
-                    visibleMonth = JalaliDate(jalali.year, jalali.month, 1),
-                )
-            }
+            _uiState.update { applyJumpToToday(it, jalali) }
         }
 
         fun toggleLegendExpanded() {
@@ -135,4 +130,15 @@ class CalendarViewModel
                 if (moodTags.isNotBlank()) add(moodTags)
                 if (!note.isNullOrBlank()) add("…")
             }.joinToString(" · ")
+
+        companion object {
+            internal fun applyJumpToToday(
+                state: CalendarUiState,
+                todayJalali: JalaliDate,
+            ): CalendarUiState =
+                state.copy(
+                    selectedJalali = todayJalali,
+                    visibleMonth = JalaliDate(todayJalali.year, todayJalali.month, 1),
+                )
+        }
     }

@@ -13,13 +13,13 @@
 | 3 | TalkBack: ring CD + `TodayRingA11yTest` (no separate day semantics node) | **Done** |
 | 4 | 32 M15 Roborazzi goldens; day-sheet captures calendar + sheet overlay via `SharedTransitionLayout` | **Done** |
 | 5 | Calendar column scroll | **Done** (prior) |
-| 6 | `CalendarViewModelTest.jumpToToday` | **Done** |
+| 6 | `CalendarJumpToTodayTest` (jump-to-today state) | **Done** |
 | 7 | Shared-element cell→sheet (`CalendarAnimatedDaySheet` + `sharedBounds`); skipped when `LocalReducedMotion` | **Done** |
 | 8 | Today pregnancy/cycle scope: trimester + dating chips, week card slot, appointment→Plan, kick/contraction→Pregnancy tab, swipeable week pager, pregnancy calendar strip, hidden daily-tip slot, M14b log icons | **Done** |
 | 9 | Contrast tests: text 4.5:1 + marker semantics 3.0:1 light/dark (`MahinCalendarMarkerContrastTest`) | **Done** |
 | 10 | `CycleDayMarkerBuilderTest` + `CycleDayMarkersMapperTest` | **Done** |
 | 11 | Paywall warm-up job identity + `paywall_secondOpenAfterCancel_startsWarmUpAgain` | **Done** |
-| 12 | Test hygiene: `CalendarUiPreferencesRepository.clear()` in `CalendarViewModelTest` tearDown; Room DB close | **Done** |
+| 12 | Test hygiene: no Roborazzi `_actual`/`_compare` in commits; JVM mapper tests avoid hung VM collects | **Done** |
 | 13 | Full M15-related test list (below) | **Done** |
 | 14 | `TodayFirstFrameBenchmark` waits for ring CD or first-day CTA copy | **Done** |
 | 15 | PR body + this handoff aligned with implementation | **Done** (CI android duration filled after green run) |
@@ -30,7 +30,7 @@
 |------|--------|
 | Ring / DS | `MahinRingGeometryTest`, `MahinCycleProgressRingRtlGoldenTest`, `MahinCalendarMarkerContrastTest`, `MahinDarkSemanticContrastTest` |
 | Domain | `TodaySnapshotUseCaseTest`, `CycleDayMarkerBuilderTest`, `PregnancyTodaySnapshotUseCaseTest` |
-| App mappers / VM | `CycleDayMarkersMapperTest`, `TodayLoggedSummaryMapperTest`, `CalendarViewModelTest`, `TodayViewModelTest` |
+| App mappers / VM | `CycleDayMarkersMapperTest`, `TodayLoggedSummaryMapperTest`, `CalendarJumpToTodayTest`, `TodayViewModelTest` |
 | Compose / a11y | `TodayRingA11yTest`, `TodayScreenContentTest`, `PriorityScreensA11yTest` (Today heading), `M13PriorityScreensScreenshotTest` |
 | Goldens | `M15FullScreenGoldenTest` (32), updated `M14aFullScreenGoldenTest` / `M14cShellGoldenTest` as needed |
 | Settings | `SettingsViewModelTest` (paywall cancellation / reopen) |
