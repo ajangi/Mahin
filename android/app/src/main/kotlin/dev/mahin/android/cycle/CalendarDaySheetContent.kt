@@ -64,7 +64,10 @@ internal fun CalendarDaySheetContent(
     onEditLog: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val monthNames = androidx.compose.ui.res.stringArrayResource(dev.mahin.core.designsystem.R.array.ds_jalali_month_names)
+    val monthNames =
+        androidx.compose.ui.res.stringArrayResource(
+            dev.mahin.core.designsystem.R.array.ds_jalali_month_names,
+        )
     val monthName = monthNames[jalali.month - 1]
     Column(modifier = modifier.fillMaxWidth().padding(MahinSpacing.lg)) {
         Text(

@@ -74,7 +74,10 @@ class CalendarViewModel
                             prediction = dashboard.prediction,
                             datesWithLogEntries = logDates,
                         )
-                    val logSummaries = logs.groupBy { it.logDate }.mapValues { (_, entries) -> entries.map { it.toSummaryLine() } }
+                    val logSummaries =
+                        logs.groupBy { it.logDate }.mapValues { (_, entries) ->
+                            entries.map { it.toSummaryLine() }
+                        }
                     markers to logSummaries
                 }.collect { (markers, logSummaries) ->
                     _uiState.update { it.copy(dayMarkers = markers, dayLogs = logSummaries) }

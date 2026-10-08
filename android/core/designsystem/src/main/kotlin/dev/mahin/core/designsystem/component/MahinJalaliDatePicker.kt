@@ -3,8 +3,6 @@ package dev.mahin.core.designsystem.component
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +11,8 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -26,14 +26,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import kotlinx.coroutines.launch
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringArrayResource
@@ -59,6 +57,7 @@ import dev.mahin.core.designsystem.mahinTextStyle
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.launch
 
 @Suppress("LongParameterList")
 @Composable
@@ -137,8 +136,7 @@ fun MahinJalaliDatePicker(
 private const val JALALI_MONTH_BASE_YEAR = 1370
 private const val JALALI_MONTH_PAGE_COUNT = 12 * 80
 
-private fun jalaliMonthPageIndex(date: JalaliDate): Int =
-    (date.year - JALALI_MONTH_BASE_YEAR) * 12 + (date.month - 1)
+private fun jalaliMonthPageIndex(date: JalaliDate): Int = (date.year - JALALI_MONTH_BASE_YEAR) * 12 + (date.month - 1)
 
 private fun jalaliMonthFromPageIndex(page: Int): JalaliDate {
     val year = JALALI_MONTH_BASE_YEAR + page / 12

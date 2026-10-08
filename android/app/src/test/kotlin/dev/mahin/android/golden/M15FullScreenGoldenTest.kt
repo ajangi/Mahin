@@ -1,7 +1,6 @@
 package dev.mahin.android.golden
 
 import androidx.activity.ComponentActivity
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -25,43 +24,67 @@ class M15FullScreenGoldenTest {
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     @Test fun today_firstDay_light_scale10() = captureToday(M15GoldenFixtures.todayFirstDay(), false, 1f)
+
     @Test fun today_firstDay_light_scale13() = captureToday(M15GoldenFixtures.todayFirstDay(), false, 1.3f)
+
     @Test fun today_firstDay_dark_scale10() = captureToday(M15GoldenFixtures.todayFirstDay(), true, 1f)
+
     @Test fun today_firstDay_dark_scale13() = captureToday(M15GoldenFixtures.todayFirstDay(), true, 1.3f)
 
     @Test fun today_earlyCycle_light_scale10() = captureToday(M15GoldenFixtures.todayEarlyCycle(), false, 1f)
+
     @Test fun today_earlyCycle_light_scale13() = captureToday(M15GoldenFixtures.todayEarlyCycle(), false, 1.3f)
+
     @Test fun today_earlyCycle_dark_scale10() = captureToday(M15GoldenFixtures.todayEarlyCycle(), true, 1f)
+
     @Test fun today_earlyCycle_dark_scale13() = captureToday(M15GoldenFixtures.todayEarlyCycle(), true, 1.3f)
 
     @Test fun today_fertileWindow_light_scale10() = captureToday(M15GoldenFixtures.todayFertileWindow(), false, 1f)
+
     @Test fun today_fertileWindow_light_scale13() = captureToday(M15GoldenFixtures.todayFertileWindow(), false, 1.3f)
+
     @Test fun today_fertileWindow_dark_scale10() = captureToday(M15GoldenFixtures.todayFertileWindow(), true, 1f)
+
     @Test fun today_fertileWindow_dark_scale13() = captureToday(M15GoldenFixtures.todayFertileWindow(), true, 1.3f)
 
     @Test fun today_overdue_light_scale10() = captureToday(M15GoldenFixtures.todayOverdue(), false, 1f)
+
     @Test fun today_overdue_light_scale13() = captureToday(M15GoldenFixtures.todayOverdue(), false, 1.3f)
+
     @Test fun today_overdue_dark_scale10() = captureToday(M15GoldenFixtures.todayOverdue(), true, 1f)
+
     @Test fun today_overdue_dark_scale13() = captureToday(M15GoldenFixtures.todayOverdue(), true, 1.3f)
 
     @Test fun today_lowConfidence_light_scale10() = captureToday(M15GoldenFixtures.todayLowConfidence(), false, 1f)
+
     @Test fun today_lowConfidence_light_scale13() = captureToday(M15GoldenFixtures.todayLowConfidence(), false, 1.3f)
+
     @Test fun today_lowConfidence_dark_scale10() = captureToday(M15GoldenFixtures.todayLowConfidence(), true, 1f)
+
     @Test fun today_lowConfidence_dark_scale13() = captureToday(M15GoldenFixtures.todayLowConfidence(), true, 1.3f)
 
     @Test fun today_pregnancyWeek_light_scale10() = captureToday(M15GoldenFixtures.todayPregnancyWeek(), false, 1f)
+
     @Test fun today_pregnancyWeek_light_scale13() = captureToday(M15GoldenFixtures.todayPregnancyWeek(), false, 1.3f)
+
     @Test fun today_pregnancyWeek_dark_scale10() = captureToday(M15GoldenFixtures.todayPregnancyWeek(), true, 1f)
+
     @Test fun today_pregnancyWeek_dark_scale13() = captureToday(M15GoldenFixtures.todayPregnancyWeek(), true, 1.3f)
 
     @Test fun calendar_month_light_scale10() = captureCalendar(M15GoldenFixtures.calendarMonth(), false, 1f)
+
     @Test fun calendar_month_light_scale13() = captureCalendar(M15GoldenFixtures.calendarMonth(), false, 1.3f)
+
     @Test fun calendar_month_dark_scale10() = captureCalendar(M15GoldenFixtures.calendarMonth(), true, 1f)
+
     @Test fun calendar_month_dark_scale13() = captureCalendar(M15GoldenFixtures.calendarMonth(), true, 1.3f)
 
     @Test fun calendar_daySheet_light_scale10() = captureDaySheet(false, 1f)
+
     @Test fun calendar_daySheet_light_scale13() = captureDaySheet(false, 1.3f)
+
     @Test fun calendar_daySheet_dark_scale10() = captureDaySheet(true, 1f)
+
     @Test fun calendar_daySheet_dark_scale13() = captureDaySheet(true, 1.3f)
 
     private fun captureToday(
@@ -99,7 +122,9 @@ class M15FullScreenGoldenTest {
             CalendarDaySheetContent(
                 jalali = jalali,
                 gregorian = gregorian,
-                markers = dev.mahin.android.cycle.DayMarkers(fertileWindow = true),
+                markers =
+                    dev.mahin.android.cycle
+                        .DayMarkers(fertileWindow = true),
                 onEditLog = {},
                 modifier = Modifier.fillMaxSize(),
             )

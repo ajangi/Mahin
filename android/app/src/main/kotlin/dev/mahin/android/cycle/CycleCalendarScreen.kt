@@ -20,7 +20,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mahin.android.R
 import dev.mahin.core.datetime.JalaliDate
 import dev.mahin.core.datetime.PersianCivilDateConverter
-import dev.mahin.core.designsystem.LocalReducedMotion
 import dev.mahin.core.designsystem.MahinSpacing
 import dev.mahin.core.designsystem.component.MahinCalendarDayDecoration
 import dev.mahin.core.designsystem.component.MahinCalendarLegend
