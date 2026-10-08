@@ -34,8 +34,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
@@ -326,19 +324,14 @@ private fun JalaliDayCell(
         }
     val blendedFill =
         if (!selected && decoration?.fillColor != null) {
-            lerp(surfaceColor, decoration.fillColor.copy(alpha = 1f), decoration.fillColor.alpha)
+            blendCalendarMarkerFill(surfaceColor, decoration.fillColor)
         } else {
             fill
         }
     val contentColor =
         when {
             selected -> MaterialTheme.colorScheme.onPrimary
-            decoration?.fillColor != null ->
-                if (blendedFill.luminance() < 0.5f) {
-                    Color.White
-                } else {
-                    Color.Black.copy(alpha = 0.87f)
-                }
+            decoration?.fillColor != null -> mahinCalendarDayLabelOnBlendedFill(blendedFill)
             else -> MaterialTheme.colorScheme.onSurface
         }
     val shape = RoundedCornerShape(MahinRadius.sm)
@@ -372,6 +365,7 @@ private fun JalaliDayCell(
                 .mahinMinimumTouchTarget()
                 .clip(shape)
                 .then(borderModifier)
+                .testTag("jalali_day_cell")
                 .semantics {
                     role = Role.Button
                     this.selected = selected
@@ -396,7 +390,7 @@ private fun JalaliDayCell(
             if (decoration?.estimatedOvulation == true) {
                 val markerOnFill =
                     if (decoration.fillColor != null) {
-                        if (blendedFill.luminance() < 0.45f) Color.White else Color.Black
+                        mahinCalendarOvulationMarkerOnBlendedFill(blendedFill)
                     } else {
                         MahinCalendarMarkerTints.estimatedOvulation().copy(alpha = 1f)
                     }

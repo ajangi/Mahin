@@ -25,6 +25,7 @@ import dev.mahin.core.datastore.PregnancyTimerPreferencesRepository
 import dev.mahin.core.datastore.SubscriptionPreferencesRepository
 import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
+import dev.mahin.core.testing.ViewModelStoreTestHarness
 import dev.mahin.domain.subscription.EntitlementTier
 import java.time.LocalDate
 import kotlinx.coroutines.CancellationException
@@ -47,6 +48,7 @@ class SettingsViewModelTest {
     private lateinit var database: MahinDatabase
     private lateinit var pregnancyRepository: PregnancyTrackingRepository
     private lateinit var context: Context
+    private val viewModelStore = ViewModelStoreTestHarness()
 
     @Before
     fun setUp() {
@@ -62,6 +64,7 @@ class SettingsViewModelTest {
 
     @After
     fun tearDown() {
+        viewModelStore.clear()
         runBlocking {
             SubscriptionPreferencesRepository(context).clear()
         }
@@ -181,7 +184,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun paywall_dismiss_cancelsWarmUpJob() {
+    fun paywall_dismiss_cancelsWarmUpJob_andPropagatesCancellation() {
         val billingAdapter = CancellableWarmUpBillingAdapter()
         val viewModel = createViewModel(billingAdapter = billingAdapter)
         viewModel.openPaywall()
@@ -190,18 +193,7 @@ class SettingsViewModelTest {
         viewModel.dismissPaywall()
         idle()
         assertFalse(viewModel.uiState.value.showPaywall)
-        assertTrue(billingAdapter.cancelRecordedInFinally)
-    }
-
-    @Test
-    fun paywall_dismiss_propagatesCancellationException() {
-        val billingAdapter = CancellableWarmUpBillingAdapter()
-        val viewModel = createViewModel(billingAdapter = billingAdapter)
-        viewModel.openPaywall()
-        idle()
-        viewModel.dismissPaywall()
-        idle()
-        assertTrue(billingAdapter.cancelRecordedInFinally)
+        assertThat(billingAdapter.cancellationCause).isInstanceOf(CancellationException::class.java)
     }
 
     @Test
@@ -307,13 +299,15 @@ class SettingsViewModelTest {
         val repository = FeatureFlagRepository(FakeMetaApi(flags))
         val gateway = RemoteFeatureFlagGateway(repository)
         val premiumCoordinator = PremiumBillingCoordinator(billingAdapter, entitlementRepository)
-        return SettingsViewModel(
-            pregnancyRepository = pregnancyRepository,
-            featureFlagGateway = gateway,
-            featureFlagRepository = repository,
-            billingAdapter = billingAdapter,
-            premiumBillingCoordinator = premiumCoordinator,
-            entitlementRepository = entitlementRepository,
+        return viewModelStore.hold(
+            SettingsViewModel(
+                pregnancyRepository = pregnancyRepository,
+                featureFlagGateway = gateway,
+                featureFlagRepository = repository,
+                billingAdapter = billingAdapter,
+                premiumBillingCoordinator = premiumCoordinator,
+                entitlementRepository = entitlementRepository,
+            ),
         )
     }
 
@@ -373,13 +367,13 @@ class SettingsViewModelTest {
     }
 
     private class CancellableWarmUpBillingAdapter : CountingBillingAdapter() {
-        var cancelRecordedInFinally = false
+        var cancellationCause: CancellationException? = null
 
         override suspend fun startConnection() {
             try {
                 delay(Long.MAX_VALUE)
             } catch (cancelled: CancellationException) {
-                cancelRecordedInFinally = true
+                cancellationCause = cancelled
                 throw cancelled
             }
         }

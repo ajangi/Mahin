@@ -18,8 +18,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.invisibleToUser
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mahin.android.R
@@ -94,7 +93,7 @@ internal fun CycleCalendarScreenContent(
                     .padding(horizontal = MahinSpacing.md)
                     .then(
                         if (state.daySheetOpen) {
-                            Modifier.semantics { invisibleToUser() }
+                            Modifier.clearAndSetSemantics { }
                         } else {
                             Modifier
                         },

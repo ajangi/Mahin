@@ -14,6 +14,7 @@ import dev.mahin.core.datastore.PregnancyTimerPreferencesRepository
 import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.PregnancyOutcome
 import dev.mahin.core.model.ReproductiveMode
+import dev.mahin.core.testing.ViewModelStoreTestHarness
 import java.time.LocalDate
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -31,6 +32,7 @@ class TodayViewModelTest {
     private lateinit var database: MahinDatabase
     private lateinit var cycleRepository: CycleTrackingRepository
     private lateinit var pregnancyRepository: PregnancyTrackingRepository
+    private val viewModelStore = ViewModelStoreTestHarness()
 
     @Before
     fun setUp() {
@@ -46,6 +48,7 @@ class TodayViewModelTest {
 
     @After
     fun tearDown() {
+        viewModelStore.clear()
         runBlocking {
             val context = ApplicationProvider.getApplicationContext<Context>()
             NotificationPreferencesRepository(context).clear()
@@ -64,7 +67,7 @@ class TodayViewModelTest {
                     clinicalEddDate = null,
                     datingReason = null,
                 )
-            val viewModel = TodayViewModel(cycleRepository, pregnancyRepository, notificationPrefs())
+            val viewModel = createViewModel()
             pregnancyRepository.recordOutcome(
                 pregnancyId = pregnancy.id,
                 outcome = PregnancyOutcome.PREGNANCY_LOSS,
@@ -86,7 +89,7 @@ class TodayViewModelTest {
                     clinicalEddDate = null,
                     datingReason = null,
                 )
-            val viewModel = TodayViewModel(cycleRepository, pregnancyRepository, notificationPrefs())
+            val viewModel = createViewModel()
             pregnancyRepository.recordOutcome(
                 pregnancyId = pregnancy.id,
                 outcome = PregnancyOutcome.PREGNANCY_LOSS,
@@ -109,7 +112,7 @@ class TodayViewModelTest {
                     clinicalEddDate = null,
                     datingReason = null,
                 )
-            val viewModel = TodayViewModel(cycleRepository, pregnancyRepository, notificationPrefs())
+            val viewModel = createViewModel()
             pregnancyRepository.recordOutcome(
                 pregnancyId = pregnancy.id,
                 outcome = PregnancyOutcome.PREGNANCY_LOSS,
@@ -132,7 +135,7 @@ class TodayViewModelTest {
                     clinicalEddDate = null,
                     datingReason = null,
                 )
-            val viewModel = TodayViewModel(cycleRepository, pregnancyRepository, notificationPrefs())
+            val viewModel = createViewModel()
             pregnancyRepository.recordOutcome(
                 pregnancyId = pregnancy.id,
                 outcome = PregnancyOutcome.PREGNANCY_LOSS,
@@ -146,7 +149,7 @@ class TodayViewModelTest {
     fun onWeekDaySelected_marksSelectedDayInWeekStripWeeks() =
         runBlocking {
             seedCycleProfile()
-            val viewModel = TodayViewModel(cycleRepository, pregnancyRepository, notificationPrefs())
+            val viewModel = createViewModel()
             awaitUntil {
                 val ui = viewModel.uiState.value
                 ui.weekStripWeeks.isNotEmpty()
@@ -182,7 +185,7 @@ class TodayViewModelTest {
                     updatedAtEpochMs = 0L,
                 ),
             )
-            val viewModel = TodayViewModel(cycleRepository, pregnancyRepository, notificationPrefs())
+            val viewModel = createViewModel()
             awaitUntil {
                 val ui = viewModel.uiState.value
                 ui.weekStripWeeks.isNotEmpty()
@@ -207,7 +210,7 @@ class TodayViewModelTest {
                     clinicalEddDate = null,
                     datingReason = null,
                 )
-            val viewModel = TodayViewModel(cycleRepository, pregnancyRepository, notificationPrefs())
+            val viewModel = createViewModel()
             pregnancyRepository.recordOutcome(
                 pregnancyId = pregnancy.id,
                 outcome = PregnancyOutcome.PREGNANCY_LOSS,
@@ -216,6 +219,11 @@ class TodayViewModelTest {
             awaitUntil { viewModel.uiState.value.postTransitionLearnLinkVisible }
         }
     }
+
+    private fun createViewModel(): TodayViewModel =
+        viewModelStore.hold(
+            TodayViewModel(cycleRepository, pregnancyRepository, notificationPrefs()),
+        )
 
     private fun notificationPrefs(): NotificationPreferencesRepository {
         val context = ApplicationProvider.getApplicationContext<Context>()

@@ -17,7 +17,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -77,7 +76,7 @@ fun MahinCycleProgressRing(
     arcs: List<MahinRingArc>,
     progressFraction: Float,
     modifier: Modifier = Modifier,
-    size: Dp = 220.dp,
+    ringSize: Dp = 220.dp,
     trackColor: Color = Color.Transparent,
     progressColor: Color? = null,
     todayMarkerFraction: Float? = null,
@@ -112,13 +111,14 @@ fun MahinCycleProgressRing(
     Box(
         modifier =
             modifier
-                .size(size)
+                .size(ringSize)
                 .then(semanticsModifier)
                 .testTag("cycle_progress_ring"),
         contentAlignment = Alignment.Center,
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val side = this.size.minDimension
+            val canvasSize = size
+            val side = canvasSize.minDimension
             val stroke = side * 0.09f
             val diameter = side - stroke
             val topLeft = Offset(stroke / 2f, stroke / 2f)
@@ -173,18 +173,14 @@ fun MahinCycleProgressRing(
                 )
             }
             todayMarkerFraction?.let { fraction ->
-                val angleDegrees = mahinRingTodayMarkerRotationDegrees(geometry, fraction)
-                val radius = diameter / 2f
-                val center = Offset(topLeft.x + radius + stroke / 2f, topLeft.y + radius + stroke / 2f)
+                val center = Offset(canvasSize.width / 2f, canvasSize.height / 2f)
+                val markerPoint = mahinRingTodayMarkerPoint(side, geometry, fraction)
                 val markerRadius = stroke * 0.55f
-                rotate(angleDegrees, center) {
-                    val markerCenter = Offset(center.x, center.y - radius)
-                    drawCircle(
-                        color = todayMarkerColor,
-                        radius = markerRadius,
-                        center = markerCenter,
-                    )
-                }
+                drawCircle(
+                    color = todayMarkerColor,
+                    radius = markerRadius,
+                    center = markerPoint,
+                )
             }
         }
         content()

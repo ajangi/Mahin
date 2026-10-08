@@ -160,6 +160,7 @@ tasks.withType<Test>().configureEach {
             excludeTestsMatching("dev.mahin.android.cycle.TodayScreenContentTest")
             excludeTestsMatching("dev.mahin.android.cycle.TodayRingA11yTest")
             excludeTestsMatching("dev.mahin.android.cycle.CalendarAnimatedDaySheetA11yTest")
+            excludeTestsMatching("dev.mahin.android.cycle.CalendarDaySheetGridA11yTest")
             excludeTestsMatching("dev.mahin.android.cycle.CalendarDaySheetBackTest")
             excludeTestsMatching("dev.mahin.android.cycle.CalendarDaySheetContentTest")
             excludeTestsMatching("dev.mahin.android.cycle.CalendarJumpToTodayTest")

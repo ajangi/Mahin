@@ -9,10 +9,12 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import com.google.common.truth.Truth.assertThat
 import dev.mahin.android.golden.M15GoldenFixtures
 import dev.mahin.core.datetime.PersianDigits
 import dev.mahin.core.designsystem.MahinTheme
@@ -27,11 +29,29 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], qualifiers = "fa-rIR", manifest = Config.NONE)
 class TodayScreenBehaviorTest {
-    @get:Rule
+    @get:Rule(order = 0)
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
-    @get:Rule
+    @get:Rule(order = 1)
     val viewModelStoreRule = ViewModelStoreClearingRule(composeRule)
+
+    @Test
+    fun quickLogChip_tap_invokesOnOpenLogForDateWithToday() {
+        val today = LocalDate.now()
+        var opened: LocalDate? = null
+        composeRule.setContent {
+            MahinTheme {
+                TodayScreenContent(
+                    state = M15GoldenFixtures.todayFertileWindow(),
+                    actions = TodayScreenActions(onOpenLogForDate = { opened = it }),
+                )
+            }
+        }
+        composeRule.onNodeWithTag("today_screen_list").performScrollToNode(hasTestTag("today_quick_log_row"))
+        composeRule.onAllNodesWithTag("today_quick_log_chip")[0].performClick()
+        composeRule.waitForIdle()
+        assertThat(opened).isEqualTo(today)
+    }
 
     @Test
     fun weekStripTap_updatesSelectedSemantics() {

@@ -537,6 +537,7 @@ private fun QuickLogChip(
     FilterChip(
         selected = false,
         onClick = onClick,
+        modifier = Modifier.testTag("today_quick_log_chip"),
         label = {
             Row(horizontalArrangement = Arrangement.spacedBy(MahinSpacing.xs)) {
                 MahinIcon(icon = icon, decorative = true)

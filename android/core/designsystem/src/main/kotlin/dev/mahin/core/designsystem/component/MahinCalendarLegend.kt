@@ -20,7 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
@@ -36,6 +38,7 @@ fun MahinCalendarLegend(
     onToggleExpanded: (() -> Unit)? = null,
 ) {
     val description = stringResource(R.string.ds_calendar_legend_content_description)
+    val toggleLabel = stringResource(R.string.ds_calendar_legend_title)
     val expandedStateDescription = stringResource(R.string.ds_calendar_legend_state_expanded)
     val collapsedStateDescription = stringResource(R.string.ds_calendar_legend_state_collapsed)
     Column(
@@ -54,6 +57,8 @@ fun MahinCalendarLegend(
                                 .mahinMinimumTouchTarget()
                                 .clickable(onClick = onToggleExpanded)
                                 .semantics {
+                                    role = Role.Button
+                                    contentDescription = toggleLabel
                                     stateDescription =
                                         if (expanded) {
                                             expandedStateDescription

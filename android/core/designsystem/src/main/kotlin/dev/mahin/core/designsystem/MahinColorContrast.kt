@@ -1,5 +1,6 @@
 package dev.mahin.core.designsystem
 
+import androidx.compose.ui.graphics.Color
 import kotlin.math.pow
 
 /** WCAG 2.x relative luminance for sRGB hex colours (`#RRGGBB`). */
@@ -13,6 +14,26 @@ fun relativeLuminance(hex: String): Double {
     val g = channel(digits.substring(2, 4).toInt(16))
     val b = channel(digits.substring(4, 6).toInt(16))
     return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+fun contrastRatioBetweenColors(
+    foreground: Color,
+    background: Color,
+): Double = contrastRatio(colorToHex(foreground), colorToHex(background))
+
+fun colorToHex(color: Color): String {
+    val r = (color.red * 255f).toInt().coerceIn(0, 255)
+    val g = (color.green * 255f).toInt().coerceIn(0, 255)
+    val b = (color.blue * 255f).toInt().coerceIn(0, 255)
+    return "#%02X%02X%02X".format(r, g, b)
+}
+
+fun hexToColor(hex: String): Color {
+    val digits = hex.removePrefix("#")
+    val r = digits.substring(0, 2).toInt(16)
+    val g = digits.substring(2, 4).toInt(16)
+    val b = digits.substring(4, 6).toInt(16)
+    return Color(0xFF000000L or (r.toLong() shl 16) or (g.toLong() shl 8) or b.toLong())
 }
 
 fun contrastRatio(
