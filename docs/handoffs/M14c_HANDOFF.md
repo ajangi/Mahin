@@ -1,7 +1,7 @@
 # M14c Handoff — App shell & Settings
 
 **Milestone:** M14c  
-**Status:** **accepted** (gatekeeper round 5; [PR #35](https://github.com/ajangi/Mahin/pull/35), squash-merge `d951c201efcec6e9565f6cdce8251a4d33ce8569` on `master`, **2026-10-07**)  
+**Status:** **accepted** (gatekeeper round 5; [PR #35](https://github.com/ajangi/Mahin/pull/35), squash-merge `d951c201efcec6e9565f6cdce8251a4d33ce8569` on `master`, **2026-10-08**)  
 **Next milestone:** **M15** only
 
 ## Implemented scope
