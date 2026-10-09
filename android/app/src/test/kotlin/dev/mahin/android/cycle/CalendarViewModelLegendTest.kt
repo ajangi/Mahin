@@ -12,9 +12,12 @@ import dev.mahin.core.datetime.JalaliDate
 import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.core.testing.ViewModelStoreTestHarness
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -88,7 +91,23 @@ class CalendarViewModelLegendTest {
             awaitUntil { viewModel.uiState.value.legendExpanded }
             assertThat(calendarPrefs.observeLegendCollapsed().first()).isFalse()
             viewModel.selectJalaliDate(JalaliDate(1403, 12, 11))
-            awaitUntil { viewModel.uiState.value.legendExpanded }
+            val collapsedAfterSecondTap =
+                runBlocking {
+                    val waiter =
+                        async(Dispatchers.Default) {
+                            withTimeoutOrNull(1_000) {
+                                calendarPrefs.observeLegendCollapsed().first { it }
+                            }
+                        }
+                    val deadline = System.currentTimeMillis() + 1_200
+                    while (!waiter.isCompleted && System.currentTimeMillis() < deadline) {
+                        ShadowLooper.idleMainLooper()
+                        delay(25)
+                    }
+                    waiter.await()
+                }
+            assertThat(collapsedAfterSecondTap).isNull()
+            assertThat(viewModel.uiState.value.legendExpanded).isTrue()
             assertThat(calendarPrefs.observeLegendAutoCollapsedOnce().first()).isTrue()
             assertThat(calendarPrefs.observeLegendCollapsed().first()).isFalse()
         }

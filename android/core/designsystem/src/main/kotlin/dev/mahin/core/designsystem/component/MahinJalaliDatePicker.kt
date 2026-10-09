@@ -323,12 +323,13 @@ private fun JalaliDayCell(
                 PersianDigits.format(g.format(DateTimeFormatter.ISO_LOCAL_DATE))
         }
     val parentBackground = MaterialTheme.colorScheme.background
+    val surfaceColor = MaterialTheme.colorScheme.surface
     val fill =
         when {
             selected -> MaterialTheme.colorScheme.primary
             decoration?.fillColor != null -> decoration.fillColor
             markerColor != null -> markerColor
-            else -> parentBackground
+            else -> surfaceColor
         }
     val decoratedColors =
         if (!selected && decoration?.fillColor != null) {

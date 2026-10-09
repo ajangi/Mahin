@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.mahin.core.datetime.JalaliDate
+import dev.mahin.core.datetime.PersianCivilDateConverter
 import dev.mahin.core.designsystem.component.MahinCalendarDayDecoration
 import dev.mahin.core.designsystem.component.MahinCalendarLegend
 import dev.mahin.core.designsystem.component.MahinCalendarMarkerTintAlphas
@@ -55,16 +56,16 @@ class MahinDesignSystemScreenshotTest {
     }
 
     @Test
-    fun jalaliCalendarOvulationDayRtlLight() {
-        captureJalaliOvulationDay(darkTheme = false)
+    fun jalaliCalendarJalaliDay15OvulationRtlLight() {
+        captureJalaliOvulationOnDay15(darkTheme = false)
     }
 
     @Test
-    fun jalaliCalendarOvulationDayRtlDark() {
-        captureJalaliOvulationDay(darkTheme = true)
+    fun jalaliCalendarJalaliDay15OvulationRtlDark() {
+        captureJalaliOvulationOnDay15(darkTheme = true)
     }
 
-    private fun captureJalaliOvulationDay(darkTheme: Boolean) {
+    private fun captureJalaliOvulationOnDay15(darkTheme: Boolean) {
         val ovulationFill =
             if (darkTheme) {
                 hexToColor(MahinTokenHex.DARK_HEALTH_OVULATION).copy(
@@ -82,8 +83,9 @@ class MahinDesignSystemScreenshotTest {
                         selectedDate = JalaliDate(year = 1403, month = 12, day = 15),
                         onDateSelected = {},
                         modifier = Modifier.fillMaxSize(),
-                        dayDecoration = { date ->
-                            if (date.dayOfMonth == 15) {
+                        dayDecoration = { gregorian ->
+                            val jalali = PersianCivilDateConverter.toJalali(gregorian)
+                            if (jalali.day == 15) {
                                 MahinCalendarDayDecoration(
                                     fillColor = ovulationFill,
                                     estimatedOvulation = true,

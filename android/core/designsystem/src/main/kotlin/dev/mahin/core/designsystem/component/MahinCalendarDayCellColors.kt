@@ -54,8 +54,8 @@ fun mahinCalendarDayCellColors(
     return MahinCalendarDayCellColors(label = label, ovulationMarker = marker)
 }
 
-/** Legacy luminance threshold (must not be used in production UI). */
-fun mahinCalendarDayLabelLuminanceThreshold(blendedFill: Color): Color =
+/** Regression-only luminance threshold (not used in production UI). */
+internal fun mahinCalendarDayLabelLuminanceThreshold(blendedFill: Color): Color =
     if (blendedFill.luminance() < 0.5f) {
         Color.White
     } else {
