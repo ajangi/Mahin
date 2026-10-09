@@ -80,7 +80,7 @@ class MahinDesignSystemScreenshotTest {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 MahinTheme(darkTheme = darkTheme) {
                     MahinJalaliDatePicker(
-                        selectedDate = JalaliDate(year = 1403, month = 12, day = 15),
+                        selectedDate = JalaliDate(year = 1403, month = 12, day = 5),
                         onDateSelected = {},
                         modifier = Modifier.fillMaxSize(),
                         dayDecoration = { gregorian ->
