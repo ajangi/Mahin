@@ -32,6 +32,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -65,9 +66,13 @@ class SettingsViewModelTest {
     @After
     fun tearDown() {
         viewModelStore.clear()
+        idle()
         runBlocking {
-            SubscriptionPreferencesRepository(context).clear()
+            withTimeout(5_000) {
+                SubscriptionPreferencesRepository(context).clear()
+            }
         }
+        idle()
         database.close()
     }
 
@@ -79,13 +84,24 @@ class SettingsViewModelTest {
         timeoutMs: Long = 2_000,
         condition: () -> Boolean,
     ) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            if (condition()) return
-            ShadowLooper.idleMainLooper()
-            delay(25)
+        withTimeout(timeoutMs) {
+            while (true) {
+                if (condition()) return@withTimeout
+                ShadowLooper.idleMainLooper()
+                delay(25)
+            }
         }
-        throw AssertionError("Condition not met within ${timeoutMs}ms")
+    }
+
+    private fun runWithTimeout(
+        timeoutMs: Long = 10_000,
+        block: suspend () -> Unit,
+    ) {
+        runBlocking {
+            withTimeout(timeoutMs) {
+                block()
+            }
+        }
     }
 
     @Test
@@ -110,6 +126,8 @@ class SettingsViewModelTest {
             val state = viewModel.uiState.value
             assertThat(state.healthConnectEntryVisible).isEqualTo(healthConnect)
             assertThat(state.healthAssistantEntryVisible).isEqualTo(assistant)
+            viewModelStore.clear()
+            idle()
         }
     }
 
@@ -125,7 +143,7 @@ class SettingsViewModelTest {
 
     @Test
     fun modeChangeBlockedDuringActivePregnancy() {
-        runBlocking {
+        runWithTimeout {
             seedProfile(ReproductiveMode.CYCLE_TRACKING)
             pregnancyRepository.startPregnancy(
                 lmpDate = LocalDate.of(2025, 1, 1),
@@ -141,7 +159,7 @@ class SettingsViewModelTest {
 
     @Test
     fun selectingTtc_updatesRepositoryMode() {
-        runBlocking {
+        runWithTimeout {
             seedProfile(ReproductiveMode.CYCLE_TRACKING)
             val viewModel = createViewModel()
             awaitUntil { viewModel.uiState.value.reproductiveMode == ReproductiveMode.CYCLE_TRACKING }
@@ -152,7 +170,7 @@ class SettingsViewModelTest {
 
     @Test
     fun selectingCycle_updatesRepositoryMode() {
-        runBlocking {
+        runWithTimeout {
             seedProfile(ReproductiveMode.TRYING_TO_CONCEIVE)
             val viewModel = createViewModel()
             awaitUntil { viewModel.uiState.value.reproductiveMode == ReproductiveMode.TRYING_TO_CONCEIVE }
@@ -173,7 +191,7 @@ class SettingsViewModelTest {
 
     @Test
     fun paywall_dismissDuringWarmUp_canReopen() {
-        runBlocking {
+        runWithTimeout {
             val billingAdapter = SlowBillingAdapter()
             val viewModel = createViewModel(billingAdapter = billingAdapter)
             viewModel.openPaywall()
@@ -198,7 +216,7 @@ class SettingsViewModelTest {
 
     @Test
     fun paywall_throwingWarmUp_stillAllowsReopen() {
-        runBlocking {
+        runWithTimeout {
             val billingAdapter = ThrowingBillingAdapter()
             val viewModel = createViewModel(billingAdapter = billingAdapter)
             viewModel.openPaywall()
@@ -211,7 +229,7 @@ class SettingsViewModelTest {
 
     @Test
     fun paywall_secondOpenAfterCancel_startsWarmUpAgain() {
-        runBlocking {
+        runWithTimeout(timeoutMs = 15_000) {
             val billingAdapter = SlowBillingAdapter()
             val viewModel = createViewModel(billingAdapter = billingAdapter)
             viewModel.openPaywall()
@@ -241,7 +259,7 @@ class SettingsViewModelTest {
 
     @Test
     fun resumeTtc_updatesRepositoryMode() {
-        runBlocking {
+        runWithTimeout {
             seedProfile(ReproductiveMode.POST_PREGNANCY_TRANSITION)
             val viewModel = createViewModel()
             awaitUntil {
@@ -254,7 +272,7 @@ class SettingsViewModelTest {
 
     @Test
     fun premiumEntitlement_hidesPaywallEntry() {
-        runBlocking {
+        runWithTimeout {
             SubscriptionPreferencesRepository(context).saveEntitlement(
                 CachedEntitlement(
                     tierName = EntitlementTier.PREMIUM_MONTHLY.name,
@@ -371,7 +389,9 @@ class SettingsViewModelTest {
 
         override suspend fun startConnection() {
             try {
-                delay(Long.MAX_VALUE)
+                while (true) {
+                    delay(1_000)
+                }
             } catch (cancelled: CancellationException) {
                 cancellationCause = cancelled
                 throw cancelled

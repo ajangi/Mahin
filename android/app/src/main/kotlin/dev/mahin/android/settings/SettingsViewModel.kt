@@ -219,4 +219,9 @@ class SettingsViewModel
                 dismissPaywall()
             }
         }
+
+        override fun onCleared() {
+            dismissPaywall()
+            super.onCleared()
+        }
     }
