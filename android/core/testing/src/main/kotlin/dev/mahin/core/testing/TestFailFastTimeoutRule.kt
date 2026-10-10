@@ -18,7 +18,8 @@ class TestFailFastTimeoutRule(
     private val timeoutMs: Long = 60_000L,
 ) : TestRule {
     private val junitTimeout =
-        Timeout.builder()
+        Timeout
+            .builder()
             .withTimeout(timeoutMs, TimeUnit.MILLISECONDS)
             .withLookingForStuckThread(true)
             .build()
