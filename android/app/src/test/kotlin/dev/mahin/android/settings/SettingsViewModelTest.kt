@@ -25,15 +25,21 @@ import dev.mahin.core.datastore.PregnancyTimerPreferencesRepository
 import dev.mahin.core.datastore.SubscriptionPreferencesRepository
 import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
+import dev.mahin.core.testing.TestHangWatchdogRule
+import dev.mahin.core.testing.ViewModelStoreTestHarness
 import dev.mahin.domain.subscription.EntitlementTier
 import java.time.LocalDate
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -43,9 +49,14 @@ import org.robolectric.shadows.ShadowLooper
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class SettingsViewModelTest {
+    @get:Rule
+    val testHangWatchdog: TestHangWatchdogRule = TestHangWatchdogRule()
+
     private lateinit var database: MahinDatabase
     private lateinit var pregnancyRepository: PregnancyTrackingRepository
     private lateinit var context: Context
+    private val viewModelStore = ViewModelStoreTestHarness()
+    private var heldViewModel: SettingsViewModel? = null
 
     @Before
     fun setUp() {
@@ -55,14 +66,20 @@ class SettingsViewModelTest {
                 .inMemoryDatabaseBuilder(context, MahinDatabase::class.java)
                 .allowMainThreadQueries()
                 .build()
+        // Eager open on the test thread so tearDown never races a lazy first open (InvalidationTracker
+        // onOpen on a Room executor) against database.close() — see M15 handoff.
+        database.openHelper.writableDatabase
         pregnancyRepository =
             PregnancyTrackingRepository(database, PregnancyTimerPreferencesRepository(context))
     }
 
     @After
     fun tearDown() {
-        runBlocking {
-            SubscriptionPreferencesRepository(context).clear()
+        releaseViewModels()
+        runBlocking(Dispatchers.IO) {
+            withTimeout(5_000) {
+                SubscriptionPreferencesRepository(context).clear()
+            }
         }
         database.close()
     }
@@ -71,17 +88,34 @@ class SettingsViewModelTest {
         ShadowLooper.idleMainLooper()
     }
 
+    private fun releaseViewModels() {
+        heldViewModel?.dismissPaywall()
+        heldViewModel = null
+        viewModelStore.clear()
+    }
+
     private suspend fun awaitUntil(
         timeoutMs: Long = 2_000,
         condition: () -> Boolean,
     ) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            if (condition()) return
-            ShadowLooper.idleMainLooper()
-            delay(25)
+        withTimeout(timeoutMs) {
+            while (true) {
+                if (condition()) return@withTimeout
+                ShadowLooper.idleMainLooper()
+                delay(25)
+            }
         }
-        throw AssertionError("Condition not met within ${timeoutMs}ms")
+    }
+
+    private fun runWithTimeout(
+        timeoutMs: Long = 10_000,
+        block: suspend () -> Unit,
+    ) {
+        runBlocking {
+            withTimeout(timeoutMs) {
+                block()
+            }
+        }
     }
 
     @Test
@@ -106,6 +140,7 @@ class SettingsViewModelTest {
             val state = viewModel.uiState.value
             assertThat(state.healthConnectEntryVisible).isEqualTo(healthConnect)
             assertThat(state.healthAssistantEntryVisible).isEqualTo(assistant)
+            releaseViewModels()
         }
     }
 
@@ -121,7 +156,7 @@ class SettingsViewModelTest {
 
     @Test
     fun modeChangeBlockedDuringActivePregnancy() {
-        runBlocking {
+        runWithTimeout {
             seedProfile(ReproductiveMode.CYCLE_TRACKING)
             pregnancyRepository.startPregnancy(
                 lmpDate = LocalDate.of(2025, 1, 1),
@@ -137,7 +172,7 @@ class SettingsViewModelTest {
 
     @Test
     fun selectingTtc_updatesRepositoryMode() {
-        runBlocking {
+        runWithTimeout {
             seedProfile(ReproductiveMode.CYCLE_TRACKING)
             val viewModel = createViewModel()
             awaitUntil { viewModel.uiState.value.reproductiveMode == ReproductiveMode.CYCLE_TRACKING }
@@ -148,7 +183,7 @@ class SettingsViewModelTest {
 
     @Test
     fun selectingCycle_updatesRepositoryMode() {
-        runBlocking {
+        runWithTimeout {
             seedProfile(ReproductiveMode.TRYING_TO_CONCEIVE)
             val viewModel = createViewModel()
             awaitUntil { viewModel.uiState.value.reproductiveMode == ReproductiveMode.TRYING_TO_CONCEIVE }
@@ -165,11 +200,13 @@ class SettingsViewModelTest {
         viewModel.openPaywall()
         idle()
         assertThat(billingAdapter.startConnectionCount).isEqualTo(1)
+        viewModel.dismissPaywall()
+        idle()
     }
 
     @Test
     fun paywall_dismissDuringWarmUp_canReopen() {
-        runBlocking {
+        runWithTimeout {
             val billingAdapter = SlowBillingAdapter()
             val viewModel = createViewModel(billingAdapter = billingAdapter)
             viewModel.openPaywall()
@@ -180,8 +217,21 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun paywall_dismiss_recordsCancellationExceptionInBillingAdapter() {
+        val billingAdapter = CancellableWarmUpBillingAdapter()
+        val viewModel = createViewModel(billingAdapter = billingAdapter)
+        viewModel.openPaywall()
+        idle()
+        assertTrue(viewModel.uiState.value.showPaywall)
+        viewModel.dismissPaywall()
+        idle()
+        assertFalse(viewModel.uiState.value.showPaywall)
+        assertThat(billingAdapter.cancellationCause).isInstanceOf(CancellationException::class.java)
+    }
+
+    @Test
     fun paywall_throwingWarmUp_stillAllowsReopen() {
-        runBlocking {
+        runWithTimeout {
             val billingAdapter = ThrowingBillingAdapter()
             val viewModel = createViewModel(billingAdapter = billingAdapter)
             viewModel.openPaywall()
@@ -189,6 +239,20 @@ class SettingsViewModelTest {
             viewModel.dismissPaywall()
             viewModel.openPaywall()
             awaitUntil { viewModel.uiState.value.showPaywall }
+        }
+    }
+
+    @Test
+    fun paywall_secondOpenAfterCancel_startsWarmUpAgain() {
+        runWithTimeout(timeoutMs = 15_000) {
+            val billingAdapter = SlowBillingAdapter()
+            val viewModel = createViewModel(billingAdapter = billingAdapter)
+            viewModel.openPaywall()
+            awaitUntil(timeoutMs = 5_000) { billingAdapter.startConnectionCount == 1 }
+            viewModel.dismissPaywall()
+            idle()
+            viewModel.openPaywall()
+            awaitUntil(timeoutMs = 5_000) { billingAdapter.startConnectionCount == 2 }
         }
     }
 
@@ -210,7 +274,7 @@ class SettingsViewModelTest {
 
     @Test
     fun resumeTtc_updatesRepositoryMode() {
-        runBlocking {
+        runWithTimeout {
             seedProfile(ReproductiveMode.POST_PREGNANCY_TRANSITION)
             val viewModel = createViewModel()
             awaitUntil {
@@ -223,7 +287,7 @@ class SettingsViewModelTest {
 
     @Test
     fun premiumEntitlement_hidesPaywallEntry() {
-        runBlocking {
+        runWithTimeout {
             SubscriptionPreferencesRepository(context).saveEntitlement(
                 CachedEntitlement(
                     tierName = EntitlementTier.PREMIUM_MONTHLY.name,
@@ -268,14 +332,17 @@ class SettingsViewModelTest {
         val repository = FeatureFlagRepository(FakeMetaApi(flags))
         val gateway = RemoteFeatureFlagGateway(repository)
         val premiumCoordinator = PremiumBillingCoordinator(billingAdapter, entitlementRepository)
-        return SettingsViewModel(
-            pregnancyRepository = pregnancyRepository,
-            featureFlagGateway = gateway,
-            featureFlagRepository = repository,
-            billingAdapter = billingAdapter,
-            premiumBillingCoordinator = premiumCoordinator,
-            entitlementRepository = entitlementRepository,
-        )
+        return viewModelStore
+            .hold(
+                SettingsViewModel(
+                    pregnancyRepository = pregnancyRepository,
+                    featureFlagGateway = gateway,
+                    featureFlagRepository = repository,
+                    billingAdapter = billingAdapter,
+                    premiumBillingCoordinator = premiumCoordinator,
+                    entitlementRepository = entitlementRepository,
+                ),
+            ).also { heldViewModel = it }
     }
 
     private class FakeMetaApi(
@@ -328,8 +395,23 @@ class SettingsViewModelTest {
 
     private class SlowBillingAdapter : CountingBillingAdapter() {
         override suspend fun startConnection() {
+            startConnectionCount++
             delay(500)
-            super.startConnection()
+        }
+    }
+
+    private class CancellableWarmUpBillingAdapter : CountingBillingAdapter() {
+        var cancellationCause: CancellationException? = null
+
+        override suspend fun startConnection() {
+            try {
+                while (true) {
+                    delay(1_000)
+                }
+            } catch (cancelled: CancellationException) {
+                cancellationCause = cancelled
+                throw cancelled
+            }
         }
     }
 

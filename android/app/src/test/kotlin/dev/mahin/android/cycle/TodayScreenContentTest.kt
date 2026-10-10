@@ -1,14 +1,15 @@
 package dev.mahin.android.cycle
 
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
+import dev.mahin.android.golden.M15GoldenFixtures
 import dev.mahin.android.pregnancy.PostPregnancyTransitionActions
 import dev.mahin.core.designsystem.MahinTheme
 import dev.mahin.core.model.ReproductiveMode
-import dev.mahin.domain.cycle.CyclePredictionResult
-import dev.mahin.domain.cycle.PredictionConfidence
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -41,28 +42,33 @@ class TodayScreenContentTest {
                     state =
                         TodayUiState(
                             reproductiveMode = ReproductiveMode.TRYING_TO_CONCEIVE,
-                            dashboard =
-                                dev.mahin.core.database.cycle.CycleDashboard(
-                                    profile = null,
-                                    prediction =
-                                        CyclePredictionResult(
-                                            algorithmVersion = "v1",
-                                            confidence = PredictionConfidence.LOW,
-                                            cycleDay = 1,
-                                            nextPeriod = null,
-                                            fertileWindow = null,
-                                            estimatedOvulation = null,
-                                            insufficientDataReason = null,
-                                        ),
-                                    todayLog = null,
-                                    onPeriodToday = false,
-                                    openPeriodStart = null,
-                                ),
+                            todaySnapshot =
+                                M15GoldenFixtures
+                                    .todayFirstDay()
+                                    .todaySnapshot,
                         ),
                 )
             }
         }
-        composeRule.onNodeWithText("BBT", substring = true).assertExists()
+        composeRule
+            .onNodeWithText("برای ثبت BBT، تست تخمک‌گذاری و سایر نشانه‌ها به تب «ثبت» یا «باروری» بروید.")
+            .assertExists()
+    }
+
+    @Test
+    fun today_fertileWindow_showsNonContraceptionCopy() {
+        composeRule.setContent {
+            MahinTheme {
+                TodayScreenContent(
+                    state =
+                        dev.mahin.android.golden.M15GoldenFixtures.todayFertileWindow().copy(
+                            reproductiveMode = ReproductiveMode.CYCLE_TRACKING,
+                        ),
+                )
+            }
+        }
+        composeRule.onNodeWithTag("today_screen_list").performScrollToNode(hasTestTag("fertile_not_contraception_copy"))
+        composeRule.onNodeWithTag("fertile_not_contraception_copy").assertExists()
     }
 
     @Test

@@ -3,6 +3,7 @@ package dev.mahin.android.cycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.mahin.android.navigation.LogTabDateRequest
 import dev.mahin.android.pregnancy.PregnancyFormatters
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.pregnancy.PregnancyDayLogInput
@@ -66,6 +67,7 @@ data class LogUiState(
         listOf("گرفتگی", "سردرد", "نفخ", "خستگی", "درد پستان"),
 )
 
+@Suppress("LongParameterList")
 @HiltViewModel
 class LogViewModel
     @Inject
@@ -76,6 +78,7 @@ class LogViewModel
         private val ttcRepository: TtcTrackingRepository,
         private val pregnancyRepository: PregnancyTrackingRepository,
         private val ttcPrivacyRepository: TtcPrivacyPreferencesRepository,
+        private val logTabDateRequest: LogTabDateRequest,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(LogUiState())
         val uiState: StateFlow<LogUiState> = _uiState.asStateFlow()
@@ -94,6 +97,14 @@ class LogViewModel
                 ttcPrivacyRepository.observeIntercourseLoggingEnabled().collect { enabled ->
                     _uiState.update { state ->
                         state.copy(intercourseLoggingEnabled = enabled)
+                    }
+                }
+            }
+            viewModelScope.launch {
+                logTabDateRequest.pendingDate.collect { pending ->
+                    pending?.let { date ->
+                        onDateSelected(PersianCivilDateConverter.toJalali(date))
+                        logTabDateRequest.consume()
                     }
                 }
             }

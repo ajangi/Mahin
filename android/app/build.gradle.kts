@@ -67,6 +67,12 @@ android {
                 signingConfig = releaseSigning
             }
         }
+        create("benchmark") {
+            initWith(getByName("release"))
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("release")
+            isDebuggable = false
+        }
     }
 }
 
@@ -106,6 +112,8 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.compose.material.icons)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation("androidx.compose.animation:animation")
     implementation(libs.hilt.android)
     implementation(libs.androidx.hilt.work)
     ksp(libs.androidx.hilt.compiler)
@@ -126,9 +134,16 @@ dependencies {
 }
 
 tasks.withType<Test>().configureEach {
-    timeout.set(Duration.ofMinutes(20))
+    // Robolectric + Compose screenshot tests deadlock when forked in parallel on CI.
+    maxParallelForks = 1
+    timeout.set(Duration.ofMinutes(30))
     testLogging {
         events("started", "failed")
+        showStandardStreams = true
+    }
+    if (name == "testBenchmarkUnitTest") {
+        // Benchmark build type is for macrobenchmark APK assembly only; Robolectric tests target debug.
+        enabled = false
     }
     if (name == "testReleaseUnitTest") {
         filter {
@@ -139,10 +154,19 @@ tasks.withType<Test>().configureEach {
             excludeTestsMatching("dev.mahin.android.golden.M14aFullScreenGoldenTest")
             excludeTestsMatching("dev.mahin.android.golden.M14bIconSheetGoldenTest")
             excludeTestsMatching("dev.mahin.android.golden.M14cShellGoldenTest")
+            excludeTestsMatching("dev.mahin.android.golden.M15FullScreenGoldenTest")
             excludeTestsMatching("dev.mahin.android.shell.MahinShellNavigationTest")
             excludeTestsMatching("dev.mahin.android.shell.ShellModeTransitionTest")
             excludeTestsMatching("dev.mahin.android.settings.SettingsScreenContentTest")
             excludeTestsMatching("dev.mahin.android.cycle.TodayScreenContentTest")
+            excludeTestsMatching("dev.mahin.android.cycle.TodayRingA11yTest")
+            excludeTestsMatching("dev.mahin.android.cycle.CalendarAnimatedDaySheetA11yTest")
+            excludeTestsMatching("dev.mahin.android.cycle.CalendarDaySheetGridA11yTest")
+            excludeTestsMatching("dev.mahin.android.cycle.CalendarDaySheetBackTest")
+            excludeTestsMatching("dev.mahin.android.cycle.CalendarDaySheetContentTest")
+            excludeTestsMatching("dev.mahin.android.cycle.CalendarJumpToTodayTest")
+            excludeTestsMatching("dev.mahin.android.cycle.TodayPregnancyCalendarEntryTest")
+            excludeTestsMatching("dev.mahin.android.cycle.TodayScreenBehaviorTest")
             excludeTestsMatching("dev.mahin.android.shell.MahinBottomNavigationBarA11yTest")
             excludeTestsMatching("dev.mahin.android.pregnancy.PregnancyPlanScreenTest")
             excludeTestsMatching("dev.mahin.android.ttc.TtcInsightsScreenScrollTest")

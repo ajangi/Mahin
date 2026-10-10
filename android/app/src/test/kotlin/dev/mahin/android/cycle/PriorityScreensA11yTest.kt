@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.animation.ExperimentalSharedTransitionApi::class)
+
 package dev.mahin.android.cycle
 
 import androidx.compose.runtime.CompositionLocalProvider
@@ -76,6 +78,10 @@ class PriorityScreensA11yTest {
         composeRule.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 MahinTheme {
+                    dev.mahin.core.designsystem.component.MahinShellTopAppBar(
+                        title = "امروز",
+                        onOpenSettings = {},
+                    )
                     TodayScreenContent(state = TodayUiState())
                 }
             }
@@ -85,7 +91,7 @@ class PriorityScreensA11yTest {
             SemanticsMatcher("has heading semantics") { node ->
                 node.config.getOrNull(SemanticsProperties.Heading) != null
             }
-        assertNotNull(composeRule.onNode(headingMatcher).fetchSemanticsNode())
+        composeRule.onNode(headingMatcher).assertIsDisplayed()
     }
 
     @Test
@@ -109,6 +115,7 @@ class PriorityScreensA11yTest {
                         state =
                             CalendarUiState(
                                 selectedJalali = JalaliDate(1403, 6, 15),
+                                visibleMonth = JalaliDate(1403, 6, 15),
                             ),
                         onDateSelected = {},
                     )

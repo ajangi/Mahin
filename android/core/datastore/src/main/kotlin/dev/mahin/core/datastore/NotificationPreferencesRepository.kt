@@ -103,4 +103,8 @@ class NotificationPreferencesRepository
                     categoryEnabled = categories,
                 )
             }
+
+        suspend fun clear() {
+            dataStore.edit { it.clear() }
+        }
     }

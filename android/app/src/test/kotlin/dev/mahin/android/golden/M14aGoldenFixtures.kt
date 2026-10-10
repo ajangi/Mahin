@@ -49,7 +49,7 @@ object M14aGoldenFixtures {
                 estimatedOvulation = null,
                 insufficientDataReason = null,
             )
-        return TodayUiState(
+        return M15GoldenFixtures.todayFertileWindow().copy(
             dashboard =
                 CycleDashboard(
                     profile = null,
@@ -124,7 +124,7 @@ object M14aGoldenFixtures {
                     fertileWindow = day in 11..17,
                 )
         }
-        return CalendarUiState(selectedJalali = selected, dayMarkers = markers)
+        return CalendarUiState(selectedJalali = selected, visibleMonth = selected, dayMarkers = markers)
     }
 
     fun cycleInsightsPopulated(): CycleInsightsUiState =

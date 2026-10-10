@@ -21,6 +21,7 @@ import dev.mahin.android.shell.reproductiveModeShellAccent
 import dev.mahin.core.designsystem.component.MahinBottomNavigationBar
 import dev.mahin.core.designsystem.component.MahinShellTopAppBar
 import dev.mahin.core.model.ReproductiveMode
+import dev.mahin.core.testing.ViewModelStoreClearingRule
 import dev.mahin.core.testing.roborazzi.captureMahinFullScreenGolden
 import org.junit.Rule
 import org.junit.Test
@@ -33,8 +34,10 @@ import org.robolectric.annotation.GraphicsMode
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [33], qualifiers = "fa-rIR-w411dp-h891dp-xxhdpi")
 class M14cShellGoldenTest {
+    private val androidComposeRule = createAndroidComposeRule<ComponentActivity>()
+
     @get:Rule
-    val composeRule = createAndroidComposeRule<ComponentActivity>()
+    val composeRule = ViewModelStoreClearingRule.withCompose(androidComposeRule)
 
     @Test
     fun shell_cycle_light_scale10() = captureShell(ReproductiveMode.CYCLE_TRACKING, false, 1f)
@@ -121,7 +124,7 @@ class M14cShellGoldenTest {
     ) {
         val destinations = MahinTopLevelDestination.forMode(mode)
         val selected = destinations.first()
-        composeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
+        androidComposeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
             Scaffold(
                 topBar = {
                     MahinShellTopAppBar(
@@ -151,7 +154,7 @@ class M14cShellGoldenTest {
         assistantOn: Boolean = false,
     ) {
         if (assistantOn) {
-            composeRule.captureMahinFullScreenGolden(
+            androidComposeRule.captureMahinFullScreenGolden(
                 darkTheme = darkTheme,
                 fontScale = fontScale,
                 beforeCapture = {
@@ -162,7 +165,7 @@ class M14cShellGoldenTest {
                 SettingsGoldenContent(assistantOn = true)
             }
         } else {
-            composeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
+            androidComposeRule.captureMahinFullScreenGolden(darkTheme, fontScale) {
                 SettingsGoldenContent(assistantOn = false)
             }
         }

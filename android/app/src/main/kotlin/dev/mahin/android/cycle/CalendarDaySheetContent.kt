@@ -1,0 +1,141 @@
+package dev.mahin.android.cycle
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import dev.mahin.android.R
+import dev.mahin.core.datetime.JalaliDate
+import dev.mahin.core.datetime.PersianCivilDateConverter
+import dev.mahin.core.datetime.PersianDigits
+import dev.mahin.core.designsystem.LocalReducedMotion
+import dev.mahin.core.designsystem.MahinSpacing
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Suppress("LongParameterList")
+@Composable
+fun CalendarDaySheet(
+    open: Boolean,
+    selectedJalali: JalaliDate,
+    markers: DayMarkers?,
+    logLines: List<String> = emptyList(),
+    onDismiss: () -> Unit,
+    onEditLog: (LocalDate) -> Unit,
+) {
+    if (!open) return
+    val converter = PersianCivilDateConverter
+    val gregorian = converter.toGregorian(selectedJalali)
+    val skipHalfExpanded = LocalReducedMotion.current
+    val sheetState =
+        rememberModalBottomSheetState(
+            skipPartiallyExpanded = skipHalfExpanded,
+        )
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+    ) {
+        CalendarDaySheetContent(
+            jalali = selectedJalali,
+            gregorian = gregorian,
+            markers = markers,
+            logLines = logLines,
+            onEditLog = { onEditLog(gregorian) },
+            modifier = Modifier.testTag("calendar_day_sheet"),
+        )
+    }
+}
+
+@Suppress("LongParameterList")
+@Composable
+internal fun CalendarDaySheetContent(
+    jalali: JalaliDate,
+    gregorian: LocalDate,
+    markers: DayMarkers?,
+    logLines: List<String> = emptyList(),
+    onEditLog: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val monthNames =
+        androidx.compose.ui.res.stringArrayResource(
+            dev.mahin.core.designsystem.R.array.ds_jalali_month_names,
+        )
+    val monthName = monthNames[jalali.month - 1]
+    Column(modifier = modifier.fillMaxWidth().padding(MahinSpacing.lg)) {
+        Text(
+            text =
+                stringResource(
+                    R.string.calendar_day_sheet_title,
+                    PersianDigits.format(jalali.day),
+                    monthName,
+                    PersianDigits.format(jalali.year),
+                ),
+            style = MaterialTheme.typography.titleMedium,
+        )
+        Text(
+            text =
+                stringResource(
+                    R.string.calendar_day_sheet_gregorian,
+                    PersianDigits.format(gregorian.format(DateTimeFormatter.ISO_LOCAL_DATE)),
+                ),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = dayPredictionCopy(markers),
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(top = MahinSpacing.md),
+        )
+        if (logLines.isNotEmpty()) {
+            logLines.forEach { line ->
+                Text(
+                    text = line,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier =
+                        Modifier
+                            .padding(top = MahinSpacing.xs)
+                            .testTag("calendar_day_sheet_log_line"),
+                )
+            }
+        }
+        if (markers?.fertileWindow == true || markers?.estimatedOvulation == true) {
+            Text(
+                text = stringResource(R.string.today_fertile_not_contraception),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier =
+                    Modifier
+                        .padding(top = MahinSpacing.sm)
+                        .testTag("fertile_not_contraception_copy"),
+            )
+        }
+        Button(
+            onClick = onEditLog,
+            modifier = Modifier.padding(top = MahinSpacing.lg),
+        ) {
+            Text(text = stringResource(R.string.calendar_day_sheet_edit))
+        }
+    }
+}
+
+@Composable
+private fun dayPredictionCopy(markers: DayMarkers?): String {
+    if (markers == null) return stringResource(R.string.calendar_day_sheet_no_markers)
+    return when {
+        markers.loggedPeriod -> stringResource(R.string.calendar_day_sheet_logged_period)
+        markers.predictedPeriod -> stringResource(R.string.calendar_day_sheet_predicted_period)
+        markers.estimatedOvulation -> stringResource(R.string.calendar_day_sheet_ovulation)
+        markers.fertileWindow -> stringResource(R.string.calendar_day_sheet_fertile)
+        else -> stringResource(R.string.calendar_day_sheet_neutral)
+    }
+}
