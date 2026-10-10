@@ -66,6 +66,9 @@ class SettingsViewModelTest {
                 .inMemoryDatabaseBuilder(context, MahinDatabase::class.java)
                 .allowMainThreadQueries()
                 .build()
+        // Eager open on the test thread so tearDown never races a lazy first open (InvalidationTracker
+        // onOpen on a Room executor) against database.close() — see M15 handoff.
+        database.openHelper.writableDatabase
         pregnancyRepository =
             PregnancyTrackingRepository(database, PregnancyTimerPreferencesRepository(context))
     }
@@ -78,7 +81,6 @@ class SettingsViewModelTest {
                 SubscriptionPreferencesRepository(context).clear()
             }
         }
-        waitForViewModelShutdown()
         database.close()
     }
 
@@ -86,24 +88,10 @@ class SettingsViewModelTest {
         ShadowLooper.idleMainLooper()
     }
 
-    /**
-     * After [releaseViewModels], give cancelled viewModelScope / Room collectors time to finish
-     * without calling [ShadowLooper.idleMainLooper] (unbounded idle can hang when paywall warm-up
-     * still has delayed main-looper tasks).
-     */
-    private fun waitForViewModelShutdown() {
-        runBlocking {
-            withTimeout(2_000) {
-                delay(250)
-            }
-        }
-    }
-
     private fun releaseViewModels() {
         heldViewModel?.dismissPaywall()
         heldViewModel = null
         viewModelStore.clear()
-        waitForViewModelShutdown()
     }
 
     private suspend fun awaitUntil(

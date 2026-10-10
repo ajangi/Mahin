@@ -139,6 +139,7 @@ tasks.withType<Test>().configureEach {
     timeout.set(Duration.ofMinutes(30))
     testLogging {
         events("started", "failed")
+        showStandardStreams = true
     }
     if (name == "testBenchmarkUnitTest") {
         // Benchmark build type is for macrobenchmark APK assembly only; Robolectric tests target debug.

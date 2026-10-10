@@ -40,6 +40,10 @@ cd android && ./gradlew ktlintCheck detekt lintDebug assembleDebug assembleRelea
 - Today day sheet still uses **`ModalBottomSheet`**; calendar tab uses shared-element overlay when `SharedTransitionLayout` is active.
 - `testReleaseUnitTest` excludes Robolectric Compose UI classes that use `manifest = Config.NONE` or `createAndroidComposeRule`.
 
+### `SettingsViewModelTest` CI hang (test-only fix)
+
+**Root cause:** lock-order deadlock during the **first lazy** Room open vs `database.close()` in `@After`. If the DB was not opened in `setUp`, the first query could open it on a Room background thread while `InvalidationTracker.syncTriggers` runs inside `onOpen` (holding the SQLite `ProcessLock` and waiting on Room’s close read lock), while `close()` on the test/main thread holds the close write lock and waits on the SQLite lock. **Fix:** eager `database.openHelper.writableDatabase` in `setUp` before any `SettingsViewModel` exists. `dismissPaywall`, `heldViewModel`, and DataStore clear on `Dispatchers.IO` do not address this deadlock; they remain useful test hygiene only. `TestHangWatchdogRule` dumps stacks on timeout but cannot break `ReentrantLock.lock()` — see its KDoc and `app` `testLogging.showStandardStreams`.
+
 ## M16 carry-overs
 
 - Component goldens and a tighter Roborazzi tolerance.
@@ -53,6 +57,7 @@ cd android && ./gradlew ktlintCheck detekt lintDebug assembleDebug assembleRelea
 - Changelog note for **`ringSize`** rename on `MahinCycleProgressRing`.
 - Baseline profiles.
 - Make paywall dismiss **rethrow** observable in tests (`SettingsViewModelTest`).
+- **`TestFailFastTimeoutRule`:** JUnit `Timeout` runs Robolectric tests on a worker thread (breaks main looper); reintroduce only with a non–main-looper timeout strategy if needed.
 - Inject a **`Clock`** for deterministic “today” in VM/tests.
 - Add `popUpTo` / `saveState` to Plan and Pregnancy navigation.
 - Make the benchmark helper **fail on timeout**.
