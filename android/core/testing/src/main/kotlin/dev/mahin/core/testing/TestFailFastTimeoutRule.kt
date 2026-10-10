@@ -5,6 +5,7 @@ import org.junit.rules.TestRule
 import org.junit.rules.Timeout
 import org.junit.runner.Description
 import org.junit.runners.model.Statement
+import org.junit.runners.model.TestTimedOutException
 
 /**
  * Per-test wall-clock bound (default 60s) that prints a full thread dump before propagating
@@ -33,9 +34,9 @@ class TestFailFastTimeoutRule(
             override fun evaluate() {
                 try {
                     timed.evaluate()
-                } catch (t: Throwable) {
+                } catch (timedOut: TestTimedOutException) {
                     TestHangWatchdogRule.dumpAllStackTraces(description.displayName)
-                    throw t
+                    throw timedOut
                 }
             }
         }
