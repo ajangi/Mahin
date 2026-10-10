@@ -25,10 +25,12 @@ import dev.mahin.core.datastore.PregnancyTimerPreferencesRepository
 import dev.mahin.core.datastore.SubscriptionPreferencesRepository
 import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
+import dev.mahin.core.testing.TestHangWatchdogRule
 import dev.mahin.core.testing.ViewModelStoreTestHarness
 import dev.mahin.domain.subscription.EntitlementTier
 import java.time.LocalDate
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
@@ -37,6 +39,7 @@ import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -46,10 +49,14 @@ import org.robolectric.shadows.ShadowLooper
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class SettingsViewModelTest {
+    @get:Rule
+    val testHangWatchdog: TestHangWatchdogRule = TestHangWatchdogRule()
+
     private lateinit var database: MahinDatabase
     private lateinit var pregnancyRepository: PregnancyTrackingRepository
     private lateinit var context: Context
     private val viewModelStore = ViewModelStoreTestHarness()
+    private var heldViewModel: SettingsViewModel? = null
 
     @Before
     fun setUp() {
@@ -65,19 +72,38 @@ class SettingsViewModelTest {
 
     @After
     fun tearDown() {
-        viewModelStore.clear()
-        idle()
-        runBlocking {
+        releaseViewModels()
+        runBlocking(Dispatchers.IO) {
             withTimeout(5_000) {
                 SubscriptionPreferencesRepository(context).clear()
             }
         }
-        idle()
+        waitForViewModelShutdown()
         database.close()
     }
 
     private fun idle() {
         ShadowLooper.idleMainLooper()
+    }
+
+    /**
+     * After [releaseViewModels], give cancelled viewModelScope / Room collectors time to finish
+     * without calling [ShadowLooper.idleMainLooper] (unbounded idle can hang when paywall warm-up
+     * still has delayed main-looper tasks).
+     */
+    private fun waitForViewModelShutdown() {
+        runBlocking {
+            withTimeout(2_000) {
+                delay(250)
+            }
+        }
+    }
+
+    private fun releaseViewModels() {
+        heldViewModel?.dismissPaywall()
+        heldViewModel = null
+        viewModelStore.clear()
+        waitForViewModelShutdown()
     }
 
     private suspend fun awaitUntil(
@@ -126,8 +152,7 @@ class SettingsViewModelTest {
             val state = viewModel.uiState.value
             assertThat(state.healthConnectEntryVisible).isEqualTo(healthConnect)
             assertThat(state.healthAssistantEntryVisible).isEqualTo(assistant)
-            viewModelStore.clear()
-            idle()
+            releaseViewModels()
         }
     }
 
@@ -187,6 +212,8 @@ class SettingsViewModelTest {
         viewModel.openPaywall()
         idle()
         assertThat(billingAdapter.startConnectionCount).isEqualTo(1)
+        viewModel.dismissPaywall()
+        idle()
     }
 
     @Test
@@ -317,16 +344,17 @@ class SettingsViewModelTest {
         val repository = FeatureFlagRepository(FakeMetaApi(flags))
         val gateway = RemoteFeatureFlagGateway(repository)
         val premiumCoordinator = PremiumBillingCoordinator(billingAdapter, entitlementRepository)
-        return viewModelStore.hold(
-            SettingsViewModel(
-                pregnancyRepository = pregnancyRepository,
-                featureFlagGateway = gateway,
-                featureFlagRepository = repository,
-                billingAdapter = billingAdapter,
-                premiumBillingCoordinator = premiumCoordinator,
-                entitlementRepository = entitlementRepository,
-            ),
-        )
+        return viewModelStore
+            .hold(
+                SettingsViewModel(
+                    pregnancyRepository = pregnancyRepository,
+                    featureFlagGateway = gateway,
+                    featureFlagRepository = repository,
+                    billingAdapter = billingAdapter,
+                    premiumBillingCoordinator = premiumCoordinator,
+                    entitlementRepository = entitlementRepository,
+                ),
+            ).also { heldViewModel = it }
     }
 
     private class FakeMetaApi(

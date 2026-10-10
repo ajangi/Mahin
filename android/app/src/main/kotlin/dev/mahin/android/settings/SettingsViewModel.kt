@@ -220,8 +220,4 @@ class SettingsViewModel
             }
         }
 
-        override fun onCleared() {
-            dismissPaywall()
-            super.onCleared()
-        }
     }
