@@ -137,9 +137,14 @@ tasks.withType<Test>().configureEach {
     // Robolectric + Compose screenshot tests deadlock when forked in parallel on CI.
     maxParallelForks = 1
     timeout.set(Duration.ofMinutes(30))
+    val verboseTestStreams =
+        providers
+            .environmentVariable("MAHIN_TEST_VERBOSE_STREAMS")
+            .orElse("false")
+            .map { it.equals("true", ignoreCase = true) }
     testLogging {
-        events("started", "failed")
-        showStandardStreams = true
+        events("started", "failed", "standard_error")
+        showStandardStreams = verboseTestStreams.get()
     }
     if (name == "testBenchmarkUnitTest") {
         // Benchmark build type is for macrobenchmark APK assembly only; Robolectric tests target debug.
@@ -155,6 +160,7 @@ tasks.withType<Test>().configureEach {
             excludeTestsMatching("dev.mahin.android.golden.M14bIconSheetGoldenTest")
             excludeTestsMatching("dev.mahin.android.golden.M14cShellGoldenTest")
             excludeTestsMatching("dev.mahin.android.golden.M15FullScreenGoldenTest")
+            excludeTestsMatching("dev.mahin.android.golden.M16FullScreenGoldenTest")
             excludeTestsMatching("dev.mahin.android.shell.MahinShellNavigationTest")
             excludeTestsMatching("dev.mahin.android.shell.ShellModeTransitionTest")
             excludeTestsMatching("dev.mahin.android.settings.SettingsScreenContentTest")
