@@ -14,11 +14,17 @@ import androidx.compose.ui.unit.LayoutDirection
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.mahin.core.datetime.JalaliDate
+import dev.mahin.core.datetime.PersianCivilDateConverter
+import dev.mahin.core.designsystem.component.MahinCalendarDayDecoration
 import dev.mahin.core.designsystem.component.MahinCalendarLegend
+import dev.mahin.core.designsystem.component.MahinCalendarMarkerTintAlphas
 import dev.mahin.core.designsystem.component.MahinEmptyState
 import dev.mahin.core.designsystem.component.MahinJalaliDatePicker
 import dev.mahin.core.designsystem.component.MahinLoadingState
 import dev.mahin.core.designsystem.component.MahinScreenHeader
+import dev.mahin.core.designsystem.hexToColor
+import dev.mahin.core.model.MahinTokenHex
+import dev.mahin.core.testing.ViewModelStoreClearingRule
 import dev.mahin.core.testing.roborazzi.MahinRoborazzi
 import org.junit.Rule
 import org.junit.Test
@@ -32,24 +38,72 @@ import org.robolectric.annotation.GraphicsMode
 @Config(sdk = [33], qualifiers = "fa-rIR-w411dp-h891dp-xxhdpi")
 @OptIn(ExperimentalRoborazziApi::class)
 class MahinDesignSystemScreenshotTest {
+    private val androidComposeRule = createAndroidComposeRule<ComponentActivity>()
+
     @get:Rule
-    val composeRule = createAndroidComposeRule<ComponentActivity>()
+    val composeRule = ViewModelStoreClearingRule.withCompose(androidComposeRule)
 
     @Test
     fun emptyStateRtlLight() {
-        composeRule.setContent {
+        androidComposeRule.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 MahinTheme(darkTheme = false) {
                     MahinEmptyState(modifier = Modifier.fillMaxSize())
                 }
             }
         }
-        composeRule.onRoot().captureRoboImage(roborazziOptions = MahinRoborazzi.options)
+        androidComposeRule.onRoot().captureRoboImage(roborazziOptions = MahinRoborazzi.options)
+    }
+
+    @Test
+    fun jalaliCalendarJalaliDay15OvulationRtlLight() {
+        captureJalaliOvulationOnDay15(darkTheme = false)
+    }
+
+    @Test
+    fun jalaliCalendarJalaliDay15OvulationRtlDark() {
+        captureJalaliOvulationOnDay15(darkTheme = true)
+    }
+
+    private fun captureJalaliOvulationOnDay15(darkTheme: Boolean) {
+        val ovulationFill =
+            if (darkTheme) {
+                hexToColor(MahinTokenHex.DARK_HEALTH_OVULATION).copy(
+                    alpha = MahinCalendarMarkerTintAlphas.DARK_OVULATION,
+                )
+            } else {
+                hexToColor(MahinTokenHex.LIGHT_HEALTH_OVULATION).copy(
+                    alpha = MahinCalendarMarkerTintAlphas.LIGHT_OVULATION,
+                )
+            }
+        androidComposeRule.setContent {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                MahinTheme(darkTheme = darkTheme) {
+                    MahinJalaliDatePicker(
+                        selectedDate = JalaliDate(year = 1403, month = 12, day = 5),
+                        onDateSelected = {},
+                        modifier = Modifier.fillMaxSize(),
+                        dayDecoration = { gregorian ->
+                            val jalali = PersianCivilDateConverter.toJalali(gregorian)
+                            if (jalali.day == 15) {
+                                MahinCalendarDayDecoration(
+                                    fillColor = ovulationFill,
+                                    estimatedOvulation = true,
+                                )
+                            } else {
+                                null
+                            }
+                        },
+                    )
+                }
+            }
+        }
+        androidComposeRule.onRoot().captureRoboImage(roborazziOptions = MahinRoborazzi.options)
     }
 
     @Test
     fun jalaliDatePickerRtlLight() {
-        composeRule.setContent {
+        androidComposeRule.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 MahinTheme(darkTheme = false) {
                     MahinJalaliDatePicker(
@@ -60,12 +114,12 @@ class MahinDesignSystemScreenshotTest {
                 }
             }
         }
-        composeRule.onRoot().captureRoboImage(roborazziOptions = MahinRoborazzi.options)
+        androidComposeRule.onRoot().captureRoboImage(roborazziOptions = MahinRoborazzi.options)
     }
 
     @Test
     fun screenHeaderAndCalendarLegendRtlLight() {
-        composeRule.setContent {
+        androidComposeRule.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 MahinTheme(darkTheme = false) {
                     Column(modifier = Modifier.fillMaxSize()) {
@@ -78,12 +132,12 @@ class MahinDesignSystemScreenshotTest {
                 }
             }
         }
-        composeRule.onRoot().captureRoboImage(roborazziOptions = MahinRoborazzi.options)
+        androidComposeRule.onRoot().captureRoboImage(roborazziOptions = MahinRoborazzi.options)
     }
 
     @Test
     fun numericDisplayPersianDigitsRtlLight() {
-        composeRule.setContent {
+        androidComposeRule.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 MahinTheme(darkTheme = false) {
                     Column(modifier = Modifier.fillMaxSize()) {
@@ -101,12 +155,12 @@ class MahinDesignSystemScreenshotTest {
                 }
             }
         }
-        composeRule.onRoot().captureRoboImage(roborazziOptions = MahinRoborazzi.options)
+        androidComposeRule.onRoot().captureRoboImage(roborazziOptions = MahinRoborazzi.options)
     }
 
     @Test
     fun numericDisplayPersianDigitsRtlDark() {
-        composeRule.setContent {
+        androidComposeRule.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 MahinTheme(darkTheme = true) {
                     Column(modifier = Modifier.fillMaxSize()) {
@@ -124,18 +178,18 @@ class MahinDesignSystemScreenshotTest {
                 }
             }
         }
-        composeRule.onRoot().captureRoboImage(roborazziOptions = MahinRoborazzi.options)
+        androidComposeRule.onRoot().captureRoboImage(roborazziOptions = MahinRoborazzi.options)
     }
 
     @Test
     fun loadingStateRtlLight() {
-        composeRule.setContent {
+        androidComposeRule.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 MahinTheme(darkTheme = false) {
                     MahinLoadingState(modifier = Modifier.fillMaxSize())
                 }
             }
         }
-        composeRule.onRoot().captureRoboImage(roborazziOptions = MahinRoborazzi.options)
+        androidComposeRule.onRoot().captureRoboImage(roborazziOptions = MahinRoborazzi.options)
     }
 }

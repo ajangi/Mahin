@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.animation.ExperimentalSharedTransitionApi::class)
+
 package dev.mahin.android.cycle
 
 import androidx.activity.ComponentActivity
@@ -16,6 +18,7 @@ import com.github.takahirom.roborazzi.captureRoboImage
 import dev.mahin.android.onboarding.OnboardingWelcomeScreen
 import dev.mahin.core.datetime.JalaliDate
 import dev.mahin.core.designsystem.MahinTheme
+import dev.mahin.core.testing.ViewModelStoreClearingRule
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -32,12 +35,14 @@ import org.robolectric.annotation.GraphicsMode
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [33], qualifiers = "fa-rIR")
 class M13PriorityScreensScreenshotTest {
+    private val androidComposeRule = createAndroidComposeRule<ComponentActivity>()
+
     @get:Rule
-    val composeRule = createAndroidComposeRule<ComponentActivity>()
+    val composeRule = ViewModelStoreClearingRule.withCompose(androidComposeRule)
 
     @Test
     fun todayScreen_emptyRtlLight() {
-        composeRule.setContent {
+        androidComposeRule.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 MahinTheme(darkTheme = false) {
                     TodayScreenContent(
@@ -47,12 +52,12 @@ class M13PriorityScreensScreenshotTest {
                 }
             }
         }
-        composeRule.onRoot().captureRoboImage()
+        androidComposeRule.onRoot().captureRoboImage()
     }
 
     @Test
     fun logScreen_rtlLight() {
-        composeRule.setContent {
+        androidComposeRule.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 MahinTheme(darkTheme = false) {
                     LogScreenContent(
@@ -66,12 +71,12 @@ class M13PriorityScreensScreenshotTest {
                 }
             }
         }
-        composeRule.onRoot().captureRoboImage()
+        androidComposeRule.onRoot().captureRoboImage()
     }
 
     @Test
     fun historyScreen_emptyRtlLight() {
-        composeRule.setContent {
+        androidComposeRule.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 MahinTheme(darkTheme = false) {
                     HistoryScreenContent(
@@ -81,18 +86,19 @@ class M13PriorityScreensScreenshotTest {
                 }
             }
         }
-        composeRule.onRoot().captureRoboImage()
+        androidComposeRule.onRoot().captureRoboImage()
     }
 
     @Test
     fun calendarScreen_rtlLight() {
-        composeRule.setContent {
+        androidComposeRule.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 MahinTheme(darkTheme = false) {
                     CycleCalendarScreenContent(
                         state =
                             CalendarUiState(
                                 selectedJalali = JalaliDate(1403, 6, 15),
+                                visibleMonth = JalaliDate(1403, 6, 15),
                             ),
                         onDateSelected = {},
                         modifier =
@@ -104,12 +110,12 @@ class M13PriorityScreensScreenshotTest {
                 }
             }
         }
-        composeRule.onRoot().captureRoboImage()
+        androidComposeRule.onRoot().captureRoboImage()
     }
 
     @Test
     fun onboardingWelcome_rtlLight() {
-        composeRule.setContent {
+        androidComposeRule.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 MahinTheme(darkTheme = false) {
                     OnboardingWelcomeScreen(
@@ -119,7 +125,7 @@ class M13PriorityScreensScreenshotTest {
                 }
             }
         }
-        composeRule.onRoot().captureRoboImage()
+        androidComposeRule.onRoot().captureRoboImage()
     }
 }
 

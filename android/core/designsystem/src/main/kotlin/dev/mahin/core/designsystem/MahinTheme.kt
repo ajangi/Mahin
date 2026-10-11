@@ -84,6 +84,8 @@ private val mahinShapes =
         extraLarge = RoundedCornerShape(MahinRadius.xl),
     )
 
+val LocalMahinDarkTheme = staticCompositionLocalOf { false }
+
 @Composable
 fun MahinTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -121,6 +123,7 @@ fun MahinTheme(
     CompositionLocalProvider(
         LocalMahinExtendedColors provides extended,
         LocalReducedMotion provides reducedMotion,
+        LocalMahinDarkTheme provides darkTheme,
     ) {
         MaterialTheme(
             colorScheme = scheme,

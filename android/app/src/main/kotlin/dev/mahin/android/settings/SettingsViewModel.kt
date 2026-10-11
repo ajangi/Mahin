@@ -16,6 +16,7 @@ import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.domain.subscription.EntitlementTier
 import java.time.LocalDate
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -167,17 +168,26 @@ class SettingsViewModel
             if (paywallVisible.value) return
             paywallVisible.value = true
             if (paywallWarmUpJob?.isActive == true) return
-            paywallWarmUpJob =
+            val job =
                 viewModelScope.launch {
                     try {
-                        runCatching { premiumBillingCoordinator.warmUp() }
+                        premiumBillingCoordinator.warmUp()
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (_: Exception) {
+                        // Billing warm-up is best-effort; paywall stays open.
                     } finally {
-                        paywallWarmUpJob = null
+                        if (paywallWarmUpJob === this.coroutineContext[kotlinx.coroutines.Job]) {
+                            paywallWarmUpJob = null
+                        }
                     }
                 }
+            paywallWarmUpJob = job
         }
 
         fun dismissPaywall() {
+            paywallWarmUpJob?.cancel()
+            paywallWarmUpJob = null
             paywallVisible.value = false
         }
 

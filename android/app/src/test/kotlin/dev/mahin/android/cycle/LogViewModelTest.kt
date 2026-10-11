@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import dev.mahin.android.navigation.LogTabDateRequest
 import dev.mahin.core.database.MahinDatabase
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.entity.CycleProfileEntity
@@ -20,6 +21,7 @@ import dev.mahin.core.healthconnect.PeriodDayTrackingService
 import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.PeriodFlowLevel
 import dev.mahin.core.model.ReproductiveMode
+import dev.mahin.core.testing.ViewModelStoreTestHarness
 import java.time.LocalDate
 import java.util.UUID
 import kotlinx.coroutines.delay
@@ -42,6 +44,7 @@ class LogViewModelTest {
     private lateinit var privacyRepository: TtcPrivacyPreferencesRepository
     private lateinit var periodDayTrackingService: PeriodDayTrackingService
     private lateinit var tombstoneRepository: HealthConnectPeriodDayTombstoneRepository
+    private val viewModelStore = ViewModelStoreTestHarness()
 
     @Before
     fun setUp() {
@@ -61,7 +64,23 @@ class LogViewModelTest {
 
     @After
     fun tearDown() {
+        viewModelStore.clear()
         database.close()
+    }
+
+    @Test
+    fun pendingLogTabDate_selectsDateAndClearsRequest() {
+        runBlocking {
+            seedTtcProfile()
+            val target = LocalDate.of(2025, 4, 10)
+            val request = LogTabDateRequest()
+            request.request(target)
+            val vm = createViewModel(integrationActive = false, logTabDateRequest = request)
+            awaitUntil {
+                vm.uiState.value.selectedJalali == PersianCivilDateConverter.toJalali(target)
+            }
+            assertThat(request.pendingDate.value).isNull()
+        }
     }
 
     @Test
@@ -251,18 +270,24 @@ class LogViewModelTest {
         )
     }
 
-    private fun createViewModel(integrationActive: Boolean): LogViewModel {
+    private fun createViewModel(
+        integrationActive: Boolean,
+        logTabDateRequest: LogTabDateRequest = LogTabDateRequest(),
+    ): LogViewModel {
         val gate =
             object : HealthConnectPeriodDayIntegrationGate {
                 override suspend fun isIntegrationActive(): Boolean = integrationActive
             }
-        return LogViewModel(
-            cycleRepository,
-            periodDayTrackingService,
-            gate,
-            ttcRepository,
-            pregnancyRepository,
-            privacyRepository,
+        return viewModelStore.hold(
+            LogViewModel(
+                cycleRepository,
+                periodDayTrackingService,
+                gate,
+                ttcRepository,
+                pregnancyRepository,
+                privacyRepository,
+                logTabDateRequest,
+            ),
         )
     }
 

@@ -1,6 +1,8 @@
 package dev.mahin.core.designsystem
 
+import androidx.compose.ui.graphics.Color
 import kotlin.math.pow
+import kotlin.math.roundToInt
 
 /** WCAG 2.x relative luminance for sRGB hex colours (`#RRGGBB`). */
 fun relativeLuminance(hex: String): Double {
@@ -15,6 +17,56 @@ fun relativeLuminance(hex: String): Double {
     return 0.2126 * r + 0.7152 * g + 0.0722 * b
 }
 
+/** Straight-alpha sRGB composite of [foreground] over [background]. */
+fun compositeSrgbOver(
+    foreground: Color,
+    background: Color,
+): Color {
+    val a = foreground.alpha.coerceIn(0f, 1f)
+    if (a <= 0f) return background
+    if (a >= 1f) return foreground.copy(alpha = 1f)
+
+    fun blend(
+        f: Float,
+        b: Float,
+    ): Float = f * a + b * (1f - a)
+    return Color(
+        red = blend(foreground.red, background.red),
+        green = blend(foreground.green, background.green),
+        blue = blend(foreground.blue, background.blue),
+        alpha = 1f,
+    )
+}
+
+fun colorToHex(color: Color): String {
+    val rendered =
+        if (color.alpha < 1f) {
+            error("colorToHex requires opaque colours; composite over the background first")
+        } else {
+            color
+        }
+    val r = (rendered.red * 255f).roundToInt().coerceIn(0, 255)
+    val g = (rendered.green * 255f).roundToInt().coerceIn(0, 255)
+    val b = (rendered.blue * 255f).roundToInt().coerceIn(0, 255)
+    return "#%02X%02X%02X".format(r, g, b)
+}
+
+fun contrastRatioBetweenColors(
+    foreground: Color,
+    background: Color,
+): Double {
+    val renderedForeground = compositeSrgbOver(foreground, background)
+    return contrastRatio(colorToHex(renderedForeground), colorToHex(background))
+}
+
+fun hexToColor(hex: String): Color {
+    val digits = hex.removePrefix("#")
+    val r = digits.substring(0, 2).toInt(16)
+    val g = digits.substring(2, 4).toInt(16)
+    val b = digits.substring(4, 6).toInt(16)
+    return Color(0xFF000000L or (r.toLong() shl 16) or (g.toLong() shl 8) or b.toLong())
+}
+
 fun contrastRatio(
     foregroundHex: String,
     backgroundHex: String,
@@ -24,4 +76,35 @@ fun contrastRatio(
     val lighter = maxOf(l1, l2)
     val darker = minOf(l1, l2)
     return (lighter + 0.05) / (darker + 0.05)
+}
+
+/** Alpha-composites [foregroundHex] over [backgroundHex] in sRGB (straight alpha). */
+fun compositeHexOver(
+    foregroundHex: String,
+    foregroundAlpha: Float,
+    backgroundHex: String,
+): String {
+    fun channel(
+        hex: String,
+        start: Int,
+    ): Int = hex.removePrefix("#").substring(start, start + 2).toInt(16)
+
+    val a = foregroundAlpha.coerceIn(0f, 1f)
+    val br = channel(backgroundHex, 0)
+    val bg = channel(backgroundHex, 2)
+    val bb = channel(backgroundHex, 4)
+    val fr = channel(foregroundHex, 0)
+    val fg = channel(foregroundHex, 2)
+    val fb = channel(foregroundHex, 4)
+
+    fun blend(
+        f: Int,
+        b: Int,
+    ): Int =
+        kotlin.math
+            .round((f * a) + (b * (1f - a)))
+            .toInt()
+            .coerceIn(0, 255)
+
+    return "#%02X%02X%02X".format(blend(fr, br), blend(fg, bg), blend(fb, bb))
 }
