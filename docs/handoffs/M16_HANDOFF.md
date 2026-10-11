@@ -1,7 +1,7 @@
 # M16 Handoff — Logging experience overhaul (Gatekeeper Round 2)
 
 **Milestone:** M16  
-**Status:** PR [#39](https://github.com/ajangi/Mahin/pull/39) — Gatekeeper Round 2 complete (see CI on branch head after push)  
+**Status:** PR [#39](https://github.com/ajangi/Mahin/pull/39) — head `2e04bc3` — CI **green** (run [38171299097](https://github.com/ajangi/Mahin/actions/runs/38171299097), android ~14m)  
 **Next milestone:** **M17** only
 
 ## Gatekeeper Round 2 — per-item evidence
