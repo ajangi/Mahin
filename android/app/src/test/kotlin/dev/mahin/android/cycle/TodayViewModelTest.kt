@@ -14,6 +14,7 @@ import dev.mahin.core.datastore.PregnancyTimerPreferencesRepository
 import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.PregnancyOutcome
 import dev.mahin.core.model.ReproductiveMode
+import dev.mahin.core.common.FixedLocalDateClock
 import dev.mahin.core.testing.ViewModelStoreTestHarness
 import java.time.LocalDate
 import kotlinx.coroutines.delay
@@ -29,6 +30,8 @@ import org.robolectric.shadows.ShadowLooper
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class TodayViewModelTest {
+    private val fixedToday = LocalDate.of(2025, 6, 15)
+    private val localDateClock = FixedLocalDateClock(fixedToday)
     private lateinit var database: MahinDatabase
     private lateinit var cycleRepository: CycleTrackingRepository
     private lateinit var pregnancyRepository: PregnancyTrackingRepository
@@ -42,6 +45,7 @@ class TodayViewModelTest {
                 .inMemoryDatabaseBuilder(context, MahinDatabase::class.java)
                 .allowMainThreadQueries()
                 .build()
+        database.openHelper.writableDatabase
         cycleRepository = CycleTrackingRepository(database)
         pregnancyRepository = PregnancyTrackingRepository(database, PregnancyTimerPreferencesRepository(context))
     }
@@ -181,6 +185,8 @@ class TodayViewModelTest {
                     moodTags = "شاد",
                     symptomTags = "خستگی",
                     painSeverity = null,
+                    painLocation = null,
+                    painNote = null,
                     note = null,
                     updatedAtEpochMs = 0L,
                 ),
@@ -222,7 +228,7 @@ class TodayViewModelTest {
 
     private fun createViewModel(): TodayViewModel =
         viewModelStore.hold(
-            TodayViewModel(cycleRepository, pregnancyRepository, notificationPrefs()),
+            TodayViewModel(cycleRepository, pregnancyRepository, notificationPrefs(), localDateClock),
         )
 
     private fun notificationPrefs(): NotificationPreferencesRepository {

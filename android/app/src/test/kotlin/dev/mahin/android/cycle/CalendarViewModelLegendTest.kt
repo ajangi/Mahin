@@ -11,9 +11,9 @@ import dev.mahin.core.datastore.CalendarUiPreferencesRepository
 import dev.mahin.core.datetime.JalaliDate
 import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
+import dev.mahin.core.common.FixedLocalDateClock
 import dev.mahin.core.testing.ViewModelStoreTestHarness
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
+import java.time.LocalDate
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -42,6 +42,7 @@ class CalendarViewModelLegendTest {
                 .inMemoryDatabaseBuilder(context, MahinDatabase::class.java)
                 .allowMainThreadQueries()
                 .build()
+        database.openHelper.writableDatabase
         cycleRepository = CycleTrackingRepository(database)
         calendarPrefs = CalendarUiPreferencesRepository(context)
         runBlocking { seedProfile() }
@@ -91,20 +92,10 @@ class CalendarViewModelLegendTest {
             awaitUntil { viewModel.uiState.value.legendExpanded }
             assertThat(calendarPrefs.observeLegendCollapsed().first()).isFalse()
             viewModel.selectJalaliDate(JalaliDate(1403, 12, 11))
+            ShadowLooper.idleMainLooper()
             val collapsedAfterSecondTap =
-                runBlocking {
-                    val waiter =
-                        async(Dispatchers.Default) {
-                            withTimeoutOrNull(1_000) {
-                                calendarPrefs.observeLegendCollapsed().first { it }
-                            }
-                        }
-                    val deadline = System.currentTimeMillis() + 1_200
-                    while (!waiter.isCompleted && System.currentTimeMillis() < deadline) {
-                        ShadowLooper.idleMainLooper()
-                        delay(25)
-                    }
-                    waiter.await()
+                withTimeoutOrNull(1_000) {
+                    calendarPrefs.observeLegendCollapsed().first { it }
                 }
             assertThat(collapsedAfterSecondTap).isNull()
             assertThat(viewModel.uiState.value.legendExpanded).isTrue()
@@ -139,6 +130,7 @@ class CalendarViewModelLegendTest {
             CalendarViewModel(
                 repository = cycleRepository,
                 calendarUiPreferencesRepository = calendarPrefs,
+                localDateClock = FixedLocalDateClock(LocalDate.of(2025, 3, 6)),
             ),
         )
 

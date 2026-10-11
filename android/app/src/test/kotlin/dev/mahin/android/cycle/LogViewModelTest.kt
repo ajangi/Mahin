@@ -21,6 +21,7 @@ import dev.mahin.core.healthconnect.PeriodDayTrackingService
 import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.PeriodFlowLevel
 import dev.mahin.core.model.ReproductiveMode
+import dev.mahin.core.common.FixedLocalDateClock
 import dev.mahin.core.testing.ViewModelStoreTestHarness
 import java.time.LocalDate
 import java.util.UUID
@@ -37,6 +38,7 @@ import org.robolectric.shadows.ShadowLooper
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class LogViewModelTest {
+    private val localDateClock = FixedLocalDateClock(LocalDate.of(2025, 4, 10))
     private lateinit var database: MahinDatabase
     private lateinit var cycleRepository: CycleTrackingRepository
     private lateinit var ttcRepository: TtcTrackingRepository
@@ -54,6 +56,7 @@ class LogViewModelTest {
                 .inMemoryDatabaseBuilder(context, MahinDatabase::class.java)
                 .allowMainThreadQueries()
                 .build()
+        database.openHelper.writableDatabase
         cycleRepository = CycleTrackingRepository(database)
         ttcRepository = TtcTrackingRepository(database)
         pregnancyRepository = PregnancyTrackingRepository(database, PregnancyTimerPreferencesRepository(context))
@@ -96,6 +99,8 @@ class LogViewModelTest {
                     moodTags = "",
                     symptomTags = "سردرد",
                     painSeverity = null,
+                    painLocation = null,
+                    painNote = null,
                     note = "یادداشت الف",
                     updatedAtEpochMs = 0L,
                 ),
@@ -287,6 +292,7 @@ class LogViewModelTest {
                 pregnancyRepository,
                 privacyRepository,
                 logTabDateRequest,
+                localDateClock,
             ),
         )
     }

@@ -3,6 +3,7 @@ package dev.mahin.android.cycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.mahin.core.common.LocalDateClock
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.entity.DailyLogEntity
 import dev.mahin.core.datastore.CalendarUiPreferencesRepository
@@ -33,9 +34,10 @@ class CalendarViewModel
     constructor(
         private val repository: CycleTrackingRepository,
         private val calendarUiPreferencesRepository: CalendarUiPreferencesRepository,
+        private val localDateClock: LocalDateClock,
     ) : ViewModel() {
         private val converter = PersianCivilDateConverter
-        private val today = LocalDate.now()
+        private val today = localDateClock.today()
         private val _uiState =
             MutableStateFlow(
                 CalendarUiState(
@@ -110,7 +112,7 @@ class CalendarViewModel
         }
 
         fun jumpToToday() {
-            val jalali = converter.toJalali(LocalDate.now())
+            val jalali = converter.toJalali(localDateClock.today())
             _uiState.update { applyJumpToToday(it, jalali) }
         }
 

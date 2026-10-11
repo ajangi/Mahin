@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.mahin.android.navigation.LogTabDateRequest
 import dev.mahin.android.pregnancy.PregnancyFormatters
+import dev.mahin.core.common.LocalDateClock
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.pregnancy.PregnancyDayLogInput
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
@@ -37,7 +38,7 @@ enum class BbtFieldError {
 
 data class LogUiState(
     val converter: CivilDateConverter = PersianCivilDateConverter,
-    val selectedJalali: JalaliDate = PersianCivilDateConverter.toJalali(LocalDate.now()),
+    val selectedJalali: JalaliDate = JalaliDate(1403, 1, 1),
     val reproductiveMode: ReproductiveMode = ReproductiveMode.CYCLE_TRACKING,
     val intercourseLoggingEnabled: Boolean = false,
     val loggingPeriod: Boolean = false,
@@ -79,8 +80,14 @@ class LogViewModel
         private val pregnancyRepository: PregnancyTrackingRepository,
         private val ttcPrivacyRepository: TtcPrivacyPreferencesRepository,
         private val logTabDateRequest: LogTabDateRequest,
+        private val localDateClock: LocalDateClock,
     ) : ViewModel() {
-        private val _uiState = MutableStateFlow(LogUiState())
+        private val _uiState =
+            MutableStateFlow(
+                LogUiState(
+                    selectedJalali = PersianCivilDateConverter.toJalali(localDateClock.today()),
+                ),
+            )
         val uiState: StateFlow<LogUiState> = _uiState.asStateFlow()
 
         private var loadJob: Job? = null
