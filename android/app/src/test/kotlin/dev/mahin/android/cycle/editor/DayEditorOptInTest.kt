@@ -3,7 +3,6 @@ package dev.mahin.android.cycle.editor
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
 import dev.mahin.core.designsystem.MahinTheme
 import dev.mahin.core.model.LogEditorCategory
 import dev.mahin.core.testing.ViewModelStoreClearingRule

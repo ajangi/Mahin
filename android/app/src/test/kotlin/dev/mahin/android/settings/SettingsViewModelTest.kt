@@ -27,7 +27,6 @@ import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.core.testing.MainDispatcherRule
 import dev.mahin.core.testing.TestHangWatchdogRule
-import kotlinx.coroutines.test.advanceUntilIdle
 import dev.mahin.core.testing.ViewModelStoreTestHarness
 import dev.mahin.domain.subscription.EntitlementTier
 import java.time.LocalDate
@@ -36,6 +35,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertFalse

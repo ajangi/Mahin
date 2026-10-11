@@ -1,17 +1,17 @@
 package dev.mahin.android.golden
 
 import androidx.activity.ComponentActivity
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import dev.mahin.android.cycle.editor.DayEditorManageCategoriesPanel
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import dev.mahin.android.R
-import dev.mahin.core.designsystem.MahinSpacing
+import dev.mahin.android.cycle.editor.DayEditorManageCategoriesPanel
 import dev.mahin.android.cycle.editor.DayEditorSheetContent
+import dev.mahin.core.designsystem.MahinSpacing
 import dev.mahin.core.testing.ViewModelStoreClearingRule
 import dev.mahin.core.testing.roborazzi.captureMahinFullScreenGolden
 import java.time.LocalDate

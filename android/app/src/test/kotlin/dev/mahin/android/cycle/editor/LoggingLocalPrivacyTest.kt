@@ -15,7 +15,6 @@ import dev.mahin.core.security.DisabledAppLockGateway
 import dev.mahin.core.sync.InMemorySyncOutbox
 import dev.mahin.domain.subscription.EntitlementTier
 import java.time.LocalDate
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -81,7 +80,8 @@ class LoggingLocalPrivacyTest {
                     DisabledAppLockGateway,
                     dev.mahin.core.billing.EntitlementRepository(
                         SubscriptionPreferencesRepository(context),
-                        dev.mahin.core.datastore.AccountSessionRepository(context),
+                        dev.mahin.core.datastore
+                            .AccountSessionRepository(context),
                         object : dev.mahin.core.billing.EntitlementApi {
                             override suspend fun currentEntitlement(
                                 authorization: String,
@@ -97,13 +97,15 @@ class LoggingLocalPrivacyTest {
                                 authorization: String,
                                 body: dev.mahin.core.billing.GooglePlayVerifyRequest,
                             ): dev.mahin.core.billing.GooglePlayBillingResponse =
-                                dev.mahin.core.billing.GooglePlayBillingResponse(EntitlementTier.FREE.name, null)
+                                dev.mahin.core.billing
+                                    .GooglePlayBillingResponse(EntitlementTier.FREE.name, null)
 
                             override suspend fun restorePurchases(
                                 authorization: String,
                                 body: dev.mahin.core.billing.GooglePlayRestoreRequest,
                             ): dev.mahin.core.billing.GooglePlayBillingResponse =
-                                dev.mahin.core.billing.GooglePlayBillingResponse(EntitlementTier.FREE.name, null)
+                                dev.mahin.core.billing
+                                    .GooglePlayBillingResponse(EntitlementTier.FREE.name, null)
                         },
                     ),
                 )

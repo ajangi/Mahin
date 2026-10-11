@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import dev.mahin.core.common.FixedLocalDateClock
 import dev.mahin.core.database.MahinDatabase
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.entity.CycleProfileEntity
@@ -11,7 +12,6 @@ import dev.mahin.core.datastore.CalendarUiPreferencesRepository
 import dev.mahin.core.datetime.JalaliDate
 import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
-import dev.mahin.core.common.FixedLocalDateClock
 import dev.mahin.core.testing.ViewModelStoreTestHarness
 import java.time.LocalDate
 import kotlinx.coroutines.delay
