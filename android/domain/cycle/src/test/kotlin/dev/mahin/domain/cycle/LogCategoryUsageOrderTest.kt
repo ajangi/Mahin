@@ -20,11 +20,12 @@ class LogCategoryUsageOrderTest {
                 usageCounts = emptyMap(),
                 mostUsedFirst = false,
             )
-        assertThat(order).containsExactly(
-            LogEditorCategory.PAIN,
-            LogEditorCategory.SYMPTOMS,
-            LogEditorCategory.MOOD,
-        ).inOrder()
+        assertThat(order)
+            .containsExactly(
+                LogEditorCategory.PAIN,
+                LogEditorCategory.SYMPTOMS,
+                LogEditorCategory.MOOD,
+            ).inOrder()
     }
 
     @Test

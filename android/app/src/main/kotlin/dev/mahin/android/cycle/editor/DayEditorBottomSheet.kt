@@ -257,4 +257,6 @@ private fun painLocationLabel(location: PainLocation): String =
     }
 
 @Composable
-private fun stringArrayResource(id: Int): Array<String> = androidx.compose.ui.res.stringArrayResource(id)
+private fun stringArrayResource(id: Int): Array<String> =
+    androidx.compose.ui.res
+        .stringArrayResource(id)

@@ -14,7 +14,6 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.EntryPointAccessors
-import dev.mahin.android.cycle.editor.DayEditorCoordinator
 import dev.mahin.android.cycle.editor.DayEditorHost
 import dev.mahin.android.navigation.AppNavigationEntryPoint
 import dev.mahin.android.navigation.MahinTopLevelDestination

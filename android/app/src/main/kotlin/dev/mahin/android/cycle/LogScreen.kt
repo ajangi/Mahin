@@ -6,9 +6,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.EntryPointAccessors
 import dev.mahin.android.navigation.AppNavigationEntryPoint
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mahin.android.privacy.SensitiveScreenProtection
 import dev.mahin.android.privacy.SensitiveScreenViewModel
 

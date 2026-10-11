@@ -88,6 +88,5 @@ private object LoggingPreferenceKeys {
     val mostUsedFirst = booleanPreferencesKey("most_used_first")
     val pinnedOrder = stringPreferencesKey("pinned_category_order")
 
-    fun lifestyleEnabled(category: LogEditorCategory) =
-        booleanPreferencesKey("lifestyle_${category.name.lowercase()}")
+    fun lifestyleEnabled(category: LogEditorCategory) = booleanPreferencesKey("lifestyle_${category.name.lowercase()}")
 }

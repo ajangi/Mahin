@@ -137,7 +137,15 @@ data class MahinShellScreenOverrides(
     companion object {
         val Default: MahinShellScreenOverrides =
             MahinShellScreenOverrides(
-                today = { onOpenHistory, onOpenLearn, onOpenLogTab, onOpenDayEditor, onOpenPlan, onOpenPregnancyTab, onOpenCalendar ->
+                today = {
+                    onOpenHistory,
+                    onOpenLearn,
+                    onOpenLogTab,
+                    onOpenDayEditor,
+                    onOpenPlan,
+                    onOpenPregnancyTab,
+                    onOpenCalendar,
+                    ->
                     TodayScreen(
                         onOpenHistory = onOpenHistory,
                         onOpenLearn = onOpenLearn,

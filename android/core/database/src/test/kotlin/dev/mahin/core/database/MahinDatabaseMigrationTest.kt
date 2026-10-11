@@ -139,9 +139,12 @@ class MahinDatabaseMigrationTest {
                 MIGRATION_3_4,
                 MIGRATION_4_5,
             )
-        migrated.query("SELECT name FROM sqlite_master WHERE type='table' AND name='custom_symptom_tag'").use { cursor ->
-            assertThat(cursor.moveToFirst()).isTrue()
-        }
+        migrated
+            .query(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='custom_symptom_tag'",
+            ).use { cursor ->
+                assertThat(cursor.moveToFirst()).isTrue()
+            }
         migrated.query("SELECT moodTags, painSeverity FROM daily_log WHERE id = 'd1'").use { cursor ->
             assertThat(cursor.moveToFirst()).isTrue()
             assertThat(cursor.getString(0)).isEqualTo("آرام")

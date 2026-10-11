@@ -7,9 +7,7 @@ import dev.mahin.core.common.LocalDateClock
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.entity.CustomSymptomTagEntity
 import dev.mahin.core.database.logging.CustomSymptomTagRepository
-import dev.mahin.core.database.pregnancy.PregnancyDayLogInput
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
-import dev.mahin.core.database.ttc.TtcDayLogInput
 import dev.mahin.core.database.ttc.TtcTrackingRepository
 import dev.mahin.core.datastore.LoggingPreferencesRepository
 import dev.mahin.core.datastore.TtcPrivacyPreferencesRepository
@@ -446,5 +444,4 @@ class DayEditorViewModel
                 mostUsedFirst = false,
             )
         }
-
     }

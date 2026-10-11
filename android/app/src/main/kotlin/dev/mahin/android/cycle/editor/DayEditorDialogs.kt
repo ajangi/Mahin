@@ -1,8 +1,11 @@
 package dev.mahin.android.cycle.editor
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -12,9 +15,6 @@ import androidx.compose.ui.res.stringResource
 import dev.mahin.android.R
 import dev.mahin.core.designsystem.MahinSpacing
 import dev.mahin.core.model.LogEditorCategory
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Switch
 
 @Composable
 fun DayEditorSexualOptInDialog(
@@ -65,29 +65,29 @@ internal fun DayEditorManageCategoriesPanel(
     Column(modifier = Modifier.padding(MahinSpacing.lg)) {
         Text(text = stringResource(R.string.day_editor_manage_categories))
         LifestyleRow(
-                label = stringResource(R.string.day_editor_lifestyle_sleep),
-                enabled = state.lifestyleEnabled[LogEditorCategory.SLEEP] == true,
-                onToggle = { onLifestyleToggle(LogEditorCategory.SLEEP, it) },
-                testTag = "day_editor_lifestyle_sleep",
-            )
-            LifestyleRow(
-                label = stringResource(R.string.day_editor_lifestyle_exercise),
-                enabled = state.lifestyleEnabled[LogEditorCategory.EXERCISE] == true,
-                onToggle = { onLifestyleToggle(LogEditorCategory.EXERCISE, it) },
-                testTag = "day_editor_lifestyle_exercise",
-            )
-            LifestyleRow(
-                label = stringResource(R.string.day_editor_lifestyle_water),
-                enabled = state.lifestyleEnabled[LogEditorCategory.WATER] == true,
-                onToggle = { onLifestyleToggle(LogEditorCategory.WATER, it) },
-                testTag = "day_editor_lifestyle_water",
-            )
-            LifestyleRow(
-                label = stringResource(R.string.day_editor_lifestyle_stress),
-                enabled = state.lifestyleEnabled[LogEditorCategory.STRESS] == true,
-                onToggle = { onLifestyleToggle(LogEditorCategory.STRESS, it) },
-                testTag = "day_editor_lifestyle_stress",
-            )
+            label = stringResource(R.string.day_editor_lifestyle_sleep),
+            enabled = state.lifestyleEnabled[LogEditorCategory.SLEEP] == true,
+            onToggle = { onLifestyleToggle(LogEditorCategory.SLEEP, it) },
+            testTag = "day_editor_lifestyle_sleep",
+        )
+        LifestyleRow(
+            label = stringResource(R.string.day_editor_lifestyle_exercise),
+            enabled = state.lifestyleEnabled[LogEditorCategory.EXERCISE] == true,
+            onToggle = { onLifestyleToggle(LogEditorCategory.EXERCISE, it) },
+            testTag = "day_editor_lifestyle_exercise",
+        )
+        LifestyleRow(
+            label = stringResource(R.string.day_editor_lifestyle_water),
+            enabled = state.lifestyleEnabled[LogEditorCategory.WATER] == true,
+            onToggle = { onLifestyleToggle(LogEditorCategory.WATER, it) },
+            testTag = "day_editor_lifestyle_water",
+        )
+        LifestyleRow(
+            label = stringResource(R.string.day_editor_lifestyle_stress),
+            enabled = state.lifestyleEnabled[LogEditorCategory.STRESS] == true,
+            onToggle = { onLifestyleToggle(LogEditorCategory.STRESS, it) },
+            testTag = "day_editor_lifestyle_stress",
+        )
         if (!state.sexualActivityEnabled) {
             TextButton(onClick = onRequestSexualOptIn) {
                 Text(stringResource(R.string.day_editor_enable_sexual_activity))
