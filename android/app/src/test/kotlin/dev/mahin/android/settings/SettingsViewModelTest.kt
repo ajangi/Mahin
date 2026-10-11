@@ -94,6 +94,9 @@ class SettingsViewModelTest {
 
     @After
     fun tearDown() {
+        releaseViewModels()
+        testDispatcher.scheduler.advanceUntilIdle()
+        ShadowLooper.idleMainLooper()
         runBlocking(Dispatchers.IO) {
             withTimeout(5_000) {
                 SubscriptionPreferencesRepository(context).clear()
