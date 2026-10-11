@@ -186,7 +186,7 @@ class SettingsViewModel
         }
 
         fun dismissPaywall() {
-            paywallWarmUpJob?.cancel()
+            paywallWarmUpJob?.cancel(CancellationException("paywall_dismissed"))
             paywallWarmUpJob = null
             paywallVisible.value = false
         }

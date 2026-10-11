@@ -25,7 +25,9 @@ import dev.mahin.core.datastore.PregnancyTimerPreferencesRepository
 import dev.mahin.core.datastore.SubscriptionPreferencesRepository
 import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
+import dev.mahin.core.testing.MainDispatcherRule
 import dev.mahin.core.testing.TestHangWatchdogRule
+import kotlinx.coroutines.test.advanceUntilIdle
 import dev.mahin.core.testing.ViewModelStoreTestHarness
 import dev.mahin.domain.subscription.EntitlementTier
 import java.time.LocalDate
@@ -51,6 +53,9 @@ import org.robolectric.shadows.ShadowLooper
 class SettingsViewModelTest {
     @get:Rule
     val testHangWatchdog: TestHangWatchdogRule = TestHangWatchdogRule()
+
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule()
 
     private lateinit var database: MahinDatabase
     private lateinit var pregnancyRepository: PregnancyTrackingRepository
@@ -85,6 +90,7 @@ class SettingsViewModelTest {
     }
 
     private fun idle() {
+        mainDispatcherRule.dispatcher.scheduler.advanceUntilIdle()
         ShadowLooper.idleMainLooper()
     }
 
