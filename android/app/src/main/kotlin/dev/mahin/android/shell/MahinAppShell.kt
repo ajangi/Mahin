@@ -59,6 +59,7 @@ internal fun MahinAppShellWithNavigationOverride(
 }
 
 @Composable
+@Suppress("LongParameterList")
 internal fun MahinAppShellContent(
     shellState: ShellNavigationState,
     navController: NavHostController,
