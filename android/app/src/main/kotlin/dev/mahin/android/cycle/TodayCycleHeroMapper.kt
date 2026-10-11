@@ -46,6 +46,7 @@ internal object TodayCycleHeroMapper {
 
     fun todayMarkerFraction(hero: CycleTodayHero): Float? {
         val day = hero.cycleDay ?: return null
-        return (day.toFloat() / hero.cycleLengthDays.coerceAtLeast(1)).coerceIn(0f, 1f)
+        val length = hero.cycleLengthDays.coerceAtLeast(1)
+        return ((day - 0.5f) / length).coerceIn(0f, 1f)
     }
 }

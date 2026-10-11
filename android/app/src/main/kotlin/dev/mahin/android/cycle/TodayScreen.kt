@@ -337,13 +337,16 @@ private fun TodayPregnancyHero(
         )
     MahinSurfaceCard(modifier = Modifier.padding(vertical = MahinSpacing.sm)) {
         Column {
-            val weekProgress = (hero.gestationalWeeks * 7 + hero.gestationalDays).toFloat() / hero.totalGestationalDays
+            val gestationalDay = hero.gestationalWeeks * 7 + hero.gestationalDays
+            val totalDays = hero.totalGestationalDays.coerceAtLeast(1)
+            val weekProgress = gestationalDay.toFloat() / totalDays
+            val markerFraction = ((gestationalDay - 0.5f) / totalDays).coerceIn(0f, 1f)
             MahinCycleProgressRing(
                 arcs = TodayPregnancyRingMapper.weekArcs(hero),
                 progressFraction = weekProgress.coerceIn(0f, 1f),
                 trackColor = TodayCycleHeroMapper.trackColor(),
                 progressColor = MaterialTheme.colorScheme.secondary,
-                todayMarkerFraction = weekProgress.coerceIn(0f, 1f),
+                todayMarkerFraction = markerFraction,
                 todayMarkerColor = MaterialTheme.colorScheme.secondary,
                 contentDescription = gaLabel,
             ) {
