@@ -32,14 +32,19 @@ object M16GoldenFixtures {
         )
 
     fun pregnancyEditor(): DayEditorUiState =
-        cycleEditor().copy(
+        DayEditorUiState(
+            date = LocalDate.of(2025, 3, 15),
             reproductiveMode = ReproductiveMode.PREGNANT,
             orderedCategories =
                 listOf(
                     LogEditorCategory.PREGNANCY_SYMPTOMS,
                     LogEditorCategory.PREGNANCY_VITALS,
+                    LogEditorCategory.MOOD,
                     LogEditorCategory.NOTES,
                 ),
+            pregnancySymptomTags = setOf("تهوع"),
+            moodTags = setOf("آرام"),
+            note = "یادداشت",
         )
 
     fun sexualOptIn(): DayEditorUiState =

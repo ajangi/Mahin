@@ -29,27 +29,28 @@ class LogCategoryUsageOrderTest {
     }
 
     @Test
-    fun mostUsedFirst_breaksTiesByEnumOrdinal() {
+    fun mostUsedFirst_ordersUnpinnedByUsage_keepsPinnedFirst() {
         val enabled =
             setOf(
                 LogEditorCategory.SYMPTOMS,
                 LogEditorCategory.MOOD,
                 LogEditorCategory.PAIN,
+                LogEditorCategory.NOTES,
             )
         val order =
             LogCategoryUsageOrder.orderedCategories(
                 enabled = enabled,
-                pinnedOrder = enabled.toList(),
+                pinnedOrder = listOf(LogEditorCategory.PAIN, LogEditorCategory.SYMPTOMS),
                 usageCounts =
                     mapOf(
-                        LogEditorCategory.SYMPTOMS to 3,
-                        LogEditorCategory.MOOD to 3,
-                        LogEditorCategory.PAIN to 1,
+                        LogEditorCategory.MOOD to 5,
+                        LogEditorCategory.NOTES to 2,
+                        LogEditorCategory.SYMPTOMS to 1,
                     ),
                 mostUsedFirst = true,
             )
-        assertThat(order.first()).isEqualTo(LogEditorCategory.SYMPTOMS)
-        assertThat(order[1]).isEqualTo(LogEditorCategory.MOOD)
-        assertThat(order.last()).isEqualTo(LogEditorCategory.PAIN)
+        assertThat(order.take(2)).containsExactly(LogEditorCategory.PAIN, LogEditorCategory.SYMPTOMS).inOrder()
+        assertThat(order.drop(2).first()).isEqualTo(LogEditorCategory.MOOD)
+        assertThat(order.last()).isEqualTo(LogEditorCategory.NOTES)
     }
 }

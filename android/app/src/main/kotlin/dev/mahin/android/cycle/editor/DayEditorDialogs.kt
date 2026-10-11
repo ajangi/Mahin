@@ -1,14 +1,18 @@
 package dev.mahin.android.cycle.editor
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -46,12 +50,20 @@ fun DayEditorManageCategoriesSheet(
     onDismiss: () -> Unit,
     onLifestyleToggle: (LogEditorCategory, Boolean) -> Unit,
     onRequestSexualOptIn: () -> Unit,
+    onMostUsedFirstToggle: (Boolean) -> Unit,
+    onDisableSexualActivity: () -> Unit,
+    onMoveCategoryEarlier: (LogEditorCategory) -> Unit,
+    onMoveCategoryLater: (LogEditorCategory) -> Unit,
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss, modifier = Modifier.testTag("day_editor_manage_categories_sheet")) {
         DayEditorManageCategoriesPanel(
             state = state,
             onLifestyleToggle = onLifestyleToggle,
             onRequestSexualOptIn = onRequestSexualOptIn,
+            onMostUsedFirstToggle = onMostUsedFirstToggle,
+            onDisableSexualActivity = onDisableSexualActivity,
+            onMoveCategoryEarlier = onMoveCategoryEarlier,
+            onMoveCategoryLater = onMoveCategoryLater,
         )
     }
 }
@@ -61,9 +73,19 @@ internal fun DayEditorManageCategoriesPanel(
     state: DayEditorUiState,
     onLifestyleToggle: (LogEditorCategory, Boolean) -> Unit,
     onRequestSexualOptIn: () -> Unit,
+    onMostUsedFirstToggle: (Boolean) -> Unit = {},
+    onDisableSexualActivity: () -> Unit = {},
+    onMoveCategoryEarlier: (LogEditorCategory) -> Unit = {},
+    onMoveCategoryLater: (LogEditorCategory) -> Unit = {},
 ) {
     Column(modifier = Modifier.padding(MahinSpacing.lg)) {
         Text(text = stringResource(R.string.day_editor_manage_categories))
+        LifestyleRow(
+            label = stringResource(R.string.day_editor_most_used_first),
+            enabled = state.mostUsedFirst,
+            onToggle = onMostUsedFirstToggle,
+            testTag = "day_editor_most_used_first",
+        )
         LifestyleRow(
             label = stringResource(R.string.day_editor_lifestyle_sleep),
             enabled = state.lifestyleEnabled[LogEditorCategory.SLEEP] == true,
@@ -88,9 +110,33 @@ internal fun DayEditorManageCategoriesPanel(
             onToggle = { onLifestyleToggle(LogEditorCategory.STRESS, it) },
             testTag = "day_editor_lifestyle_stress",
         )
-        if (!state.sexualActivityEnabled) {
+        if (state.sexualActivityEnabled) {
+            TextButton(
+                onClick = onDisableSexualActivity,
+                modifier = Modifier.testTag("day_editor_disable_sexual_activity"),
+            ) {
+                Text(stringResource(R.string.day_editor_disable_sexual_activity))
+            }
+        } else {
             TextButton(onClick = onRequestSexualOptIn) {
                 Text(stringResource(R.string.day_editor_enable_sexual_activity))
+            }
+        }
+        state.orderedCategories.forEach { category ->
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .testTag("day_editor_category_order_${category.name}"),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(text = category.name, modifier = Modifier.weight(1f))
+                IconButton(onClick = { onMoveCategoryEarlier(category) }) {
+                    Text("↑")
+                }
+                IconButton(onClick = { onMoveCategoryLater(category) }) {
+                    Text("↓")
+                }
             }
         }
     }
@@ -103,9 +149,9 @@ private fun LifestyleRow(
     onToggle: (Boolean) -> Unit,
     testTag: String,
 ) {
-    androidx.compose.foundation.layout.Row(
+    Row(
         modifier = Modifier.testTag(testTag),
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(text = label, modifier = Modifier.weight(1f))
         Switch(checked = enabled, onCheckedChange = onToggle)

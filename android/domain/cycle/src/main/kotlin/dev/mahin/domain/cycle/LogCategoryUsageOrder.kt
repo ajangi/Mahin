@@ -13,13 +13,17 @@ object LogCategoryUsageOrder {
         usageCounts: Map<LogEditorCategory, Int>,
         mostUsedFirst: Boolean,
     ): List<LogEditorCategory> {
-        val pinned =
-            pinnedOrder.filter { it in enabled } +
-                enabled.filter { it !in pinnedOrder }.sortedBy { it.ordinal }
-        if (!mostUsedFirst) return pinned
-        return pinned.sortedWith(
-            compareByDescending<LogEditorCategory> { usageCounts[it] ?: 0 }
-                .thenBy { it.ordinal },
-        )
+        val pinnedFiltered = pinnedOrder.filter { it in enabled }
+        val unpinned = enabled.filter { it !in pinnedFiltered.toSet() }
+        val unpinnedOrdered =
+            if (mostUsedFirst) {
+                unpinned.sortedWith(
+                    compareByDescending<LogEditorCategory> { usageCounts[it] ?: 0 }
+                        .thenBy { it.ordinal },
+                )
+            } else {
+                unpinned.sortedBy { it.ordinal }
+            }
+        return pinnedFiltered + unpinnedOrdered
     }
 }

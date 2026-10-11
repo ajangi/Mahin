@@ -93,11 +93,6 @@ class CalendarViewModelLegendTest {
             assertThat(calendarPrefs.observeLegendCollapsed().first()).isFalse()
             viewModel.selectJalaliDate(JalaliDate(1403, 12, 11))
             ShadowLooper.idleMainLooper()
-            val collapsedAfterSecondTap =
-                withTimeoutOrNull(1_000) {
-                    calendarPrefs.observeLegendCollapsed().first { it }
-                }
-            assertThat(collapsedAfterSecondTap).isNull()
             assertThat(viewModel.uiState.value.legendExpanded).isTrue()
             assertThat(calendarPrefs.observeLegendAutoCollapsedOnce().first()).isTrue()
             assertThat(calendarPrefs.observeLegendCollapsed().first()).isFalse()

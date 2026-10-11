@@ -143,7 +143,10 @@ tasks.withType<Test>().configureEach {
             .orElse("false")
             .map { it.equals("true", ignoreCase = true) }
     testLogging {
-        events("started", "failed", "standard_error")
+        events("started", "failed")
+        if (verboseTestStreams.get()) {
+            events("standard_error")
+        }
         showStandardStreams = verboseTestStreams.get()
     }
     if (name == "testBenchmarkUnitTest") {
@@ -164,7 +167,6 @@ tasks.withType<Test>().configureEach {
             excludeTestsMatching("dev.mahin.android.shell.MahinShellNavigationTest")
             excludeTestsMatching("dev.mahin.android.shell.ShellModeTransitionTest")
             excludeTestsMatching("dev.mahin.android.settings.SettingsScreenContentTest")
-            excludeTestsMatching("dev.mahin.android.settings.SettingsViewModelTest")
             excludeTestsMatching("dev.mahin.android.cycle.TodayScreenContentTest")
             excludeTestsMatching("dev.mahin.android.cycle.TodayRingA11yTest")
             excludeTestsMatching("dev.mahin.android.cycle.CalendarAnimatedDaySheetA11yTest")
@@ -182,7 +184,6 @@ tasks.withType<Test>().configureEach {
             excludeTestsMatching("dev.mahin.android.assistant.AssistantSettingsScreenTest")
             excludeTestsMatching("dev.mahin.android.cycle.editor.DayEditorLoggingEffortTest")
             excludeTestsMatching("dev.mahin.android.cycle.editor.DayEditorOptInTest")
-            excludeTestsMatching("dev.mahin.android.cycle.editor.DayEditorPainTest")
         }
     }
 }

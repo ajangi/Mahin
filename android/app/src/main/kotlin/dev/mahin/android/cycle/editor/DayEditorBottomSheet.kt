@@ -1,17 +1,12 @@
 package dev.mahin.android.cycle.editor
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -27,20 +22,15 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mahin.android.R
-import dev.mahin.android.cycle.MahinLogTagIconMapper
 import dev.mahin.core.datetime.PersianCivilDateConverter
 import dev.mahin.core.datetime.PersianDigits
 import dev.mahin.core.designsystem.LocalReducedMotion
 import dev.mahin.core.designsystem.MahinSpacing
-import dev.mahin.core.designsystem.component.MahinIconToggleCell
 import dev.mahin.core.designsystem.component.MahinSectionLabel
-import dev.mahin.core.designsystem.icon.MahinIcon
 import dev.mahin.core.model.LogEditorCategory
-import dev.mahin.core.model.PainLocation
 import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -90,6 +80,17 @@ fun DayEditorHost(
                 onToggleSymptom = viewModel::toggleSymptom,
                 onToggleMood = viewModel::toggleMood,
                 onSetPain = viewModel::setPain,
+                onAdjustPainSeverity = viewModel::adjustPainSeverity,
+                onNoteChange = viewModel::setNote,
+                onMucusSelected = viewModel::setCervicalMucus,
+                onOvulationTest = viewModel::setOvulationTest,
+                onPregnancyTest = viewModel::setPregnancyTest,
+                onToggleIntercourse = viewModel::toggleIntercourse,
+                onIntercourseProtected = viewModel::setIntercourseProtected,
+                onToggleLifestyle = viewModel::toggleLifestyleLogged,
+                onCustomSymptomDraft = viewModel::setCustomSymptomDraft,
+                onAddCustomSymptom = viewModel::addCustomSymptomFromDraft,
+                onTogglePregnancySymptom = viewModel::togglePregnancySymptom,
                 onOpenManage = viewModel::openManageCategories,
                 onRequestSexualOptIn = viewModel::requestSexualOptIn,
             )
@@ -107,22 +108,36 @@ fun DayEditorHost(
             onDismiss = viewModel::closeManageCategories,
             onLifestyleToggle = viewModel::setLifestyleEnabled,
             onRequestSexualOptIn = viewModel::requestSexualOptIn,
+            onMostUsedFirstToggle = viewModel::setMostUsedFirst,
+            onDisableSexualActivity = viewModel::disableSexualActivity,
+            onMoveCategoryEarlier = viewModel::moveCategoryEarlier,
+            onMoveCategoryLater = viewModel::moveCategoryLater,
         )
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 @Suppress("LongMethod", "LongParameterList", "CyclomaticComplexMethod")
 internal fun DayEditorSheetContent(
     date: LocalDate,
     state: DayEditorUiState,
-    onTogglePeriod: () -> Unit,
-    onToggleSymptom: (String) -> Unit,
-    onToggleMood: (String) -> Unit,
-    onSetPain: (PainLocation, Int) -> Unit,
-    onOpenManage: () -> Unit,
-    onRequestSexualOptIn: () -> Unit,
+    onTogglePeriod: () -> Unit = {},
+    onToggleSymptom: (String) -> Unit = {},
+    onToggleMood: (String) -> Unit = {},
+    onSetPain: (dev.mahin.core.model.PainLocation, Int) -> Unit = { _, _ -> },
+    onAdjustPainSeverity: (Int) -> Unit = {},
+    onNoteChange: (String) -> Unit = {},
+    onMucusSelected: (dev.mahin.core.model.CervicalMucusType) -> Unit = {},
+    onOvulationTest: (dev.mahin.core.model.OvulationTestResult) -> Unit = {},
+    onPregnancyTest: (dev.mahin.core.model.PregnancyTestResult) -> Unit = {},
+    onToggleIntercourse: () -> Unit = {},
+    onIntercourseProtected: (Boolean?) -> Unit = {},
+    onToggleLifestyle: (LogEditorCategory) -> Unit = {},
+    onCustomSymptomDraft: (String) -> Unit = {},
+    onAddCustomSymptom: () -> Unit = {},
+    onTogglePregnancySymptom: (String) -> Unit = {},
+    onOpenManage: () -> Unit = {},
+    onRequestSexualOptIn: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val jalali = PersianCivilDateConverter.toJalali(date)
@@ -140,7 +155,7 @@ internal fun DayEditorSheetContent(
                 .verticalScroll(rememberScrollState())
                 .padding(MahinSpacing.lg),
     ) {
-        Text(text = title, style = MaterialTheme.typography.titleMedium)
+        Text(text = title, style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
         TextButton(onClick = onOpenManage, modifier = Modifier.testTag("day_editor_manage_categories")) {
             Text(text = stringResource(R.string.day_editor_manage_categories))
         }
@@ -157,79 +172,81 @@ internal fun DayEditorSheetContent(
                                 .testTag("day_editor_period_started")
                                 .padding(vertical = MahinSpacing.xs)
                                 .semantics {
-                                    contentDescription =
-                                        "period_started"
+                                    contentDescription = "period_started"
                                 },
                     )
                 }
                 LogEditorCategory.SYMPTOMS -> {
-                    MahinSectionLabel(text = stringResource(R.string.log_symptoms_section))
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(MahinSpacing.sm)) {
-                        state.availableSymptoms.forEach { tag ->
-                            val selected = tag in state.symptomTags
-                            MahinIconToggleCell(
-                                label = tag,
-                                selected = selected,
-                                onClick = { onToggleSymptom(tag) },
-                                modifier = Modifier.testTag("day_editor_symptom_$tag"),
-                                icon = {
-                                    MahinIcon(
-                                        icon = MahinLogTagIconMapper.symptomIcon(tag),
-                                        modifier = Modifier.size(24.dp),
-                                    )
-                                },
-                            )
-                        }
-                    }
-                }
-                LogEditorCategory.MOOD -> {
-                    MahinSectionLabel(text = stringResource(R.string.day_editor_mood_section))
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(MahinSpacing.sm)) {
-                        state.availableMoods.forEach { tag ->
-                            val selected = tag in state.moodTags
-                            MahinIconToggleCell(
-                                label = tag,
-                                selected = selected,
-                                onClick = { onToggleMood(tag) },
-                                modifier = Modifier.testTag("day_editor_mood_$tag"),
-                                icon = {
-                                    MahinIcon(
-                                        icon = MahinLogTagIconMapper.moodIcon(tag),
-                                        modifier = Modifier.size(24.dp),
-                                    )
-                                },
-                            )
-                        }
-                    }
-                }
-                LogEditorCategory.PAIN -> {
-                    MahinSectionLabel(text = stringResource(R.string.day_editor_pain_section))
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(MahinSpacing.sm)) {
-                        PainLocation.entries.forEach { location ->
-                            FilterChip(
-                                selected = state.painLocation == location,
-                                onClick = { onSetPain(location, state.painSeverity ?: 5) },
-                                label = { Text(painLocationLabel(location)) },
-                                modifier = Modifier.testTag("day_editor_pain_location_${location.name}"),
-                            )
-                        }
-                    }
-                    Text(
-                        text =
-                            stringResource(
-                                R.string.day_editor_pain_severity,
-                                PersianDigits.format(state.painSeverity ?: 0),
-                            ),
-                        modifier = Modifier.testTag("day_editor_pain_severity"),
+                    DayEditorSymptomsSection(state, state.confirmPulseKey, onToggleSymptom)
+                    DayEditorCustomSymptomSection(
+                        draft = state.customSymptomDraft,
+                        onDraftChange = onCustomSymptomDraft,
+                        onAdd = onAddCustomSymptom,
                     )
                 }
-                LogEditorCategory.SEXUAL_ACTIVITY -> {
-                    MahinSectionLabel(text = stringResource(R.string.day_editor_sexual_section))
-                    Text(text = stringResource(R.string.day_editor_sexual_hint))
+                LogEditorCategory.MOOD ->
+                    DayEditorMoodSection(state, state.confirmPulseKey, onToggleMood)
+                LogEditorCategory.PAIN ->
+                    DayEditorPainSection(
+                        state = state,
+                        confirmPulseKey = state.confirmPulseKey,
+                        onSetPain = onSetPain,
+                        onAdjustSeverity = onAdjustPainSeverity,
+                    )
+                LogEditorCategory.DISCHARGE ->
+                    DayEditorDischargeSection(state.cervicalMucus, onMucusSelected)
+                LogEditorCategory.TTC_TESTS ->
+                    DayEditorTtcTestsSection(
+                        ovulationTest = state.ovulationTest,
+                        pregnancyTest = state.pregnancyTest,
+                        onOvulationTest = onOvulationTest,
+                        onPregnancyTest = onPregnancyTest,
+                    )
+                LogEditorCategory.MEDICATION -> {
+                    MahinSectionLabel(text = stringResource(R.string.day_editor_medication_section))
                 }
-                LogEditorCategory.PREGNANCY_SYMPTOMS -> {
-                    MahinSectionLabel(text = stringResource(R.string.log_symptoms_section))
-                }
+                LogEditorCategory.NOTES -> DayEditorNotesSection(state.note, onNoteChange)
+                LogEditorCategory.SEXUAL_ACTIVITY ->
+                    DayEditorSexualSection(
+                        intercourseLogged = state.intercourseLogged,
+                        intercourseProtected = state.intercourseProtected,
+                        onToggleIntercourse = onToggleIntercourse,
+                        onProtectedSelected = onIntercourseProtected,
+                    )
+                LogEditorCategory.SLEEP ->
+                    DayEditorLifestyleSection(
+                        category = LogEditorCategory.SLEEP,
+                        label = stringResource(R.string.day_editor_lifestyle_sleep),
+                        logged = state.sleepLogged,
+                        onToggle = { onToggleLifestyle(LogEditorCategory.SLEEP) },
+                    )
+                LogEditorCategory.EXERCISE ->
+                    DayEditorLifestyleSection(
+                        category = LogEditorCategory.EXERCISE,
+                        label = stringResource(R.string.day_editor_lifestyle_exercise),
+                        logged = state.exerciseLogged,
+                        onToggle = { onToggleLifestyle(LogEditorCategory.EXERCISE) },
+                    )
+                LogEditorCategory.WATER ->
+                    DayEditorLifestyleSection(
+                        category = LogEditorCategory.WATER,
+                        label = stringResource(R.string.day_editor_lifestyle_water),
+                        logged = state.waterGlasses > 0,
+                        onToggle = { onToggleLifestyle(LogEditorCategory.WATER) },
+                    )
+                LogEditorCategory.STRESS ->
+                    DayEditorLifestyleSection(
+                        category = LogEditorCategory.STRESS,
+                        label = stringResource(R.string.day_editor_lifestyle_stress),
+                        logged = state.stressLevel != null,
+                        onToggle = { onToggleLifestyle(LogEditorCategory.STRESS) },
+                    )
+                LogEditorCategory.PREGNANCY_SYMPTOMS ->
+                    DayEditorPregnancySymptomsSection(
+                        available = state.availablePregnancySymptoms,
+                        selected = state.pregnancySymptomTags,
+                        onToggle = onTogglePregnancySymptom,
+                    )
                 LogEditorCategory.PREGNANCY_VITALS -> {
                     MahinSectionLabel(text = stringResource(R.string.log_pregnancy_weight_label))
                 }
@@ -243,18 +260,6 @@ internal fun DayEditorSheetContent(
         }
     }
 }
-
-@Composable
-private fun painLocationLabel(location: PainLocation): String =
-    when (location) {
-        PainLocation.ABDOMEN -> stringResource(R.string.day_editor_pain_abdomen)
-        PainLocation.BACK -> stringResource(R.string.day_editor_pain_back)
-        PainLocation.HEAD -> stringResource(R.string.day_editor_pain_head)
-        PainLocation.BREASTS -> stringResource(R.string.day_editor_pain_breasts)
-        PainLocation.PELVIS -> stringResource(R.string.day_editor_pain_pelvis)
-        PainLocation.LEGS -> stringResource(R.string.day_editor_pain_legs)
-        PainLocation.OTHER -> stringResource(R.string.day_editor_pain_other)
-    }
 
 @Composable
 private fun stringArrayResource(id: Int): Array<String> =

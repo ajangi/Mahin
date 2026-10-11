@@ -30,4 +30,7 @@ internal object LogDayEditorCatalog {
             "استرس",
             "نوسان خلقی",
         )
+
+    val defaultPregnancySymptoms: List<String> =
+        listOf("تهوع", "خستگی", "سردرد", "درد کمر", "ورم")
 }

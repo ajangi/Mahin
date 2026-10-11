@@ -411,5 +411,12 @@
     <string name="day_editor_lifestyle_exercise">ورزش</string>
     <string name="day_editor_lifestyle_water">آب</string>
     <string name="day_editor_lifestyle_stress">استرس</string>
+    <string name="day_editor_notes_hint">یادداشت این روز (رمزنگاری‌شده)</string>
+    <string name="day_editor_custom_symptom_label">علامت سفارشی</string>
+    <string name="day_editor_custom_symptom_hint">نام علامت</string>
+    <string name="day_editor_custom_symptom_add">افزودن علامت</string>
+    <string name="day_editor_most_used_first">مرتب‌سازی بر اساس بیشترین استفاده</string>
+    <string name="day_editor_disable_sexual_activity">غیرفعال‌سازی ثبت فعالیت جنسی</string>
+    <string name="day_editor_medication_section">دارو و مکمل</string>
     <string name="log_open_day_editor">ویرایش ثبت روز</string>
 </resources>

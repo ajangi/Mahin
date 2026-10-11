@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class CalendarUiState(
+    val todayGregorian: LocalDate = LocalDate.EPOCH,
     val selectedJalali: JalaliDate,
     val visibleMonth: JalaliDate,
     val dayMarkers: Map<LocalDate, DayMarkers> = emptyMap(),
@@ -41,6 +42,7 @@ class CalendarViewModel
         private val _uiState =
             MutableStateFlow(
                 CalendarUiState(
+                    todayGregorian = today,
                     selectedJalali = converter.toJalali(today),
                     visibleMonth = converter.toJalali(today),
                 ),

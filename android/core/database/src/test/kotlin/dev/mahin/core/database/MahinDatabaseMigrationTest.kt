@@ -145,6 +145,14 @@ class MahinDatabaseMigrationTest {
             ).use { cursor ->
                 assertThat(cursor.moveToFirst()).isTrue()
             }
+        migrated.query("PRAGMA table_info(daily_log)").use { cursor ->
+            val columns = mutableListOf<String>()
+            while (cursor.moveToNext()) {
+                columns.add(cursor.getString(1))
+            }
+            assertThat(columns).contains("painLocation")
+            assertThat(columns).contains("painNote")
+        }
         migrated.query("SELECT moodTags, painSeverity FROM daily_log WHERE id = 'd1'").use { cursor ->
             assertThat(cursor.moveToFirst()).isTrue()
             assertThat(cursor.getString(0)).isEqualTo("آرام")

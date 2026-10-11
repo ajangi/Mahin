@@ -69,7 +69,7 @@ internal fun CycleCalendarScreenContent(
     modifier: Modifier = Modifier,
 ) {
     val converter = PersianCivilDateConverter
-    val today = LocalDate.now()
+    val today = state.todayGregorian
     val reducedMotion = LocalReducedMotion.current
     val selectedGregorian = converter.toGregorian(state.selectedJalali)
     val palette =

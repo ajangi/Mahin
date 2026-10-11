@@ -2,6 +2,8 @@ package dev.mahin.core.testing.roborazzi
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -40,8 +42,13 @@ fun ComposeContentTestRule.captureMahinFullScreenGolden(
         ) {
             MahinTheme(darkTheme = darkTheme) {
                 ProvideReducedMotion(reducedMotion = true) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        content()
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background,
+                    ) {
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            content()
+                        }
                     }
                 }
             }

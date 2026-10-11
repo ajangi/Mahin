@@ -36,7 +36,7 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.withTimeout
 import org.junit.After
@@ -45,6 +45,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.RuleChain
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -53,11 +54,22 @@ import org.robolectric.shadows.ShadowLooper
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class SettingsViewModelTest {
-    @get:Rule
-    val testHangWatchdog: TestHangWatchdogRule = TestHangWatchdogRule()
+    private val testDispatcher = StandardTestDispatcher()
+    private val mainDispatcherRule =
+        MainDispatcherRule(
+            dispatcher = testDispatcher,
+            beforeResetMain = {
+                releaseViewModels()
+                testDispatcher.scheduler.advanceUntilIdle()
+                ShadowLooper.idleMainLooper()
+            },
+        )
 
     @get:Rule
-    val mainDispatcherRule = MainDispatcherRule(UnconfinedTestDispatcher())
+    val ruleChain: RuleChain =
+        RuleChain
+            .outerRule(TestHangWatchdogRule())
+            .around(mainDispatcherRule)
 
     private lateinit var database: MahinDatabase
     private lateinit var pregnancyRepository: PregnancyTrackingRepository
@@ -82,7 +94,6 @@ class SettingsViewModelTest {
 
     @After
     fun tearDown() {
-        releaseViewModels()
         runBlocking(Dispatchers.IO) {
             withTimeout(5_000) {
                 SubscriptionPreferencesRepository(context).clear()
@@ -92,7 +103,7 @@ class SettingsViewModelTest {
     }
 
     private fun idle() {
-        mainDispatcherRule.dispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.advanceUntilIdle()
         ShadowLooper.idleMainLooper()
     }
 
@@ -109,7 +120,7 @@ class SettingsViewModelTest {
         withTimeout(timeoutMs) {
             while (true) {
                 if (condition()) return@withTimeout
-                mainDispatcherRule.dispatcher.scheduler.advanceUntilIdle()
+                testDispatcher.scheduler.advanceUntilIdle()
                 ShadowLooper.idleMainLooper()
             }
         }
@@ -235,6 +246,8 @@ class SettingsViewModelTest {
         idle()
         assertFalse(viewModel.uiState.value.showPaywall)
         assertThat(billingAdapter.cancellationCause).isInstanceOf(CancellationException::class.java)
+        assertThat(billingAdapter.cancellationCause?.message).isEqualTo("paywall_dismissed")
+        assertThat(billingAdapter.warmUpJobCompleted).isTrue()
     }
 
     @Test
@@ -272,8 +285,8 @@ class SettingsViewModelTest {
         assertFalse(viewModel.uiState.value.showPaywall)
         assertThat(billingAdapter.startConnectionCount).isEqualTo(0)
         viewModel.openPaywall()
-        assertTrue(viewModel.uiState.value.showPaywall)
         idle()
+        assertTrue(viewModel.uiState.value.showPaywall)
         assertThat(billingAdapter.startConnectionCount).isEqualTo(1)
         viewModel.dismissPaywall()
         idle()
@@ -410,6 +423,7 @@ class SettingsViewModelTest {
 
     private class CancellableWarmUpBillingAdapter : CountingBillingAdapter() {
         var cancellationCause: CancellationException? = null
+        var warmUpJobCompleted = false
 
         override suspend fun startConnection() {
             startConnectionCount++
@@ -418,6 +432,8 @@ class SettingsViewModelTest {
             } catch (cancelled: CancellationException) {
                 cancellationCause = cancelled
                 throw cancelled
+            } finally {
+                warmUpJobCompleted = true
             }
         }
     }

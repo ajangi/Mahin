@@ -265,11 +265,14 @@ class LogViewModel
                 bpDiastolic = bpPair?.second
             }
             applyPeriodDayFromLog(state, date)
+            val existingDaily = repository.getDailyLogForDate(date)
             repository.upsertDailyLog(
                 date = date,
                 moodTags = state.moodTags,
                 symptomTags = state.symptomTags,
-                painSeverity = null,
+                painSeverity = existingDaily?.painSeverity,
+                painLocation = existingDaily?.painLocation,
+                painNote = existingDaily?.painNote,
                 note = state.note.takeIf { it.isNotBlank() },
             )
             if (reproductiveMode == ReproductiveMode.TRYING_TO_CONCEIVE) {

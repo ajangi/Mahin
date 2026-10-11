@@ -36,12 +36,12 @@ class TodayScreenBehaviorTest {
 
     @Test
     fun quickLogChip_tap_invokesOnOpenLogForDateWithToday() {
-        val today = LocalDate.now()
+        val today = LocalDate.of(2025, 3, 14)
         var opened: LocalDate? = null
         androidComposeRule.setContent {
             MahinTheme {
                 TodayScreenContent(
-                    state = M15GoldenFixtures.todayFertileWindow(),
+                    state = M15GoldenFixtures.todayFertileWindow().copy(today = today),
                     actions = TodayScreenActions(onOpenLogForDate = { opened = it }),
                 )
             }

@@ -184,7 +184,8 @@ class CycleTrackingRepository
         ) {
             val first = periodDao.getById(firstId) ?: return
             val second = periodDao.getById(secondId) ?: return
-            if (!first.endDate!!.plusDays(1).equals(second.startDate)) return
+            val firstEnd = first.endDate ?: first.startDate
+            if (!firstEnd.plusDays(1).equals(second.startDate)) return
             val now = System.currentTimeMillis()
             periodDao.upsert(
                 first.copy(

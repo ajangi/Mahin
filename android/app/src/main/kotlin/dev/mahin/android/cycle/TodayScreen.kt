@@ -175,7 +175,7 @@ internal fun TodayScreenContent(
                             item {
                                 TodayQuickLogRow(
                                     showTtcTest = state.reproductiveMode == ReproductiveMode.TRYING_TO_CONCEIVE,
-                                    onQuickLog = { actions.onOpenLogForDate(LocalDate.now()) },
+                                    onQuickLog = { actions.onOpenLogForDate(state.today) },
                                 )
                             }
                             state.loggedSummary?.takeIf { it.chips.isNotEmpty() }?.let { summary ->
@@ -340,7 +340,7 @@ private fun TodayPregnancyHero(
             val gestationalDay = hero.gestationalWeeks * 7 + hero.gestationalDays
             val totalDays = hero.totalGestationalDays.coerceAtLeast(1)
             val weekProgress = gestationalDay.toFloat() / totalDays
-            val markerFraction = ((gestationalDay - 0.5f) / totalDays).coerceIn(0f, 1f)
+            val markerFraction = TodayPregnancyHeroMapper.todayMarkerFraction(hero)
             MahinCycleProgressRing(
                 arcs = TodayPregnancyRingMapper.weekArcs(hero),
                 progressFraction = weekProgress.coerceIn(0f, 1f),

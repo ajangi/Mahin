@@ -54,6 +54,7 @@ class TodayViewModel
                     val now = localDateClock.today()
                     _uiState.update { state ->
                         state.copy(
+                            today = now,
                             dashboard = dashboard,
                             todaySnapshot = snapshot,
                             loggedSummary = dashboard.todayLog?.let { TodayLoggedSummaryMapper.fromEntity(it) },
@@ -91,6 +92,7 @@ class TodayViewModel
                         }
                     _uiState.update {
                         it.copy(
+                            today = localDateClock.today(),
                             reproductiveMode = mode,
                             pregnancyStatus = if (mode == ReproductiveMode.PREGNANT) status else null,
                             pregnancySnapshot =

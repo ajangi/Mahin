@@ -175,6 +175,7 @@ object M15GoldenFixtures {
                 insufficientDataReason = null,
             )
         return TodayUiState(
+            today = today,
             dashboard =
                 CycleDashboard(
                     profile = null,

@@ -52,46 +52,5 @@ internal fun LogScreenContent(
                 modifier = Modifier.testTag("log_open_day_editor"),
             )
         }
-        if (state.reproductiveMode == ReproductiveMode.TRYING_TO_CONCEIVE) {
-            item {
-                TtcLogSections(
-                    form =
-                        TtcLogFormState(
-                            bbtInput = state.bbtInput,
-                            bbtError = state.bbtError,
-                            intercourseLoggingEnabled = state.intercourseLoggingEnabled,
-                            ovulationTest = state.ovulationTest,
-                            cervicalMucus = state.cervicalMucus,
-                            intercourseLogged = state.intercourseLogged,
-                            intercourseProtected = state.intercourseProtected,
-                            pregnancyTest = state.pregnancyTest,
-                        ),
-                    callbacks = actions.ttcCallbacks,
-                )
-            }
-        }
-        if (state.reproductiveMode == ReproductiveMode.PREGNANT) {
-            item {
-                PregnancyLogSections(
-                    form =
-                        PregnancyLogFormState(
-                            pregnancySymptomTags = state.pregnancySymptomTags,
-                            weightInput = state.pregnancyWeightInput,
-                            weightError = state.pregnancyWeightError,
-                            bpSystolicInput = state.pregnancyBpSystolicInput,
-                            bpDiastolicInput = state.pregnancyBpDiastolicInput,
-                            bpError = state.pregnancyBpError,
-                            availableSymptoms = state.pregnancyAvailableSymptoms,
-                        ),
-                    callbacks =
-                        PregnancyLogCallbacks(
-                            onSymptomToggle = actions.onTogglePregnancySymptom,
-                            onWeightChange = actions.onPregnancyWeightChange,
-                            onBpSystolicChange = actions.onPregnancyBpSystolicChange,
-                            onBpDiastolicChange = actions.onPregnancyBpDiastolicChange,
-                        ),
-                )
-            }
-        }
     }
 }
