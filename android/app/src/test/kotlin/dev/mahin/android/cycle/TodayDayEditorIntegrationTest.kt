@@ -8,17 +8,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import dev.mahin.android.cycle.editor.DayEditorSession
-import dev.mahin.android.cycle.editor.DayEditorSheetContent
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
-import androidx.compose.ui.test.performScrollToNode
 import com.google.common.truth.Truth.assertThat
 import dev.mahin.android.cycle.editor.DayEditorCoordinator
+import dev.mahin.android.cycle.editor.DayEditorSheetContent
 import dev.mahin.android.cycle.editor.DayEditorViewModel
 import dev.mahin.android.golden.M15GoldenFixtures
 import dev.mahin.core.common.FixedLocalDateClock
@@ -111,9 +109,15 @@ class TodayDayEditorIntegrationTest {
             androidComposeRule.onNodeWithTag("day_editor_save").assertDoesNotExist()
             androidComposeRule.onNodeWithTag("day_editor_sexual_opt_in").assertDoesNotExist()
             androidComposeRule.onNodeWithTag("day_editor_period_started").performClick()
-            androidComposeRule.onNodeWithTag("day_editor_scroll").performScrollToNode(hasTestTag("day_editor_symptom_خستگی"))
+            androidComposeRule
+                .onNodeWithTag(
+                    "day_editor_scroll",
+                ).performScrollToNode(hasTestTag("day_editor_symptom_خستگی"))
             androidComposeRule.onNodeWithTag("day_editor_symptom_خستگی").performClick()
-            androidComposeRule.onNodeWithTag("day_editor_scroll").performScrollToNode(hasTestTag("day_editor_mood_آرام"))
+            androidComposeRule
+                .onNodeWithTag(
+                    "day_editor_scroll",
+                ).performScrollToNode(hasTestTag("day_editor_mood_آرام"))
             androidComposeRule.onNodeWithTag("day_editor_mood_آرام").performClick()
             awaitUntil { "خستگی" in viewModel.uiState.value.symptomTags }
             awaitUntil { "آرام" in viewModel.uiState.value.moodTags }
@@ -156,6 +160,7 @@ internal class DayEditorTestHarness private constructor(
 
     fun periodDayFor(date: LocalDate): dev.mahin.core.database.entity.PeriodDayEntity? =
         runBlocking(Dispatchers.IO) { database.periodDayDao().getForDate(date) }
+
     fun createViewModel(today: LocalDate): DayEditorViewModel {
         val gate =
             object : HealthConnectPeriodDayIntegrationGate {
@@ -180,7 +185,8 @@ internal class DayEditorTestHarness private constructor(
         dev.mahin.core.database.pregnancy.PregnancyTrackingRepository(
             database,
             dev.mahin.core.datastore.PregnancyTimerPreferencesRepository(
-                androidx.test.core.app.ApplicationProvider.getApplicationContext(),
+                androidx.test.core.app.ApplicationProvider
+                    .getApplicationContext(),
             ),
         )
 
@@ -204,7 +210,9 @@ internal class DayEditorTestHarness private constructor(
 
     companion object {
         fun create(): DayEditorTestHarness {
-            val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+            val context =
+                androidx.test.core.app.ApplicationProvider
+                    .getApplicationContext<android.content.Context>()
             val database =
                 androidx.room.Room
                     .inMemoryDatabaseBuilder(context, dev.mahin.core.database.MahinDatabase::class.java)

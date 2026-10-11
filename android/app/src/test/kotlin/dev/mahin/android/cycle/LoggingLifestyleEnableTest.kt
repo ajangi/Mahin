@@ -8,13 +8,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import dev.mahin.android.cycle.editor.DayEditorManageCategoriesPanel
 import dev.mahin.android.cycle.editor.DayEditorSheetContent
 import dev.mahin.android.cycle.editor.DayEditorUiState
-import dev.mahin.android.settings.SettingsScreenContent
 import dev.mahin.android.settings.SettingsScreenCallbacks
+import dev.mahin.android.settings.SettingsScreenContent
 import dev.mahin.android.settings.SettingsUiState
 import dev.mahin.core.designsystem.MahinTheme
 import dev.mahin.core.model.LogEditorCategory
@@ -105,7 +105,10 @@ class LoggingLifestyleEnableTest {
                 }
             }
         }
-        androidComposeRule.onNodeWithTag("settings_screen_list").performScrollToNode(hasTestTag("settings_lifestyle_sleep"))
+        androidComposeRule
+            .onNodeWithTag(
+                "settings_screen_list",
+            ).performScrollToNode(hasTestTag("settings_lifestyle_sleep"))
         androidComposeRule.onNodeWithTag("settings_lifestyle_sleep").assertExists()
         androidComposeRule.onNodeWithTag("settings_lifestyle_sleep_switch").performClick()
         androidComposeRule.waitForIdle()

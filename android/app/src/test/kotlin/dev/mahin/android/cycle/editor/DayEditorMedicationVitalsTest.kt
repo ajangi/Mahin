@@ -3,7 +3,6 @@ package dev.mahin.android.cycle.editor
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.google.common.truth.Truth.assertThat
 import dev.mahin.core.common.FixedLocalDateClock
 import dev.mahin.core.database.MahinDatabase
 import dev.mahin.core.database.cycle.CycleTrackingRepository

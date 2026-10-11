@@ -80,7 +80,11 @@ class PregnancyAppointmentsViewModelTest {
             vm.onNewAppointmentTypeSelected(PregnancyAppointmentType.CLINICIAN_VISIT)
             vm.addAppointment()
             awaitUntil { vm.uiState.value.appointments.size == 1 }
-            assertThat(vm.uiState.value.appointments.first().title).isEqualTo("ویزیت")
+            assertThat(
+                vm.uiState.value.appointments
+                    .first()
+                    .title,
+            ).isEqualTo("ویزیت")
         }
     }
 

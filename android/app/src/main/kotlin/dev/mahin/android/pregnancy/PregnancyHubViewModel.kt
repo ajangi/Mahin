@@ -15,7 +15,6 @@ import dev.mahin.core.model.PregnancyOutcome
 import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.domain.pregnancy.PregnancyDatingEngineV1
 import dev.mahin.domain.pregnancy.PregnancyStatusSnapshot
-import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay

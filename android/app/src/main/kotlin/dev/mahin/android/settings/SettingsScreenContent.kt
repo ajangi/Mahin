@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -27,8 +29,6 @@ import dev.mahin.core.designsystem.component.MahinShellSecondaryTopAppBar
 import dev.mahin.core.designsystem.component.MahinSurfaceCard
 import dev.mahin.core.designsystem.mahinTextStyle
 import dev.mahin.core.model.LogEditorCategory
-import androidx.compose.material3.Switch
-import androidx.compose.ui.Alignment
 
 @Composable
 internal fun SettingsScreenContent(
