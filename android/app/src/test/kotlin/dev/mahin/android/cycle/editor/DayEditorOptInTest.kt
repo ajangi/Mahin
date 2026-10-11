@@ -55,6 +55,7 @@ class DayEditorOptInTest {
 
     @After
     fun tearDown() {
+        repeat(30) { ShadowLooper.idleMainLooper() }
         harness.close()
     }
 

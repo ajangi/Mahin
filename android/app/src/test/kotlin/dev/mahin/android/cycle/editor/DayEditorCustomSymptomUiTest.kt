@@ -11,23 +11,18 @@ import androidx.compose.ui.test.performTextInput
 import com.google.common.truth.Truth.assertThat
 import dev.mahin.core.designsystem.MahinTheme
 import dev.mahin.core.model.LogEditorCategory
-import dev.mahin.core.testing.MainDispatcherRule
 import dev.mahin.core.testing.ViewModelStoreClearingRule
 import java.time.LocalDate
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.RuleChain
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowLooper
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], qualifiers = "fa-rIR", manifest = Config.NONE)
 class DayEditorCustomSymptomUiTest {
@@ -38,11 +33,7 @@ class DayEditorCustomSymptomUiTest {
     private val label = "سردرد شخصی"
 
     @get:Rule
-    val composeRule: RuleChain =
-        RuleChain
-            .outerRule(androidComposeRule)
-            .around(MainDispatcherRule(UnconfinedTestDispatcher()))
-            .around(ViewModelStoreClearingRule(androidComposeRule))
+    val composeRule = ViewModelStoreClearingRule.withCompose(androidComposeRule)
 
     @Before
     fun setUp() {
