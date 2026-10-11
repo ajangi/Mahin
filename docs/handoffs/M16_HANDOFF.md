@@ -1,7 +1,7 @@
 # M16 Handoff — Logging experience overhaul
 
 **Milestone:** M16  
-**Status:** draft PR [#39](https://github.com/ajangi/Mahin/pull/39) — head `03d9f5f`+ — Gatekeeper round 1  
+**Status:** draft PR [#39](https://github.com/ajangi/Mahin/pull/39) — head `7c6db5a` — CI **green** (run [38156398704](https://github.com/ajangi/Mahin/actions/runs/38156398704))  
 **Next milestone:** **M17** only
 
 ## Implemented scope
