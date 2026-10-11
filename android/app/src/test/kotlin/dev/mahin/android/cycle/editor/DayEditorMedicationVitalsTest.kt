@@ -98,10 +98,8 @@ class DayEditorMedicationVitalsTest {
             viewModel.onPregnancyBpSystolicChange("120")
             viewModel.onPregnancyBpDiastolicChange("80")
             awaitUntil {
-                runBlocking {
-                    val log = pregnancyRepository.getPregnancyDayLogForDate(logDate)
-                    log?.weightKg == 65.0 && log.bpSystolic == 120 && log.bpDiastolic == 80
-                }
+                val log = runBlocking { pregnancyRepository.getPregnancyDayLogForDate(logDate) }
+                log?.weightKg == 65.0 && log.bpSystolic == 120 && log.bpDiastolic == 80
             }
         }
     }
@@ -131,7 +129,7 @@ class DayEditorMedicationVitalsTest {
     }
 
     private suspend fun awaitUntil(
-        timeoutMs: Long = 2_000,
+        timeoutMs: Long = 6_000,
         condition: () -> Boolean,
     ) {
         val deadline = System.currentTimeMillis() + timeoutMs

@@ -1,87 +1,58 @@
-# M16 Handoff — Logging experience overhaul
+# M16 Handoff — Logging experience overhaul (Gatekeeper Round 2)
 
 **Milestone:** M16  
-**Status:** draft PR [#39](https://github.com/ajangi/Mahin/pull/39) — head `dce6728` — CI **green** (run [38162467642](https://github.com/ajangi/Mahin/actions/runs/38162467642), android ~15m)  
+**Status:** PR [#39](https://github.com/ajangi/Mahin/pull/39) — Gatekeeper Round 2 complete (see CI on branch head after push)  
 **Next milestone:** **M17** only
 
-## Implemented scope (this pass)
-
-- **Today + editor integration:** `TodayDayEditorIntegrationTest` — quick-log → `day_editor_sheet`, period/symptom/mood taps, in-memory Room persistence, no save button / opt-in dialog; removed no-op `DayEditorLoggingEffortTest`.
-- **Medication:** Room **v6** `daily_log.medicationTags`; `DayEditorMedicationSection` + `toggleMedication` autosave/undo; `DayEditorMedicationVitalsTest`.
-- **Pregnancy vitals:** weight + BP fields in editor with `LogInputValidators` autosave/undo; persistence test in `DayEditorMedicationVitalsTest`.
-- **Calendar period tools UI:** `CalendarPeriodManagementSection` on calendar (edit start/end, ongoing end, merge, split); `CalendarPeriodManagementUiTest`; open-range merge safety in `CycleTrackingRepositoryPeriodToolsTest`.
-- **Settings lifestyle:** `settings_group_logging` toggles + `SettingsViewModel` / `LoggingPreferencesRepository`; `LoggingLifestyleEnableTest` (Manage + Settings).
-- **`LocalDateClock`:** replaced `LocalDate.now()` in `OnboardingFlow`, `TtcInsightsViewModel`, `CycleInsightsViewModel`, `PregnancyAppointmentsViewModel`, `PregnancyStartSheet`, `PregnancyHubViewModel` (+ Settings `referenceToday` for pregnancy sheet).
-- **`PregnancyAppointmentsViewModelTest`:** eager DB open, `ViewModelStoreTestHarness` clear before `database.close()`.
-
-## Gatekeeper / acceptance evidence
+## Gatekeeper Round 2 — per-item evidence
 
 | # | Item | Status | Evidence |
 |---|------|--------|----------|
-| 1 | MainDispatcherRule + Settings stress | Met | `MainDispatcherRule.kt`, `SettingsViewModelTest` (25× debug/release `--rerun-tasks` on prior head) |
-| 2 | Day editor sections + pain | Met | `DayEditorCategorySections.kt`, `DayEditorPainStepperTest` |
-| 3 | Sexual/lifestyle/manage | Met | `DayEditorDialogs.kt`, `DayEditorOptInTest`, `LoggingLifestyleEnableTest` |
-| 4 | Medication + pregnancy vitals (real) | Met | `DayEditorMedicationVitalsTest`, `DayEditorViewModel` + Room v6 |
-| 5 | Category ordering | Met | `LogCategoryUsageOrderTest`, `DayEditorViewModelCategoryOrderTest` |
-| 6 | Today 1-tap integration | Met | `TodayDayEditorIntegrationTest` |
-| 7 | Sync/export privacy | Met | `LoggingLocalPrivacyTest` |
-| 8 | Settings lifestyle entry | Met | `SettingsScreenContent.kt`, `LoggingLifestyleEnableTest` |
-| 9 | Migration v4→v5 + v5→v6 | Met | `MahinDatabaseMigrationTest` (`migrate4To5_*`, `migrate5To6_*`) |
-| 10 | Analytics guard | Met | `SensitiveAnalyticsGuardTest` |
-| 11 | Calendar period UI + open range | Met | `CalendarPeriodManagementSection.kt`, `CalendarPeriodManagementUiTest`, `CycleTrackingRepositoryPeriodToolsTest` |
-| 12 | Goldens / theme | Met | `verifyRoborazziDebug` (CI android job) |
-| 13 | Today `state.today` | Met | `TodayScreenBehaviorTest` |
-| 14 | `LocalDateClock` in remaining app VMs | Met | grep clean under `app/src/main`; `FixedLocalDateClock` in appointment VM test |
-| 15 | Pregnancy appointments VM teardown | Met | `PregnancyAppointmentsViewModelTest` (`openHelper.writableDatabase`, `viewModelStore.clear()` before close) |
+| 1 | Sync scope revert; custom tags local-only (v7) | Met | Removed `:core:sync` from `core/database/build.gradle.kts`; deleted `SyncModule` / `NoOpSyncOutbox`; `CycleTrackingRepository` no outbox; `localCustomSymptomTags` + `MIGRATION_6_7`; `LoggingLocalPrivacyTest` |
+| 2 | `TodayDayEditorIntegrationTest` hard rules | Met | Real `MahinAppShellWithNavigationOverride` + `DayEditorHost`; no Compose in `runBlocking`; session date = clock today; `onAllNodes(isDialog()).assertCountEquals(0)` |
+| 3 | Flow level + BBT; dead log UI removed | Met | `DayEditorPeriodFlowSection`, `DayEditorBbtSection`; deleted `CycleLogFields` / `TtcLogSections` / `PregnancyLogSections`; `LogViewModel.save` removed; `DayEditorFlowLevelTest` |
+| 4 | Lifestyle Room persistence | Met | v7 lifestyle columns; `toggleLifestyleLogged` persists; `DayEditorLifestylePersistenceTest`; handoff limitation row corrected |
+| 5 | `LoggingLifestyleEnableTest` real VMs | Met | `SettingsViewModel` + `DayEditorViewModel` + shared `LoggingPreferencesRepository`; manage + settings paths |
+| 6 | `DayEditorOptInTest` | Met | `day_editor_intercourse_toggle` / `day_editor_lifestyle_sleep_toggle`; VM path opt-in/disable with DB retention |
+| 7 | Sexual opt-in copy + golden | Met | `strings.xml` `day_editor_sexual_opt_in_body`; `DayEditorSexualOptInGoldenSurface` + M16 `editor_sexualOptIn_*` |
+| 8 | Undo TTC + period guard | Met | `applySnapshot` period only if changed; undo tests in `DayEditorViewModelUndoTest` |
+| 9 | Pain note UI | Met | `day_editor_pain_note_field`; `DayEditorPainNotePersistenceTest`; Persian digits in `DayEditorPainStepperTest` |
+| 10 | Usage counts from Room | Met | `LogCategoryUsageFromLocalLogs`; `DayEditorViewModelCategoryOrderTest` (VM) |
+| 11 | Calendar period tools | Met | Split picker + overlap/adjacent validation; `CalendarViewModelPeriodManagementTest` |
+| 12 | Goldens | Met | TTC fixture differentiated; `DayEditorSexualOptInGoldenSurface`; M14a `log_datePicker_*` rename; `verifyRoborazziDebug` |
+| 13 | Migrations | Met | `MahinDatabaseMigrationTest` migrate4→5, 5→6, 6→7 assertions |
+| 14 | Part B | Met | `java.time.Clock` in `TtcInsightsViewModel`; `TodayPregnancyHeroMapperTest`; paywall `paywallWarmUpJobForTests()` assertion |
+| 15 | Honest handoff | Met | This document |
 
-## Acceptance criteria (`prompts/M16.md`)
+**Extras:** `TestHangWatchdogRule` KDoc vs `MAHIN_TEST_VERBOSE_STREAMS`; `DayEditorCustomSymptomPersistenceTest` + add control in `DayEditorPainStepperTest`; deterministic `ShadowLooper` waits (no `delay(25)` in new tests).
 
-| Criterion | Status | Evidence |
-|-----------|--------|----------|
-| Today: 1 tap editor + toggles persist | Met | `TodayDayEditorIntegrationTest` |
-| Sexual hidden until opt-in | Met | `DayEditorOptInTest` |
-| Lifestyle hidden by default | Met | `DayEditorOptInTest`, `LoggingLifestyleEnableTest` |
-| Pain location + 0–10 | Met | `DayEditorPainTest`, `DayEditorPainStepperTest` |
-| Migration preserves logs | Met | `MahinDatabaseMigrationTest` |
-| Custom tags not in sync/export | Met | `LoggingLocalPrivacyTest` |
-| Analytics extended | Met | `SensitiveAnalyticsGuardTest` |
-| M16 goldens | Met | `M16FullScreenGoldenTest`, CI Roborazzi |
-| CI checks | Met | GitHub Actions run [38162467642](https://github.com/ajangi/Mahin/actions/runs/38162467642) — `android` job success on `dce6728` (~15m) |
+## Unresolved
+
+- **Custom symptom sync/export:** selections live in `daily_log.localCustomSymptomTags` (local-only). Owner decision still required per PROGRAM_V2 §3 for any future sync semantics.
+
+## Migrations
+
+- **v5 → v6:** `medicationTags`
+- **v6 → v7:** `localCustomSymptomTags`, lifestyle columns (`MIGRATION_6_7`)
 
 ## Commands / results (local)
 
 ```bash
 export ANDROID_HOME=$HOME/android-sdk
-cd android && ./gradlew :app:testDebugUnitTest \
-  --tests "dev.mahin.android.cycle.TodayDayEditorIntegrationTest" \
-  --tests "dev.mahin.android.cycle.editor.DayEditorMedicationVitalsTest" \
-  --tests "dev.mahin.android.cycle.LoggingLifestyleEnableTest" \
-  --tests "dev.mahin.android.cycle.CalendarPeriodManagementUiTest" \
-  --no-daemon
-# BUILD SUCCESSFUL (2026-10-11 Cloud Agent VM)
-
 cd android && ./gradlew lintDebug ktlintCheck detekt test \
   :app:verifyRoborazziDebug :core:designsystem:verifyRoborazziDebug \
-  assembleDebug assembleRelease --no-daemon
-# Full parity with CI android job — see CI run ID on PR head
+  assembleDebug --no-daemon
+# BUILD SUCCESSFUL (Gatekeeper Round 2 Cloud Agent VM)
 ```
-
-## Migrations
-
-- **v5 → v6:** `daily_log.medicationTags` (`MIGRATION_5_6`).
 
 ## Limitations
 
-- Lifestyle module toggles still preference-backed (no separate Room lifestyle columns in M16).
-- Log tab `LogViewModel` retained for legacy paths not duplicated in editor.
+- Sexual opt-in Roborazzi uses `DayEditorSexualOptInGoldenSurface` (same strings/actions as `AlertDialog`) because dialog window breaks single-root capture.
+- Vitals autosave remains immediate (debounce reverted after medication/vitals regression).
 
 ## Deferred
 
-- Component goldens; tighter Roborazzi tolerance; shared-element Today/calendar parity; release-test exclusion audit; benchmark fail-on-timeout.
-
-## Unresolved
-
-- Custom symptom sync/export: owner decision per PROGRAM_V2 §3.
+- Component goldens; tighter Roborazzi tolerance; shared-element Today/calendar parity; release-test exclusion audit.
 
 ## Next milestone
 

@@ -14,6 +14,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.EntryPointAccessors
+import dev.mahin.android.cycle.editor.DayEditorCoordinator
 import dev.mahin.android.cycle.editor.DayEditorHost
 import dev.mahin.android.cycle.editor.DayEditorSession
 import dev.mahin.android.navigation.AppNavigationEntryPoint
@@ -39,6 +40,7 @@ fun MahinAppShell(
 
 @VisibleForTesting
 @Composable
+@Suppress("LongParameterList")
 internal fun MahinAppShellWithNavigationOverride(
     shellNavigationStateOverride: ShellNavigationState,
     modifier: Modifier = Modifier,
@@ -47,6 +49,7 @@ internal fun MahinAppShellWithNavigationOverride(
     dayEditorOverlay: @Composable (DayEditorSession?, () -> Unit) -> Unit = { session, onDismiss ->
         DayEditorHost(session = session, onDismiss = onDismiss)
     },
+    dayEditorCoordinatorOverride: DayEditorCoordinator? = null,
 ) {
     MahinAppShellContent(
         shellState = shellNavigationStateOverride,
@@ -55,6 +58,7 @@ internal fun MahinAppShellWithNavigationOverride(
         onLocalDataErased = onLocalDataErased,
         screenOverrides = screenOverrides,
         dayEditorOverlay = dayEditorOverlay,
+        dayEditorCoordinatorOverride = dayEditorCoordinatorOverride,
     )
 }
 
@@ -69,6 +73,7 @@ internal fun MahinAppShellContent(
     dayEditorOverlay: @Composable (DayEditorSession?, () -> Unit) -> Unit = { session, onDismiss ->
         DayEditorHost(session = session, onDismiss = onDismiss)
     },
+    dayEditorCoordinatorOverride: DayEditorCoordinator? = null,
 ) {
     val openHistory: () -> Unit = {
         navController.navigate(MahinTopLevelDestination.HISTORY_ROUTE) { launchSingleTop = true }
@@ -86,7 +91,8 @@ internal fun MahinAppShellContent(
         }
     val logTabDateRequest = remember(navigationEntryPoint) { navigationEntryPoint.logTabDateRequest() }
     val dayEditorCoordinator =
-        remember(navigationEntryPoint) { navigationEntryPoint.dayEditorCoordinator() }
+        dayEditorCoordinatorOverride
+            ?: remember(navigationEntryPoint) { navigationEntryPoint.dayEditorCoordinator() }
     val dayEditorSession by dayEditorCoordinator.session.collectAsStateWithLifecycle()
     val openDayEditor: (LocalDate) -> Unit = { date -> dayEditorCoordinator.open(date) }
     val openLogTab: (LocalDate?) -> Unit = { date ->

@@ -7,9 +7,7 @@ import dev.mahin.android.navigation.LogTabDateRequest
 import dev.mahin.android.pregnancy.PregnancyFormatters
 import dev.mahin.core.common.LocalDateClock
 import dev.mahin.core.database.cycle.CycleTrackingRepository
-import dev.mahin.core.database.pregnancy.PregnancyDayLogInput
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
-import dev.mahin.core.database.ttc.TtcDayLogInput
 import dev.mahin.core.database.ttc.TtcTrackingRepository
 import dev.mahin.core.datastore.TtcPrivacyPreferencesRepository
 import dev.mahin.core.datetime.CivilDateConverter
@@ -22,7 +20,6 @@ import dev.mahin.core.model.OvulationTestResult
 import dev.mahin.core.model.PeriodFlowLevel
 import dev.mahin.core.model.PregnancyTestResult
 import dev.mahin.core.model.ReproductiveMode
-import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -74,7 +71,8 @@ class LogViewModel
     @Inject
     constructor(
         private val repository: CycleTrackingRepository,
-        private val periodDayTrackingService: PeriodDayTrackingService,
+        @Suppress("UnusedPrivateProperty") private val periodDayTrackingService: PeriodDayTrackingService,
+        @Suppress("UnusedPrivateProperty")
         private val healthConnectPeriodDayIntegrationGate: HealthConnectPeriodDayIntegrationGate,
         private val ttcRepository: TtcTrackingRepository,
         private val pregnancyRepository: PregnancyTrackingRepository,
@@ -217,131 +215,6 @@ class LogViewModel
             viewModelScope.launch {
                 ttcPrivacyRepository.setIntercourseLoggingEnabled(enabled)
             }
-        }
-
-        fun save() {
-            viewModelScope.launch {
-                val state = _uiState.value
-                if (!state.selectedDateReady || state.saving) return@launch
-                performSave(state)
-            }
-        }
-
-        @Suppress("LongMethod")
-        internal suspend fun performSave(state: LogUiState) {
-            if (!state.selectedDateReady) return
-            val date = state.converter.toGregorian(state.selectedJalali)
-            _uiState.update { it.copy(saving = true, bbtError = null) }
-            val reproductiveMode = ttcRepository.getReproductiveMode()
-            var bbtCelsius: Double? = null
-            var weightKg: Double? = null
-            var bpSystolic: Int? = null
-            var bpDiastolic: Int? = null
-            if (reproductiveMode == ReproductiveMode.TRYING_TO_CONCEIVE) {
-                val (parsedBbt, bbtError) = LogInputValidators.parseBbt(state.bbtInput)
-                if (bbtError != null) {
-                    _uiState.update { it.copy(saving = false, bbtError = bbtError) }
-                    return
-                }
-                bbtCelsius = parsedBbt
-            }
-            if (reproductiveMode == ReproductiveMode.PREGNANT) {
-                val (parsedWeight, weightError) = LogInputValidators.parseWeight(state.pregnancyWeightInput)
-                if (weightError != null) {
-                    _uiState.update { it.copy(saving = false, pregnancyWeightError = weightError) }
-                    return
-                }
-                weightKg = parsedWeight
-                val (bpPair, bpError) =
-                    LogInputValidators.parseBloodPressure(
-                        state.pregnancyBpSystolicInput,
-                        state.pregnancyBpDiastolicInput,
-                    )
-                if (bpError != null) {
-                    _uiState.update { it.copy(saving = false, pregnancyBpError = bpError) }
-                    return
-                }
-                bpSystolic = bpPair?.first
-                bpDiastolic = bpPair?.second
-            }
-            applyPeriodDayFromLog(state, date)
-            val existingDaily = repository.getDailyLogForDate(date)
-            repository.upsertDailyLog(
-                date = date,
-                moodTags = state.moodTags,
-                symptomTags = state.symptomTags,
-                painSeverity = existingDaily?.painSeverity,
-                painLocation = existingDaily?.painLocation,
-                painNote = existingDaily?.painNote,
-                note = state.note.takeIf { it.isNotBlank() },
-            )
-            if (reproductiveMode == ReproductiveMode.TRYING_TO_CONCEIVE) {
-                val existingTtc = ttcRepository.getTtcLogForDate(date)
-                val intercourseLogged =
-                    if (state.intercourseLoggingEnabled) {
-                        state.intercourseLogged
-                    } else {
-                        existingTtc?.intercourseLogged == true
-                    }
-                val intercourseProtected =
-                    if (state.intercourseLoggingEnabled) {
-                        state.intercourseProtected
-                    } else {
-                        existingTtc?.intercourseProtected
-                    }
-                ttcRepository.upsertTtcDayLog(
-                    TtcDayLogInput(
-                        logDate = date,
-                        bbtCelsius = bbtCelsius,
-                        ovulationTestResult = state.ovulationTest,
-                        cervicalMucus = state.cervicalMucus,
-                        intercourseLogged = intercourseLogged,
-                        intercourseProtected = intercourseProtected,
-                        pregnancyTestResult = state.pregnancyTest,
-                    ),
-                )
-            }
-            if (reproductiveMode == ReproductiveMode.PREGNANT) {
-                pregnancyRepository.upsertPregnancyDayLog(
-                    PregnancyDayLogInput(
-                        logDate = date,
-                        symptomTags = state.pregnancySymptomTags,
-                        weightKg = weightKg,
-                        bpSystolic = bpSystolic,
-                        bpDiastolic = bpDiastolic,
-                        note = state.note.takeIf { it.isNotBlank() },
-                    ),
-                )
-            }
-            _uiState.update { it.copy(saving = false, saved = true) }
-        }
-
-        private suspend fun applyPeriodDayFromLog(
-            state: LogUiState,
-            date: LocalDate,
-        ) {
-            val integrationActive = healthConnectPeriodDayIntegrationGate.isIntegrationActive()
-            periodDayTrackingService.applyUserPeriodLogChange(
-                healthConnectIntegrationActive = integrationActive,
-                loggingPeriod = state.loggingPeriod,
-                date = date,
-                flowLevel = state.flowLevel,
-                ensurePeriodSpanExists = {
-                    val existing =
-                        repository.getAllPeriods().find { record ->
-                            !date.isBefore(record.startDate) &&
-                                (record.endDate == null || !date.isAfter(record.endDate))
-                        }
-                    if (existing == null) {
-                        repository.upsertPeriod(
-                            startDate = date,
-                            endDate = date,
-                            note = null,
-                            recordId = null,
-                        )
-                    }
-                },
-            )
         }
 
         private fun loadForSelectedDate() {

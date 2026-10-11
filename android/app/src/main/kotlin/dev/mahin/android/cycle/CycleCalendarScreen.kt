@@ -57,7 +57,10 @@ fun CycleCalendarScreen(
             onSavePeriodEdit = viewModel::savePeriodEdit,
             onCancelPeriodEdit = viewModel::cancelPeriodEdit,
             onMergePeriodWithNext = viewModel::mergePeriodWithNext,
-            onSplitPeriod = viewModel::splitPeriod,
+            onSplitPeriod = viewModel::beginPeriodSplit,
+            onPeriodSplitAfterSelected = viewModel::onPeriodSplitAfterSelected,
+            onConfirmPeriodSplit = viewModel::confirmPeriodSplit,
+            onCancelPeriodSplit = viewModel::cancelPeriodSplit,
         )
     }
 }
@@ -81,6 +84,9 @@ internal fun CycleCalendarScreenContent(
     onCancelPeriodEdit: () -> Unit = {},
     onMergePeriodWithNext: (String) -> Unit = {},
     onSplitPeriod: (String) -> Unit = {},
+    onPeriodSplitAfterSelected: (JalaliDate) -> Unit = {},
+    onConfirmPeriodSplit: () -> Unit = {},
+    onCancelPeriodSplit: () -> Unit = {},
     sharedTransitionScope: SharedTransitionScope? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -162,6 +168,12 @@ internal fun CycleCalendarScreenContent(
                 onCancelEdit = onCancelPeriodEdit,
                 onMergeWithNext = onMergePeriodWithNext,
                 onSplit = onSplitPeriod,
+                splitRecordId = state.periodSplitId,
+                splitAfterJalali = state.periodSplitAfterJalali,
+                onSplitAfterSelected = onPeriodSplitAfterSelected,
+                onConfirmSplit = onConfirmPeriodSplit,
+                onCancelSplit = onCancelPeriodSplit,
+                feedbackMessageKey = state.periodFeedbackMessage,
                 modifier = Modifier.padding(top = MahinSpacing.md),
             )
             Text(

@@ -1,19 +1,8 @@
 package dev.mahin.android.cycle
 
 import dev.mahin.core.datetime.JalaliDate
-import dev.mahin.core.model.PeriodFlowLevel
 
 data class LogScreenActions(
     val onDateSelected: (JalaliDate) -> Unit,
     val onOpenDayEditor: () -> Unit = {},
-    val onToggleLoggingPeriod: () -> Unit,
-    val onFlowLevelSelected: (PeriodFlowLevel) -> Unit,
-    val onToggleSymptom: (String) -> Unit,
-    val onNoteChange: (String) -> Unit,
-    val onSave: () -> Unit,
-    val onTogglePregnancySymptom: (String) -> Unit,
-    val onPregnancyWeightChange: (String) -> Unit,
-    val onPregnancyBpSystolicChange: (String) -> Unit,
-    val onPregnancyBpDiastolicChange: (String) -> Unit,
-    val ttcCallbacks: TtcLogFormCallbacks,
 )

@@ -1,6 +1,7 @@
 package dev.mahin.android.settings
 
 import android.app.Activity
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -235,6 +236,9 @@ class SettingsViewModel
             paywallWarmUpJob = null
             paywallVisible.value = false
         }
+
+        @VisibleForTesting
+        internal fun paywallWarmUpJobForTests(): Job? = paywallWarmUpJob
 
         fun priceLabel(productId: String): String? {
             val state = billingAdapter.state.value

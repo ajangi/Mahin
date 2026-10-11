@@ -253,6 +253,7 @@ class SettingsViewModelTest {
         assertThat(billingAdapter.cancellationCause).isInstanceOf(CancellationException::class.java)
         assertThat(billingAdapter.cancellationCause?.message).isEqualTo("paywall_dismissed")
         assertThat(billingAdapter.warmUpJobCompleted).isTrue()
+        assertThat(viewModel.paywallWarmUpJobForTests()).isNull()
     }
 
     @Test

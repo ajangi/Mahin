@@ -110,6 +110,10 @@
     <string name="calendar_period_set_ongoing">بدون تاریخ پایان</string>
     <string name="calendar_period_save">ذخیرهٔ بازه</string>
     <string name="calendar_period_cancel">انصراف</string>
+    <string name="calendar_period_split_after_label">تقسیم بعد از این روز</string>
+    <string name="calendar_period_error_overlap">این بازه با بازهٔ دیگری هم‌پوشانی دارد.</string>
+    <string name="calendar_period_error_merge">فقط بازه‌های پشت‌سرهم را می‌توان ادغام کرد.</string>
+    <string name="calendar_period_error_split">روز تقسیم باید داخل بازه باشد.</string>
     <string name="settings_group_logging">ثبت روزانه</string>
     <string name="calendar_day_sheet_title">روز %1$s %2$s %3$s</string>
     <string name="calendar_day_sheet_gregorian">میلادی: %1$s</string>
@@ -404,6 +408,7 @@
     <string name="day_editor_mood_section">خلق‌وخو</string>
     <string name="day_editor_pain_section">درد</string>
     <string name="day_editor_pain_severity">شدت: %1$s از ۱۰</string>
+    <string name="day_editor_pain_note_label">یادداشت درد</string>
     <string name="day_editor_pain_abdomen">شکم</string>
     <string name="day_editor_pain_back">کمر</string>
     <string name="day_editor_pain_head">سر</string>
@@ -415,7 +420,7 @@
     <string name="day_editor_sexual_hint">فقط روی دستگاه ذخیره می‌شود.</string>
     <string name="day_editor_enable_sexual_activity">فعال‌سازی ثبت فعالیت جنسی</string>
     <string name="day_editor_sexual_opt_in_title">ثبت فعالیت جنسی</string>
-    <string name="day_editor_sexual_opt_in_body">این بخش پیش‌فرض پنهان است. داده هرگز در اعلان‌ها یا تحلیل‌ها استفاده نمی‌شود و فقط روی دستگاه شما می‌ماند.</string>
+    <string name="day_editor_sexual_opt_in_body">با فعال‌سازی، برای هر روز فقط تاریخ و اینکه محافظت‌شده یا محافظت‌نشده بوده ذخیره می‌شود. این اطلاعات هرگز به تحلیل‌ها، اعلان‌ها یا سرویس‌های بیرونی نمی‌رود و فقط روی دستگاه شما می‌ماند.</string>
     <string name="day_editor_sexual_opt_in_confirm">فعال‌سازی</string>
     <string name="day_editor_sexual_opt_in_cancel">انصراف</string>
     <string name="day_editor_saved_snackbar">ذخیره شد</string>

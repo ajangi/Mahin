@@ -40,17 +40,13 @@ fun DayEditorHost(
     session: DayEditorSession?,
     onDismiss: () -> Unit,
     viewModel: DayEditorViewModel = hiltViewModel(),
+    useModalSheet: Boolean = true,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(session?.date) {
         session?.date?.let { viewModel.openDate(it) }
     }
     if (session == null) return
-    val skipHalfExpanded = LocalReducedMotion.current
-    val sheetState =
-        rememberModalBottomSheetState(
-            skipPartiallyExpanded = skipHalfExpanded,
-        )
     val snackbarHostState = remember { SnackbarHostState() }
     val undoLabel = stringResource(R.string.day_editor_undo)
     val savedMessage = stringResource(R.string.day_editor_saved_snackbar)
@@ -67,12 +63,8 @@ fun DayEditorHost(
             viewModel.dismissUndo()
         }
     }
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        modifier = Modifier.testTag("day_editor_sheet"),
-    ) {
-        Column {
+    val editorContent: @Composable () -> Unit = {
+        Column(Modifier.testTag("day_editor_sheet")) {
             SnackbarHost(hostState = snackbarHostState)
             DayEditorSheetContent(
                 date = session.date,
@@ -82,6 +74,10 @@ fun DayEditorHost(
                 onToggleMood = viewModel::toggleMood,
                 onSetPain = viewModel::setPain,
                 onAdjustPainSeverity = viewModel::adjustPainSeverity,
+                onPainNoteChange = viewModel::setPainNote,
+                onSetFlowLevel = viewModel::setFlowLevel,
+                onBbtChange = viewModel::onBbtChange,
+                onToggleLocalCustomSymptom = viewModel::toggleLocalCustomSymptom,
                 onNoteChange = viewModel::setNote,
                 onMucusSelected = viewModel::setCervicalMucus,
                 onOvulationTest = viewModel::setOvulationTest,
@@ -100,6 +96,22 @@ fun DayEditorHost(
                 onRequestSexualOptIn = viewModel::requestSexualOptIn,
             )
         }
+    }
+    if (useModalSheet) {
+        val skipHalfExpanded = LocalReducedMotion.current
+        val sheetState =
+            rememberModalBottomSheetState(
+                skipPartiallyExpanded = skipHalfExpanded,
+            )
+        ModalBottomSheet(
+            onDismissRequest = onDismiss,
+            sheetState = sheetState,
+            modifier = Modifier.testTag("day_editor_sheet_modal"),
+        ) {
+            editorContent()
+        }
+    } else {
+        editorContent()
     }
     if (state.showSexualOptIn) {
         DayEditorSexualOptInDialog(
@@ -131,6 +143,10 @@ internal fun DayEditorSheetContent(
     onToggleMood: (String) -> Unit = {},
     onSetPain: (dev.mahin.core.model.PainLocation, Int) -> Unit = { _, _ -> },
     onAdjustPainSeverity: (Int) -> Unit = {},
+    onPainNoteChange: (String) -> Unit = {},
+    onSetFlowLevel: (dev.mahin.core.model.PeriodFlowLevel) -> Unit = {},
+    onBbtChange: (String) -> Unit = {},
+    onToggleLocalCustomSymptom: (String) -> Unit = {},
     onNoteChange: (String) -> Unit = {},
     onMucusSelected: (dev.mahin.core.model.CervicalMucusType) -> Unit = {},
     onOvulationTest: (dev.mahin.core.model.OvulationTestResult) -> Unit = {},
@@ -185,6 +201,11 @@ internal fun DayEditorSheetContent(
                                     contentDescription = "period_started"
                                 },
                     )
+                    DayEditorPeriodFlowSection(
+                        periodLogged = state.periodLogged,
+                        flowLevel = state.flowLevel,
+                        onSetFlowLevel = onSetFlowLevel,
+                    )
                 }
                 LogEditorCategory.SYMPTOMS -> {
                     DayEditorSymptomsSection(state, state.confirmPulseKey, onToggleSymptom)
@@ -192,6 +213,11 @@ internal fun DayEditorSheetContent(
                         draft = state.customSymptomDraft,
                         onDraftChange = onCustomSymptomDraft,
                         onAdd = onAddCustomSymptom,
+                    )
+                    DayEditorCustomSymptomChipsSection(
+                        labels = state.customSymptoms,
+                        selected = state.localCustomSymptomTags,
+                        onToggle = onToggleLocalCustomSymptom,
                     )
                 }
                 LogEditorCategory.MOOD ->
@@ -202,16 +228,23 @@ internal fun DayEditorSheetContent(
                         confirmPulseKey = state.confirmPulseKey,
                         onSetPain = onSetPain,
                         onAdjustSeverity = onAdjustPainSeverity,
+                        onPainNoteChange = onPainNoteChange,
                     )
                 LogEditorCategory.DISCHARGE ->
                     DayEditorDischargeSection(state.cervicalMucus, onMucusSelected)
-                LogEditorCategory.TTC_TESTS ->
+                LogEditorCategory.TTC_TESTS -> {
+                    DayEditorBbtSection(
+                        bbtInput = state.bbtInput,
+                        bbtError = state.bbtError,
+                        onBbtChange = onBbtChange,
+                    )
                     DayEditorTtcTestsSection(
                         ovulationTest = state.ovulationTest,
                         pregnancyTest = state.pregnancyTest,
                         onOvulationTest = onOvulationTest,
                         onPregnancyTest = onPregnancyTest,
                     )
+                }
                 LogEditorCategory.MEDICATION ->
                     DayEditorMedicationSection(
                         available = LogDayEditorCatalog.defaultMedications,
@@ -221,40 +254,50 @@ internal fun DayEditorSheetContent(
                     )
                 LogEditorCategory.NOTES -> DayEditorNotesSection(state.note, onNoteChange)
                 LogEditorCategory.SEXUAL_ACTIVITY ->
-                    DayEditorSexualSection(
-                        intercourseLogged = state.intercourseLogged,
-                        intercourseProtected = state.intercourseProtected,
-                        onToggleIntercourse = onToggleIntercourse,
-                        onProtectedSelected = onIntercourseProtected,
-                    )
+                    if (state.sexualActivityEnabled) {
+                        DayEditorSexualSection(
+                            intercourseLogged = state.intercourseLogged,
+                            intercourseProtected = state.intercourseProtected,
+                            onToggleIntercourse = onToggleIntercourse,
+                            onProtectedSelected = onIntercourseProtected,
+                        )
+                    }
                 LogEditorCategory.SLEEP ->
-                    DayEditorLifestyleSection(
-                        category = LogEditorCategory.SLEEP,
-                        label = stringResource(R.string.day_editor_lifestyle_sleep),
-                        logged = state.sleepLogged,
-                        onToggle = { onToggleLifestyle(LogEditorCategory.SLEEP) },
-                    )
+                    if (state.lifestyleEnabled[LogEditorCategory.SLEEP] == true) {
+                        DayEditorLifestyleSection(
+                            category = LogEditorCategory.SLEEP,
+                            label = stringResource(R.string.day_editor_lifestyle_sleep),
+                            logged = state.sleepLogged,
+                            onToggle = { onToggleLifestyle(LogEditorCategory.SLEEP) },
+                        )
+                    }
                 LogEditorCategory.EXERCISE ->
-                    DayEditorLifestyleSection(
-                        category = LogEditorCategory.EXERCISE,
-                        label = stringResource(R.string.day_editor_lifestyle_exercise),
-                        logged = state.exerciseLogged,
-                        onToggle = { onToggleLifestyle(LogEditorCategory.EXERCISE) },
-                    )
+                    if (state.lifestyleEnabled[LogEditorCategory.EXERCISE] == true) {
+                        DayEditorLifestyleSection(
+                            category = LogEditorCategory.EXERCISE,
+                            label = stringResource(R.string.day_editor_lifestyle_exercise),
+                            logged = state.exerciseLogged,
+                            onToggle = { onToggleLifestyle(LogEditorCategory.EXERCISE) },
+                        )
+                    }
                 LogEditorCategory.WATER ->
-                    DayEditorLifestyleSection(
-                        category = LogEditorCategory.WATER,
-                        label = stringResource(R.string.day_editor_lifestyle_water),
-                        logged = state.waterGlasses > 0,
-                        onToggle = { onToggleLifestyle(LogEditorCategory.WATER) },
-                    )
+                    if (state.lifestyleEnabled[LogEditorCategory.WATER] == true) {
+                        DayEditorLifestyleSection(
+                            category = LogEditorCategory.WATER,
+                            label = stringResource(R.string.day_editor_lifestyle_water),
+                            logged = state.waterGlasses > 0,
+                            onToggle = { onToggleLifestyle(LogEditorCategory.WATER) },
+                        )
+                    }
                 LogEditorCategory.STRESS ->
-                    DayEditorLifestyleSection(
-                        category = LogEditorCategory.STRESS,
-                        label = stringResource(R.string.day_editor_lifestyle_stress),
-                        logged = state.stressLevel != null,
-                        onToggle = { onToggleLifestyle(LogEditorCategory.STRESS) },
-                    )
+                    if (state.lifestyleEnabled[LogEditorCategory.STRESS] == true) {
+                        DayEditorLifestyleSection(
+                            category = LogEditorCategory.STRESS,
+                            label = stringResource(R.string.day_editor_lifestyle_stress),
+                            logged = state.stressLevel != null,
+                            onToggle = { onToggleLifestyle(LogEditorCategory.STRESS) },
+                        )
+                    }
                 LogEditorCategory.PREGNANCY_SYMPTOMS ->
                     DayEditorPregnancySymptomsSection(
                         available = state.availablePregnancySymptoms,

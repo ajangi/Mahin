@@ -251,3 +251,22 @@ val MIGRATION_5_6 =
             )
         }
     }
+
+val MIGRATION_6_7 =
+    object : Migration(6, 7) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "ALTER TABLE daily_log ADD COLUMN localCustomSymptomTags TEXT NOT NULL DEFAULT ''",
+            )
+            db.execSQL(
+                "ALTER TABLE daily_log ADD COLUMN sleepLogged INTEGER NOT NULL DEFAULT 0",
+            )
+            db.execSQL(
+                "ALTER TABLE daily_log ADD COLUMN exerciseLogged INTEGER NOT NULL DEFAULT 0",
+            )
+            db.execSQL(
+                "ALTER TABLE daily_log ADD COLUMN waterGlasses INTEGER NOT NULL DEFAULT 0",
+            )
+            db.execSQL("ALTER TABLE daily_log ADD COLUMN stressLevel INTEGER")
+        }
+    }

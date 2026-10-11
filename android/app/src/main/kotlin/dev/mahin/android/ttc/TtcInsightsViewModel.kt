@@ -12,6 +12,7 @@ import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.domain.fertility.FertilityInsightEngineV1
 import dev.mahin.domain.fertility.FertilityInsightResult
 import dev.mahin.domain.fertility.TtcSignalDay
+import java.time.Clock
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -46,6 +47,7 @@ class TtcInsightsViewModel
         private val ttcRepository: TtcTrackingRepository,
         private val ttcPrivacyRepository: TtcPrivacyPreferencesRepository,
         private val localDateClock: LocalDateClock,
+        private val clock: Clock,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(TtcInsightsUiState())
         val uiState: StateFlow<TtcInsightsUiState> = _uiState.asStateFlow()
@@ -125,7 +127,7 @@ class TtcInsightsViewModel
             flow {
                 while (true) {
                     emit(localDateClock.today())
-                    val now = LocalDateTime.now()
+                    val now = LocalDateTime.now(clock)
                     val nextMidnight = now.toLocalDate().plusDays(1).atStartOfDay()
                     val delayMs = Duration.between(now, nextMidnight).toMillis().coerceAtLeast(60_000L)
                     delay(delayMs)

@@ -1,6 +1,7 @@
 package dev.mahin.android.cycle.editor
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -44,5 +45,57 @@ class DayEditorPainStepperTest {
         }
         androidComposeRule.onNodeWithTag("day_editor_pain_increase").performClick()
         assertThat(severity).isEqualTo(4)
+    }
+
+    @Test
+    fun painStepper_showsPersianZero() {
+        androidComposeRule.setContent {
+            MahinTheme {
+                DayEditorSheetContent(
+                    date = LocalDate.of(2025, 6, 1),
+                    state =
+                        DayEditorUiState(
+                            orderedCategories = listOf(LogEditorCategory.PAIN),
+                            painLocation = PainLocation.HEAD,
+                            painSeverity = 0,
+                        ),
+                )
+            }
+        }
+        androidComposeRule.onNodeWithTag("day_editor_pain_severity").assertTextContains("۰", substring = true)
+    }
+
+    @Test
+    fun customSymptomSection_exposesAddControl() {
+        androidComposeRule.setContent {
+            MahinTheme {
+                DayEditorSheetContent(
+                    date = LocalDate.of(2025, 6, 1),
+                    state =
+                        DayEditorUiState(
+                            orderedCategories = listOf(LogEditorCategory.SYMPTOMS),
+                        ),
+                )
+            }
+        }
+        androidComposeRule.onNodeWithTag("day_editor_custom_symptom_add").assertExists()
+    }
+
+    @Test
+    fun painStepper_showsPersianTen() {
+        androidComposeRule.setContent {
+            MahinTheme {
+                DayEditorSheetContent(
+                    date = LocalDate.of(2025, 6, 1),
+                    state =
+                        DayEditorUiState(
+                            orderedCategories = listOf(LogEditorCategory.PAIN),
+                            painLocation = PainLocation.HEAD,
+                            painSeverity = 10,
+                        ),
+                )
+            }
+        }
+        androidComposeRule.onNodeWithTag("day_editor_pain_severity").assertTextContains("۱۰", substring = true)
     }
 }

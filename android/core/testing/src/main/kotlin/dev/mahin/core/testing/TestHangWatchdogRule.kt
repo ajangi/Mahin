@@ -17,8 +17,8 @@ import org.junit.runners.model.Statement
  * watchdog is for **diagnostics** (stack dump) and marking the test thread interrupted; it does
  * not forcibly release locks.
  *
- * Pair with Gradle test output filtering on `:app` so watchdog lines are surfaced without enabling
- * all standard streams (see `app/build.gradle.kts`).
+ * On CI, set env `MAHIN_TEST_VERBOSE_STREAMS=true` (see `app/build.gradle.kts`) so stderr dumps
+ * are included in the test log; otherwise they still go to stderr but may be filtered from reports.
  */
 class TestHangWatchdogRule(
     private val timeoutMs: Long = 60_000L,

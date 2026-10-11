@@ -15,9 +15,15 @@ data class DailyLogEntity(
     val moodTags: String,
     val symptomTags: String,
     val medicationTags: String,
+    /** Local-only custom symptom selections; excluded from sync/export. */
+    val localCustomSymptomTags: String,
     val painSeverity: Int?,
     val painLocation: String?,
     val painNote: String?,
     val note: String?,
+    val sleepLogged: Boolean,
+    val exerciseLogged: Boolean,
+    val waterGlasses: Int,
+    val stressLevel: Int?,
     val updatedAtEpochMs: Long,
 )

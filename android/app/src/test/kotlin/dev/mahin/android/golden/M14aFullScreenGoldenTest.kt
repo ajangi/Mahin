@@ -65,16 +65,16 @@ class M14aFullScreenGoldenTest {
     fun calendar_populated_dark_scale13() = captureCalendar(darkTheme = true, fontScale = 1.3f)
 
     @Test
-    fun log_populated_light_scale10() = captureLog(darkTheme = false, fontScale = 1f)
+    fun log_datePicker_light_scale10() = captureLog(darkTheme = false, fontScale = 1f)
 
     @Test
-    fun log_populated_light_scale13() = captureLog(darkTheme = false, fontScale = 1.3f)
+    fun log_datePicker_light_scale13() = captureLog(darkTheme = false, fontScale = 1.3f)
 
     @Test
-    fun log_populated_dark_scale10() = captureLog(darkTheme = true, fontScale = 1f)
+    fun log_datePicker_dark_scale10() = captureLog(darkTheme = true, fontScale = 1f)
 
     @Test
-    fun log_populated_dark_scale13() = captureLog(darkTheme = true, fontScale = 1.3f)
+    fun log_datePicker_dark_scale13() = captureLog(darkTheme = true, fontScale = 1.3f)
 
     @Test
     fun history_populated_light_scale10() = captureHistory(darkTheme = false, fontScale = 1f)

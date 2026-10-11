@@ -153,11 +153,17 @@ class MahinDatabaseMigrationTest {
             assertThat(columns).contains("painLocation")
             assertThat(columns).contains("painNote")
         }
-        migrated.query("SELECT moodTags, painSeverity FROM daily_log WHERE id = 'd1'").use { cursor ->
-            assertThat(cursor.moveToFirst()).isTrue()
-            assertThat(cursor.getString(0)).isEqualTo("آرام")
-            assertThat(cursor.getInt(1)).isEqualTo(3)
-        }
+        migrated
+            .query(
+                "SELECT moodTags, symptomTags, note, painLocation, painNote FROM daily_log WHERE id = 'd1'",
+            ).use { cursor ->
+                assertThat(cursor.moveToFirst()).isTrue()
+                assertThat(cursor.getString(0)).isEqualTo("آرام")
+                assertThat(cursor.getString(1)).isEqualTo("سردرد")
+                assertThat(cursor.isNull(2)).isTrue()
+                assertThat(cursor.isNull(3)).isTrue()
+                assertThat(cursor.isNull(4)).isTrue()
+            }
         migrated.close()
     }
 
@@ -184,12 +190,43 @@ class MahinDatabaseMigrationTest {
                 MIGRATION_4_5,
                 MIGRATION_5_6,
             )
-        migrated.query("PRAGMA table_info(daily_log)").use { cursor ->
-            val columns = mutableListOf<String>()
-            while (cursor.moveToNext()) {
-                columns.add(cursor.getString(1))
-            }
-            assertThat(columns).contains("medicationTags")
+        migrated.query("SELECT symptomTags, medicationTags FROM daily_log WHERE id = 'd1'").use { cursor ->
+            assertThat(cursor.moveToFirst()).isTrue()
+            assertThat(cursor.getString(0)).isEqualTo("سردرد")
+            assertThat(cursor.getString(1)).isEqualTo("")
+        }
+        migrated.close()
+    }
+
+    @Test
+    fun migrate6To7_addsLocalCustomAndLifestyleColumns() {
+        helper.createDatabase(TEST_DB, 6).apply {
+            execSQL(
+                """
+                INSERT INTO daily_log (
+                    id, logDate, moodTags, symptomTags, medicationTags, painSeverity,
+                    painLocation, painNote, note, updatedAtEpochMs
+                ) VALUES ('d1', '2025-01-01', '', 'سردرد', '', NULL, NULL, NULL, NULL, 0)
+                """.trimIndent(),
+            )
+            close()
+        }
+        val migrated =
+            helper.runMigrationsAndValidate(
+                TEST_DB,
+                7,
+                true,
+                MIGRATION_1_2,
+                MIGRATION_2_3,
+                MIGRATION_3_4,
+                MIGRATION_4_5,
+                MIGRATION_5_6,
+                MIGRATION_6_7,
+            )
+        migrated.query("SELECT symptomTags, localCustomSymptomTags FROM daily_log WHERE id = 'd1'").use { cursor ->
+            assertThat(cursor.moveToFirst()).isTrue()
+            assertThat(cursor.getString(0)).isEqualTo("سردرد")
+            assertThat(cursor.getString(1)).isEqualTo("")
         }
         migrated.close()
     }

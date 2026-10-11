@@ -21,7 +21,6 @@ dependencies {
     implementation(project(":domain:cycle"))
     implementation(project(":domain:pregnancy"))
     implementation(project(":core:datastore"))
-    implementation(project(":core:sync"))
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.sqlite)

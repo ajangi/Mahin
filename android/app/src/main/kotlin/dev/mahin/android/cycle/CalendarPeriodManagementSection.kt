@@ -36,11 +36,25 @@ internal fun CalendarPeriodManagementSection(
     onCancelEdit: () -> Unit,
     onMergeWithNext: (String) -> Unit,
     onSplit: (String) -> Unit,
+    splitRecordId: String? = null,
+    splitAfterJalali: JalaliDate? = null,
+    onSplitAfterSelected: (JalaliDate) -> Unit = {},
+    onConfirmSplit: () -> Unit = {},
+    onCancelSplit: () -> Unit = {},
+    feedbackMessageKey: String? = null,
     modifier: Modifier = Modifier,
 ) {
     val converter = PersianCivilDateConverter
     Column(modifier = modifier.fillMaxWidth().testTag("calendar_period_management")) {
         MahinSectionLabel(text = stringResource(R.string.calendar_period_management_title))
+        if (feedbackMessageKey != null) {
+            Text(
+                text = periodFeedbackText(feedbackMessageKey),
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.testTag("calendar_period_feedback"),
+            )
+        }
         if (periods.isEmpty()) {
             Text(
                 text = stringResource(R.string.calendar_period_management_empty),
@@ -91,6 +105,36 @@ internal fun CalendarPeriodManagementSection(
                         ) {
                             Text(stringResource(R.string.calendar_period_split))
                         }
+                    }
+                }
+            }
+        }
+        if (splitRecordId != null && splitAfterJalali != null) {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = MahinSpacing.md)
+                        .testTag("calendar_period_split_editor"),
+            ) {
+                Text(text = stringResource(R.string.calendar_period_split_after_label))
+                dev.mahin.core.designsystem.component.MahinJalaliDatePicker(
+                    selectedDate = splitAfterJalali,
+                    onDateSelected = onSplitAfterSelected,
+                    converter = converter,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(MahinSpacing.sm)) {
+                    TextButton(
+                        onClick = onConfirmSplit,
+                        modifier = Modifier.testTag("calendar_period_split_confirm"),
+                    ) {
+                        Text(stringResource(R.string.calendar_period_split))
+                    }
+                    TextButton(
+                        onClick = onCancelSplit,
+                        modifier = Modifier.testTag("calendar_period_split_cancel"),
+                    ) {
+                        Text(stringResource(R.string.calendar_period_cancel))
                     }
                 }
             }
@@ -149,6 +193,15 @@ internal fun CalendarPeriodManagementSection(
         }
     }
 }
+
+@Composable
+private fun periodFeedbackText(key: String): String =
+    when (key) {
+        "overlap" -> stringResource(R.string.calendar_period_error_overlap)
+        "merge_not_adjacent" -> stringResource(R.string.calendar_period_error_merge)
+        "invalid_split" -> stringResource(R.string.calendar_period_error_split)
+        else -> stringResource(R.string.calendar_period_error_overlap)
+    }
 
 private fun formatGregorian(
     date: LocalDate,

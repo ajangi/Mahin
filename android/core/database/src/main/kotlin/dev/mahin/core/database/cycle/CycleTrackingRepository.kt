@@ -7,9 +7,6 @@ import dev.mahin.core.database.entity.PeriodDayEntity
 import dev.mahin.core.database.entity.PeriodRecordEntity
 import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.PeriodFlowLevel
-import dev.mahin.core.sync.NoOpSyncOutbox
-import dev.mahin.core.sync.SyncMutation
-import dev.mahin.core.sync.SyncOutbox
 import dev.mahin.domain.cycle.CyclePredictionEngineV1
 import dev.mahin.domain.cycle.CyclePredictionInput
 import dev.mahin.domain.cycle.CyclePredictionResult
@@ -33,10 +30,7 @@ class CycleTrackingRepository
     @Inject
     constructor(
         database: MahinDatabase,
-        private val syncOutbox: SyncOutbox,
     ) {
-        constructor(database: MahinDatabase) : this(database, NoOpSyncOutbox())
-
         private val profileDao = database.cycleProfileDao()
         private val periodDao = database.periodRecordDao()
         private val periodDayDao = database.periodDayDao()
@@ -168,8 +162,14 @@ class CycleTrackingRepository
             painNote: String? = null,
             note: String?,
             medicationTags: Set<String> = emptySet(),
+            localCustomSymptomTags: Set<String> = emptySet(),
+            sleepLogged: Boolean = false,
+            exerciseLogged: Boolean = false,
+            waterGlasses: Int = 0,
+            stressLevel: Int? = null,
         ) {
-            val id = dailyLogDao.getForDate(date)?.id ?: UUID.randomUUID().toString()
+            val existing = dailyLogDao.getForDate(date)
+            val id = existing?.id ?: UUID.randomUUID().toString()
             dailyLogDao.upsert(
                 DailyLogEntity(
                     id = id,
@@ -177,20 +177,16 @@ class CycleTrackingRepository
                     moodTags = moodTags.joinToString(","),
                     symptomTags = symptomTags.joinToString(","),
                     medicationTags = medicationTags.joinToString(","),
+                    localCustomSymptomTags = localCustomSymptomTags.joinToString(","),
                     painSeverity = painSeverity,
                     painLocation = painLocation,
                     painNote = painNote,
                     note = note,
+                    sleepLogged = sleepLogged,
+                    exerciseLogged = exerciseLogged,
+                    waterGlasses = waterGlasses,
+                    stressLevel = stressLevel,
                     updatedAtEpochMs = System.currentTimeMillis(),
-                ),
-            )
-            syncOutbox.enqueue(
-                SyncMutation(
-                    id = UUID.randomUUID(),
-                    entityType = "daily_log",
-                    entityId = UUID.fromString(id),
-                    idempotencyKey = "daily_log:$date",
-                    createdAtEpochMs = System.currentTimeMillis(),
                 ),
             )
         }

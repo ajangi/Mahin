@@ -3,6 +3,7 @@ package dev.mahin.android.cycle.editor
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.mahin.android.cycle.BbtFieldError
 import dev.mahin.android.cycle.LogInputValidators
 import dev.mahin.android.cycle.WeightBpFieldError
 import dev.mahin.android.pregnancy.PregnancyFormatters
@@ -25,6 +26,7 @@ import dev.mahin.core.model.PainLocation
 import dev.mahin.core.model.PeriodFlowLevel
 import dev.mahin.core.model.PregnancyTestResult
 import dev.mahin.core.model.ReproductiveMode
+import dev.mahin.domain.cycle.LogCategoryUsageFromLocalLogs
 import dev.mahin.domain.cycle.LogCategoryUsageOrder
 import java.time.LocalDate
 import java.util.UUID
@@ -33,6 +35,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -50,6 +53,7 @@ data class DayEditorUiState(
     val periodLogged: Boolean = false,
     val flowLevel: PeriodFlowLevel? = null,
     val symptomTags: Set<String> = emptySet(),
+    val localCustomSymptomTags: Set<String> = emptySet(),
     val moodTags: Set<String> = emptySet(),
     val painLocation: PainLocation? = null,
     val painSeverity: Int? = null,
@@ -61,6 +65,7 @@ data class DayEditorUiState(
     val waterGlasses: Int = 0,
     val stressLevel: Int? = null,
     val bbtInput: String = "",
+    val bbtError: BbtFieldError? = null,
     val cervicalMucus: CervicalMucusType? = null,
     val ovulationTest: OvulationTestResult? = null,
     val pregnancyTest: PregnancyTestResult? = null,
@@ -88,12 +93,23 @@ data class UndoSnapshot(
     val periodLogged: Boolean,
     val flowLevel: PeriodFlowLevel?,
     val symptomTags: Set<String>,
+    val localCustomSymptomTags: Set<String>,
     val moodTags: Set<String>,
     val medicationTags: Set<String>,
     val painLocation: PainLocation?,
     val painSeverity: Int?,
     val painNote: String?,
     val note: String?,
+    val sleepLogged: Boolean,
+    val exerciseLogged: Boolean,
+    val waterGlasses: Int,
+    val stressLevel: Int?,
+    val bbtInput: String,
+    val cervicalMucus: CervicalMucusType?,
+    val ovulationTest: OvulationTestResult?,
+    val pregnancyTest: PregnancyTestResult?,
+    val intercourseLogged: Boolean,
+    val intercourseProtected: Boolean?,
     val pregnancySymptomTags: Set<String>,
     val pregnancyWeightInput: String,
     val pregnancyBpSystolicInput: String,
@@ -191,7 +207,7 @@ class DayEditorViewModel
                     _uiState.update { state ->
                         state.copy(
                             customSymptoms = labels,
-                            availableSymptoms = LogDayEditorCatalog.defaultSymptoms + labels,
+                            availableSymptoms = LogDayEditorCatalog.defaultSymptoms,
                         )
                     }
                 }
@@ -220,18 +236,53 @@ class DayEditorViewModel
             }
         }
 
+        fun setFlowLevel(level: PeriodFlowLevel) {
+            val date = _uiState.value.date ?: return
+            captureUndo()
+            viewModelScope.launch {
+                _uiState.update { it.copy(flowLevel = level) }
+                if (_uiState.value.periodLogged) {
+                    periodDayTrackingService.applyUserPeriodLogChange(
+                        healthConnectIntegrationActive = healthConnectPeriodDayIntegrationGate.isIntegrationActive(),
+                        loggingPeriod = true,
+                        date = date,
+                        flowLevel = level,
+                        ensurePeriodSpanExists = { ensurePeriodSpan(date) },
+                    )
+                }
+                pulse("flow_$level", LogEditorCategory.PERIOD_FLOW)
+                showUndo()
+                loadDay(date)
+            }
+        }
+
+        fun onBbtChange(value: String) {
+            val date = _uiState.value.date ?: return
+            captureUndo()
+            viewModelScope.launch {
+                val (parsed, error) = LogInputValidators.parseBbt(value)
+                _uiState.update { it.copy(bbtInput = value, bbtError = error) }
+                if (error == null) {
+                    persistTtcLog(date) { it.copy(bbtCelsius = parsed) }
+                    pulse("bbt", LogEditorCategory.TTC_TESTS)
+                    showUndo()
+                }
+            }
+        }
+
         fun togglePeriodLogged() {
             val date = _uiState.value.date ?: return
             captureUndo()
             viewModelScope.launch {
                 val state = _uiState.value
                 val next = !state.periodLogged
+                val flow = state.flowLevel ?: PeriodFlowLevel.MEDIUM
                 if (next) {
                     periodDayTrackingService.applyUserPeriodLogChange(
                         healthConnectIntegrationActive = healthConnectPeriodDayIntegrationGate.isIntegrationActive(),
                         loggingPeriod = true,
                         date = date,
-                        flowLevel = state.flowLevel ?: PeriodFlowLevel.MEDIUM,
+                        flowLevel = flow,
                         ensurePeriodSpanExists = { ensurePeriodSpan(date) },
                     )
                 } else {
@@ -258,6 +309,25 @@ class DayEditorViewModel
                     fields.copy(symptomTags = next)
                 }
                 pulse("symptom_$tag", LogEditorCategory.SYMPTOMS)
+                showUndo()
+                loadDay(date)
+            }
+        }
+
+        fun toggleLocalCustomSymptom(tag: String) {
+            val date = _uiState.value.date ?: return
+            captureUndo()
+            viewModelScope.launch {
+                persistDailyLog(date) { fields ->
+                    val next =
+                        if (tag in fields.localCustomSymptomTags) {
+                            fields.localCustomSymptomTags - tag
+                        } else {
+                            fields.localCustomSymptomTags + tag
+                        }
+                    fields.copy(localCustomSymptomTags = next)
+                }
+                pulse("custom_symptom_$tag", LogEditorCategory.SYMPTOMS)
                 showUndo()
                 loadDay(date)
             }
@@ -301,9 +371,7 @@ class DayEditorViewModel
             captureUndo()
             viewModelScope.launch {
                 val (parsed, error) = LogInputValidators.parseWeight(value)
-                _uiState.update {
-                    it.copy(pregnancyWeightInput = value, pregnancyWeightError = error)
-                }
+                _uiState.update { it.copy(pregnancyWeightInput = value, pregnancyWeightError = error) }
                 if (error == null) {
                     persistPregnancyDayLog(date, _uiState.value.copy(pregnancyWeightInput = value))
                     pulse("pregnancy_weight", LogEditorCategory.PREGNANCY_VITALS)
@@ -454,20 +522,26 @@ class DayEditorViewModel
         }
 
         fun toggleLifestyleLogged(category: LogEditorCategory) {
-            _uiState.update { state ->
-                when (category) {
-                    LogEditorCategory.SLEEP ->
-                        state.copy(sleepLogged = !state.sleepLogged)
-                    LogEditorCategory.EXERCISE ->
-                        state.copy(exerciseLogged = !state.exerciseLogged)
-                    LogEditorCategory.WATER ->
-                        state.copy(waterGlasses = if (state.waterGlasses > 0) 0 else 1)
-                    LogEditorCategory.STRESS ->
-                        state.copy(stressLevel = if (state.stressLevel == null) 3 else null)
-                    else -> state
+            val date = _uiState.value.date ?: return
+            captureUndo()
+            viewModelScope.launch {
+                persistDailyLog(date) { fields ->
+                    when (category) {
+                        LogEditorCategory.SLEEP ->
+                            fields.copy(sleepLogged = !fields.sleepLogged)
+                        LogEditorCategory.EXERCISE ->
+                            fields.copy(exerciseLogged = !fields.exerciseLogged)
+                        LogEditorCategory.WATER ->
+                            fields.copy(waterGlasses = if (fields.waterGlasses > 0) 0 else 1)
+                        LogEditorCategory.STRESS ->
+                            fields.copy(stressLevel = if (fields.stressLevel == null) 3 else null)
+                        else -> fields
+                    }
                 }
+                pulse("lifestyle_${category.name}", category)
+                showUndo()
+                loadDay(date)
             }
-            pulse("lifestyle_${category.name}", category)
         }
 
         fun setCustomSymptomDraft(value: String) {
@@ -595,6 +669,7 @@ class DayEditorViewModel
         fun addCustomSymptom(label: String) {
             val trimmed = label.trim()
             if (trimmed.isEmpty()) return
+            val date = _uiState.value.date
             viewModelScope.launch {
                 customSymptomTagRepository.upsert(
                     CustomSymptomTagEntity(
@@ -603,6 +678,14 @@ class DayEditorViewModel
                         createdAtEpochMs = System.currentTimeMillis(),
                     ),
                 )
+                if (date != null) {
+                    captureUndo()
+                    persistDailyLog(date) { fields ->
+                        fields.copy(localCustomSymptomTags = fields.localCustomSymptomTags + trimmed)
+                    }
+                    showUndo()
+                    loadDay(date)
+                }
             }
         }
 
@@ -625,31 +708,99 @@ class DayEditorViewModel
                 pregnancyDay?.weightKg?.let { PregnancyFormatters.formatDecimal(it) } ?: ""
             val bpSys = pregnancyDay?.bpSystolic?.toString() ?: ""
             val bpDia = pregnancyDay?.bpDiastolic?.toString() ?: ""
+            val usageCounts = computeCategoryUsageCounts(date)
+            val bbtInput = ttc?.bbtCelsius?.toString() ?: ""
             _uiState.update { state ->
-                state.copy(
-                    loading = false,
-                    periodLogged = periodDay != null,
-                    flowLevel = periodDay?.flowLevel,
-                    symptomTags = fields.symptomTags,
-                    moodTags = fields.moodTags,
-                    medicationTags = fields.medicationTags,
-                    painLocation = fields.painLocation,
-                    painSeverity = fields.painSeverity,
-                    painNote = fields.painNote ?: "",
-                    note = fields.note ?: "",
-                    cervicalMucus = ttc?.cervicalMucus,
-                    ovulationTest = ttc?.ovulationTestResult,
-                    pregnancyTest = ttc?.pregnancyTestResult,
-                    intercourseLogged = ttc?.intercourseLogged == true,
-                    intercourseProtected = ttc?.intercourseProtected,
-                    pregnancySymptomTags = pregnancySymptoms,
-                    pregnancyWeightInput = weightInput,
-                    pregnancyBpSystolicInput = bpSys,
-                    pregnancyBpDiastolicInput = bpDia,
-                    pregnancyWeightError = null,
-                    pregnancyBpError = null,
+                val withFields =
+                    state.copy(
+                        loading = false,
+                        periodLogged = periodDay != null,
+                        flowLevel = periodDay?.flowLevel,
+                        symptomTags = fields.symptomTags,
+                        localCustomSymptomTags = fields.localCustomSymptomTags,
+                        moodTags = fields.moodTags,
+                        medicationTags = fields.medicationTags,
+                        painLocation = fields.painLocation,
+                        painSeverity = fields.painSeverity,
+                        painNote = fields.painNote ?: "",
+                        note = fields.note ?: "",
+                        sleepLogged = fields.sleepLogged,
+                        exerciseLogged = fields.exerciseLogged,
+                        waterGlasses = fields.waterGlasses,
+                        stressLevel = fields.stressLevel,
+                        cervicalMucus = ttc?.cervicalMucus,
+                        ovulationTest = ttc?.ovulationTestResult,
+                        pregnancyTest = ttc?.pregnancyTestResult,
+                        intercourseLogged = ttc?.intercourseLogged == true,
+                        intercourseProtected = ttc?.intercourseProtected,
+                        bbtInput = bbtInput,
+                        bbtError = null,
+                        pregnancySymptomTags = pregnancySymptoms,
+                        pregnancyWeightInput = weightInput,
+                        pregnancyBpSystolicInput = bpSys,
+                        pregnancyBpDiastolicInput = bpDia,
+                        pregnancyWeightError = null,
+                        pregnancyBpError = null,
+                        categoryUsageCounts = usageCounts,
+                    )
+                withFields.copy(
+                    orderedCategories =
+                        buildCategoryOrder(
+                            state = withFields,
+                            pinned = withFields.pinnedCategoryOrder,
+                            sexualEnabled = withFields.sexualActivityEnabled,
+                            mode = withFields.reproductiveMode,
+                            mostUsedFirst = withFields.mostUsedFirst,
+                            referenceDate = date,
+                            usageCounts = usageCounts,
+                        ),
                 )
             }
+        }
+
+        private suspend fun computeCategoryUsageCounts(referenceDate: LocalDate): Map<LogEditorCategory, Int> {
+            val windowStart = referenceDate.minusDays(LogCategoryUsageFromLocalLogs.WINDOW_DAYS)
+            val daily =
+                cycleRepository.observeDailyLogs(windowStart, referenceDate).first().map { entity ->
+                    val parsed = DailyLogFieldSupport.fromEntity(entity)
+                    LogCategoryUsageFromLocalLogs.DailyLogUsageRow(
+                        logDate = entity.logDate,
+                        moodTags = parsed.moodTags,
+                        symptomTags = parsed.symptomTags,
+                        medicationTags = parsed.medicationTags,
+                        localCustomSymptomTags = parsed.localCustomSymptomTags,
+                        painSeverity = parsed.painSeverity,
+                        note = parsed.note,
+                        sleepLogged = parsed.sleepLogged,
+                        exerciseLogged = parsed.exerciseLogged,
+                        waterGlasses = parsed.waterGlasses,
+                        stressLevel = parsed.stressLevel,
+                    )
+                }
+            val ttc =
+                ttcRepository.getTtcLogsInRange(windowStart, referenceDate).map { row ->
+                    LogCategoryUsageFromLocalLogs.TtcLogUsageRow(
+                        logDate = row.logDate,
+                        bbtLogged = row.bbtCelsius != null,
+                        cervicalMucusLogged = row.cervicalMucus != null,
+                        ovulationTestLogged = row.ovulationTestResult != null,
+                        pregnancyTestLogged = row.pregnancyTestResult != null,
+                        intercourseLogged = row.intercourseLogged,
+                    )
+                }
+            val periodDays =
+                cycleRepository.getPeriodDaysInRange(windowStart, referenceDate).map { row ->
+                    LogCategoryUsageFromLocalLogs.PeriodDayUsageRow(
+                        logDate = row.logDate,
+                        flowLogged = row.flowLevel != null,
+                    )
+                }
+            return LogCategoryUsageFromLocalLogs.countUsage(
+                referenceDate = referenceDate,
+                dailyLogs = daily,
+                ttcLogs = ttc,
+                periodDays = periodDays,
+            )
         }
 
         private suspend fun ensurePeriodSpan(date: LocalDate) {
@@ -675,12 +826,23 @@ class DayEditorViewModel
                     periodLogged = state.periodLogged,
                     flowLevel = state.flowLevel,
                     symptomTags = state.symptomTags,
+                    localCustomSymptomTags = state.localCustomSymptomTags,
                     moodTags = state.moodTags,
                     medicationTags = state.medicationTags,
                     painLocation = state.painLocation,
                     painSeverity = state.painSeverity,
                     painNote = state.painNote.takeIf { it.isNotBlank() },
                     note = state.note.takeIf { it.isNotBlank() },
+                    sleepLogged = state.sleepLogged,
+                    exerciseLogged = state.exerciseLogged,
+                    waterGlasses = state.waterGlasses,
+                    stressLevel = state.stressLevel,
+                    bbtInput = state.bbtInput,
+                    cervicalMucus = state.cervicalMucus,
+                    ovulationTest = state.ovulationTest,
+                    pregnancyTest = state.pregnancyTest,
+                    intercourseLogged = state.intercourseLogged,
+                    intercourseProtected = state.intercourseProtected,
                     pregnancySymptomTags = state.pregnancySymptomTags,
                     pregnancyWeightInput = state.pregnancyWeightInput,
                     pregnancyBpSystolicInput = state.pregnancyBpSystolicInput,
@@ -692,32 +854,51 @@ class DayEditorViewModel
             date: LocalDate,
             snapshot: UndoSnapshot,
         ) {
-            if (snapshot.periodLogged) {
-                periodDayTrackingService.applyUserPeriodLogChange(
-                    healthConnectIntegrationActive = healthConnectPeriodDayIntegrationGate.isIntegrationActive(),
-                    loggingPeriod = true,
-                    date = date,
-                    flowLevel = snapshot.flowLevel,
-                    ensurePeriodSpanExists = { ensurePeriodSpan(date) },
-                )
-            } else {
-                periodDayTrackingService.applyUserPeriodLogChange(
-                    healthConnectIntegrationActive = healthConnectPeriodDayIntegrationGate.isIntegrationActive(),
-                    loggingPeriod = false,
-                    date = date,
-                    flowLevel = null,
-                    ensurePeriodSpanExists = {},
-                )
+            val current = _uiState.value
+            if (snapshot.periodLogged != current.periodLogged || snapshot.flowLevel != current.flowLevel) {
+                if (snapshot.periodLogged) {
+                    periodDayTrackingService.applyUserPeriodLogChange(
+                        healthConnectIntegrationActive = healthConnectPeriodDayIntegrationGate.isIntegrationActive(),
+                        loggingPeriod = true,
+                        date = date,
+                        flowLevel = snapshot.flowLevel,
+                        ensurePeriodSpanExists = { ensurePeriodSpan(date) },
+                    )
+                } else {
+                    periodDayTrackingService.applyUserPeriodLogChange(
+                        healthConnectIntegrationActive = healthConnectPeriodDayIntegrationGate.isIntegrationActive(),
+                        loggingPeriod = false,
+                        date = date,
+                        flowLevel = null,
+                        ensurePeriodSpanExists = {},
+                    )
+                }
             }
             persistDailyLog(date) { fields ->
                 fields.copy(
                     moodTags = snapshot.moodTags,
                     symptomTags = snapshot.symptomTags,
+                    localCustomSymptomTags = snapshot.localCustomSymptomTags,
                     medicationTags = snapshot.medicationTags,
                     painSeverity = snapshot.painSeverity,
                     painLocation = snapshot.painLocation,
                     painNote = snapshot.painNote,
                     note = snapshot.note,
+                    sleepLogged = snapshot.sleepLogged,
+                    exerciseLogged = snapshot.exerciseLogged,
+                    waterGlasses = snapshot.waterGlasses,
+                    stressLevel = snapshot.stressLevel,
+                )
+            }
+            val (bbtCelsius, _) = LogInputValidators.parseBbt(snapshot.bbtInput)
+            persistTtcLog(date) {
+                it.copy(
+                    bbtCelsius = bbtCelsius,
+                    cervicalMucus = snapshot.cervicalMucus,
+                    ovulationTestResult = snapshot.ovulationTest,
+                    pregnancyTestResult = snapshot.pregnancyTest,
+                    intercourseLogged = snapshot.intercourseLogged,
+                    intercourseProtected = snapshot.intercourseProtected,
                 )
             }
             if (_uiState.value.reproductiveMode == ReproductiveMode.PREGNANT) {
@@ -738,30 +919,10 @@ class DayEditorViewModel
 
         private fun pulse(
             key: String,
-            category: LogEditorCategory? = null,
+            @Suppress("UnusedParameter") category: LogEditorCategory? = null,
         ) {
             _uiState.update { state ->
-                val counts =
-                    if (category != null) {
-                        val current = state.categoryUsageCounts[category] ?: 0
-                        state.categoryUsageCounts + (category to current + 1)
-                    } else {
-                        state.categoryUsageCounts
-                    }
-                state.copy(
-                    confirmPulseKey = key,
-                    categoryUsageCounts = counts,
-                    orderedCategories =
-                        buildCategoryOrder(
-                            state = state,
-                            pinned = state.pinnedCategoryOrder,
-                            sexualEnabled = state.sexualActivityEnabled,
-                            mode = state.reproductiveMode,
-                            mostUsedFirst = state.mostUsedFirst,
-                            referenceDate = state.date ?: localDateClock.today(),
-                            usageCounts = counts,
-                        ),
-                )
+                state.copy(confirmPulseKey = key)
             }
         }
 
@@ -860,6 +1021,11 @@ class DayEditorViewModel
                     painNote = next.painNote,
                     note = next.note,
                     medicationTags = next.medicationTags,
+                    localCustomSymptomTags = next.localCustomSymptomTags,
+                    sleepLogged = next.sleepLogged,
+                    exerciseLogged = next.exerciseLogged,
+                    waterGlasses = next.waterGlasses,
+                    stressLevel = next.stressLevel,
                 )
             }
         }

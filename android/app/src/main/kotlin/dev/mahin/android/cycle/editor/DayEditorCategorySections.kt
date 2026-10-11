@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.mahin.android.R
+import dev.mahin.android.cycle.BbtFieldError
 import dev.mahin.android.cycle.MahinLogTagIconMapper
 import dev.mahin.core.datetime.PersianDigits
 import dev.mahin.core.designsystem.LocalReducedMotion
@@ -34,6 +35,7 @@ import dev.mahin.core.model.CervicalMucusType
 import dev.mahin.core.model.LogEditorCategory
 import dev.mahin.core.model.OvulationTestResult
 import dev.mahin.core.model.PainLocation
+import dev.mahin.core.model.PeriodFlowLevel
 import dev.mahin.core.model.PregnancyTestResult
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -43,6 +45,7 @@ internal fun DayEditorPainSection(
     confirmPulseKey: String?,
     onSetPain: (PainLocation, Int) -> Unit,
     onAdjustSeverity: (Int) -> Unit,
+    onPainNoteChange: (String) -> Unit,
 ) {
     MahinSectionLabel(text = stringResource(R.string.day_editor_pain_section))
     FlowRow(horizontalArrangement = Arrangement.spacedBy(MahinSpacing.sm)) {
@@ -83,7 +86,93 @@ internal fun DayEditorPainSection(
             Text(text = "+", style = MaterialTheme.typography.titleLarge)
         }
     }
+    OutlinedTextField(
+        value = state.painNote,
+        onValueChange = onPainNoteChange,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .testTag("day_editor_pain_note_field"),
+        label = { Text(stringResource(R.string.day_editor_pain_note_label)) },
+        minLines = 1,
+    )
 }
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun DayEditorPeriodFlowSection(
+    periodLogged: Boolean,
+    flowLevel: PeriodFlowLevel?,
+    onSetFlowLevel: (PeriodFlowLevel) -> Unit,
+) {
+    if (!periodLogged) return
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(MahinSpacing.sm)) {
+        PeriodFlowLevel.entries.forEach { level ->
+            FilterChip(
+                selected = flowLevel == level,
+                onClick = { onSetFlowLevel(level) },
+                label = { Text(flowLevelLabel(level)) },
+                modifier = Modifier.testTag("day_editor_flow_${level.name}"),
+            )
+        }
+    }
+}
+
+@Composable
+internal fun DayEditorBbtSection(
+    bbtInput: String,
+    bbtError: BbtFieldError?,
+    onBbtChange: (String) -> Unit,
+) {
+    MahinSectionLabel(text = stringResource(R.string.log_bbt_label))
+    OutlinedTextField(
+        value = bbtInput,
+        onValueChange = onBbtChange,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .testTag("day_editor_bbt_field"),
+        label = { Text(stringResource(R.string.log_bbt_label)) },
+        isError = bbtError != null,
+        supportingText = {
+            when (bbtError) {
+                BbtFieldError.UNPARSEABLE -> Text(stringResource(R.string.log_bbt_error_unparseable))
+                BbtFieldError.OUT_OF_RANGE -> Text(stringResource(R.string.log_bbt_error_range))
+                null -> Unit
+            }
+        },
+    )
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun DayEditorCustomSymptomChipsSection(
+    labels: List<String>,
+    selected: Set<String>,
+    onToggle: (String) -> Unit,
+) {
+    if (labels.isEmpty()) return
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(MahinSpacing.sm)) {
+        labels.forEach { tag ->
+            FilterChip(
+                selected = tag in selected,
+                onClick = { onToggle(tag) },
+                label = { Text(tag) },
+                modifier = Modifier.testTag("day_editor_custom_symptom_chip_$tag"),
+            )
+        }
+    }
+}
+
+@Composable
+private fun flowLevelLabel(level: PeriodFlowLevel): String =
+    when (level) {
+        PeriodFlowLevel.SPOTTING -> stringResource(R.string.flow_spotting)
+        PeriodFlowLevel.LIGHT -> stringResource(R.string.flow_light)
+        PeriodFlowLevel.MEDIUM -> stringResource(R.string.flow_medium)
+        PeriodFlowLevel.HEAVY -> stringResource(R.string.flow_heavy)
+        PeriodFlowLevel.VERY_HEAVY -> stringResource(R.string.flow_very_heavy)
+    }
 
 @Composable
 internal fun DayEditorNotesSection(

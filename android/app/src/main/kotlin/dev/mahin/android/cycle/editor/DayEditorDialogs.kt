@@ -28,7 +28,7 @@ fun DayEditorSexualOptInDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.day_editor_sexual_opt_in_title)) },
-        text = { Text(stringResource(R.string.day_editor_sexual_opt_in_body)) },
+        text = { DayEditorSexualOptInDialogBody() },
         confirmButton = {
             TextButton(onClick = onConfirm, modifier = Modifier.testTag("day_editor_sexual_opt_in_confirm")) {
                 Text(stringResource(R.string.day_editor_sexual_opt_in_confirm))
@@ -41,6 +41,31 @@ fun DayEditorSexualOptInDialog(
         },
         modifier = Modifier.testTag("day_editor_sexual_opt_in"),
     )
+}
+
+/** Golden-safe surface (no window/dialog root) matching [DayEditorSexualOptInDialog] copy. */
+@Composable
+fun DayEditorSexualOptInGoldenSurface(modifier: Modifier = Modifier) {
+    Column(modifier = modifier.padding(MahinSpacing.lg).testTag("day_editor_sexual_opt_in")) {
+        Text(
+            text = stringResource(R.string.day_editor_sexual_opt_in_title),
+            style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
+        )
+        DayEditorSexualOptInDialogBody()
+        Row(modifier = Modifier.padding(top = MahinSpacing.md)) {
+            TextButton(onClick = {}, modifier = Modifier.testTag("day_editor_sexual_opt_in_confirm")) {
+                Text(stringResource(R.string.day_editor_sexual_opt_in_confirm))
+            }
+            TextButton(onClick = {}) {
+                Text(stringResource(R.string.day_editor_sexual_opt_in_cancel))
+            }
+        }
+    }
+}
+
+@Composable
+private fun DayEditorSexualOptInDialogBody() {
+    Text(stringResource(R.string.day_editor_sexual_opt_in_body))
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

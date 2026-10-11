@@ -5,7 +5,6 @@ import dev.mahin.android.cycle.DayMarkers
 import dev.mahin.android.cycle.LogScreenActions
 import dev.mahin.android.cycle.LogUiState
 import dev.mahin.android.cycle.TodayUiState
-import dev.mahin.android.cycle.TtcLogFormCallbacks
 import dev.mahin.android.insights.CycleInsightsUiState
 import dev.mahin.android.learn.LearnUiState
 import dev.mahin.android.pregnancy.PregnancyHubActions
@@ -69,25 +68,7 @@ object M14aGoldenFixtures {
     fun logScreenActions(): LogScreenActions =
         LogScreenActions(
             onDateSelected = {},
-            onToggleLoggingPeriod = {},
-            onFlowLevelSelected = {},
-            onToggleSymptom = {},
-            onNoteChange = {},
-            onSave = {},
-            onTogglePregnancySymptom = {},
-            onPregnancyWeightChange = {},
-            onPregnancyBpSystolicChange = {},
-            onPregnancyBpDiastolicChange = {},
-            ttcCallbacks =
-                TtcLogFormCallbacks(
-                    onBbtChange = {},
-                    onOvulationTestSelected = {},
-                    onCervicalMucusSelected = {},
-                    onIntercourseOptInChanged = {},
-                    onIntercourseToggle = {},
-                    onIntercourseProtectedSelected = {},
-                    onPregnancyTestSelected = {},
-                ),
+            onOpenDayEditor = {},
         )
 
     fun historyPopulated(): List<PeriodRecordEntity> =
