@@ -32,9 +32,11 @@ import dev.mahin.domain.subscription.EntitlementTier
 import java.time.LocalDate
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.withTimeout
 import org.junit.After
@@ -55,7 +57,7 @@ class SettingsViewModelTest {
     val testHangWatchdog: TestHangWatchdogRule = TestHangWatchdogRule()
 
     @get:Rule
-    val mainDispatcherRule = MainDispatcherRule()
+    val mainDispatcherRule = MainDispatcherRule(UnconfinedTestDispatcher())
 
     private lateinit var database: MahinDatabase
     private lateinit var pregnancyRepository: PregnancyTrackingRepository
@@ -107,8 +109,8 @@ class SettingsViewModelTest {
         withTimeout(timeoutMs) {
             while (true) {
                 if (condition()) return@withTimeout
+                mainDispatcherRule.dispatcher.scheduler.advanceUntilIdle()
                 ShadowLooper.idleMainLooper()
-                delay(25)
             }
         }
     }
@@ -410,10 +412,9 @@ class SettingsViewModelTest {
         var cancellationCause: CancellationException? = null
 
         override suspend fun startConnection() {
+            startConnectionCount++
             try {
-                while (true) {
-                    delay(1_000)
-                }
+                awaitCancellation()
             } catch (cancelled: CancellationException) {
                 cancellationCause = cancelled
                 throw cancelled
