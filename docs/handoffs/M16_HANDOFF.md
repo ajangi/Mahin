@@ -1,7 +1,7 @@
 # M16 Handoff — Logging experience overhaul
 
 **Milestone:** M16  
-**Status:** draft PR [#39](https://github.com/ajangi/Mahin/pull/39) — final gap closure (medication/vitals, calendar period UI, Today integration test, Settings lifestyle, Room v6, `LocalDateClock`)  
+**Status:** draft PR [#39](https://github.com/ajangi/Mahin/pull/39) — head `dce6728` — CI **green** (run [38162467642](https://github.com/ajangi/Mahin/actions/runs/38162467642), android ~15m)  
 **Next milestone:** **M17** only
 
 ## Implemented scope (this pass)
@@ -46,7 +46,7 @@
 | Custom tags not in sync/export | Met | `LoggingLocalPrivacyTest` |
 | Analytics extended | Met | `SensitiveAnalyticsGuardTest` |
 | M16 goldens | Met | `M16FullScreenGoldenTest`, CI Roborazzi |
-| CI checks | Met | GitHub Actions `ci` android job on final push head (see below) |
+| CI checks | Met | GitHub Actions run [38162467642](https://github.com/ajangi/Mahin/actions/runs/38162467642) — `android` job success on `dce6728` (~15m) |
 
 ## Commands / results (local)
 
