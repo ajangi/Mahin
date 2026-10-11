@@ -1,7 +1,7 @@
 # M16 Handoff — Logging experience overhaul (Gatekeeper Round 5)
 
 **Milestone:** M16  
-**Status:** PR [#39](https://github.com/ajangi/Mahin/pull/39) — CI on final tip after Round 5 push (see below)  
+**Status:** PR [#39](https://github.com/ajangi/Mahin/pull/39) — head `45226a5` — CI **green** ([38183318983](https://github.com/ajangi/Mahin/actions/runs/38183318983), android ~24m 24s)  
 **Next milestone:** **M17** only
 
 ## Gatekeeper Round 5 — per-item evidence
@@ -21,7 +21,7 @@
 |-----|-----|-------------|--------|
 | `70da805` | [38179611519](https://github.com/ajangi/Mahin/actions/runs/38179611519) | ~16m 41s | Green |
 | `77b5ac1` | [38180817859](https://github.com/ajangi/Mahin/actions/runs/38180817859) | — | **Red** — flaky `DayEditorViewModelUndoTest.undo_restoresBbtInDatabase` (stale BBT undo snapshot; fixed in Round 5) |
-| *(Round 5 head)* | *(after single push)* | *(fill from CI)* | *(expected green)* |
+| `45226a5` | [38183318983](https://github.com/ajangi/Mahin/actions/runs/38183318983) | ~24m 24s | Green |
 
 ## Sexual opt-in golden MD5s
 
