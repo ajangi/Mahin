@@ -1,9 +1,6 @@
 package dev.mahin.android.cycle.editor
 
 import androidx.activity.ComponentActivity
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -27,35 +24,29 @@ class DayEditorLoggingEffortTest {
     @get:Rule
     val composeRule = ViewModelStoreClearingRule.withCompose(androidComposeRule)
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun quickLog_opensDayEditorSheet() {
         val date = LocalDate.of(2025, 6, 15)
         androidComposeRule.setContent {
             MahinTheme {
-                val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-                ModalBottomSheet(
-                    onDismissRequest = {},
-                    sheetState = sheetState,
+                DayEditorSheetContent(
+                    date = date,
+                    state =
+                        DayEditorUiState(
+                            orderedCategories = listOf(LogEditorCategory.PERIOD_FLOW),
+                        ),
+                    onTogglePeriod = {},
+                    onToggleSymptom = {},
+                    onToggleMood = {},
+                    onSetPain = { _, _ -> },
+                    onOpenManage = {},
+                    onRequestSexualOptIn = {},
                     modifier = Modifier.testTag("day_editor_sheet"),
-                ) {
-                    DayEditorSheetContent(
-                        date = date,
-                        state =
-                            DayEditorUiState(
-                                orderedCategories = listOf(LogEditorCategory.PERIOD_FLOW),
-                            ),
-                        onTogglePeriod = {},
-                        onToggleSymptom = {},
-                        onToggleMood = {},
-                        onSetPain = { _, _ -> },
-                        onOpenManage = {},
-                        onRequestSexualOptIn = {},
-                    )
-                }
+                )
             }
         }
         androidComposeRule.onNodeWithTag("day_editor_sheet").assertExists()
+        androidComposeRule.onNodeWithTag("day_editor_period_started").assertExists()
     }
 
     @Test
