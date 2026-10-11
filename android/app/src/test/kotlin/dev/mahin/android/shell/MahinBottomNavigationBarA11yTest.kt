@@ -27,7 +27,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], qualifiers = "fa-rIR")
+@Config(sdk = [33], qualifiers = "fa-rIR", manifest = Config.NONE)
 class MahinBottomNavigationBarA11yTest {
     @get:Rule
     val composeRule = createComposeRule()
