@@ -86,7 +86,7 @@ Ungated milestones (M14a–M18) can be executed by a cloud agent without further
 | M14a | Design foundations: screen specs, dark semantic colours (ADR 0020), motion, Numeric Display, golden harness + CI verify, benchmark skeleton. **No visible navigation change** | **accepted** — merge `4591b53` **2026-10-06** ([PR #31](https://github.com/ajangi/Mahin/pull/31)); owner approved specs/colours at review | `prompts/M14a.md` |
 | M14b | Icon set (8 families) + `MahinIllustration` with bundled placeholders and medical-image gating | **accepted** — merge `4a31e20` **2026-10-07** ([PR #33](https://github.com/ajangi/Mahin/pull/33)); borderline icons still need clinical review before release | `prompts/M14b.md` |
 | M14c | App shell: Mahin bottom bar (5 tabs per mode per PRD §5), top app bar, Settings screen | **accepted** — merge `d951c20` **2026-10-08** ([PR #35](https://github.com/ajangi/Mahin/pull/35)); gatekeeper rounds through round 5 | `prompts/M14c.md` |
-| M15 | Today home & calendar redesign | none | `prompts/M15.md` |
+| M15 | Today home & calendar redesign | **accepted** — merge `01bed76` **2026-10-11** ([PR #37](https://github.com/ajangi/Mahin/pull/37)); owner approved at merge | `prompts/M15.md` |
 | M16 | Logging experience overhaul (local-only custom tags) | none | `prompts/M16.md` |
 | M17 | Daily wellness, Learn magazine, guided programs, remote CMS images (Coil) | real content needs clinical review before launch | `prompts/M17.md` |
 | M18 | Pregnancy companion depth (local-only checklist and expenses) | schedules/warning-sign content need clinical review before launch | `prompts/M18.md` |
