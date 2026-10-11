@@ -1,7 +1,7 @@
 # M16 Handoff — Logging experience overhaul
 
 **Milestone:** M16  
-**Status:** draft PR (CI pending on head)  
+**Status:** draft PR [#39](https://github.com/ajangi/Mahin/pull/39) — head `817e9f8` (CI in flight)  
 **Next milestone:** **M17** only
 
 ## Implemented scope
@@ -49,23 +49,32 @@
 | Custom tags / category prefs not in sync outbox; export unchanged | Met | `LoggingLocalPrivacyTest` |
 | `SensitiveAnalyticsGuardTest` extended | Met | `acceptsLogCategoryOpenedWithCoarseSurface` |
 | M16 goldens light/dark × scales + RTL harness | Met | `M16FullScreenGoldenTest` (22 captures) |
-| Existing checks | CI pending | command below |
+| Existing checks | Local verify (see commands); GitHub android job re-triggered on latest push | `ci.yml` android step |
 
 ## Commands / results (local)
 
 ```bash
 export ANDROID_HOME=$HOME/android-sdk
 cd android && ./gradlew \
-  :app:recordRoborazziDebug --tests "dev.mahin.android.golden.M16FullScreenGoldenTest" \
-  :app:recordRoborazziDebug --tests "dev.mahin.android.golden.M15FullScreenGoldenTest" \
+  :app:testDebugUnitTest --tests "dev.mahin.android.cycle.editor.*" \
+  --tests "dev.mahin.android.settings.SettingsViewModelTest" \
   --rerun-tasks --no-daemon
-# BUILD SUCCESSFUL (M16 10 tests, M15 32 tests)
+# BUILD SUCCESSFUL (post-fix)
 
-cd android && ./gradlew lintDebug ktlintCheck detekt \
-  :app:testDebugUnitTest :core:database:testDebugUnitTest :domain:cycle:test :core:analytics:test \
+cd android && ./gradlew \
   :app:verifyRoborazziDebug :core:designsystem:verifyRoborazziDebug \
   --rerun-tasks --no-daemon
-# (run on PR head — pending)
+# BUILD SUCCESSFUL (includes M14a log goldens refresh)
+
+# Full CI parity (same as .github/workflows/ci.yml android job):
+cd android && GRADLE_OPTS='-Dorg.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=512m -Dorg.gradle.workers.max=2 -Dorg.gradle.parallel=false' \
+  ./gradlew lintDebug ktlintCheck detekt test assembleDebug assembleRelease \
+  :core:network:testReleaseUnitTest \
+  :core:network:verifyReleaseMahinApiBaseUrlHttps \
+  :app:verifyReleaseApkNoEmulatorApiHost \
+  :app:verifyRoborazziDebug :core:designsystem:verifyRoborazziDebug \
+  :benchmark:assemble --rerun-tasks --no-daemon
+# Run on merge candidate; last GitHub run failed before shell overlay + settings fixes.
 ```
 
 ## Limitations
