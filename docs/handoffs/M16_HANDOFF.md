@@ -1,7 +1,7 @@
 # M16 Handoff — Logging experience overhaul
 
 **Milestone:** M16  
-**Status:** draft PR [#39](https://github.com/ajangi/Mahin/pull/39) — head `d520f58` — Gatekeeper round 1  
+**Status:** draft PR [#39](https://github.com/ajangi/Mahin/pull/39) — head `pending` — Gatekeeper round 1  
 **Next milestone:** **M17** only
 
 ## Implemented scope
@@ -58,7 +58,7 @@ for i in $(seq 1 25); do ./gradlew :app:testDebugUnitTest \
   --tests "dev.mahin.android.settings.SettingsViewModelTest" --rerun-tasks --no-daemon -q; done
 for i in $(seq 1 25); do ./gradlew :app:testReleaseUnitTest \
   --tests "dev.mahin.android.settings.SettingsViewModelTest" --rerun-tasks --no-daemon -q; done
-# Record counts in commit message / CI comment (25/25 target).
+# 2026-10-11 Cloud Agent VM: debug 25/25, release 25/25 (all --rerun-tasks).
 
 cd android && ./gradlew :app:verifyRoborazziDebug :core:designsystem:verifyRoborazziDebug --rerun-tasks --no-daemon
 # BUILD SUCCESSFUL (after Surface background + golden refresh)
