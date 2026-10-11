@@ -22,6 +22,7 @@ import dev.mahin.core.designsystem.component.MahinSectionLabel
 import java.time.LocalDate
 
 @Composable
+@Suppress("LongParameterList", "LongMethod")
 internal fun CalendarPeriodManagementSection(
     periods: List<PeriodRecordEntity>,
     editingRecordId: String?,

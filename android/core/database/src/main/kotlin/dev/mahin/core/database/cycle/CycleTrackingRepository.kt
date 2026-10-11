@@ -7,12 +7,12 @@ import dev.mahin.core.database.entity.PeriodDayEntity
 import dev.mahin.core.database.entity.PeriodRecordEntity
 import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.PeriodFlowLevel
-import dev.mahin.domain.cycle.CyclePredictionEngineV1
-import dev.mahin.domain.cycle.CyclePredictionInput
-import dev.mahin.domain.cycle.CyclePredictionResult
 import dev.mahin.core.sync.NoOpSyncOutbox
 import dev.mahin.core.sync.SyncMutation
 import dev.mahin.core.sync.SyncOutbox
+import dev.mahin.domain.cycle.CyclePredictionEngineV1
+import dev.mahin.domain.cycle.CyclePredictionInput
+import dev.mahin.domain.cycle.CyclePredictionResult
 import java.time.LocalDate
 import java.util.UUID
 import javax.inject.Inject
@@ -36,6 +36,7 @@ class CycleTrackingRepository
         private val syncOutbox: SyncOutbox,
     ) {
         constructor(database: MahinDatabase) : this(database, NoOpSyncOutbox())
+
         private val profileDao = database.cycleProfileDao()
         private val periodDao = database.periodRecordDao()
         private val periodDayDao = database.periodDayDao()

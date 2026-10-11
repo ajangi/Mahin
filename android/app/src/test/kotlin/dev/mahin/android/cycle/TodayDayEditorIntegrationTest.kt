@@ -72,7 +72,7 @@ class TodayDayEditorIntegrationTest {
         runBlocking {
             harness.seedCycleProfile()
             val coordinator = DayEditorCoordinator()
-            val viewModel = harness.createViewModel(today)
+            val viewModel = harness.createViewModel()
             androidComposeRule.setContent {
                 val session by coordinator.session.collectAsState()
                 val editorState by viewModel.uiState.collectAsState()
@@ -144,6 +144,7 @@ class TodayDayEditorIntegrationTest {
     }
 }
 
+@Suppress("LongParameterList")
 internal class DayEditorTestHarness private constructor(
     val cycleRepository: CycleTrackingRepository,
     private val ttcRepository: TtcTrackingRepository,
@@ -161,7 +162,7 @@ internal class DayEditorTestHarness private constructor(
     fun periodDayFor(date: LocalDate): dev.mahin.core.database.entity.PeriodDayEntity? =
         runBlocking(Dispatchers.IO) { database.periodDayDao().getForDate(date) }
 
-    fun createViewModel(today: LocalDate): DayEditorViewModel {
+    fun createViewModel(): DayEditorViewModel {
         val gate =
             object : HealthConnectPeriodDayIntegrationGate {
                 override suspend fun isIntegrationActive(): Boolean = false

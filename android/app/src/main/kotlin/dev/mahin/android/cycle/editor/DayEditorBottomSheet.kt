@@ -35,6 +35,7 @@ import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Suppress("LongMethod")
 fun DayEditorHost(
     session: DayEditorSession?,
     onDismiss: () -> Unit,

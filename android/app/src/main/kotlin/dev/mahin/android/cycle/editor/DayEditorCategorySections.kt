@@ -332,6 +332,7 @@ internal fun DayEditorMedicationSection(
 }
 
 @Composable
+@Suppress("LongParameterList")
 internal fun DayEditorPregnancyVitalsSection(
     weightInput: String,
     weightError: Boolean,

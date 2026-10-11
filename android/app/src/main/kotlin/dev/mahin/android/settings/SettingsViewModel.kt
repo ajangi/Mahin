@@ -48,6 +48,7 @@ data class SettingsUiState(
 )
 
 @HiltViewModel
+@Suppress("LongParameterList")
 class SettingsViewModel
     @Inject
     constructor(
