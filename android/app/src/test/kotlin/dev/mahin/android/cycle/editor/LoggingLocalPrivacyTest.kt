@@ -10,6 +10,7 @@ import dev.mahin.core.database.MahinDatabase
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.entity.CustomSymptomTagEntity
 import dev.mahin.core.database.logging.CustomSymptomTagRepository
+import dev.mahin.core.datastore.LoggingPreferencesRepository
 import dev.mahin.core.datastore.SubscriptionPreferencesRepository
 import dev.mahin.core.security.DisabledAppLockGateway
 import dev.mahin.core.sync.InMemorySyncOutbox
@@ -29,6 +30,7 @@ class LoggingLocalPrivacyTest {
     private lateinit var database: MahinDatabase
     private lateinit var cycleRepository: CycleTrackingRepository
     private lateinit var customSymptomTagRepository: CustomSymptomTagRepository
+    private lateinit var loggingPreferencesRepository: LoggingPreferencesRepository
     private val outbox = InMemorySyncOutbox()
 
     @Before
@@ -39,12 +41,14 @@ class LoggingLocalPrivacyTest {
                 .inMemoryDatabaseBuilder(context, MahinDatabase::class.java)
                 .allowMainThreadQueries()
                 .build()
-        cycleRepository = CycleTrackingRepository(database)
+        cycleRepository = CycleTrackingRepository(database, outbox)
         customSymptomTagRepository = CustomSymptomTagRepository(database)
+        loggingPreferencesRepository = LoggingPreferencesRepository(context)
     }
 
     @After
     fun tearDown() {
+        runBlocking { loggingPreferencesRepository.clear() }
         database.close()
     }
 
@@ -58,7 +62,40 @@ class LoggingLocalPrivacyTest {
                     createdAtEpochMs = 0L,
                 ),
             )
+            loggingPreferencesRepository.setSexualActivityEnabled(true)
+            loggingPreferencesRepository.setLifestyleModuleEnabled(
+                dev.mahin.core.model.LogEditorCategory.SLEEP,
+                true,
+            )
+            loggingPreferencesRepository.setPinnedCategoryOrder(
+                listOf(dev.mahin.core.model.LogEditorCategory.MOOD),
+            )
             assertThat(outbox.pending()).isEmpty()
+        }
+    }
+
+    @Test
+    fun dailyLogUpsert_enqueuesSync_butCustomTagsDoNot() {
+        runBlocking {
+            val day = LocalDate.of(2025, 3, 1)
+            cycleRepository.upsertDailyLog(
+                date = day,
+                moodTags = setOf("آرام"),
+                symptomTags = setOf("سردرد"),
+                painSeverity = null,
+                note = null,
+            )
+            assertThat(outbox.pending()).hasSize(1)
+            assertThat(outbox.pending().single().entityType).isEqualTo("daily_log")
+            customSymptomTagRepository.upsert(
+                CustomSymptomTagEntity(
+                    id = "c2",
+                    label = "علامت دیگر",
+                    createdAtEpochMs = 1L,
+                ),
+            )
+            loggingPreferencesRepository.setMostUsedFirst(true)
+            assertThat(outbox.pending()).hasSize(1)
         }
     }
 

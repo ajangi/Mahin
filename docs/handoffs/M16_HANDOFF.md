@@ -46,7 +46,7 @@
 | Custom tags not in sync/export | Met | `LoggingLocalPrivacyTest` |
 | Analytics extended | Met | `SensitiveAnalyticsGuardTest` |
 | M16 goldens | Met | `M16FullScreenGoldenTest` |
-| CI checks | Pending push | Local full android job (see commands) |
+| CI checks | Met | GitHub Actions `ci` android job success on `7c6db5a` |
 
 ## Commands / results (local)
 
