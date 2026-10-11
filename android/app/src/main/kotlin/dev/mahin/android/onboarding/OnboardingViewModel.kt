@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.mahin.core.database.cycle.CycleOnboardingInput
+import dev.mahin.core.common.LocalDateClock
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
 import dev.mahin.core.model.ReproductiveMode
@@ -20,7 +21,11 @@ class OnboardingViewModel
     constructor(
         private val repository: CycleTrackingRepository,
         private val pregnancyRepository: PregnancyTrackingRepository,
+        private val localDateClock: LocalDateClock,
     ) : ViewModel() {
+        val referenceToday: LocalDate
+            get() = localDateClock.today()
+
         private val _saving = MutableStateFlow(false)
         val saving: StateFlow<Boolean> = _saving.asStateFlow()
 

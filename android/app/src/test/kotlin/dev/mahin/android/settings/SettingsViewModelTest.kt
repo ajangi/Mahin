@@ -11,6 +11,7 @@ import dev.mahin.core.billing.BillingPurchaseReceipt
 import dev.mahin.core.billing.EntitlementApi
 import dev.mahin.core.billing.EntitlementApiResponse
 import dev.mahin.core.billing.EntitlementRepository
+import dev.mahin.core.common.FixedLocalDateClock
 import dev.mahin.core.config.FeatureFlagRepository
 import dev.mahin.core.config.MahinFeatureFlags
 import dev.mahin.core.config.MetaApi
@@ -21,6 +22,7 @@ import dev.mahin.core.database.entity.CycleProfileEntity
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
 import dev.mahin.core.datastore.AccountSessionRepository
 import dev.mahin.core.datastore.CachedEntitlement
+import dev.mahin.core.datastore.LoggingPreferencesRepository
 import dev.mahin.core.datastore.PregnancyTimerPreferencesRepository
 import dev.mahin.core.datastore.SubscriptionPreferencesRepository
 import dev.mahin.core.model.CycleRegularity
@@ -365,6 +367,8 @@ class SettingsViewModelTest {
                     billingAdapter = billingAdapter,
                     premiumBillingCoordinator = premiumCoordinator,
                     entitlementRepository = entitlementRepository,
+                    loggingPreferencesRepository = LoggingPreferencesRepository(context),
+                    localDateClock = FixedLocalDateClock(LocalDate.of(2025, 3, 1)),
                 ),
             ).also { heldViewModel = it }
     }

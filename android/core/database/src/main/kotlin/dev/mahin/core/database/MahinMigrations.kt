@@ -242,3 +242,12 @@ val MIGRATION_4_5 =
             )
         }
     }
+
+val MIGRATION_5_6 =
+    object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "ALTER TABLE daily_log ADD COLUMN medicationTags TEXT NOT NULL DEFAULT ''",
+            )
+        }
+    }

@@ -59,4 +59,27 @@ class CycleTrackingRepositoryPeriodToolsTest {
             assertThat(periods.first().endDate).isEqualTo(LocalDate.of(2025, 1, 6))
         }
     }
+
+    @Test
+    fun mergeAdjacentPeriods_openEndDate_doesNotCrash() {
+        runBlocking {
+            val first =
+                repository.upsertPeriod(
+                    startDate = LocalDate.of(2025, 2, 1),
+                    endDate = null,
+                    note = null,
+                    recordId = null,
+                )
+            val second =
+                repository.upsertPeriod(
+                    startDate = LocalDate.of(2025, 2, 2),
+                    endDate = LocalDate.of(2025, 2, 5),
+                    note = null,
+                    recordId = null,
+                )
+            repository.mergeAdjacentPeriods(first, second)
+            val periods = repository.getAllPeriods()
+            assertThat(periods).hasSize(1)
+        }
+    }
 }

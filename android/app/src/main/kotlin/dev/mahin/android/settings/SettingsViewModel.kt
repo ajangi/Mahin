@@ -12,6 +12,9 @@ import dev.mahin.core.config.FeatureFlagGateway
 import dev.mahin.core.config.FeatureFlagRepository
 import dev.mahin.core.config.MahinFeatureFlags
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
+import dev.mahin.core.common.LocalDateClock
+import dev.mahin.core.datastore.LoggingPreferencesRepository
+import dev.mahin.core.model.LogEditorCategory
 import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.domain.subscription.EntitlementTier
 import java.time.LocalDate
@@ -37,6 +40,11 @@ data class SettingsUiState(
     val billingState: BillingAdapterState = BillingAdapterState.Idle,
     val premiumActive: Boolean = false,
     val showPremiumPaywallEntry: Boolean = true,
+    val lifestyleSleepEnabled: Boolean = false,
+    val lifestyleExerciseEnabled: Boolean = false,
+    val lifestyleWaterEnabled: Boolean = false,
+    val lifestyleStressEnabled: Boolean = false,
+    val referenceToday: LocalDate = LocalDate.EPOCH,
 )
 
 @HiltViewModel
@@ -49,6 +57,8 @@ class SettingsViewModel
         private val billingAdapter: BillingAdapter,
         private val premiumBillingCoordinator: PremiumBillingCoordinator,
         private val entitlementRepository: EntitlementRepository,
+        private val loggingPreferencesRepository: LoggingPreferencesRepository,
+        private val localDateClock: LocalDateClock,
     ) : ViewModel() {
         private val paywallVisible = MutableStateFlow(false)
         private var paywallWarmUpJob: Job? = null
@@ -56,6 +66,7 @@ class SettingsViewModel
         val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
         init {
+            _uiState.update { it.copy(referenceToday = localDateClock.today()) }
             viewModelScope.launch {
                 featureFlagRepository.refreshFromRemote()
                 refreshFeatureFlags()
@@ -87,6 +98,30 @@ class SettingsViewModel
                 }
             }
             viewModelScope.launch {
+                combine(
+                    loggingPreferencesRepository.observeLifestyleModuleEnabled(LogEditorCategory.SLEEP),
+                    loggingPreferencesRepository.observeLifestyleModuleEnabled(LogEditorCategory.EXERCISE),
+                    loggingPreferencesRepository.observeLifestyleModuleEnabled(LogEditorCategory.WATER),
+                    loggingPreferencesRepository.observeLifestyleModuleEnabled(LogEditorCategory.STRESS),
+                ) { sleep, exercise, water, stress ->
+                    SettingsUiState(
+                        lifestyleSleepEnabled = sleep,
+                        lifestyleExerciseEnabled = exercise,
+                        lifestyleWaterEnabled = water,
+                        lifestyleStressEnabled = stress,
+                    )
+                }.collect { lifestyle ->
+                    _uiState.update {
+                        it.copy(
+                            lifestyleSleepEnabled = lifestyle.lifestyleSleepEnabled,
+                            lifestyleExerciseEnabled = lifestyle.lifestyleExerciseEnabled,
+                            lifestyleWaterEnabled = lifestyle.lifestyleWaterEnabled,
+                            lifestyleStressEnabled = lifestyle.lifestyleStressEnabled,
+                        )
+                    }
+                }
+            }
+            viewModelScope.launch {
                 entitlementRepository.entitlement.collect { snapshot ->
                     val premium = snapshot.tier != EntitlementTier.FREE
                     _uiState.update {
@@ -96,6 +131,15 @@ class SettingsViewModel
                         )
                     }
                 }
+            }
+        }
+
+        fun setLifestyleModuleEnabled(
+            category: LogEditorCategory,
+            enabled: Boolean,
+        ) {
+            viewModelScope.launch {
+                loggingPreferencesRepository.setLifestyleModuleEnabled(category, enabled)
             }
         }
 

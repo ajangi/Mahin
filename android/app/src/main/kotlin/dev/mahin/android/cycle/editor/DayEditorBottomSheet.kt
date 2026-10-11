@@ -91,6 +91,10 @@ fun DayEditorHost(
                 onCustomSymptomDraft = viewModel::setCustomSymptomDraft,
                 onAddCustomSymptom = viewModel::addCustomSymptomFromDraft,
                 onTogglePregnancySymptom = viewModel::togglePregnancySymptom,
+                onToggleMedication = viewModel::toggleMedication,
+                onPregnancyWeightChange = viewModel::onPregnancyWeightChange,
+                onPregnancyBpSystolicChange = viewModel::onPregnancyBpSystolicChange,
+                onPregnancyBpDiastolicChange = viewModel::onPregnancyBpDiastolicChange,
                 onOpenManage = viewModel::openManageCategories,
                 onRequestSexualOptIn = viewModel::requestSexualOptIn,
             )
@@ -136,6 +140,10 @@ internal fun DayEditorSheetContent(
     onCustomSymptomDraft: (String) -> Unit = {},
     onAddCustomSymptom: () -> Unit = {},
     onTogglePregnancySymptom: (String) -> Unit = {},
+    onToggleMedication: (String) -> Unit = {},
+    onPregnancyWeightChange: (String) -> Unit = {},
+    onPregnancyBpSystolicChange: (String) -> Unit = {},
+    onPregnancyBpDiastolicChange: (String) -> Unit = {},
     onOpenManage: () -> Unit = {},
     onRequestSexualOptIn: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -153,7 +161,8 @@ internal fun DayEditorSheetContent(
             modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(MahinSpacing.lg),
+                .padding(MahinSpacing.lg)
+                .testTag("day_editor_scroll"),
     ) {
         Text(text = title, style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
         TextButton(onClick = onOpenManage, modifier = Modifier.testTag("day_editor_manage_categories")) {
@@ -202,9 +211,13 @@ internal fun DayEditorSheetContent(
                         onOvulationTest = onOvulationTest,
                         onPregnancyTest = onPregnancyTest,
                     )
-                LogEditorCategory.MEDICATION -> {
-                    MahinSectionLabel(text = stringResource(R.string.day_editor_medication_section))
-                }
+                LogEditorCategory.MEDICATION ->
+                    DayEditorMedicationSection(
+                        available = LogDayEditorCatalog.defaultMedications,
+                        selected = state.medicationTags,
+                        confirmPulseKey = state.confirmPulseKey,
+                        onToggle = onToggleMedication,
+                    )
                 LogEditorCategory.NOTES -> DayEditorNotesSection(state.note, onNoteChange)
                 LogEditorCategory.SEXUAL_ACTIVITY ->
                     DayEditorSexualSection(
@@ -247,9 +260,17 @@ internal fun DayEditorSheetContent(
                         selected = state.pregnancySymptomTags,
                         onToggle = onTogglePregnancySymptom,
                     )
-                LogEditorCategory.PREGNANCY_VITALS -> {
-                    MahinSectionLabel(text = stringResource(R.string.log_pregnancy_weight_label))
-                }
+                LogEditorCategory.PREGNANCY_VITALS ->
+                    DayEditorPregnancyVitalsSection(
+                        weightInput = state.pregnancyWeightInput,
+                        weightError = state.pregnancyWeightError != null,
+                        systolicInput = state.pregnancyBpSystolicInput,
+                        diastolicInput = state.pregnancyBpDiastolicInput,
+                        bpError = state.pregnancyBpError != null,
+                        onWeightChange = onPregnancyWeightChange,
+                        onSystolicChange = onPregnancyBpSystolicChange,
+                        onDiastolicChange = onPregnancyBpDiastolicChange,
+                    )
                 else -> Unit
             }
         }

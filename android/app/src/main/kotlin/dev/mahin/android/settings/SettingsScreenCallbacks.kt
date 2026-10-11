@@ -1,6 +1,7 @@
 package dev.mahin.android.settings
 
 import androidx.compose.runtime.Immutable
+import dev.mahin.core.model.LogEditorCategory
 
 @Immutable
 data class SettingsScreenCallbacks(
@@ -15,4 +16,5 @@ data class SettingsScreenCallbacks(
     val onOpenHistory: () -> Unit,
     val onResumeCycle: () -> Unit,
     val onResumeTtc: () -> Unit,
+    val onLifestyleModuleToggle: (LogEditorCategory, Boolean) -> Unit = { _, _ -> },
 )

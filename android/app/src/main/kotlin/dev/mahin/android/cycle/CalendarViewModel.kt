@@ -6,10 +6,12 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.mahin.core.common.LocalDateClock
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.entity.DailyLogEntity
+import dev.mahin.core.database.entity.PeriodRecordEntity
 import dev.mahin.core.datastore.CalendarUiPreferencesRepository
 import dev.mahin.core.datetime.JalaliDate
 import dev.mahin.core.datetime.PersianCivilDateConverter
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,6 +29,10 @@ data class CalendarUiState(
     val legendExpanded: Boolean = true,
     val daySheetOpen: Boolean = false,
     val legendAutoCollapsedOnce: Boolean = false,
+    val periodRecords: List<PeriodRecordEntity> = emptyList(),
+    val periodEditId: String? = null,
+    val periodEditStartJalali: JalaliDate? = null,
+    val periodEditEndJalali: JalaliDate? = null,
 )
 
 @HiltViewModel
@@ -62,6 +68,13 @@ class CalendarViewModel
                             legendExpanded = !collapsed,
                             legendAutoCollapsedOnce = autoOnce,
                         )
+                    }
+                }
+            }
+            viewModelScope.launch {
+                repository.observePeriods().collect { periods ->
+                    _uiState.update {
+                        it.copy(periodRecords = periods.sortedByDescending { record -> record.startDate })
                     }
                 }
             }
@@ -122,6 +135,77 @@ class CalendarViewModel
             viewModelScope.launch {
                 val expanded = !_uiState.value.legendExpanded
                 calendarUiPreferencesRepository.setLegendCollapsed(!expanded)
+            }
+        }
+
+        fun beginPeriodEdit(recordId: String) {
+            val record = _uiState.value.periodRecords.find { it.id == recordId } ?: return
+            _uiState.update {
+                it.copy(
+                    periodEditId = recordId,
+                    periodEditStartJalali = converter.toJalali(record.startDate),
+                    periodEditEndJalali = record.endDate?.let { end -> converter.toJalali(end) },
+                )
+            }
+        }
+
+        fun onPeriodEditStartSelected(jalali: JalaliDate) {
+            _uiState.update { it.copy(periodEditStartJalali = jalali) }
+        }
+
+        fun onPeriodEditEndSelected(jalali: JalaliDate) {
+            _uiState.update { it.copy(periodEditEndJalali = jalali) }
+        }
+
+        fun clearPeriodEditEnd() {
+            _uiState.update { it.copy(periodEditEndJalali = null) }
+        }
+
+        fun cancelPeriodEdit() {
+            _uiState.update {
+                it.copy(
+                    periodEditId = null,
+                    periodEditStartJalali = null,
+                    periodEditEndJalali = null,
+                )
+            }
+        }
+
+        fun savePeriodEdit(recordId: String) {
+            val state = _uiState.value
+            val startJalali = state.periodEditStartJalali ?: return
+            val start = converter.toGregorian(startJalali)
+            val end = state.periodEditEndJalali?.let { converter.toGregorian(it) }
+            if (end != null && end.isBefore(start)) return
+            viewModelScope.launch {
+                val record = repository.getAllPeriods().find { it.id == recordId } ?: return@launch
+                repository.upsertPeriod(
+                    startDate = start,
+                    endDate = end,
+                    note = record.note,
+                    recordId = recordId,
+                )
+                cancelPeriodEdit()
+            }
+        }
+
+        fun mergePeriodWithNext(recordId: String) {
+            viewModelScope.launch {
+                val periods = repository.getAllPeriods().sortedBy { it.startDate }
+                val index = periods.indexOfFirst { it.id == recordId }
+                if (index < 0 || index >= periods.lastIndex) return@launch
+                repository.mergeAdjacentPeriods(recordId, periods[index + 1].id)
+            }
+        }
+
+        fun splitPeriod(recordId: String) {
+            viewModelScope.launch {
+                val record = repository.getAllPeriods().find { it.id == recordId } ?: return@launch
+                val end = record.endDate ?: return@launch
+                val spanDays = ChronoUnit.DAYS.between(record.startDate, end)
+                if (spanDays < 1) return@launch
+                val splitAfter = record.startDate.plusDays(spanDays / 2)
+                repository.splitPeriodRecord(recordId, splitAfter)
             }
         }
 

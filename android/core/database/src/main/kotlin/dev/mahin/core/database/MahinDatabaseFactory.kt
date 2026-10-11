@@ -30,7 +30,7 @@ object MahinDatabaseFactory {
         val builder =
             Room
                 .databaseBuilder(appContext, MahinDatabase::class.java, DATABASE_NAME)
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
         when (encryptionMode) {
             DatabaseEncryptionMode.KEYSTORE_SQLCIPHER -> {
                 loadSqlCipherNativeLibrary()

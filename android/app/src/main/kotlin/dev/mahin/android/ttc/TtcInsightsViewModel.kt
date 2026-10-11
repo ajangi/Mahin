@@ -3,6 +3,7 @@ package dev.mahin.android.ttc
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.mahin.core.common.LocalDateClock
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.entity.TtcDayLogEntity
 import dev.mahin.core.database.ttc.TtcTrackingRepository
@@ -44,6 +45,7 @@ class TtcInsightsViewModel
         private val cycleRepository: CycleTrackingRepository,
         private val ttcRepository: TtcTrackingRepository,
         private val ttcPrivacyRepository: TtcPrivacyPreferencesRepository,
+        private val localDateClock: LocalDateClock,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(TtcInsightsUiState())
         val uiState: StateFlow<TtcInsightsUiState> = _uiState.asStateFlow()
@@ -122,7 +124,7 @@ class TtcInsightsViewModel
         private fun calendarDayTicker(): Flow<LocalDate> =
             flow {
                 while (true) {
-                    emit(LocalDate.now())
+                    emit(localDateClock.today())
                     val now = LocalDateTime.now()
                     val nextMidnight = now.toLocalDate().plusDays(1).atStartOfDay()
                     val delayMs = Duration.between(now, nextMidnight).toMillis().coerceAtLeast(60_000L)

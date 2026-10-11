@@ -86,7 +86,7 @@ abstract class MahinDatabase : RoomDatabase() {
     abstract fun customSymptomTagDao(): CustomSymptomTagDao
 
     companion object {
-        const val VERSION: Int = 5
+        const val VERSION: Int = 6
         const val EXPORTS_SCHEMA: Boolean = true
     }
 }

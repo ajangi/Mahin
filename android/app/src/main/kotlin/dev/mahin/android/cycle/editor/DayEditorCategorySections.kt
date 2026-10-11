@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.IconButton
@@ -303,6 +304,80 @@ internal fun DayEditorMoodSection(
                 )
             }
         }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun DayEditorMedicationSection(
+    available: List<String>,
+    selected: Set<String>,
+    confirmPulseKey: String?,
+    onToggle: (String) -> Unit,
+) {
+    MahinSectionLabel(text = stringResource(R.string.day_editor_medication_section))
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(MahinSpacing.sm)) {
+        available.forEach { tag ->
+            val pulse = confirmPulseKey == "medication_$tag"
+            DayEditorPulseBox(pulse = pulse) {
+                FilterChip(
+                    selected = tag in selected,
+                    onClick = { onToggle(tag) },
+                    label = { Text(tag) },
+                    modifier = Modifier.testTag("day_editor_medication_$tag"),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+internal fun DayEditorPregnancyVitalsSection(
+    weightInput: String,
+    weightError: Boolean,
+    systolicInput: String,
+    diastolicInput: String,
+    bpError: Boolean,
+    onWeightChange: (String) -> Unit,
+    onSystolicChange: (String) -> Unit,
+    onDiastolicChange: (String) -> Unit,
+) {
+    MahinSectionLabel(text = stringResource(R.string.log_pregnancy_section))
+    OutlinedTextField(
+        value = weightInput,
+        onValueChange = onWeightChange,
+        label = { Text(stringResource(R.string.log_pregnancy_weight_label)) },
+        isError = weightError,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = MahinSpacing.xs)
+                .testTag("day_editor_pregnancy_weight"),
+    )
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(MahinSpacing.sm),
+    ) {
+        OutlinedTextField(
+            value = systolicInput,
+            onValueChange = onSystolicChange,
+            label = { Text(stringResource(R.string.log_pregnancy_bp_systolic)) },
+            isError = bpError,
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .testTag("day_editor_pregnancy_bp_systolic"),
+        )
+        OutlinedTextField(
+            value = diastolicInput,
+            onValueChange = onDiastolicChange,
+            label = { Text(stringResource(R.string.log_pregnancy_bp_diastolic)) },
+            isError = bpError,
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .testTag("day_editor_pregnancy_bp_diastolic"),
+        )
     }
 }
 

@@ -16,6 +16,7 @@ class TodayLoggedSummaryMapperTest {
                 logDate = LocalDate.now(),
                 symptomTags = "خستگی,سردرد",
                 moodTags = "آرام",
+                medicationTags = "",
                 painSeverity = null,
                 painLocation = null,
                 painNote = null,

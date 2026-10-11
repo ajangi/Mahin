@@ -8,6 +8,7 @@ import dev.mahin.android.premium.PremiumBillingCoordinator
 import dev.mahin.core.billing.BillingAdapter
 import dev.mahin.core.billing.BillingAdapterState
 import dev.mahin.core.billing.EntitlementRepository
+import dev.mahin.core.common.LocalDateClock
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.entity.DailyLogEntity
 import dev.mahin.core.database.entity.PeriodRecordEntity
@@ -43,6 +44,7 @@ class CycleInsightsViewModel
         private val entitlementRepository: EntitlementRepository,
         private val billingAdapter: BillingAdapter,
         private val premiumBillingCoordinator: PremiumBillingCoordinator,
+        private val localDateClock: LocalDateClock,
     ) : ViewModel() {
         private val paywallVisible = MutableStateFlow(false)
 
@@ -50,8 +52,8 @@ class CycleInsightsViewModel
             combine(
                 cycleTrackingRepository.observePeriods(),
                 cycleTrackingRepository.observeDailyLogs(
-                    LocalDate.now().minusMonths(3),
-                    LocalDate.now(),
+                    localDateClock.today().minusMonths(3),
+                    localDateClock.today(),
                 ),
                 entitlementRepository.entitlement,
                 billingAdapter.state,

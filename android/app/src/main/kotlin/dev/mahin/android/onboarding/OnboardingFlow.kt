@@ -29,14 +29,15 @@ fun OnboardingFlow(
     onComplete: () -> Unit,
     viewModel: OnboardingViewModel = hiltViewModel(),
 ) {
+    val referenceToday = viewModel.referenceToday
     var step by remember { mutableIntStateOf(0) }
     var selectedMode by remember { mutableStateOf(ReproductiveMode.CYCLE_TRACKING) }
-    var lastPeriodStart by remember { mutableStateOf(LocalDate.now().minusDays(7)) }
+    var lastPeriodStart by remember { mutableStateOf(referenceToday.minusDays(7)) }
     var lastPeriodEnd by remember { mutableStateOf<LocalDate?>(null) }
     var cycleLength by remember { mutableStateOf<Int?>(28) }
     var periodLength by remember { mutableStateOf<Int?>(5) }
     var regularity by remember { mutableStateOf(CycleRegularity.UNKNOWN) }
-    var lmpJalali by remember { mutableStateOf(PersianCivilDateConverter.toJalali(LocalDate.now().minusWeeks(8))) }
+    var lmpJalali by remember { mutableStateOf(PersianCivilDateConverter.toJalali(referenceToday.minusWeeks(8))) }
     var includeClinicalEdd by remember { mutableStateOf(false) }
     var clinicalEddJalali by remember { mutableStateOf<JalaliDate?>(null) }
     val saving by viewModel.saving.collectAsStateWithLifecycle()

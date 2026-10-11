@@ -3,6 +3,9 @@ package dev.mahin.android.cycle.editor
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.mahin.android.cycle.LogInputValidators
+import dev.mahin.android.cycle.WeightBpFieldError
+import dev.mahin.android.pregnancy.PregnancyFormatters
 import dev.mahin.core.common.LocalDateClock
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.entity.CustomSymptomTagEntity
@@ -69,6 +72,11 @@ data class DayEditorUiState(
     val availableMoods: List<String> = LogDayEditorCatalog.defaultMoods,
     val pregnancySymptomTags: Set<String> = emptySet(),
     val availablePregnancySymptoms: List<String> = LogDayEditorCatalog.defaultPregnancySymptoms,
+    val pregnancyWeightInput: String = "",
+    val pregnancyBpSystolicInput: String = "",
+    val pregnancyBpDiastolicInput: String = "",
+    val pregnancyWeightError: WeightBpFieldError? = null,
+    val pregnancyBpError: WeightBpFieldError? = null,
     val undoMessage: String? = null,
     val confirmPulseKey: String? = null,
     val categoryUsageCounts: Map<LogEditorCategory, Int> = emptyMap(),
@@ -81,10 +89,15 @@ data class UndoSnapshot(
     val flowLevel: PeriodFlowLevel?,
     val symptomTags: Set<String>,
     val moodTags: Set<String>,
+    val medicationTags: Set<String>,
     val painLocation: PainLocation?,
     val painSeverity: Int?,
     val painNote: String?,
     val note: String?,
+    val pregnancySymptomTags: Set<String>,
+    val pregnancyWeightInput: String,
+    val pregnancyBpSystolicInput: String,
+    val pregnancyBpDiastolicInput: String,
 )
 
 @HiltViewModel
@@ -264,6 +277,81 @@ class DayEditorViewModel
             }
         }
 
+        fun toggleMedication(tag: String) {
+            val date = _uiState.value.date ?: return
+            captureUndo()
+            viewModelScope.launch {
+                persistDailyLog(date) { fields ->
+                    val next =
+                        if (tag in fields.medicationTags) {
+                            fields.medicationTags - tag
+                        } else {
+                            fields.medicationTags + tag
+                        }
+                    fields.copy(medicationTags = next)
+                }
+                pulse("medication_$tag", LogEditorCategory.MEDICATION)
+                showUndo()
+                loadDay(date)
+            }
+        }
+
+        fun onPregnancyWeightChange(value: String) {
+            val date = _uiState.value.date ?: return
+            captureUndo()
+            viewModelScope.launch {
+                val (parsed, error) = LogInputValidators.parseWeight(value)
+                _uiState.update {
+                    it.copy(pregnancyWeightInput = value, pregnancyWeightError = error)
+                }
+                if (error == null) {
+                    persistPregnancyDayLog(date, _uiState.value.copy(pregnancyWeightInput = value))
+                    pulse("pregnancy_weight", LogEditorCategory.PREGNANCY_VITALS)
+                    showUndo()
+                }
+            }
+        }
+
+        fun onPregnancyBpSystolicChange(value: String) {
+            onPregnancyBpChange(systolic = value)
+        }
+
+        fun onPregnancyBpDiastolicChange(value: String) {
+            onPregnancyBpChange(diastolic = value)
+        }
+
+        private fun onPregnancyBpChange(
+            systolic: String? = null,
+            diastolic: String? = null,
+        ) {
+            val date = _uiState.value.date ?: return
+            captureUndo()
+            viewModelScope.launch {
+                val state = _uiState.value
+                val sys = systolic ?: state.pregnancyBpSystolicInput
+                val dia = diastolic ?: state.pregnancyBpDiastolicInput
+                val (bp, error) = LogInputValidators.parseBloodPressure(sys, dia)
+                _uiState.update {
+                    it.copy(
+                        pregnancyBpSystolicInput = sys,
+                        pregnancyBpDiastolicInput = dia,
+                        pregnancyBpError = error,
+                    )
+                }
+                if (error == null) {
+                    persistPregnancyDayLog(
+                        date,
+                        _uiState.value.copy(
+                            pregnancyBpSystolicInput = sys,
+                            pregnancyBpDiastolicInput = dia,
+                        ),
+                    )
+                    pulse("pregnancy_bp", LogEditorCategory.PREGNANCY_VITALS)
+                    showUndo()
+                }
+            }
+        }
+
         fun setPain(
             location: PainLocation,
             severity: Int,
@@ -402,16 +490,8 @@ class DayEditorViewModel
                     } else {
                         _uiState.value.pregnancySymptomTags + tag
                     }
-                pregnancyRepository.upsertPregnancyDayLog(
-                    PregnancyDayLogInput(
-                        logDate = date,
-                        symptomTags = next,
-                        weightKg = null,
-                        bpSystolic = null,
-                        bpDiastolic = null,
-                        note = _uiState.value.note.takeIf { it.isNotBlank() },
-                    ),
-                )
+                _uiState.update { it.copy(pregnancySymptomTags = next) }
+                persistPregnancyDayLog(date, _uiState.value.copy(pregnancySymptomTags = next))
                 pulse("pregnancy_symptom", LogEditorCategory.PREGNANCY_SYMPTOMS)
                 showUndo()
                 loadDay(date)
@@ -541,6 +621,10 @@ class DayEditorViewModel
                 pregnancyDay
                     ?.symptomTags
                     ?.let(DailyLogFieldSupport::parseTags) ?: emptySet()
+            val weightInput =
+                pregnancyDay?.weightKg?.let { PregnancyFormatters.formatDecimal(it) } ?: ""
+            val bpSys = pregnancyDay?.bpSystolic?.toString() ?: ""
+            val bpDia = pregnancyDay?.bpDiastolic?.toString() ?: ""
             _uiState.update { state ->
                 state.copy(
                     loading = false,
@@ -548,6 +632,7 @@ class DayEditorViewModel
                     flowLevel = periodDay?.flowLevel,
                     symptomTags = fields.symptomTags,
                     moodTags = fields.moodTags,
+                    medicationTags = fields.medicationTags,
                     painLocation = fields.painLocation,
                     painSeverity = fields.painSeverity,
                     painNote = fields.painNote ?: "",
@@ -558,6 +643,11 @@ class DayEditorViewModel
                     intercourseLogged = ttc?.intercourseLogged == true,
                     intercourseProtected = ttc?.intercourseProtected,
                     pregnancySymptomTags = pregnancySymptoms,
+                    pregnancyWeightInput = weightInput,
+                    pregnancyBpSystolicInput = bpSys,
+                    pregnancyBpDiastolicInput = bpDia,
+                    pregnancyWeightError = null,
+                    pregnancyBpError = null,
                 )
             }
         }
@@ -586,10 +676,15 @@ class DayEditorViewModel
                     flowLevel = state.flowLevel,
                     symptomTags = state.symptomTags,
                     moodTags = state.moodTags,
+                    medicationTags = state.medicationTags,
                     painLocation = state.painLocation,
                     painSeverity = state.painSeverity,
                     painNote = state.painNote.takeIf { it.isNotBlank() },
                     note = state.note.takeIf { it.isNotBlank() },
+                    pregnancySymptomTags = state.pregnancySymptomTags,
+                    pregnancyWeightInput = state.pregnancyWeightInput,
+                    pregnancyBpSystolicInput = state.pregnancyBpSystolicInput,
+                    pregnancyBpDiastolicInput = state.pregnancyBpDiastolicInput,
                 )
         }
 
@@ -618,11 +713,22 @@ class DayEditorViewModel
                 fields.copy(
                     moodTags = snapshot.moodTags,
                     symptomTags = snapshot.symptomTags,
+                    medicationTags = snapshot.medicationTags,
                     painSeverity = snapshot.painSeverity,
                     painLocation = snapshot.painLocation,
                     painNote = snapshot.painNote,
                     note = snapshot.note,
                 )
+            }
+            if (_uiState.value.reproductiveMode == ReproductiveMode.PREGNANT) {
+                val restored =
+                    _uiState.value.copy(
+                        pregnancySymptomTags = snapshot.pregnancySymptomTags,
+                        pregnancyWeightInput = snapshot.pregnancyWeightInput,
+                        pregnancyBpSystolicInput = snapshot.pregnancyBpSystolicInput,
+                        pregnancyBpDiastolicInput = snapshot.pregnancyBpDiastolicInput,
+                    )
+                persistPregnancyDayLog(date, restored)
             }
         }
 
@@ -753,7 +859,32 @@ class DayEditorViewModel
                     painLocation = next.painLocation?.name,
                     painNote = next.painNote,
                     note = next.note,
+                    medicationTags = next.medicationTags,
                 )
             }
+        }
+
+        private suspend fun persistPregnancyDayLog(
+            date: LocalDate,
+            state: DayEditorUiState,
+        ) {
+            val (weightKg, weightError) = LogInputValidators.parseWeight(state.pregnancyWeightInput)
+            if (weightError != null) return
+            val (bp, bpError) =
+                LogInputValidators.parseBloodPressure(
+                    state.pregnancyBpSystolicInput,
+                    state.pregnancyBpDiastolicInput,
+                )
+            if (bpError != null) return
+            pregnancyRepository.upsertPregnancyDayLog(
+                PregnancyDayLogInput(
+                    logDate = date,
+                    symptomTags = state.pregnancySymptomTags,
+                    weightKg = weightKg,
+                    bpSystolic = bp?.first,
+                    bpDiastolic = bp?.second,
+                    note = state.note.takeIf { it.isNotBlank() },
+                ),
+            )
         }
     }

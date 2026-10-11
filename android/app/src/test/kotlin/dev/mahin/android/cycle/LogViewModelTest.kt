@@ -98,6 +98,7 @@ class LogViewModelTest {
                     logDate = dayA,
                     moodTags = "",
                     symptomTags = "سردرد",
+                    medicationTags = "",
                     painSeverity = null,
                     painLocation = null,
                     painNote = null,

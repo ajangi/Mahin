@@ -50,6 +50,14 @@ fun CycleCalendarScreen(
             onJumpToToday = viewModel::jumpToToday,
             onVisibleMonthChanged = viewModel::onVisibleMonthChanged,
             onOpenLogForDate = onOpenLogForDate,
+            onBeginPeriodEdit = viewModel::beginPeriodEdit,
+            onPeriodEditStartSelected = viewModel::onPeriodEditStartSelected,
+            onPeriodEditEndSelected = viewModel::onPeriodEditEndSelected,
+            onClearPeriodEditEnd = viewModel::clearPeriodEditEnd,
+            onSavePeriodEdit = viewModel::savePeriodEdit,
+            onCancelPeriodEdit = viewModel::cancelPeriodEdit,
+            onMergePeriodWithNext = viewModel::mergePeriodWithNext,
+            onSplitPeriod = viewModel::splitPeriod,
         )
     }
 }
@@ -65,6 +73,14 @@ internal fun CycleCalendarScreenContent(
     onJumpToToday: () -> Unit = {},
     onVisibleMonthChanged: (JalaliDate) -> Unit = {},
     onOpenLogForDate: (LocalDate) -> Unit = {},
+    onBeginPeriodEdit: (String) -> Unit = {},
+    onPeriodEditStartSelected: (JalaliDate) -> Unit = {},
+    onPeriodEditEndSelected: (JalaliDate) -> Unit = {},
+    onClearPeriodEditEnd: () -> Unit = {},
+    onSavePeriodEdit: (String) -> Unit = {},
+    onCancelPeriodEdit: () -> Unit = {},
+    onMergePeriodWithNext: (String) -> Unit = {},
+    onSplitPeriod: (String) -> Unit = {},
     sharedTransitionScope: SharedTransitionScope? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -132,6 +148,21 @@ internal fun CycleCalendarScreenContent(
                         Text(text = stringResource(R.string.calendar_jump_today))
                     }
                 },
+            )
+            CalendarPeriodManagementSection(
+                periods = state.periodRecords,
+                editingRecordId = state.periodEditId,
+                editStartJalali = state.periodEditStartJalali,
+                editEndJalali = state.periodEditEndJalali,
+                onBeginEdit = onBeginPeriodEdit,
+                onEditStartSelected = onPeriodEditStartSelected,
+                onEditEndSelected = onPeriodEditEndSelected,
+                onClearEndDate = { onClearPeriodEditEnd() },
+                onSaveEdit = onSavePeriodEdit,
+                onCancelEdit = onCancelPeriodEdit,
+                onMergeWithNext = onMergePeriodWithNext,
+                onSplit = onSplitPeriod,
+                modifier = Modifier.padding(top = MahinSpacing.md),
             )
             Text(
                 text = stringResource(R.string.prediction_disclaimer),

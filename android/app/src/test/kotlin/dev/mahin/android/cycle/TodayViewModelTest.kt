@@ -184,6 +184,7 @@ class TodayViewModelTest {
                     logDate = logDate,
                     moodTags = "شاد",
                     symptomTags = "خستگی",
+                    medicationTags = "",
                     painSeverity = null,
                     painLocation = null,
                     painNote = null,

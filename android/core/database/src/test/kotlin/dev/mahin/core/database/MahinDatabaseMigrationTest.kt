@@ -161,6 +161,39 @@ class MahinDatabaseMigrationTest {
         migrated.close()
     }
 
+    @Test
+    fun migrate5To6_addsMedicationTagsColumn() {
+        helper.createDatabase(TEST_DB, 5).apply {
+            execSQL(
+                """
+                INSERT INTO daily_log (
+                    id, logDate, moodTags, symptomTags, painSeverity, painLocation, painNote, note, updatedAtEpochMs
+                ) VALUES ('d1', '2025-01-01', '', 'سردرد', NULL, NULL, NULL, NULL, 0)
+                """.trimIndent(),
+            )
+            close()
+        }
+        val migrated =
+            helper.runMigrationsAndValidate(
+                TEST_DB,
+                6,
+                true,
+                MIGRATION_1_2,
+                MIGRATION_2_3,
+                MIGRATION_3_4,
+                MIGRATION_4_5,
+                MIGRATION_5_6,
+            )
+        migrated.query("PRAGMA table_info(daily_log)").use { cursor ->
+            val columns = mutableListOf<String>()
+            while (cursor.moveToNext()) {
+                columns.add(cursor.getString(1))
+            }
+            assertThat(columns).contains("medicationTags")
+        }
+        migrated.close()
+    }
+
     private companion object {
         const val TEST_DB = "migration-test"
     }

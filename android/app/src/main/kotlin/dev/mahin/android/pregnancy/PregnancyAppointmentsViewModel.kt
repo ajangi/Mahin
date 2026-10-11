@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.mahin.core.database.entity.PregnancyAppointmentEntity
 import dev.mahin.core.database.entity.PregnancyRecordEntity
 import dev.mahin.core.database.pregnancy.PregnancyAppointmentInput
+import dev.mahin.core.common.LocalDateClock
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
 import dev.mahin.core.datastore.NotificationPreferencesRepository
 import dev.mahin.core.datetime.JalaliDate
@@ -34,7 +35,7 @@ data class PregnancyAppointmentsUiState(
     val appointments: List<PregnancyAppointmentEntity> = emptyList(),
     val newAppointmentTitle: String = "",
     val newAppointmentType: PregnancyAppointmentType = PregnancyAppointmentType.CLINICIAN_VISIT,
-    val newAppointmentJalali: JalaliDate = PersianCivilDateConverter.toJalali(LocalDate.now()),
+    val newAppointmentJalali: JalaliDate,
 )
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -45,8 +46,15 @@ class PregnancyAppointmentsViewModel
         private val repository: PregnancyTrackingRepository,
         private val notificationPreferencesRepository: NotificationPreferencesRepository,
         private val reminderCoordinator: ReminderCoordinator,
+        private val localDateClock: LocalDateClock,
     ) : ViewModel() {
-        private val _uiState = MutableStateFlow(PregnancyAppointmentsUiState())
+        private val _uiState =
+            MutableStateFlow(
+                PregnancyAppointmentsUiState(
+                    newAppointmentJalali =
+                        PersianCivilDateConverter.toJalali(localDateClock.today()),
+                ),
+            )
         val uiState: StateFlow<PregnancyAppointmentsUiState> = _uiState.asStateFlow()
 
         init {

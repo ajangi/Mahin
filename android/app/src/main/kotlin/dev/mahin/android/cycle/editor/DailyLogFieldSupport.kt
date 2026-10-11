@@ -6,6 +6,7 @@ import dev.mahin.core.model.PainLocation
 internal data class DailyLogFields(
     val moodTags: Set<String>,
     val symptomTags: Set<String>,
+    val medicationTags: Set<String>,
     val painSeverity: Int?,
     val painLocation: PainLocation?,
     val painNote: String?,
@@ -25,6 +26,7 @@ internal object DailyLogFieldSupport {
             return DailyLogFields(
                 moodTags = emptySet(),
                 symptomTags = emptySet(),
+                medicationTags = emptySet(),
                 painSeverity = null,
                 painLocation = null,
                 painNote = null,
@@ -34,6 +36,7 @@ internal object DailyLogFieldSupport {
         return DailyLogFields(
             moodTags = parseTags(entity.moodTags),
             symptomTags = parseTags(entity.symptomTags),
+            medicationTags = parseTags(entity.medicationTags),
             painSeverity = entity.painSeverity,
             painLocation = entity.painLocation?.let { runCatching { PainLocation.valueOf(it) }.getOrNull() },
             painNote = entity.painNote,

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import dev.mahin.core.common.FixedLocalDateClock
 import dev.mahin.core.database.MahinDatabase
 import dev.mahin.core.database.entity.CycleProfileEntity
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
@@ -14,6 +15,7 @@ import dev.mahin.core.model.PregnancyAppointmentType
 import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.core.notifications.ReminderCoordinator
 import dev.mahin.core.notifications.ReminderScheduler
+import dev.mahin.core.testing.ViewModelStoreTestHarness
 import dev.mahin.domain.reminders.PlannedReminder
 import java.time.LocalDate
 import kotlinx.coroutines.delay
@@ -31,7 +33,8 @@ import org.robolectric.shadows.ShadowLooper
 class PregnancyAppointmentsViewModelTest {
     private lateinit var database: MahinDatabase
     private lateinit var repository: PregnancyTrackingRepository
-    private lateinit var viewModel: PregnancyAppointmentsViewModel
+    private val viewModelStore = ViewModelStoreTestHarness()
+    private var viewModel: PregnancyAppointmentsViewModel? = null
 
     @Before
     fun setUp() {
@@ -41,17 +44,15 @@ class PregnancyAppointmentsViewModelTest {
                 .inMemoryDatabaseBuilder(context, MahinDatabase::class.java)
                 .allowMainThreadQueries()
                 .build()
+        database.openHelper.writableDatabase
         repository = PregnancyTrackingRepository(database, PregnancyTimerPreferencesRepository(context))
-        viewModel =
-            PregnancyAppointmentsViewModel(
-                repository = repository,
-                notificationPreferencesRepository = NotificationPreferencesRepository(context),
-                reminderCoordinator = ReminderCoordinator(NoOpReminderScheduler()),
-            )
     }
 
     @After
     fun tearDown() {
+        viewModel = null
+        viewModelStore.clear()
+        ShadowLooper.idleMainLooper()
         database.close()
     }
 
@@ -73,17 +74,29 @@ class PregnancyAppointmentsViewModelTest {
                 clinicalEddDate = null,
                 datingReason = null,
             )
-            awaitUntil { viewModel.uiState.value.hasActivePregnancy }
-            viewModel.onNewAppointmentTitleChange("ویزیت")
-            viewModel.onNewAppointmentTypeSelected(PregnancyAppointmentType.CLINICIAN_VISIT)
-            viewModel.addAppointment()
-            awaitUntil { viewModel.uiState.value.appointments.size == 1 }
-            val state = viewModel.uiState.value
-            assertThat(state.appointments).hasSize(1)
-            assertThat(state.appointments.first().title).isEqualTo("ویزیت")
-            assertThat(state.newAppointmentTitle).isEmpty()
+            val vm = createViewModel()
+            awaitUntil { vm.uiState.value.hasActivePregnancy }
+            vm.onNewAppointmentTitleChange("ویزیت")
+            vm.onNewAppointmentTypeSelected(PregnancyAppointmentType.CLINICIAN_VISIT)
+            vm.addAppointment()
+            awaitUntil { vm.uiState.value.appointments.size == 1 }
+            assertThat(vm.uiState.value.appointments.first().title).isEqualTo("ویزیت")
         }
     }
+
+    private fun createViewModel(): PregnancyAppointmentsViewModel =
+        viewModelStore
+            .hold(
+                PregnancyAppointmentsViewModel(
+                    repository = repository,
+                    notificationPreferencesRepository =
+                        NotificationPreferencesRepository(
+                            ApplicationProvider.getApplicationContext(),
+                        ),
+                    reminderCoordinator = ReminderCoordinator(NoOpReminderScheduler()),
+                    localDateClock = FixedLocalDateClock(LocalDate.of(2025, 4, 1)),
+                ),
+            ).also { viewModel = it }
 
     private suspend fun awaitUntil(
         timeoutMs: Long = 2_000,

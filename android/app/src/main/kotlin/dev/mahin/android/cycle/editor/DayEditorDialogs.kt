@@ -156,6 +156,10 @@ private fun LifestyleRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(text = label, modifier = Modifier.weight(1f))
-        Switch(checked = enabled, onCheckedChange = onToggle)
+        Switch(
+            checked = enabled,
+            onCheckedChange = onToggle,
+            modifier = Modifier.testTag("${testTag}_switch"),
+        )
     }
 }

@@ -33,4 +33,12 @@ internal object LogDayEditorCatalog {
 
     val defaultPregnancySymptoms: List<String> =
         listOf("تهوع", "خستگی", "سردرد", "درد کمر", "ورم")
+
+    val defaultMedications: List<String> =
+        listOf(
+            "ویتامین",
+            "مسکن",
+            "مکمل آهن",
+            "آنتی‌بیوتیک",
+        )
 }

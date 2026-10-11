@@ -166,6 +166,7 @@ class CycleTrackingRepository
             painLocation: String? = null,
             painNote: String? = null,
             note: String?,
+            medicationTags: Set<String> = emptySet(),
         ) {
             val id = dailyLogDao.getForDate(date)?.id ?: UUID.randomUUID().toString()
             dailyLogDao.upsert(
@@ -174,6 +175,7 @@ class CycleTrackingRepository
                     logDate = date,
                     moodTags = moodTags.joinToString(","),
                     symptomTags = symptomTags.joinToString(","),
+                    medicationTags = medicationTags.joinToString(","),
                     painSeverity = painSeverity,
                     painLocation = painLocation,
                     painNote = painNote,

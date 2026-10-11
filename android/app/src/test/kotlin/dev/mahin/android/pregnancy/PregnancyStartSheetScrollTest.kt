@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import dev.mahin.core.designsystem.MahinTheme
+import java.time.LocalDate
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -43,6 +44,7 @@ class PregnancyStartSheetScrollTest {
                     Box(modifier = Modifier.height(420.dp)) {
                         PregnancyStartSheetContent(
                             onConfirm = { _, _ -> },
+                            referenceDate = LocalDate.of(2025, 3, 1),
                             modifier =
                                 Modifier
                                     .verticalScroll(rememberScrollState())

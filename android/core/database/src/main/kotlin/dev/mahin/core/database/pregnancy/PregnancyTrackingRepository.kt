@@ -215,6 +215,7 @@ class PregnancyTrackingRepository
                 input.symptomTags.isNotEmpty() ||
                     input.weightKg != null ||
                     input.bpSystolic != null ||
+                    input.bpDiastolic != null ||
                     input.note?.isNotBlank() == true
             if (!hasAny) {
                 if (existing != null) {
