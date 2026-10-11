@@ -118,7 +118,10 @@ class LoggingLocalPrivacyTest {
                 ),
             )
             val after = exportService.buildJsonExport() as HealthExportResult.Success
-            assertThat(after.json).isEqualTo(before.json)
+            val exportTimestampPattern = Regex(""""exportedAtEpochMs"\s*:\s*\d+""")
+            val beforePayload = exportTimestampPattern.replace(before.json, """"exportedAtEpochMs":0""")
+            val afterPayload = exportTimestampPattern.replace(after.json, """"exportedAtEpochMs":0""")
+            assertThat(afterPayload).isEqualTo(beforePayload)
         }
     }
 }
