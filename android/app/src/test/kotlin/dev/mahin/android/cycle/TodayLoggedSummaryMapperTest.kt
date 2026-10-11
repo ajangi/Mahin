@@ -17,6 +17,8 @@ class TodayLoggedSummaryMapperTest {
                 symptomTags = "خستگی,سردرد",
                 moodTags = "آرام",
                 painSeverity = null,
+                painLocation = null,
+                painNote = null,
                 note = null,
                 updatedAtEpochMs = 0L,
             )

@@ -15,6 +15,8 @@ data class DailyLogEntity(
     val moodTags: String,
     val symptomTags: String,
     val painSeverity: Int?,
+    val painLocation: String?,
+    val painNote: String?,
     val note: String?,
     val updatedAtEpochMs: Long,
 )

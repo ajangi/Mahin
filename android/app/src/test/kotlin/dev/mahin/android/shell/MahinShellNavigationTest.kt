@@ -47,7 +47,7 @@ class MahinShellNavigationTest {
 
     private fun testOverrides(onSwitchToPregnant: (() -> Unit)? = null): MahinShellScreenOverrides =
         MahinShellScreenOverrides(
-            today = { _, _, _, _, _, _ -> Box(Modifier.fillMaxSize().testTag("screen_today")) },
+            today = { _, _, _, _, _, _, _ -> Box(Modifier.fillMaxSize().testTag("screen_today")) },
             calendar = { _ -> Box(Modifier.fillMaxSize().testTag("screen_calendar")) },
             log = {
                 var note by rememberSaveable { mutableStateOf("") }
@@ -139,6 +139,7 @@ class MahinShellNavigationTest {
                             navController.navigate(MahinTopLevelDestination.Calendar.route)
                         },
                         onOpenLogTab = {},
+                        onOpenDayEditor = {},
                         onOpenPlan = {},
                         onOpenPregnancyTab = {},
                         screenOverrides = testOverrides(),
@@ -237,6 +238,7 @@ class MahinShellNavigationTest {
                             navController.navigate(MahinTopLevelDestination.Calendar.route)
                         },
                         onOpenLogTab = {},
+                        onOpenDayEditor = {},
                         onOpenPlan = {},
                         onOpenPregnancyTab = {},
                         screenOverrides = testOverrides(),
@@ -298,6 +300,7 @@ class MahinShellNavigationTest {
                             navController.navigate(MahinTopLevelDestination.Calendar.route)
                         },
                         onOpenLogTab = {},
+                        onOpenDayEditor = {},
                         onOpenPlan = {},
                         onOpenPregnancyTab = {},
                         screenOverrides = testOverrides(),
@@ -388,6 +391,7 @@ class MahinShellNavigationTest {
                         onOpenLearn = {},
                         onOpenCycleCalendar = {},
                         onOpenLogTab = {},
+                        onOpenDayEditor = {},
                         onOpenPlan = {},
                         onOpenPregnancyTab = {},
                         screenOverrides =
@@ -443,6 +447,7 @@ class MahinShellNavigationTest {
                         onOpenLearn = {},
                         onOpenCycleCalendar = {},
                         onOpenLogTab = {},
+                        onOpenDayEditor = {},
                         onOpenPlan = {},
                         onOpenPregnancyTab = {},
                         screenOverrides = testOverrides(),
@@ -488,6 +493,7 @@ class MahinShellNavigationTest {
                         onOpenLearn = {},
                         onOpenCycleCalendar = {},
                         onOpenLogTab = {},
+                        onOpenDayEditor = {},
                         onOpenPlan = {},
                         onOpenPregnancyTab = {},
                         screenOverrides = testOverrides(),
@@ -531,6 +537,7 @@ class MahinShellNavigationTest {
                         onOpenLearn = {},
                         onOpenCycleCalendar = {},
                         onOpenLogTab = {},
+                        onOpenDayEditor = {},
                         onOpenPlan = {},
                         onOpenPregnancyTab = {},
                         screenOverrides = testOverrides(),
@@ -607,6 +614,7 @@ class MahinShellNavigationTest {
                             navController.navigate(MahinTopLevelDestination.Calendar.route)
                         },
                         onOpenLogTab = {},
+                        onOpenDayEditor = {},
                         onOpenPlan = {},
                         onOpenPregnancyTab = {},
                         screenOverrides = testOverrides(),

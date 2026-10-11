@@ -221,3 +221,24 @@ val MIGRATION_3_4 =
             db.execSQL("CREATE INDEX IF NOT EXISTS index_contraction_event_sessionId ON contraction_event(sessionId)")
         }
     }
+
+val MIGRATION_4_5 =
+    object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE daily_log ADD COLUMN painLocation TEXT")
+            db.execSQL("ALTER TABLE daily_log ADD COLUMN painNote TEXT")
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS custom_symptom_tag (
+                    id TEXT NOT NULL,
+                    label TEXT NOT NULL,
+                    createdAtEpochMs INTEGER NOT NULL,
+                    PRIMARY KEY(id)
+                )
+                """.trimIndent(),
+            )
+            db.execSQL(
+                "CREATE UNIQUE INDEX IF NOT EXISTS index_custom_symptom_tag_label ON custom_symptom_tag(label)",
+            )
+        }
+    }

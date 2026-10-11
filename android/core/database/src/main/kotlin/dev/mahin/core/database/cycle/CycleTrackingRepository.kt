@@ -157,6 +157,8 @@ class CycleTrackingRepository
             moodTags: Set<String>,
             symptomTags: Set<String>,
             painSeverity: Int?,
+            painLocation: String? = null,
+            painNote: String? = null,
             note: String?,
         ) {
             val id = dailyLogDao.getForDate(date)?.id ?: UUID.randomUUID().toString()
@@ -167,8 +169,53 @@ class CycleTrackingRepository
                     moodTags = moodTags.joinToString(","),
                     symptomTags = symptomTags.joinToString(","),
                     painSeverity = painSeverity,
+                    painLocation = painLocation,
+                    painNote = painNote,
                     note = note,
                     updatedAtEpochMs = System.currentTimeMillis(),
+                ),
+            )
+        }
+
+        suspend fun mergeAdjacentPeriods(
+            firstId: String,
+            secondId: String,
+        ) {
+            val first = periodDao.getById(firstId) ?: return
+            val second = periodDao.getById(secondId) ?: return
+            if (!first.endDate!!.plusDays(1).equals(second.startDate)) return
+            val now = System.currentTimeMillis()
+            periodDao.upsert(
+                first.copy(
+                    endDate = second.endDate,
+                    updatedAtEpochMs = now,
+                ),
+            )
+            periodDao.deleteById(secondId)
+        }
+
+        suspend fun splitPeriodRecord(
+            recordId: String,
+            splitAfterDate: LocalDate,
+        ) {
+            val record = periodDao.getById(recordId) ?: return
+            val end = record.endDate ?: return
+            if (splitAfterDate.isBefore(record.startDate) || !splitAfterDate.isBefore(end)) return
+            val now = System.currentTimeMillis()
+            periodDao.upsert(
+                record.copy(
+                    endDate = splitAfterDate,
+                    updatedAtEpochMs = now,
+                ),
+            )
+            periodDao.upsert(
+                PeriodRecordEntity(
+                    id = UUID.randomUUID().toString(),
+                    startDate = splitAfterDate.plusDays(1),
+                    endDate = end,
+                    note = record.note,
+                    createdAtEpochMs = now,
+                    updatedAtEpochMs = now,
                 ),
             )
         }

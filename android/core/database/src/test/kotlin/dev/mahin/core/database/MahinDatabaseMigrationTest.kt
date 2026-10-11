@@ -117,6 +117,39 @@ class MahinDatabaseMigrationTest {
         migrated.close()
     }
 
+    @Test
+    fun migrate4To5_addsCustomSymptomsAndPreservesDailyLogs() {
+        helper.createDatabase(TEST_DB, 4).apply {
+            execSQL(
+                """
+                INSERT INTO daily_log (
+                    id, logDate, moodTags, symptomTags, painSeverity, note, updatedAtEpochMs
+                ) VALUES ('d1', '2025-01-01', 'آرام', 'سردرد', 3, NULL, 0)
+                """.trimIndent(),
+            )
+            close()
+        }
+        val migrated =
+            helper.runMigrationsAndValidate(
+                TEST_DB,
+                5,
+                true,
+                MIGRATION_1_2,
+                MIGRATION_2_3,
+                MIGRATION_3_4,
+                MIGRATION_4_5,
+            )
+        migrated.query("SELECT name FROM sqlite_master WHERE type='table' AND name='custom_symptom_tag'").use { cursor ->
+            assertThat(cursor.moveToFirst()).isTrue()
+        }
+        migrated.query("SELECT moodTags, painSeverity FROM daily_log WHERE id = 'd1'").use { cursor ->
+            assertThat(cursor.moveToFirst()).isTrue()
+            assertThat(cursor.getString(0)).isEqualTo("آرام")
+            assertThat(cursor.getInt(1)).isEqualTo(3)
+        }
+        migrated.close()
+    }
+
     private companion object {
         const val TEST_DB = "migration-test"
     }

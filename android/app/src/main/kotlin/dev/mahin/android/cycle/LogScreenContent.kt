@@ -50,7 +50,11 @@ internal fun LogScreenContent(
             )
         }
         item {
-            CycleLogFields(state = state, actions = actions)
+            MahinPrimaryButton(
+                text = stringResource(R.string.log_open_day_editor),
+                onClick = actions.onOpenDayEditor,
+                modifier = Modifier.testTag("log_open_day_editor"),
+            )
         }
         if (state.reproductiveMode == ReproductiveMode.TRYING_TO_CONCEIVE) {
             item {
@@ -90,25 +94,6 @@ internal fun LogScreenContent(
                             onBpSystolicChange = actions.onPregnancyBpSystolicChange,
                             onBpDiastolicChange = actions.onPregnancyBpDiastolicChange,
                         ),
-                )
-            }
-        }
-        item {
-            Spacer(modifier = Modifier.height(MahinSpacing.lg))
-        }
-        item {
-            MahinPrimaryButton(
-                text = stringResource(R.string.log_save),
-                onClick = actions.onSave,
-                enabled = !state.saving,
-            )
-        }
-        if (state.saved) {
-            item {
-                Text(
-                    text = stringResource(R.string.log_saved_confirmation),
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(top = MahinSpacing.sm),
                 )
             }
         }

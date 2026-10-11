@@ -5,6 +5,7 @@ import dev.mahin.core.model.PeriodFlowLevel
 
 data class LogScreenActions(
     val onDateSelected: (JalaliDate) -> Unit,
+    val onOpenDayEditor: () -> Unit = {},
     val onToggleLoggingPeriod: () -> Unit,
     val onFlowLevelSelected: (PeriodFlowLevel) -> Unit,
     val onToggleSymptom: (String) -> Unit,

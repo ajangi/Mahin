@@ -8,4 +8,6 @@ import dagger.hilt.components.SingletonComponent
 @InstallIn(SingletonComponent::class)
 interface AppNavigationEntryPoint {
     fun logTabDateRequest(): LogTabDateRequest
+
+    fun dayEditorCoordinator(): dev.mahin.android.cycle.editor.DayEditorCoordinator
 }
