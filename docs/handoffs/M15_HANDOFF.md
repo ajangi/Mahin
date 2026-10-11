@@ -6,18 +6,28 @@
 
 ## Accepted decisions
 
-- **(a)** **Today hero data** comes from pure domain snapshots (`TodaySnapshot`, `PregnancyTodaySnapshot`) that compose **existing** prediction and pregnancy dating only — no new prediction math or `algorithm_version` changes.
-- **(b)** Fertile-window and cycle-status copy are **estimates**; UI and explanation sheets include **non-contraception** wording (never “safe days”) per PRD §7.4.
-- **(c)** **Daily tip** slot on Today stays **hidden** until M17 CMS plumbing; no hard-coded authoritative tip in M15.
-- **(d)** Calendar **legend** collapses after first use; persistence via `CalendarUiPreferencesRepository` (DataStore), with VM/tests waiting on preference flows before assertions.
-- **(e)** Calendar **day sheet** (logs, prediction state, edit) uses shared-element transition from the day cell; month paging and **jump-to-today** on the calendar tab.
-- **(f)** When the day sheet is open, Jalali day cells are **not** in the merged accessibility tree (`clearAndSetSemantics` on the scroll column plus cell semantics); proof in `CalendarDaySheetGridA11yTest`.
-- **(g)** Calendar day **label contrast** uses **sRGB** straight-alpha compositing over `colorScheme.background`; `mahinCalendarDayCellColors` selects label colour from the blended marker fill (regression tests + DS goldens).
-- **(h)** **Cycle progress ring** marker geometry via `MahinRingMarkerGeometry` / `mahinRingTodayMarkerPoint` (⅓, ½, 1.0; LTR and RTL); composable parameter **`ringSize`** on `MahinCycleProgressRing` (not `size`).
-- **(i)** Robolectric Compose goldens and related UI tests use **`ViewModelStoreClearingRule.withCompose()`** so the activity `ViewModelStore` is cleared between cases (`RuleChain` outer compose rule).
+- **(a)** The shared-element cell→sheet transition, the month pager and the day-sheet logs are required in M15 (no deferral).
+- **(b)** The pregnancy ring reuses the cycle ring canvas and shows week progress out of 40 plus a today marker.
+- **(c)** In RTL the ring starts at 12 o'clock and runs counter-clockwise (mirrored).
+- **(d)** No 21–45 cycle-length clamp; when overdue, the ring is full and shows an overdue state.
+- **(e)** `maxParallelForks = 1` with the 30-minute Test timeout stays, documented as a precaution.
+- **(f)** All 32 M15 goldens are required (light/dark × 1.0/1.3, RTL).
+- **(g)** The cycle ring runs from the anchor to `nextPeriod.latest`, so the whole predicted window shows.
+- **(h)** A custom shared-element day-sheet overlay may replace ModalBottomSheet on the calendar, with Back and accessibility parity.
+- **(i)** Overdue is shown as a full ring plus overdue status text, with no new colour token.
 - **(j)** Light marker alphas: period **0.42**, ovulation **0.78** (dark unchanged).
 - **(k)** Roborazzi tolerance **0.5%** for M15; component-level goldens and tighter tolerance → **M16**.
 - **(l)** Undecorated calendar/log cells use **`colorScheme.surface`**; marked translucent fills composite over **`colorScheme.background`**.
+
+## Implementation notes
+
+- Today hero data uses domain snapshots (`TodaySnapshot`, `PregnancyTodaySnapshot`) composing existing prediction/dating only (no new prediction math).
+- Fertile-window copy is estimate-only with non-contraception wording (PRD §7.4); daily tip slot stays hidden until M17.
+- Legend collapse persists in `CalendarUiPreferencesRepository`; VM/tests wait on DataStore before legend assertions.
+- Calendar day **label contrast**: sRGB compositing over `colorScheme.background`; `mahinCalendarDayCellColors` and DS/regression goldens.
+- Ring marker geometry: `MahinRingMarkerGeometry` / `mahinRingTodayMarkerPoint`; composable parameter **`ringSize`** on `MahinCycleProgressRing`.
+- Compose goldens use **`ViewModelStoreClearingRule.withCompose()`** (`RuleChain` outer compose rule).
+- Day sheet open: Jalali day cells excluded from merged a11y tree — `CalendarDaySheetGridA11yTest`.
 
 ## Gatekeeper notes (round 5–6)
 
