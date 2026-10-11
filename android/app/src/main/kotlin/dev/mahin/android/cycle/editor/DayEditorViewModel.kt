@@ -260,18 +260,20 @@ class DayEditorViewModel
             val date = _uiState.value.date ?: return
             viewModelScope.launch {
                 val (parsed, error) = LogInputValidators.parseBbt(value)
-                val existing =
-                    if (error == null) {
-                        ttcRepository.getTtcLogForDate(date)?.bbtCelsius
-                    } else {
-                        null
+                if (error == null) {
+                    saveMutex.withLock {
+                        val existing = ttcRepository.getTtcLogForDate(date)?.bbtCelsius
+                        if (parsed != existing) {
+                            captureUndo()
+                            lastUndo =
+                                lastUndo?.copy(
+                                    bbtInput = existing?.toString().orEmpty(),
+                                )
+                            persistTtcLogInMutex(date) { it.copy(bbtCelsius = parsed) }
+                            pulse("bbt", LogEditorCategory.TTC_TESTS)
+                            showUndo()
+                        }
                     }
-                val shouldPersist = error == null && parsed != existing
-                if (shouldPersist) {
-                    captureUndo()
-                    persistTtcLog(date) { it.copy(bbtCelsius = parsed) }
-                    pulse("bbt", LogEditorCategory.TTC_TESTS)
-                    showUndo()
                 }
                 _uiState.update { it.copy(bbtInput = value, bbtError = error) }
             }
@@ -945,19 +947,26 @@ class DayEditorViewModel
             transform: (TtcDayLogInput) -> TtcDayLogInput,
         ) {
             saveMutex.withLock {
-                val existing = ttcRepository.getTtcLogForDate(date)
-                val base =
-                    TtcDayLogInput(
-                        logDate = date,
-                        bbtCelsius = existing?.bbtCelsius,
-                        ovulationTestResult = existing?.ovulationTestResult,
-                        cervicalMucus = existing?.cervicalMucus,
-                        intercourseLogged = existing?.intercourseLogged == true,
-                        intercourseProtected = existing?.intercourseProtected,
-                        pregnancyTestResult = existing?.pregnancyTestResult,
-                    )
-                ttcRepository.upsertTtcDayLog(transform(base))
+                persistTtcLogInMutex(date, transform)
             }
+        }
+
+        private suspend fun persistTtcLogInMutex(
+            date: LocalDate,
+            transform: (TtcDayLogInput) -> TtcDayLogInput,
+        ) {
+            val existing = ttcRepository.getTtcLogForDate(date)
+            val base =
+                TtcDayLogInput(
+                    logDate = date,
+                    bbtCelsius = existing?.bbtCelsius,
+                    ovulationTestResult = existing?.ovulationTestResult,
+                    cervicalMucus = existing?.cervicalMucus,
+                    intercourseLogged = existing?.intercourseLogged == true,
+                    intercourseProtected = existing?.intercourseProtected,
+                    pregnancyTestResult = existing?.pregnancyTestResult,
+                )
+            ttcRepository.upsertTtcDayLog(transform(base))
         }
 
         @Suppress("CyclomaticComplexMethod")

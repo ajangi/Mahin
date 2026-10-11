@@ -1,46 +1,51 @@
-# M16 Handoff — Logging experience overhaul (Gatekeeper Round 4)
+# M16 Handoff — Logging experience overhaul (Gatekeeper Round 5)
 
 **Milestone:** M16  
-**Status:** PR [#39](https://github.com/ajangi/Mahin/pull/39) — head `70da805` — CI **green** ([38179611519](https://github.com/ajangi/Mahin/actions/runs/38179611519), android ~16m 41s)  
+**Status:** PR [#39](https://github.com/ajangi/Mahin/pull/39) — CI on final tip after Round 5 push (see below)  
 **Next milestone:** **M17** only
 
-## Gatekeeper Round 4 — per-item evidence
+## Gatekeeper Round 5 — per-item evidence
 
 | # | Item | Status | Evidence |
 |---|------|--------|----------|
-| 1 | Sexual opt-in dialog goldens (scale + dark scrim) | Met | `M16FullScreenGoldenTest.captureOptIn`: `RuntimeEnvironment.setFontScale`, `+night` for dark, full-screen `Surface` behind dialog; 4 `editor_sexualOptIn_*` re-recorded; scale10 ≠ scale13 md5 (light/dark) |
-| 2 | Manage-categories reorder labels in golden + test | Met | `M16GoldenFixtures.manageCategories()` `orderedCategories`; 4 `editor_manageCategories_*` re-recorded; `DayEditorManageCategoriesPanelTest` + `mergeDescendants` on category row |
-| NB | `TtcInsightsViewModel` single clock date | Met | `calendarDayTicker` emits `zonedNow.toLocalDate()` from injected `clock` |
-| NB | HC off untick wait | Met | `healthConnectOff_untickPeriod_*` waits `undoMessage != null` |
-| NB | Second undo no-op | Met | `undo_restoresDailyLogMedicationThenMood_*` asserts `undoMessage == null` before second `undoLastChange()` |
-| NB | Custom symptom comma guard | Met | `addCustomSymptom` rejects `,`; `addCustomSymptomFromDraft_rejectsCommaInLabel` |
-| NB | Medication vitals polling | Met | `DayEditorMedicationVitalsTest` `awaitUntil` uses `ShadowLooper` only (no `delay(25)`) |
+| 1 | BBT undo snapshot from DB value (not stale `bbtInput`) | Met | `onBbtChange`: `saveMutex.withLock` → read `existing` → `captureUndo()` → `lastUndo.copy(bbtInput = existing?.toString().orEmpty())` → `persistTtcLogInMutex` |
+| 2 | Rapid BBT typing regression test | Met | `undo_restoresBbtAfterRapidChangesWithoutWaitingBetweenCalls` |
+| 3 | `DayEditorViewModelUndoTest` stability | Met | 20× local `./gradlew :app:testDebugUnitTest --tests dev.mahin.android.cycle.editor.DayEditorViewModelUndoTest --rerun-tasks` → **PASS** |
+| 4 | Manage-categories reorder a11y | Met | `day_editor_category_move_earlier` / `day_editor_category_move_later` on ↑/↓ `IconButton`s in `DayEditorManageCategoriesPanel` |
+| 5 | Sexual opt-in golden re-record (Round 4 follow-up) | Met | **3** PNGs re-recorded (`light_scale10` unchanged); md5s below |
+| 6 | `DayEditorManageCategoriesPanelTest` release exclusion | Met | `app/build.gradle.kts` `testReleaseUnitTest` excludes `DayEditorManageCategoriesPanelTest` (Robolectric Compose crash on release) |
+
+### CI history (accurate)
+
+| Tip | Run | Android job | Result |
+|-----|-----|-------------|--------|
+| `70da805` | [38179611519](https://github.com/ajangi/Mahin/actions/runs/38179611519) | ~16m 41s | Green |
+| `77b5ac1` | [38180817859](https://github.com/ajangi/Mahin/actions/runs/38180817859) | — | **Red** — flaky `DayEditorViewModelUndoTest.undo_restoresBbtInDatabase` (stale BBT undo snapshot; fixed in Round 5) |
+| *(Round 5 head)* | *(after single push)* | *(fill from CI)* | *(expected green)* |
+
+## Sexual opt-in golden MD5s
+
+| PNG | MD5 | Re-recorded in Round 4/5 |
+|-----|-----|-------------------------|
+| `editor_sexualOptIn_light_scale10.png` | `748f38affc1093c62e9689de10d30b41` | No (unchanged) |
+| `editor_sexualOptIn_light_scale13.png` | `f6ba7e0a44e231af4117046bc0c09885` | Yes |
+| `editor_sexualOptIn_dark_scale10.png` | `fe26c76f538d872bfb2ae6d46d0827a7` | Yes |
+| `editor_sexualOptIn_dark_scale13.png` | `7912334f85e99f096fdc8bcab6724ff1` | Yes |
+
+## Commands / results (local, Round 5)
+
+```bash
+cd android && for i in $(seq 1 20); do
+  ./gradlew :app:testDebugUnitTest \
+    --tests 'dev.mahin.android.cycle.editor.DayEditorViewModelUndoTest' \
+    --rerun-tasks -q || exit 1
+done
+# 20× PASS
+```
 
 ## Schema note (v7 reinstall)
 
-Room schema export **`7.json` MD5:** `b94ab31bd25e8fe2b2745f717f96fdfd` (includes `@ColumnInfo(defaultValue)` on lifestyle + `localCustomSymptomTags` from Round 3). Dev installs that already migrated on a **previous** `7.json` hash should **reinstall** the app (or clear app data) so Room identity matches the exported schema.
-
-## Re-recorded golden MD5s (Round 4)
-
-| PNG | MD5 |
-|-----|-----|
-| `editor_sexualOptIn_light_scale10.png` | `748f38affc1093c62e9689de10d30b41` |
-| `editor_sexualOptIn_light_scale13.png` | `f6ba7e0a44e231af4117046bc0c09885` |
-| `editor_sexualOptIn_dark_scale10.png` | `fe26c76f538d872bfb2ae6d46d0827a7` |
-| `editor_sexualOptIn_dark_scale13.png` | `7912334f85e99f096fdc8bcab6724ff1` |
-| `editor_manageCategories_light_scale10.png` | `7f7de9cf7f52401c6be7025143e72cff` |
-| `editor_manageCategories_light_scale13.png` | `28f74daa814916dfe42e0834c896aec0` |
-| `editor_manageCategories_dark_scale10.png` | `eb074ed185ccb3aa80afdfbfb303492c` |
-| `editor_manageCategories_dark_scale13.png` | `56c281b93ecafef48aa21d43f3a87025` |
-
-## Commands / results (local)
-
-```bash
-cd android && ./gradlew :app:recordRoborazziDebug \
-  --tests 'dev.mahin.android.golden.M16FullScreenGoldenTest.editor_sexualOptIn*' \
-  --tests 'dev.mahin.android.golden.M16FullScreenGoldenTest.editor_manageCategories*'
-./gradlew test :app:verifyRoborazziDebug --no-daemon
-```
+Room schema export **`7.json` MD5:** `b94ab31bd25e8fe2b2745f717f96fdfd`. Dev installs that migrated on a **previous** `7.json` hash should reinstall or clear app data.
 
 ## Next milestone
 

@@ -404,6 +404,8 @@
     <string name="health_connect_rationale_activity">ماهین فقط برای همگام‌سازی جریان پریود (Menstruation Flow) با Health Connect دسترسی می‌خواهد.</string>
     <string name="day_editor_title">ثبت روز %1$s %2$s</string>
     <string name="day_editor_manage_categories">مدیریت دسته‌ها</string>
+    <string name="day_editor_category_move_earlier">انتقال دسته به بالا</string>
+    <string name="day_editor_category_move_later">انتقال دسته به پایین</string>
     <string name="log_editor_category_period_flow">جریان پریود</string>
     <string name="log_editor_category_symptoms">علائم</string>
     <string name="log_editor_category_mood">خلق‌وخو</string>

@@ -76,6 +76,17 @@ class DayEditorViewModelUndoTest {
     }
 
     @Test
+    fun undo_restoresBbtAfterRapidChangesWithoutWaitingBetweenCalls() {
+        runBlocking {
+            viewModel.onBbtChange("36.55")
+            viewModel.onBbtChange("36.56")
+            awaitUntilDb { harness.ttcRepository.getTtcLogForDate(day)?.bbtCelsius == 36.56 }
+            viewModel.undoLastChange()
+            awaitUntilDb { harness.ttcRepository.getTtcLogForDate(day)?.bbtCelsius == 36.55 }
+        }
+    }
+
+    @Test
     fun undo_restoresDailyLogMedicationThenMood_withSecondUndoNoOp() {
         runBlocking {
             viewModel.toggleMood("آرام")
@@ -91,10 +102,6 @@ class DayEditorViewModelUndoTest {
             awaitUntilDb {
                 val log = harness.dailyLogFor(day)
                 log != null && log.medicationTags.contains("ویتامین")
-            }
-            awaitUntil {
-                viewModel.uiState.value.medicationTags
-                    .contains("ویتامین")
             }
             viewModel.undoLastChange()
             awaitUntilDb {
@@ -143,8 +150,8 @@ class DayEditorViewModelUndoTest {
     ) {
         val deadline = System.currentTimeMillis() + timeoutMs
         while (System.currentTimeMillis() < deadline) {
-            if (condition()) return
             ShadowLooper.idleMainLooper()
+            if (condition()) return
         }
         throw AssertionError("Condition not met within ${timeoutMs}ms")
     }

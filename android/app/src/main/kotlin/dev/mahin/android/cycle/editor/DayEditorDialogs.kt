@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import dev.mahin.android.R
 import dev.mahin.core.designsystem.MahinSpacing
@@ -86,6 +87,8 @@ internal fun DayEditorManageCategoriesPanel(
     onMoveCategoryEarlier: (LogEditorCategory) -> Unit = {},
     onMoveCategoryLater: (LogEditorCategory) -> Unit = {},
 ) {
+    val moveCategoryEarlierLabel = stringResource(R.string.day_editor_category_move_earlier)
+    val moveCategoryLaterLabel = stringResource(R.string.day_editor_category_move_later)
     Column(modifier = Modifier.padding(MahinSpacing.lg)) {
         Text(text = stringResource(R.string.day_editor_manage_categories))
         LifestyleRow(
@@ -140,10 +143,22 @@ internal fun DayEditorManageCategoriesPanel(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(text = category.localizedLabel(), modifier = Modifier.weight(1f))
-                IconButton(onClick = { onMoveCategoryEarlier(category) }) {
+                IconButton(
+                    onClick = { onMoveCategoryEarlier(category) },
+                    modifier =
+                        Modifier.semantics {
+                            contentDescription = moveCategoryEarlierLabel
+                        },
+                ) {
                     Text("↑")
                 }
-                IconButton(onClick = { onMoveCategoryLater(category) }) {
+                IconButton(
+                    onClick = { onMoveCategoryLater(category) },
+                    modifier =
+                        Modifier.semantics {
+                            contentDescription = moveCategoryLaterLabel
+                        },
+                ) {
                     Text("↓")
                 }
             }
