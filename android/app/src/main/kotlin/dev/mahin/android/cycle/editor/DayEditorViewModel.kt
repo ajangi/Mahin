@@ -88,7 +88,7 @@ data class UndoSnapshot(
 )
 
 @HiltViewModel
-@Suppress("LongParameterList", "TooManyFunctions", "UnusedPrivateProperty")
+@Suppress("LongParameterList", "TooManyFunctions", "UnusedPrivateProperty", "LargeClass")
 class DayEditorViewModel
     @Inject
     constructor(
@@ -679,6 +679,7 @@ class DayEditorViewModel
             }
         }
 
+        @Suppress("CyclomaticComplexMethod")
         private fun buildCategoryOrder(
             state: DayEditorUiState,
             pinned: List<LogEditorCategory>,

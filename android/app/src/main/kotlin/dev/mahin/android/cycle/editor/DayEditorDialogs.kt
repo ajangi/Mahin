@@ -44,6 +44,7 @@ fun DayEditorSexualOptInDialog(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Suppress("LongParameterList")
 @Composable
 fun DayEditorManageCategoriesSheet(
     state: DayEditorUiState,
@@ -68,6 +69,7 @@ fun DayEditorManageCategoriesSheet(
     }
 }
 
+@Suppress("LongParameterList")
 @Composable
 internal fun DayEditorManageCategoriesPanel(
     state: DayEditorUiState,
