@@ -152,6 +152,7 @@ class CycleTrackingRepository
             end: LocalDate,
         ): List<PeriodDayEntity> = periodDayDao.getRange(start, end)
 
+        @Suppress("LongParameterList")
         suspend fun upsertDailyLog(
             date: LocalDate,
             moodTags: Set<String>,
