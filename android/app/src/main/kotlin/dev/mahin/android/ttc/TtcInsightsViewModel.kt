@@ -15,7 +15,6 @@ import dev.mahin.domain.fertility.TtcSignalDay
 import java.time.Clock
 import java.time.Duration
 import java.time.LocalDate
-import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -127,9 +126,9 @@ class TtcInsightsViewModel
             flow {
                 while (true) {
                     emit(localDateClock.today())
-                    val now = LocalDateTime.now(clock)
-                    val nextMidnight = now.toLocalDate().plusDays(1).atStartOfDay()
-                    val delayMs = Duration.between(now, nextMidnight).toMillis().coerceAtLeast(60_000L)
+                    val zonedNow = clock.instant().atZone(clock.zone)
+                    val nextMidnight = zonedNow.toLocalDate().plusDays(1).atStartOfDay(clock.zone)
+                    val delayMs = Duration.between(zonedNow, nextMidnight).toMillis().coerceAtLeast(60_000L)
                     delay(delayMs)
                 }
             }

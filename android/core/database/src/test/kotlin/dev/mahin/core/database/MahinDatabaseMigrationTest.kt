@@ -206,7 +206,7 @@ class MahinDatabaseMigrationTest {
                 INSERT INTO daily_log (
                     id, logDate, moodTags, symptomTags, medicationTags, painSeverity,
                     painLocation, painNote, note, updatedAtEpochMs
-                ) VALUES ('d1', '2025-01-01', '', 'سردرد', '', NULL, NULL, NULL, NULL, 0)
+                ) VALUES ('d1', '2025-01-01', '', 'سردرد', 'ویتامین', 3, 'HEAD', 'درد', 'یادداشت', 0)
                 """.trimIndent(),
             )
             close()
@@ -223,11 +223,24 @@ class MahinDatabaseMigrationTest {
                 MIGRATION_5_6,
                 MIGRATION_6_7,
             )
-        migrated.query("SELECT symptomTags, localCustomSymptomTags FROM daily_log WHERE id = 'd1'").use { cursor ->
-            assertThat(cursor.moveToFirst()).isTrue()
-            assertThat(cursor.getString(0)).isEqualTo("سردرد")
-            assertThat(cursor.getString(1)).isEqualTo("")
-        }
+        migrated
+            .query(
+                """
+                SELECT symptomTags, localCustomSymptomTags, sleepLogged, exerciseLogged,
+                    waterGlasses, stressLevel, painSeverity, medicationTags
+                FROM daily_log WHERE id = 'd1'
+                """.trimIndent(),
+            ).use { cursor ->
+                assertThat(cursor.moveToFirst()).isTrue()
+                assertThat(cursor.getString(0)).isEqualTo("سردرد")
+                assertThat(cursor.getString(1)).isEqualTo("")
+                assertThat(cursor.getInt(2)).isEqualTo(0)
+                assertThat(cursor.getInt(3)).isEqualTo(0)
+                assertThat(cursor.getInt(4)).isEqualTo(0)
+                assertThat(cursor.isNull(5)).isTrue()
+                assertThat(cursor.getInt(6)).isEqualTo(3)
+                assertThat(cursor.getString(7)).isEqualTo("ویتامین")
+            }
         migrated.close()
     }
 

@@ -32,6 +32,7 @@ internal class DayEditorTestHarness private constructor(
     private val ttcPrivacyRepository: TtcPrivacyPreferencesRepository,
     private val periodDayTrackingService: PeriodDayTrackingService,
     val customSymptomTagRepository: CustomSymptomTagRepository,
+    val tombstoneRepository: HealthConnectPeriodDayTombstoneRepository,
     private val localDateClock: FixedLocalDateClock,
     private val viewModelStore: ViewModelStoreTestHarness,
     val database: MahinDatabase,
@@ -40,10 +41,10 @@ internal class DayEditorTestHarness private constructor(
 
     fun periodDayFor(date: LocalDate) = runBlocking(Dispatchers.IO) { database.periodDayDao().getForDate(date) }
 
-    fun createViewModel(): DayEditorViewModel {
+    fun createViewModel(healthConnectActive: Boolean = false): DayEditorViewModel {
         val gate =
             object : HealthConnectPeriodDayIntegrationGate {
-                override suspend fun isIntegrationActive(): Boolean = false
+                override suspend fun isIntegrationActive(): Boolean = healthConnectActive
             }
         return viewModelStore.hold(
             DayEditorViewModel(
@@ -106,6 +107,7 @@ internal class DayEditorTestHarness private constructor(
                 ttcPrivacyRepository = TtcPrivacyPreferencesRepository(context),
                 periodDayTrackingService = PeriodDayTrackingService(cycleRepository, tombstoneRepository),
                 customSymptomTagRepository = CustomSymptomTagRepository(database),
+                tombstoneRepository = tombstoneRepository,
                 localDateClock = FixedLocalDateClock(today),
                 viewModelStore = ViewModelStoreTestHarness(),
                 database = database,

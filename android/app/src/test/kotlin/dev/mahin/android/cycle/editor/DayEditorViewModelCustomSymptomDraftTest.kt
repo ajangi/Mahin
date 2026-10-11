@@ -13,17 +13,21 @@ import org.robolectric.shadows.ShadowLooper
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
-class DayEditorCustomSymptomPersistenceTest {
+class DayEditorViewModelCustomSymptomDraftTest {
     private lateinit var harness: DayEditorTestHarness
     private lateinit var viewModel: DayEditorViewModel
-    private val day = LocalDate.of(2025, 5, 5)
+    private val day = LocalDate.of(2025, 5, 6)
+    private val label = "سردرد شخصی"
 
     @Before
     fun setUp() {
         harness = DayEditorTestHarness.create(day)
         runBlocking { harness.seedCycleProfile() }
         viewModel = harness.createViewModel()
-        runBlocking { viewModel.openDate(day) }
+        runBlocking {
+            viewModel.openDate(day)
+            awaitUntil { viewModel.uiState.value.date == day }
+        }
     }
 
     @After
@@ -32,15 +36,25 @@ class DayEditorCustomSymptomPersistenceTest {
     }
 
     @Test
-    fun addCustomSymptom_persistsLocalTagOnly() {
+    fun addCustomSymptomFromDraft_persistsAndClearsDraft() {
         runBlocking {
-            viewModel.addCustomSymptom("سردرد شخصی")
+            viewModel.setCustomSymptomDraft(label)
+            viewModel.addCustomSymptomFromDraft()
             awaitUntil {
                 val log = harness.dailyLogFor(day)
-                log?.localCustomSymptomTags?.contains("سردرد شخصی") == true
+                log?.localCustomSymptomTags?.contains(label) == true
             }
-            val log = harness.dailyLogFor(day)
-            assertThat(log?.symptomTags).doesNotContain("سردرد شخصی")
+            assertThat(viewModel.uiState.value.customSymptomDraft).isEmpty()
+            viewModel.setCustomSymptomDraft(label)
+            viewModel.addCustomSymptomFromDraft()
+            val logAfterDup = harness.dailyLogFor(day)
+            assertThat(
+                logAfterDup
+                    ?.localCustomSymptomTags
+                    ?.split(",")
+                    ?.filter { it.isNotBlank() }
+                    ?.size,
+            ).isEqualTo(1)
         }
     }
 

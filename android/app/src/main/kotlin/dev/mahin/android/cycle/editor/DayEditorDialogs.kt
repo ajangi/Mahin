@@ -43,26 +43,6 @@ fun DayEditorSexualOptInDialog(
     )
 }
 
-/** Golden-safe surface (no window/dialog root) matching [DayEditorSexualOptInDialog] copy. */
-@Composable
-fun DayEditorSexualOptInGoldenSurface(modifier: Modifier = Modifier) {
-    Column(modifier = modifier.padding(MahinSpacing.lg).testTag("day_editor_sexual_opt_in")) {
-        Text(
-            text = stringResource(R.string.day_editor_sexual_opt_in_title),
-            style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
-        )
-        DayEditorSexualOptInDialogBody()
-        Row(modifier = Modifier.padding(top = MahinSpacing.md)) {
-            TextButton(onClick = {}, modifier = Modifier.testTag("day_editor_sexual_opt_in_confirm")) {
-                Text(stringResource(R.string.day_editor_sexual_opt_in_confirm))
-            }
-            TextButton(onClick = {}) {
-                Text(stringResource(R.string.day_editor_sexual_opt_in_cancel))
-            }
-        }
-    }
-}
-
 @Composable
 private fun DayEditorSexualOptInDialogBody() {
     Text(stringResource(R.string.day_editor_sexual_opt_in_body))
@@ -157,7 +137,7 @@ internal fun DayEditorManageCategoriesPanel(
                         .testTag("day_editor_category_order_${category.name}"),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(text = category.name, modifier = Modifier.weight(1f))
+                Text(text = category.localizedLabel(), modifier = Modifier.weight(1f))
                 IconButton(onClick = { onMoveCategoryEarlier(category) }) {
                     Text("↑")
                 }

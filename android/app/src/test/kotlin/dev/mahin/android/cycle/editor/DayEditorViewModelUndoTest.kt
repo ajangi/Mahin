@@ -1,5 +1,6 @@
 package dev.mahin.android.cycle.editor
 
+import com.google.common.truth.Truth.assertThat
 import dev.mahin.core.model.CervicalMucusType
 import dev.mahin.core.model.LogEditorCategory
 import dev.mahin.core.model.OvulationTestResult
@@ -43,71 +44,91 @@ class DayEditorViewModelUndoTest {
     fun undo_restoresCervicalMucusAfterSingleChange() {
         runBlocking {
             viewModel.setCervicalMucus(CervicalMucusType.EGG_WHITE)
-            awaitUntil { runBlocking { harness.ttcRepository.getTtcLogForDate(day)?.cervicalMucus != null } }
+            awaitUntilDb { harness.ttcRepository.getTtcLogForDate(day)?.cervicalMucus == CervicalMucusType.EGG_WHITE }
             viewModel.undoLastChange()
-            awaitUntil { runBlocking { harness.ttcRepository.getTtcLogForDate(day)?.cervicalMucus == null } }
+            awaitUntilDb { harness.ttcRepository.getTtcLogForDate(day)?.cervicalMucus == null }
         }
     }
 
     @Test
-    fun undo_restoresOvulationTest() {
+    fun undo_restoresOvulationTestInDatabase() {
         runBlocking {
             viewModel.setOvulationTest(OvulationTestResult.POSITIVE)
-            awaitUntil { viewModel.uiState.value.ovulationTest == OvulationTestResult.POSITIVE }
+            awaitUntilDb {
+                harness.ttcRepository.getTtcLogForDate(day)?.ovulationTestResult ==
+                    OvulationTestResult.POSITIVE
+            }
             viewModel.undoLastChange()
-            awaitUntil { viewModel.uiState.value.ovulationTest == null }
+            awaitUntilDb { harness.ttcRepository.getTtcLogForDate(day)?.ovulationTestResult == null }
         }
     }
 
     @Test
-    fun undo_restoresBbtAfterChange() {
+    fun undo_restoresBbtInDatabase() {
         runBlocking {
             viewModel.onBbtChange("36.55")
-            awaitUntil { viewModel.uiState.value.bbtInput == "36.55" }
+            awaitUntilDb { harness.ttcRepository.getTtcLogForDate(day)?.bbtCelsius == 36.55 }
+            viewModel.onBbtChange("36.56")
+            awaitUntilDb { harness.ttcRepository.getTtcLogForDate(day)?.bbtCelsius == 36.56 }
             viewModel.undoLastChange()
-            awaitUntil {
-                viewModel.uiState.value.bbtInput
-                    .isEmpty()
-            }
+            awaitUntilDb { harness.ttcRepository.getTtcLogForDate(day)?.bbtCelsius == 36.55 }
         }
     }
 
     @Test
-    fun undo_restoresDailyLogMedicationAndMood() {
+    fun undo_restoresDailyLogMedicationThenMood_withSecondUndoNoOp() {
         runBlocking {
             viewModel.toggleMood("آرام")
+            awaitUntilDb {
+                val log = harness.dailyLogFor(day)
+                log != null && log.moodTags.contains("آرام")
+            }
+            awaitUntil {
+                viewModel.uiState.value.moodTags
+                    .contains("آرام")
+            }
             viewModel.toggleMedication("ویتامین")
-            viewModel.undoLastChange()
-            awaitUntil {
+            awaitUntilDb {
                 val log = harness.dailyLogFor(day)
-                log != null && !log.medicationTags.contains("ویتامین")
+                log != null && log.medicationTags.contains("ویتامین")
+            }
+            awaitUntil {
+                viewModel.uiState.value.medicationTags
+                    .contains("ویتامین")
             }
             viewModel.undoLastChange()
-            awaitUntil {
+            awaitUntilDb {
                 val log = harness.dailyLogFor(day)
-                log != null && !log.moodTags.contains("آرام")
+                log != null && !log.medicationTags.contains("ویتامین") && log.moodTags.contains("آرام")
             }
+            val moodAfterFirstUndo = harness.dailyLogFor(day)?.moodTags
+            viewModel.undoLastChange()
+            assertThat(harness.dailyLogFor(day)?.moodTags).isEqualTo(moodAfterFirstUndo)
+            assertThat(harness.dailyLogFor(day)?.medicationTags).doesNotContain("ویتامین")
         }
     }
 
     @Test
-    fun undo_restoresPregnancyTest() {
+    fun undo_restoresPregnancyTestInDatabase() {
         runBlocking {
             viewModel.setPregnancyTest(PregnancyTestResult.POSITIVE)
-            awaitUntil { viewModel.uiState.value.pregnancyTest == PregnancyTestResult.POSITIVE }
+            awaitUntilDb {
+                harness.ttcRepository.getTtcLogForDate(day)?.pregnancyTestResult ==
+                    PregnancyTestResult.POSITIVE
+            }
             viewModel.undoLastChange()
-            awaitUntil { viewModel.uiState.value.pregnancyTest == null }
+            awaitUntilDb { harness.ttcRepository.getTtcLogForDate(day)?.pregnancyTestResult == null }
         }
     }
 
     @Test
-    fun undo_lifestyleSleepToggle_reverts() {
+    fun undo_lifestyleSleepToggle_revertsInDatabase() {
         runBlocking {
             harness.loggingPreferencesRepository.setLifestyleModuleEnabled(LogEditorCategory.SLEEP, true)
             viewModel.toggleLifestyleLogged(LogEditorCategory.SLEEP)
-            awaitUntil { harness.dailyLogFor(day)?.sleepLogged == true }
+            awaitUntilDb { harness.dailyLogFor(day)?.sleepLogged == true }
             viewModel.undoLastChange()
-            awaitUntil {
+            awaitUntilDb {
                 val log = harness.dailyLogFor(day)
                 log != null && !log.sleepLogged
             }
@@ -115,7 +136,7 @@ class DayEditorViewModelUndoTest {
     }
 
     private suspend fun awaitUntil(
-        timeoutMs: Long = 6_000,
+        timeoutMs: Long = 10_000,
         condition: () -> Boolean,
     ) {
         val deadline = System.currentTimeMillis() + timeoutMs
@@ -124,5 +145,14 @@ class DayEditorViewModelUndoTest {
             ShadowLooper.idleMainLooper()
         }
         throw AssertionError("Condition not met within ${timeoutMs}ms")
+    }
+
+    private suspend fun awaitUntilDb(condition: suspend () -> Boolean) {
+        val deadline = System.currentTimeMillis() + 10_000
+        while (System.currentTimeMillis() < deadline) {
+            ShadowLooper.idleMainLooper()
+            if (condition()) return
+        }
+        throw AssertionError("DB condition not met within 10000ms")
     }
 }

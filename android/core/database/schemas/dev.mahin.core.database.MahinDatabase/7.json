@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 7,
-    "identityHash": "6bfb90b9346d2cfb8a2db499b5bd6b55",
+    "identityHash": "d0213964de0a041bd8a794e6d11ebaeb",
     "entities": [
       {
         "tableName": "app_meta",
@@ -195,7 +195,7 @@
       },
       {
         "tableName": "daily_log",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `logDate` TEXT NOT NULL, `moodTags` TEXT NOT NULL, `symptomTags` TEXT NOT NULL, `medicationTags` TEXT NOT NULL, `localCustomSymptomTags` TEXT NOT NULL, `painSeverity` INTEGER, `painLocation` TEXT, `painNote` TEXT, `note` TEXT, `sleepLogged` INTEGER NOT NULL, `exerciseLogged` INTEGER NOT NULL, `waterGlasses` INTEGER NOT NULL, `stressLevel` INTEGER, `updatedAtEpochMs` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `logDate` TEXT NOT NULL, `moodTags` TEXT NOT NULL, `symptomTags` TEXT NOT NULL, `medicationTags` TEXT NOT NULL, `localCustomSymptomTags` TEXT NOT NULL DEFAULT '', `painSeverity` INTEGER, `painLocation` TEXT, `painNote` TEXT, `note` TEXT, `sleepLogged` INTEGER NOT NULL DEFAULT 0, `exerciseLogged` INTEGER NOT NULL DEFAULT 0, `waterGlasses` INTEGER NOT NULL DEFAULT 0, `stressLevel` INTEGER, `updatedAtEpochMs` INTEGER NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -231,7 +231,8 @@
             "fieldPath": "localCustomSymptomTags",
             "columnName": "localCustomSymptomTags",
             "affinity": "TEXT",
-            "notNull": true
+            "notNull": true,
+            "defaultValue": "''"
           },
           {
             "fieldPath": "painSeverity",
@@ -261,19 +262,22 @@
             "fieldPath": "sleepLogged",
             "columnName": "sleepLogged",
             "affinity": "INTEGER",
-            "notNull": true
+            "notNull": true,
+            "defaultValue": "0"
           },
           {
             "fieldPath": "exerciseLogged",
             "columnName": "exerciseLogged",
             "affinity": "INTEGER",
-            "notNull": true
+            "notNull": true,
+            "defaultValue": "0"
           },
           {
             "fieldPath": "waterGlasses",
             "columnName": "waterGlasses",
             "affinity": "INTEGER",
-            "notNull": true
+            "notNull": true,
+            "defaultValue": "0"
           },
           {
             "fieldPath": "stressLevel",
@@ -931,7 +935,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6bfb90b9346d2cfb8a2db499b5bd6b55')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd0213964de0a041bd8a794e6d11ebaeb')"
     ]
   }
 }

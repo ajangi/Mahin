@@ -3,10 +3,10 @@ package dev.mahin.android.golden
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import dev.mahin.android.cycle.editor.DayEditorManageCategoriesPanel
-import dev.mahin.android.cycle.editor.DayEditorSexualOptInGoldenSurface
+import dev.mahin.android.cycle.editor.DayEditorSexualOptInDialog
 import dev.mahin.android.cycle.editor.DayEditorSheetContent
-import dev.mahin.core.designsystem.MahinTheme
 import dev.mahin.core.testing.ViewModelStoreClearingRule
+import dev.mahin.core.testing.roborazzi.captureMahinDialogGolden
 import dev.mahin.core.testing.roborazzi.captureMahinFullScreenGolden
 import java.time.LocalDate
 import org.junit.Rule
@@ -88,10 +88,8 @@ class M16FullScreenGoldenTest {
         dark: Boolean,
         scale: Float,
     ) {
-        androidComposeRule.captureMahinFullScreenGolden(dark, scale) {
-            MahinTheme {
-                DayEditorSexualOptInGoldenSurface()
-            }
+        androidComposeRule.captureMahinDialogGolden(dark, scale) {
+            DayEditorSexualOptInDialog(onConfirm = {}, onDismiss = {})
         }
     }
 

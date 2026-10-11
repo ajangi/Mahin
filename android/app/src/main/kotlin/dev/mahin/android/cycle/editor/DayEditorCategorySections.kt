@@ -219,23 +219,30 @@ internal fun DayEditorTtcTestsSection(
     onOvulationTest: (OvulationTestResult) -> Unit,
     onPregnancyTest: (PregnancyTestResult) -> Unit,
 ) {
-    MahinSectionLabel(text = stringResource(R.string.log_ttc_section))
+    Text(
+        text = stringResource(R.string.log_ttc_privacy_note),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(bottom = MahinSpacing.sm),
+    )
+    MahinSectionLabel(text = stringResource(R.string.log_opk_section))
     FlowRow(horizontalArrangement = Arrangement.spacedBy(MahinSpacing.sm)) {
         OvulationTestResult.entries.forEach { result ->
             FilterChip(
                 selected = ovulationTest == result,
                 onClick = { onOvulationTest(result) },
-                label = { Text(result.name) },
+                label = { Text(opkLabel(result)) },
                 modifier = Modifier.testTag("day_editor_opk_${result.name}"),
             )
         }
     }
+    MahinSectionLabel(text = stringResource(R.string.log_pregnancy_test_section))
     FlowRow(horizontalArrangement = Arrangement.spacedBy(MahinSpacing.sm)) {
         PregnancyTestResult.entries.forEach { result ->
             FilterChip(
                 selected = pregnancyTest == result,
                 onClick = { onPregnancyTest(result) },
-                label = { Text(result.name) },
+                label = { Text(pregnancyTestLabel(result)) },
                 modifier = Modifier.testTag("day_editor_hpt_${result.name}"),
             )
         }
@@ -521,4 +528,21 @@ private fun mucusLabel(type: CervicalMucusType): String =
         CervicalMucusType.WATERY -> stringResource(R.string.mucus_watery)
         CervicalMucusType.EGG_WHITE -> stringResource(R.string.mucus_egg_white)
         CervicalMucusType.OTHER -> stringResource(R.string.mucus_other)
+    }
+
+@Composable
+private fun opkLabel(result: OvulationTestResult): String =
+    when (result) {
+        OvulationTestResult.NEGATIVE -> stringResource(R.string.opk_negative)
+        OvulationTestResult.POSITIVE -> stringResource(R.string.opk_positive)
+        OvulationTestResult.PEAK -> stringResource(R.string.opk_peak)
+        OvulationTestResult.UNCLEAR -> stringResource(R.string.opk_unclear)
+    }
+
+@Composable
+private fun pregnancyTestLabel(result: PregnancyTestResult): String =
+    when (result) {
+        PregnancyTestResult.NEGATIVE -> stringResource(R.string.pregnancy_test_negative)
+        PregnancyTestResult.POSITIVE -> stringResource(R.string.pregnancy_test_positive)
+        PregnancyTestResult.UNCLEAR -> stringResource(R.string.pregnancy_test_unclear)
     }

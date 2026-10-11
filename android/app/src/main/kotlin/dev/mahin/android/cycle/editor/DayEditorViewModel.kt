@@ -258,15 +258,22 @@ class DayEditorViewModel
 
         fun onBbtChange(value: String) {
             val date = _uiState.value.date ?: return
-            captureUndo()
             viewModelScope.launch {
                 val (parsed, error) = LogInputValidators.parseBbt(value)
-                _uiState.update { it.copy(bbtInput = value, bbtError = error) }
-                if (error == null) {
+                val existing =
+                    if (error == null) {
+                        ttcRepository.getTtcLogForDate(date)?.bbtCelsius
+                    } else {
+                        null
+                    }
+                val shouldPersist = error == null && parsed != existing
+                if (shouldPersist) {
+                    captureUndo()
                     persistTtcLog(date) { it.copy(bbtCelsius = parsed) }
                     pulse("bbt", LogEditorCategory.TTC_TESTS)
                     showUndo()
                 }
+                _uiState.update { it.copy(bbtInput = value, bbtError = error) }
             }
         }
 
@@ -670,7 +677,14 @@ class DayEditorViewModel
             val trimmed = label.trim()
             if (trimmed.isEmpty()) return
             val date = _uiState.value.date
+            val state = _uiState.value
+            if (trimmed in state.localCustomSymptomTags) return
             viewModelScope.launch {
+                val existingTags =
+                    date?.let { cycleRepository.getDailyLogForDate(it) }?.let { entity ->
+                        DailyLogFieldSupport.fromEntity(entity).localCustomSymptomTags
+                    } ?: emptySet()
+                if (trimmed in existingTags) return@launch
                 customSymptomTagRepository.upsert(
                     CustomSymptomTagEntity(
                         id = UUID.randomUUID().toString(),
