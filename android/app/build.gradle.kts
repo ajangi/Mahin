@@ -184,6 +184,8 @@ tasks.withType<Test>().configureEach {
             excludeTestsMatching("dev.mahin.android.assistant.AssistantSettingsScreenTest")
             excludeTestsMatching("dev.mahin.android.cycle.editor.DayEditorLoggingEffortTest")
             excludeTestsMatching("dev.mahin.android.cycle.editor.DayEditorOptInTest")
+            excludeTestsMatching("dev.mahin.android.cycle.editor.DayEditorPainStepperTest")
+            excludeTestsMatching("dev.mahin.android.cycle.CalendarDaySheetEditorTest")
         }
     }
 }

@@ -1,7 +1,7 @@
 # M16 Handoff — Logging experience overhaul
 
 **Milestone:** M16  
-**Status:** draft PR [#39](https://github.com/ajangi/Mahin/pull/39) — head `pending` — Gatekeeper round 1  
+**Status:** draft PR [#39](https://github.com/ajangi/Mahin/pull/39) — head `03d9f5f`+ — Gatekeeper round 1  
 **Next milestone:** **M17** only
 
 ## Implemented scope

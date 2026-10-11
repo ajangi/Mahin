@@ -17,7 +17,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [33], qualifiers = "fa-rIR", manifest = Config.NONE)
+@Config(sdk = [33], qualifiers = "fa-rIR-w411dp-h891dp-xxhdpi", manifest = Config.NONE)
 class CalendarDaySheetEditorTest {
     @get:Rule
     val composeRule = createComposeRule()
