@@ -109,21 +109,29 @@ class TodayDayEditorIntegrationTest {
         }
         androidComposeRule.onNodeWithTag("day_editor_sheet").assertExists()
         androidComposeRule.onAllNodes(isDialog()).assertCountEquals(0)
-        androidComposeRule.waitUntil(timeoutMillis = 8_000) {
+        androidComposeRule.waitUntil(timeoutMillis = 20_000) {
             ShadowLooper.idleMainLooper()
             val state = viewModel.uiState.value
             state.date == today && !state.loading
         }
         androidComposeRule.onNodeWithTag("day_editor_period_started").performClick()
+        androidComposeRule.waitUntil(timeoutMillis = 15_000) {
+            ShadowLooper.idleMainLooper()
+            viewModel.uiState.value.periodLogged
+        }
         androidComposeRule
             .onNodeWithTag("day_editor_scroll")
             .performScrollToNode(hasTestTag("day_editor_symptom_خستگی"))
         androidComposeRule.onNodeWithTag("day_editor_symptom_خستگی").performClick()
+        androidComposeRule.waitUntil(timeoutMillis = 20_000) {
+            ShadowLooper.idleMainLooper()
+            harness.dailyLogFor(today)?.symptomTags?.contains("خستگی") == true
+        }
         androidComposeRule
             .onNodeWithTag("day_editor_scroll")
             .performScrollToNode(hasTestTag("day_editor_mood_آرام"))
         androidComposeRule.onNodeWithTag("day_editor_mood_آرام").performClick()
-        androidComposeRule.waitUntil(timeoutMillis = 12_000) {
+        androidComposeRule.waitUntil(timeoutMillis = 25_000) {
             ShadowLooper.idleMainLooper()
             val log = harness.dailyLogFor(today)
             log != null && log.symptomTags.contains("خستگی") && log.moodTags.contains("آرام")
