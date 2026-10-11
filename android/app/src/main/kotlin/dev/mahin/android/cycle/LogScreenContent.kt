@@ -8,14 +8,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import dev.mahin.android.R
-import dev.mahin.android.pregnancy.PregnancyLogCallbacks
-import dev.mahin.android.pregnancy.PregnancyLogFormState
-import dev.mahin.android.pregnancy.PregnancyLogSections
 import dev.mahin.core.designsystem.MahinSpacing
 import dev.mahin.core.designsystem.component.MahinJalaliDatePicker
 import dev.mahin.core.designsystem.component.MahinPrimaryButton
 import dev.mahin.core.designsystem.component.MahinScreenHeader
-import dev.mahin.core.model.ReproductiveMode
 
 @Composable
 @Suppress("LongMethod")
