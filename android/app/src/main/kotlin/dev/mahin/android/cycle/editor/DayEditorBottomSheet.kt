@@ -113,7 +113,7 @@ fun DayEditorHost(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-@Suppress("LongMethod")
+@Suppress("LongMethod", "LongParameterList", "CyclomaticComplexMethod")
 internal fun DayEditorSheetContent(
     date: LocalDate,
     state: DayEditorUiState,

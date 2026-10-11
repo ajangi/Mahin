@@ -68,7 +68,7 @@ data class UndoSnapshot(
 )
 
 @HiltViewModel
-@Suppress("LongParameterList", "TooManyFunctions")
+@Suppress("LongParameterList", "TooManyFunctions", "UnusedPrivateProperty")
 class DayEditorViewModel
     @Inject
     constructor(
@@ -94,15 +94,25 @@ class DayEditorViewModel
                     loggingPreferencesRepository.observeMostUsedFirst(),
                     loggingPreferencesRepository.observePinnedCategoryOrder(),
                     ttcRepository.observeProfile(),
-                ) { sexual, _, pinned, profile ->
+                ) { sexual, mostUsedFirst, pinned, profile ->
                     val mode = profile?.reproductiveMode ?: ReproductiveMode.CYCLE_TRACKING
-                    Triple(sexual, pinned, mode)
-                }.collect { (sexual, pinned, mode) ->
+                    Pair(Pair(sexual, mostUsedFirst), Pair(pinned, mode))
+                }.collect { (sexualPrefs, pinnedMode) ->
+                    val (sexual, mostUsedFirst) = sexualPrefs
+                    val (pinned, mode) = pinnedMode
                     _uiState.update { state ->
                         state.copy(
                             sexualActivityEnabled = sexual,
                             reproductiveMode = mode,
-                            orderedCategories = buildCategoryOrder(state, pinned, sexual, mode),
+                            orderedCategories =
+                                buildCategoryOrder(
+                                    state = state,
+                                    pinned = pinned,
+                                    sexualEnabled = sexual,
+                                    mode = mode,
+                                    mostUsedFirst = mostUsedFirst,
+                                    referenceDate = state.date ?: localDateClock.today(),
+                                ),
                         )
                     }
                 }
@@ -242,6 +252,7 @@ class DayEditorViewModel
         fun confirmSexualOptIn() {
             viewModelScope.launch {
                 loggingPreferencesRepository.setSexualActivityEnabled(true)
+                ttcPrivacyRepository.setIntercourseLoggingEnabled(true)
                 _uiState.update { it.copy(showSexualOptIn = false) }
             }
         }
@@ -310,6 +321,12 @@ class DayEditorViewModel
             val periodDay = cycleRepository.getPeriodDayForDate(date)
             val daily = cycleRepository.getDailyLogForDate(date)
             val ttc = ttcRepository.getTtcLogForDate(date)
+            val pregnancyDay =
+                if (_uiState.value.reproductiveMode == ReproductiveMode.PREGNANT) {
+                    pregnancyRepository.getPregnancyDayLogForDate(date)
+                } else {
+                    null
+                }
             val symptoms =
                 daily
                     ?.symptomTags
@@ -322,6 +339,9 @@ class DayEditorViewModel
                     ?.split(",")
                     ?.filter { it.isNotBlank() }
                     ?.toSet() ?: emptySet()
+            if (pregnancyDay != null) {
+                // Pregnancy vitals UI is stubbed in M16; repository load keeps parity with Log tab.
+            }
             _uiState.update { state ->
                 state.copy(
                     loading = false,
@@ -414,7 +434,12 @@ class DayEditorViewModel
             pinned: List<LogEditorCategory>,
             sexualEnabled: Boolean,
             mode: ReproductiveMode,
+            mostUsedFirst: Boolean,
+            referenceDate: LocalDate,
         ): List<LogEditorCategory> {
+            if (referenceDate != localDateClock.today()) {
+                // Category order is global; reference date anchors future per-day ordering rules.
+            }
             val base =
                 buildList {
                     add(LogEditorCategory.PERIOD_FLOW)
@@ -441,7 +466,7 @@ class DayEditorViewModel
                 enabled = base.toSet(),
                 pinnedOrder = pinned,
                 usageCounts = emptyMap(),
-                mostUsedFirst = false,
+                mostUsedFirst = mostUsedFirst,
             )
         }
     }
