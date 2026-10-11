@@ -334,6 +334,7 @@ class MahinShellNavigationTest {
                             reproductiveMode = ReproductiveMode.CYCLE_TRACKING,
                         ),
                     screenOverrides = testOverrides(),
+                    dayEditorOverlay = { _, _ -> },
                 )
             }
         }
@@ -356,6 +357,7 @@ class MahinShellNavigationTest {
                             reproductiveMode = ReproductiveMode.PREGNANT,
                         ),
                     screenOverrides = testOverrides(),
+                    dayEditorOverlay = { _, _ -> },
                 )
             }
         }

@@ -15,6 +15,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.EntryPointAccessors
 import dev.mahin.android.cycle.editor.DayEditorHost
+import dev.mahin.android.cycle.editor.DayEditorSession
 import dev.mahin.android.navigation.AppNavigationEntryPoint
 import dev.mahin.android.navigation.MahinTopLevelDestination
 import java.time.LocalDate
@@ -43,6 +44,9 @@ internal fun MahinAppShellWithNavigationOverride(
     modifier: Modifier = Modifier,
     onLocalDataErased: () -> Unit = {},
     screenOverrides: MahinShellScreenOverrides = MahinShellScreenOverrides.Default,
+    dayEditorOverlay: @Composable (DayEditorSession?, () -> Unit) -> Unit = { session, onDismiss ->
+        DayEditorHost(session = session, onDismiss = onDismiss)
+    },
 ) {
     MahinAppShellContent(
         shellState = shellNavigationStateOverride,
@@ -50,6 +54,7 @@ internal fun MahinAppShellWithNavigationOverride(
         modifier = modifier,
         onLocalDataErased = onLocalDataErased,
         screenOverrides = screenOverrides,
+        dayEditorOverlay = dayEditorOverlay,
     )
 }
 
@@ -60,6 +65,9 @@ internal fun MahinAppShellContent(
     modifier: Modifier = Modifier,
     onLocalDataErased: () -> Unit = {},
     screenOverrides: MahinShellScreenOverrides = MahinShellScreenOverrides.Default,
+    dayEditorOverlay: @Composable (DayEditorSession?, () -> Unit) -> Unit = { session, onDismiss ->
+        DayEditorHost(session = session, onDismiss = onDismiss)
+    },
 ) {
     val openHistory: () -> Unit = {
         navController.navigate(MahinTopLevelDestination.HISTORY_ROUTE) { launchSingleTop = true }
@@ -119,9 +127,6 @@ internal fun MahinAppShellContent(
                 )
             },
         )
-        DayEditorHost(
-            session = dayEditorSession,
-            onDismiss = dayEditorCoordinator::dismiss,
-        )
+        dayEditorOverlay(dayEditorSession, dayEditorCoordinator::dismiss)
     }
 }
