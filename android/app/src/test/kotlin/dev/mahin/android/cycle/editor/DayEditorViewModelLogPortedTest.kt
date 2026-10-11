@@ -35,7 +35,7 @@ class DayEditorViewModelLogPortedTest {
             viewModel.openDate(day)
             awaitUntil { viewModel.uiState.value.periodLogged }
             viewModel.togglePeriodLogged()
-            awaitWorkDone()
+            awaitUntil { viewModel.uiState.value.undoMessage != null }
             assertThat(harness.periodDayFor(day)).isNotNull()
             assertThat(harness.tombstoneRepository.isUserDeleted(day)).isFalse()
         }
@@ -168,12 +168,6 @@ class DayEditorViewModelLogPortedTest {
             assertThat(harness.dailyLogFor(day)).isNull()
             viewModel.openDate(day)
             awaitUntil { viewModel.uiState.value.date == day }
-        }
-    }
-
-    private suspend fun awaitWorkDone() {
-        repeat(20) {
-            ShadowLooper.idleMainLooper()
         }
     }
 

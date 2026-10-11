@@ -1,18 +1,33 @@
 package dev.mahin.android.golden
 
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
+import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
+import com.github.takahirom.roborazzi.captureScreenRoboImage
 import dev.mahin.android.cycle.editor.DayEditorManageCategoriesPanel
 import dev.mahin.android.cycle.editor.DayEditorSexualOptInDialog
 import dev.mahin.android.cycle.editor.DayEditorSheetContent
+import dev.mahin.core.designsystem.MahinTheme
+import dev.mahin.core.designsystem.ProvideReducedMotion
 import dev.mahin.core.testing.ViewModelStoreClearingRule
-import dev.mahin.core.testing.roborazzi.captureMahinDialogGolden
+import dev.mahin.core.testing.roborazzi.MahinRoborazzi
 import dev.mahin.core.testing.roborazzi.captureMahinFullScreenGolden
 import java.time.LocalDate
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
@@ -84,13 +99,43 @@ class M16FullScreenGoldenTest {
         }
     }
 
+    @OptIn(ExperimentalRoborazziApi::class)
     private fun captureOptIn(
         dark: Boolean,
         scale: Float,
     ) {
-        androidComposeRule.captureMahinDialogGolden(dark, scale) {
-            DayEditorSexualOptInDialog(onConfirm = {}, onDismiss = {})
+        if (dark) {
+            RuntimeEnvironment.setQualifiers("+night")
+        } else {
+            RuntimeEnvironment.setQualifiers("fa-rIR-w411dp-h891dp-xxhdpi")
         }
+        RuntimeEnvironment.setFontScale(scale)
+        androidComposeRule.setContent {
+            val baseDensity = LocalDensity.current
+            CompositionLocalProvider(
+                LocalLayoutDirection provides LayoutDirection.Rtl,
+                LocalDensity provides
+                    Density(
+                        density = baseDensity.density,
+                        fontScale = scale,
+                    ),
+            ) {
+                MahinTheme(darkTheme = dark) {
+                    ProvideReducedMotion(reducedMotion = true) {
+                        Surface(
+                            modifier = Modifier.fillMaxSize(),
+                            color = MaterialTheme.colorScheme.background,
+                        ) {
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                DayEditorSexualOptInDialog(onConfirm = {}, onDismiss = {})
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        androidComposeRule.waitForIdle()
+        captureScreenRoboImage(roborazziOptions = MahinRoborazzi.options)
     }
 
     private fun captureManage(

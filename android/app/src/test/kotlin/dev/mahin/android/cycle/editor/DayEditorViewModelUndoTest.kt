@@ -101,7 +101,9 @@ class DayEditorViewModelUndoTest {
                 val log = harness.dailyLogFor(day)
                 log != null && !log.medicationTags.contains("ویتامین") && log.moodTags.contains("آرام")
             }
+            awaitUntil { viewModel.uiState.value.undoMessage == null }
             val moodAfterFirstUndo = harness.dailyLogFor(day)?.moodTags
+            assertThat(viewModel.uiState.value.undoMessage).isNull()
             viewModel.undoLastChange()
             assertThat(harness.dailyLogFor(day)?.moodTags).isEqualTo(moodAfterFirstUndo)
             assertThat(harness.dailyLogFor(day)?.medicationTags).doesNotContain("ویتامین")

@@ -73,5 +73,13 @@ object M16GoldenFixtures {
             showManageCategories = true,
             date = LocalDate.of(2025, 3, 15),
             lifestyleEnabled = mapOf(LogEditorCategory.SLEEP to true),
+            orderedCategories =
+                listOf(
+                    LogEditorCategory.PERIOD_FLOW,
+                    LogEditorCategory.SYMPTOMS,
+                    LogEditorCategory.MOOD,
+                    LogEditorCategory.PAIN,
+                    LogEditorCategory.TTC_TESTS,
+                ),
         )
 }

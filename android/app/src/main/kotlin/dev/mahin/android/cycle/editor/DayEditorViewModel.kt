@@ -675,7 +675,7 @@ class DayEditorViewModel
 
         fun addCustomSymptom(label: String) {
             val trimmed = label.trim()
-            if (trimmed.isEmpty()) return
+            if (trimmed.isEmpty() || trimmed.contains(',')) return
             val date = _uiState.value.date
             val state = _uiState.value
             if (trimmed in state.localCustomSymptomTags) return

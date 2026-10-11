@@ -36,6 +36,19 @@ class DayEditorViewModelCustomSymptomDraftTest {
     }
 
     @Test
+    fun addCustomSymptomFromDraft_rejectsCommaInLabel() {
+        runBlocking {
+            viewModel.setCustomSymptomDraft("سردرد,شخصی")
+            viewModel.addCustomSymptomFromDraft()
+            awaitUntil {
+                val log = harness.dailyLogFor(day)
+                log == null || log.localCustomSymptomTags.isEmpty()
+            }
+            assertThat(harness.dailyLogFor(day)).isNull()
+        }
+    }
+
+    @Test
     fun addCustomSymptomFromDraft_persistsAndClearsDraft() {
         runBlocking {
             viewModel.setCustomSymptomDraft(label)

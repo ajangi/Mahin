@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
 import dev.mahin.android.R
 import dev.mahin.core.designsystem.MahinSpacing
 import dev.mahin.core.model.LogEditorCategory
@@ -134,6 +135,7 @@ internal fun DayEditorManageCategoriesPanel(
                 modifier =
                     Modifier
                         .fillMaxWidth()
+                        .semantics(mergeDescendants = true) {}
                         .testTag("day_editor_category_order_${category.name}"),
                 verticalAlignment = Alignment.CenterVertically,
             ) {

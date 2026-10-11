@@ -20,7 +20,6 @@ import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.core.testing.ViewModelStoreTestHarness
 import java.time.LocalDate
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -136,7 +135,6 @@ class DayEditorMedicationVitalsTest {
         while (System.currentTimeMillis() < deadline) {
             if (condition()) return
             ShadowLooper.idleMainLooper()
-            delay(25)
         }
         throw AssertionError("Condition not met within ${timeoutMs}ms")
     }
