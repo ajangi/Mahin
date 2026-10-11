@@ -1,7 +1,7 @@
 # M16 Handoff — Logging experience overhaul
 
 **Milestone:** M16  
-**Status:** draft PR [#39](https://github.com/ajangi/Mahin/pull/39) — head `817e9f8` (CI in flight)  
+**Status:** draft PR [#39](https://github.com/ajangi/Mahin/pull/39) — head `1973e65` — CI **green** (run [38145280139](https://github.com/ajangi/Mahin/actions/runs/38145280139))  
 **Next milestone:** **M17** only
 
 ## Implemented scope
@@ -49,7 +49,7 @@
 | Custom tags / category prefs not in sync outbox; export unchanged | Met | `LoggingLocalPrivacyTest` |
 | `SensitiveAnalyticsGuardTest` extended | Met | `acceptsLogCategoryOpenedWithCoarseSurface` |
 | M16 goldens light/dark × scales + RTL harness | Met | `M16FullScreenGoldenTest` (22 captures) |
-| Existing checks | Local verify (see commands); GitHub android job re-triggered on latest push | `ci.yml` android step |
+| Existing checks | Met | GitHub `ci` android job success on `1973e65`; `verifyRoborazziDebug` in that run |
 
 ## Commands / results (local)
 
@@ -74,7 +74,7 @@ cd android && GRADLE_OPTS='-Dorg.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=512m
   :app:verifyReleaseApkNoEmulatorApiHost \
   :app:verifyRoborazziDebug :core:designsystem:verifyRoborazziDebug \
   :benchmark:assemble --rerun-tasks --no-daemon
-# Run on merge candidate; last GitHub run failed before shell overlay + settings fixes.
+# GitHub Actions run 38145682135 (head 1973e65): BUILD SUCCESSFUL (~16m android job).
 ```
 
 ## Limitations
