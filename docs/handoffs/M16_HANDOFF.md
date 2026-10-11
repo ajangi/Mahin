@@ -1,7 +1,7 @@
 # M16 Handoff — Logging experience overhaul (Gatekeeper Round 3)
 
 **Milestone:** M16  
-**Status:** PR [#39](https://github.com/ajangi/Mahin/pull/39) — head _pending push_ — CI _pending_  
+**Status:** PR [#39](https://github.com/ajangi/Mahin/pull/39) — head `ef0c37b` — CI _in progress_  
 **Next milestone:** **M17** only
 
 ## Gatekeeper Round 3 — per-item evidence
