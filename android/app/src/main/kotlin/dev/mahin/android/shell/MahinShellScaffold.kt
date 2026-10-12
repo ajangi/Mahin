@@ -55,6 +55,7 @@ internal fun MahinShellNavHost(
     onOpenLearn: () -> Unit,
     onOpenCycleCalendar: () -> Unit,
     onOpenLogTab: (LocalDate?) -> Unit,
+    onOpenDayEditor: (LocalDate) -> Unit,
     onOpenPlan: () -> Unit,
     onOpenPregnancyTab: () -> Unit,
     screenOverrides: MahinShellScreenOverrides = MahinShellScreenOverrides.Default,
@@ -74,13 +75,14 @@ internal fun MahinShellNavHost(
                 onOpenHistory,
                 onOpenLearn,
                 onOpenLogTab,
+                onOpenDayEditor,
                 onOpenPlan,
                 onOpenPregnancyTab,
                 onOpenCycleCalendar,
             )
         }
         composable(MahinTopLevelDestination.Calendar.route) {
-            screenOverrides.calendar(onOpenLogTab)
+            screenOverrides.calendar(onOpenDayEditor)
         }
         composable(MahinTopLevelDestination.Log.route) { screenOverrides.log() }
         composable(MahinTopLevelDestination.CycleInsights.route) {
@@ -113,6 +115,7 @@ data class MahinShellScreenOverrides(
         onOpenHistory: () -> Unit,
         onOpenLearn: () -> Unit,
         onOpenLogTab: (LocalDate?) -> Unit,
+        onOpenDayEditor: (LocalDate) -> Unit,
         onOpenPlan: () -> Unit,
         onOpenPregnancyTab: () -> Unit,
         onOpenCalendar: () -> Unit,
@@ -134,13 +137,21 @@ data class MahinShellScreenOverrides(
     companion object {
         val Default: MahinShellScreenOverrides =
             MahinShellScreenOverrides(
-                today = { onOpenHistory, onOpenLearn, onOpenLogTab, onOpenPlan, onOpenPregnancyTab, onOpenCalendar ->
+                today = {
+                    onOpenHistory,
+                    onOpenLearn,
+                    onOpenLogTab,
+                    onOpenDayEditor,
+                    onOpenPlan,
+                    onOpenPregnancyTab,
+                    onOpenCalendar,
+                    ->
                     TodayScreen(
                         onOpenHistory = onOpenHistory,
                         onOpenLearn = onOpenLearn,
                         actions =
                             TodayScreenActions(
-                                onOpenLogForDate = { date -> onOpenLogTab(date) },
+                                onOpenLogForDate = onOpenDayEditor,
                                 onOpenLogTab = { onOpenLogTab(null) },
                                 onOpenPlan = onOpenPlan,
                                 onOpenPregnancyTab = onOpenPregnancyTab,

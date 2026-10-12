@@ -2,6 +2,8 @@ package dev.mahin.core.testing.roborazzi
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -13,6 +15,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import com.github.takahirom.roborazzi.captureRoboImage
+import com.github.takahirom.roborazzi.captureScreenRoboImage
 import dev.mahin.core.designsystem.MahinTheme
 import dev.mahin.core.designsystem.ProvideReducedMotion
 
@@ -40,8 +43,13 @@ fun ComposeContentTestRule.captureMahinFullScreenGolden(
         ) {
             MahinTheme(darkTheme = darkTheme) {
                 ProvideReducedMotion(reducedMotion = true) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        content()
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background,
+                    ) {
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            content()
+                        }
                     }
                 }
             }
@@ -51,4 +59,32 @@ fun ComposeContentTestRule.captureMahinFullScreenGolden(
     beforeCapture?.invoke(this)
     waitForIdle()
     onRoot().captureRoboImage(roborazziOptions = MahinRoborazzi.options)
+}
+
+/** Captures dialog/popup windows (e.g. [AlertDialog]) for Roborazzi verify. */
+@OptIn(ExperimentalRoborazziApi::class)
+fun ComposeContentTestRule.captureMahinDialogGolden(
+    darkTheme: Boolean,
+    fontScale: Float,
+    content: @Composable () -> Unit,
+) {
+    setContent {
+        val baseDensity = LocalDensity.current
+        CompositionLocalProvider(
+            LocalLayoutDirection provides LayoutDirection.Rtl,
+            LocalDensity provides
+                Density(
+                    density = baseDensity.density,
+                    fontScale = fontScale,
+                ),
+        ) {
+            MahinTheme(darkTheme = darkTheme) {
+                ProvideReducedMotion(reducedMotion = true) {
+                    content()
+                }
+            }
+        }
+    }
+    waitForIdle()
+    captureScreenRoboImage(roborazziOptions = MahinRoborazzi.options)
 }

@@ -24,4 +24,20 @@ class SensitiveAnalyticsGuardTest {
     fun rejectsUnknownEventName() {
         SensitiveAnalyticsGuard.sanitize(AnalyticsEvent("period_started_today"))
     }
+
+    @Test(expected = IllegalStateException::class)
+    fun rejectsSymptomTagProperty() {
+        SensitiveAnalyticsGuard.sanitize(
+            AnalyticsEvent("log_category_opened", mapOf("symptom" to "headache")),
+        )
+    }
+
+    @Test
+    fun acceptsLogCategoryOpenedWithCoarseSurface() {
+        val event =
+            SensitiveAnalyticsGuard.sanitize(
+                AnalyticsEvent("log_category_opened", mapOf("surface" to "day_editor")),
+            )
+        assertThat(event.properties).containsEntry("surface", "day_editor")
+    }
 }

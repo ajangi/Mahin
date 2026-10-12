@@ -11,9 +11,9 @@ import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.domain.fertility.FertilityInsightEngineV1
 import dev.mahin.domain.fertility.FertilityInsightResult
 import dev.mahin.domain.fertility.TtcSignalDay
+import java.time.Clock
 import java.time.Duration
 import java.time.LocalDate
-import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -44,6 +44,7 @@ class TtcInsightsViewModel
         private val cycleRepository: CycleTrackingRepository,
         private val ttcRepository: TtcTrackingRepository,
         private val ttcPrivacyRepository: TtcPrivacyPreferencesRepository,
+        private val clock: Clock,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(TtcInsightsUiState())
         val uiState: StateFlow<TtcInsightsUiState> = _uiState.asStateFlow()
@@ -122,10 +123,10 @@ class TtcInsightsViewModel
         private fun calendarDayTicker(): Flow<LocalDate> =
             flow {
                 while (true) {
-                    emit(LocalDate.now())
-                    val now = LocalDateTime.now()
-                    val nextMidnight = now.toLocalDate().plusDays(1).atStartOfDay()
-                    val delayMs = Duration.between(now, nextMidnight).toMillis().coerceAtLeast(60_000L)
+                    val zonedNow = clock.instant().atZone(clock.zone)
+                    emit(zonedNow.toLocalDate())
+                    val nextMidnight = zonedNow.toLocalDate().plusDays(1).atStartOfDay(clock.zone)
+                    val delayMs = Duration.between(zonedNow, nextMidnight).toMillis().coerceAtLeast(60_000L)
                     delay(delayMs)
                 }
             }

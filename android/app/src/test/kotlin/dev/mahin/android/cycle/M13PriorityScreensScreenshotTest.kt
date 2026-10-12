@@ -132,23 +132,5 @@ class M13PriorityScreensScreenshotTest {
 private fun noopLogScreenActionsForScreenshot(): LogScreenActions =
     LogScreenActions(
         onDateSelected = {},
-        onToggleLoggingPeriod = {},
-        onFlowLevelSelected = {},
-        onToggleSymptom = {},
-        onNoteChange = {},
-        onSave = {},
-        onTogglePregnancySymptom = {},
-        onPregnancyWeightChange = {},
-        onPregnancyBpSystolicChange = {},
-        onPregnancyBpDiastolicChange = {},
-        ttcCallbacks =
-            TtcLogFormCallbacks(
-                onBbtChange = {},
-                onOvulationTestSelected = {},
-                onCervicalMucusSelected = {},
-                onIntercourseOptInChanged = {},
-                onIntercourseToggle = {},
-                onIntercourseProtectedSelected = {},
-                onPregnancyTestSelected = {},
-            ),
+        onOpenDayEditor = {},
     )

@@ -11,6 +11,7 @@ import dev.mahin.core.billing.BillingPurchaseReceipt
 import dev.mahin.core.billing.EntitlementApi
 import dev.mahin.core.billing.EntitlementApiResponse
 import dev.mahin.core.billing.EntitlementRepository
+import dev.mahin.core.common.FixedLocalDateClock
 import dev.mahin.core.config.FeatureFlagRepository
 import dev.mahin.core.config.MahinFeatureFlags
 import dev.mahin.core.config.MetaApi
@@ -21,19 +22,24 @@ import dev.mahin.core.database.entity.CycleProfileEntity
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
 import dev.mahin.core.datastore.AccountSessionRepository
 import dev.mahin.core.datastore.CachedEntitlement
+import dev.mahin.core.datastore.LoggingPreferencesRepository
 import dev.mahin.core.datastore.PregnancyTimerPreferencesRepository
 import dev.mahin.core.datastore.SubscriptionPreferencesRepository
 import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
+import dev.mahin.core.testing.MainDispatcherRule
 import dev.mahin.core.testing.TestHangWatchdogRule
 import dev.mahin.core.testing.ViewModelStoreTestHarness
 import dev.mahin.domain.subscription.EntitlementTier
 import java.time.LocalDate
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertFalse
@@ -41,6 +47,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.RuleChain
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -49,8 +56,22 @@ import org.robolectric.shadows.ShadowLooper
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class SettingsViewModelTest {
+    private val testDispatcher = StandardTestDispatcher()
+    private val mainDispatcherRule =
+        MainDispatcherRule(
+            dispatcher = testDispatcher,
+            beforeResetMain = {
+                releaseViewModels()
+                testDispatcher.scheduler.advanceUntilIdle()
+                ShadowLooper.idleMainLooper()
+            },
+        )
+
     @get:Rule
-    val testHangWatchdog: TestHangWatchdogRule = TestHangWatchdogRule()
+    val ruleChain: RuleChain =
+        RuleChain
+            .outerRule(TestHangWatchdogRule())
+            .around(mainDispatcherRule)
 
     private lateinit var database: MahinDatabase
     private lateinit var pregnancyRepository: PregnancyTrackingRepository
@@ -76,6 +97,8 @@ class SettingsViewModelTest {
     @After
     fun tearDown() {
         releaseViewModels()
+        testDispatcher.scheduler.advanceUntilIdle()
+        ShadowLooper.idleMainLooper()
         runBlocking(Dispatchers.IO) {
             withTimeout(5_000) {
                 SubscriptionPreferencesRepository(context).clear()
@@ -85,6 +108,7 @@ class SettingsViewModelTest {
     }
 
     private fun idle() {
+        testDispatcher.scheduler.advanceUntilIdle()
         ShadowLooper.idleMainLooper()
     }
 
@@ -101,8 +125,8 @@ class SettingsViewModelTest {
         withTimeout(timeoutMs) {
             while (true) {
                 if (condition()) return@withTimeout
+                testDispatcher.scheduler.advanceUntilIdle()
                 ShadowLooper.idleMainLooper()
-                delay(25)
             }
         }
     }
@@ -227,6 +251,9 @@ class SettingsViewModelTest {
         idle()
         assertFalse(viewModel.uiState.value.showPaywall)
         assertThat(billingAdapter.cancellationCause).isInstanceOf(CancellationException::class.java)
+        assertThat(billingAdapter.cancellationCause?.message).isEqualTo("paywall_dismissed")
+        assertThat(billingAdapter.warmUpJobCompleted).isTrue()
+        assertThat(viewModel.paywallWarmUpJobForTests()).isNull()
     }
 
     @Test
@@ -264,8 +291,8 @@ class SettingsViewModelTest {
         assertFalse(viewModel.uiState.value.showPaywall)
         assertThat(billingAdapter.startConnectionCount).isEqualTo(0)
         viewModel.openPaywall()
-        assertTrue(viewModel.uiState.value.showPaywall)
         idle()
+        assertTrue(viewModel.uiState.value.showPaywall)
         assertThat(billingAdapter.startConnectionCount).isEqualTo(1)
         viewModel.dismissPaywall()
         idle()
@@ -341,6 +368,8 @@ class SettingsViewModelTest {
                     billingAdapter = billingAdapter,
                     premiumBillingCoordinator = premiumCoordinator,
                     entitlementRepository = entitlementRepository,
+                    loggingPreferencesRepository = LoggingPreferencesRepository(context),
+                    localDateClock = FixedLocalDateClock(LocalDate.of(2025, 3, 1)),
                 ),
             ).also { heldViewModel = it }
     }
@@ -402,15 +431,17 @@ class SettingsViewModelTest {
 
     private class CancellableWarmUpBillingAdapter : CountingBillingAdapter() {
         var cancellationCause: CancellationException? = null
+        var warmUpJobCompleted = false
 
         override suspend fun startConnection() {
+            startConnectionCount++
             try {
-                while (true) {
-                    delay(1_000)
-                }
+                awaitCancellation()
             } catch (cancelled: CancellationException) {
                 cancellationCause = cancelled
                 throw cancelled
+            } finally {
+                warmUpJobCompleted = true
             }
         }
     }

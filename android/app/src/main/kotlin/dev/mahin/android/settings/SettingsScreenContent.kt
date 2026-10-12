@@ -1,5 +1,7 @@
 package dev.mahin.android.settings
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -8,8 +10,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -24,6 +28,7 @@ import dev.mahin.core.designsystem.component.MahinSettingsGroup
 import dev.mahin.core.designsystem.component.MahinShellSecondaryTopAppBar
 import dev.mahin.core.designsystem.component.MahinSurfaceCard
 import dev.mahin.core.designsystem.mahinTextStyle
+import dev.mahin.core.model.LogEditorCategory
 
 @Composable
 internal fun SettingsScreenContent(
@@ -103,6 +108,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.settingsGroups(
     callbacks: SettingsScreenCallbacks,
 ) {
     settingsCoreGroups(callbacks)
+    item {
+        SettingsLoggingLifestyleGroup(state = state, callbacks = callbacks)
+    }
     if (state.premiumActive || state.showPremiumPaywallEntry) {
         item {
             if (state.premiumActive) {
@@ -222,6 +230,68 @@ private fun androidx.compose.foundation.lazy.LazyListScope.settingsOptionalGroup
                 modifier = Modifier.padding(top = MahinSpacing.md),
             )
         }
+    }
+}
+
+@Composable
+private fun SettingsLoggingLifestyleGroup(
+    state: SettingsUiState,
+    callbacks: SettingsScreenCallbacks,
+) {
+    Text(
+        text = stringResource(R.string.settings_group_logging),
+        style = mahinTextStyle(MahinTypographyRole.Label),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = MahinSpacing.md),
+    )
+    SettingsLifestyleSwitchRow(
+        label = stringResource(R.string.day_editor_lifestyle_sleep),
+        checked = state.lifestyleSleepEnabled,
+        onCheckedChange = { callbacks.onLifestyleModuleToggle(LogEditorCategory.SLEEP, it) },
+        testTag = "settings_lifestyle_sleep",
+    )
+    SettingsLifestyleSwitchRow(
+        label = stringResource(R.string.day_editor_lifestyle_exercise),
+        checked = state.lifestyleExerciseEnabled,
+        onCheckedChange = { callbacks.onLifestyleModuleToggle(LogEditorCategory.EXERCISE, it) },
+        testTag = "settings_lifestyle_exercise",
+    )
+    SettingsLifestyleSwitchRow(
+        label = stringResource(R.string.day_editor_lifestyle_water),
+        checked = state.lifestyleWaterEnabled,
+        onCheckedChange = { callbacks.onLifestyleModuleToggle(LogEditorCategory.WATER, it) },
+        testTag = "settings_lifestyle_water",
+    )
+    SettingsLifestyleSwitchRow(
+        label = stringResource(R.string.day_editor_lifestyle_stress),
+        checked = state.lifestyleStressEnabled,
+        onCheckedChange = { callbacks.onLifestyleModuleToggle(LogEditorCategory.STRESS, it) },
+        testTag = "settings_lifestyle_stress",
+    )
+}
+
+@Composable
+private fun SettingsLifestyleSwitchRow(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    testTag: String,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = MahinSpacing.xs)
+                .testTag(testTag),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(text = label, style = MaterialTheme.typography.bodyLarge)
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            modifier = Modifier.testTag("${testTag}_switch"),
+        )
     }
 }
 

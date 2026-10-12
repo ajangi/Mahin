@@ -152,23 +152,85 @@ class CycleTrackingRepository
             end: LocalDate,
         ): List<PeriodDayEntity> = periodDayDao.getRange(start, end)
 
+        @Suppress("LongParameterList")
         suspend fun upsertDailyLog(
             date: LocalDate,
             moodTags: Set<String>,
             symptomTags: Set<String>,
             painSeverity: Int?,
+            painLocation: String? = null,
+            painNote: String? = null,
             note: String?,
+            medicationTags: Set<String> = emptySet(),
+            localCustomSymptomTags: Set<String> = emptySet(),
+            sleepLogged: Boolean = false,
+            exerciseLogged: Boolean = false,
+            waterGlasses: Int = 0,
+            stressLevel: Int? = null,
         ) {
-            val id = dailyLogDao.getForDate(date)?.id ?: UUID.randomUUID().toString()
+            val existing = dailyLogDao.getForDate(date)
+            val id = existing?.id ?: UUID.randomUUID().toString()
             dailyLogDao.upsert(
                 DailyLogEntity(
                     id = id,
                     logDate = date,
                     moodTags = moodTags.joinToString(","),
                     symptomTags = symptomTags.joinToString(","),
+                    medicationTags = medicationTags.joinToString(","),
+                    localCustomSymptomTags = localCustomSymptomTags.joinToString(","),
                     painSeverity = painSeverity,
+                    painLocation = painLocation,
+                    painNote = painNote,
                     note = note,
+                    sleepLogged = sleepLogged,
+                    exerciseLogged = exerciseLogged,
+                    waterGlasses = waterGlasses,
+                    stressLevel = stressLevel,
                     updatedAtEpochMs = System.currentTimeMillis(),
+                ),
+            )
+        }
+
+        suspend fun mergeAdjacentPeriods(
+            firstId: String,
+            secondId: String,
+        ) {
+            val first = periodDao.getById(firstId) ?: return
+            val second = periodDao.getById(secondId) ?: return
+            val firstEnd = first.endDate ?: first.startDate
+            if (!firstEnd.plusDays(1).equals(second.startDate)) return
+            val now = System.currentTimeMillis()
+            periodDao.upsert(
+                first.copy(
+                    endDate = second.endDate,
+                    updatedAtEpochMs = now,
+                ),
+            )
+            periodDao.deleteById(secondId)
+        }
+
+        suspend fun splitPeriodRecord(
+            recordId: String,
+            splitAfterDate: LocalDate,
+        ) {
+            val record = periodDao.getById(recordId) ?: return
+            val end = record.endDate ?: return
+            if (splitAfterDate.isBefore(record.startDate) || !splitAfterDate.isBefore(end)) return
+            val now = System.currentTimeMillis()
+            periodDao.upsert(
+                record.copy(
+                    endDate = splitAfterDate,
+                    updatedAtEpochMs = now,
+                ),
+            )
+            periodDao.upsert(
+                PeriodRecordEntity(
+                    id = UUID.randomUUID().toString(),
+                    startDate = splitAfterDate.plusDays(1),
+                    endDate = end,
+                    note = record.note,
+                    createdAtEpochMs = now,
+                    updatedAtEpochMs = now,
                 ),
             )
         }

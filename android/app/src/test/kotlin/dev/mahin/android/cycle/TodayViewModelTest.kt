@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import dev.mahin.core.common.FixedLocalDateClock
 import dev.mahin.core.database.MahinDatabase
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.entity.CycleProfileEntity
@@ -29,6 +30,8 @@ import org.robolectric.shadows.ShadowLooper
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class TodayViewModelTest {
+    private val fixedToday = LocalDate.of(2025, 6, 15)
+    private val localDateClock = FixedLocalDateClock(fixedToday)
     private lateinit var database: MahinDatabase
     private lateinit var cycleRepository: CycleTrackingRepository
     private lateinit var pregnancyRepository: PregnancyTrackingRepository
@@ -42,6 +45,7 @@ class TodayViewModelTest {
                 .inMemoryDatabaseBuilder(context, MahinDatabase::class.java)
                 .allowMainThreadQueries()
                 .build()
+        database.openHelper.writableDatabase
         cycleRepository = CycleTrackingRepository(database)
         pregnancyRepository = PregnancyTrackingRepository(database, PregnancyTimerPreferencesRepository(context))
     }
@@ -180,8 +184,16 @@ class TodayViewModelTest {
                     logDate = logDate,
                     moodTags = "شاد",
                     symptomTags = "خستگی",
+                    medicationTags = "",
+                    localCustomSymptomTags = "",
                     painSeverity = null,
+                    painLocation = null,
+                    painNote = null,
                     note = null,
+                    sleepLogged = false,
+                    exerciseLogged = false,
+                    waterGlasses = 0,
+                    stressLevel = null,
                     updatedAtEpochMs = 0L,
                 ),
             )
@@ -222,7 +234,7 @@ class TodayViewModelTest {
 
     private fun createViewModel(): TodayViewModel =
         viewModelStore.hold(
-            TodayViewModel(cycleRepository, pregnancyRepository, notificationPrefs()),
+            TodayViewModel(cycleRepository, pregnancyRepository, notificationPrefs(), localDateClock),
         )
 
     private fun notificationPrefs(): NotificationPreferencesRepository {

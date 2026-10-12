@@ -8,16 +8,17 @@ import org.junit.runner.Description
 import org.junit.runners.model.Statement
 
 /**
- * Daemon watchdog: if the test body is still running after [timeoutMs], dumps all thread stacks and
- * interrupts the test thread so Gradle fails before the 30-minute task timeout.
+ * Daemon watchdog: if the test body is still running after [timeoutMs], dumps all thread stacks to
+ * stderr and interrupts the test thread. It does **not** end tests blocked on locks — hung tests
+ * may still run until the Gradle task timeout.
  *
  * **Limitation:** [Thread.interrupt] does not unblock threads stuck in
  * [java.util.concurrent.locks.ReentrantLock.lock] (e.g. Room/SQLite teardown deadlocks). The
- * watchdog is for **diagnostics** (stack dump to stderr/CI stdout) and marking the test thread
- * interrupted; it does not forcibly release locks.
+ * watchdog is for **diagnostics** (stack dump) and marking the test thread interrupted; it does
+ * not forcibly release locks.
  *
- * Pair with Gradle `testLogging { showStandardStreams = true }` on the module under test so dumps
- * appear in CI logs.
+ * On CI, set env `MAHIN_TEST_VERBOSE_STREAMS=true` (see `app/build.gradle.kts`) so stderr dumps
+ * are included in the test log; otherwise they still go to stderr but may be filtered from reports.
  */
 class TestHangWatchdogRule(
     private val timeoutMs: Long = 60_000L,
@@ -66,10 +67,7 @@ class TestHangWatchdogRule(
                 }
             }
             out.flush()
-            val dump = writer.toString()
-            // Stderr and stdout: Gradle surfaces both when showStandardStreams is enabled.
-            System.err.println(dump)
-            System.out.println(dump)
+            System.err.println(writer.toString())
         }
     }
 }

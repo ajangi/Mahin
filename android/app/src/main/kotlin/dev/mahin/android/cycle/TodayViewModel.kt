@@ -3,6 +3,7 @@ package dev.mahin.android.cycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.mahin.core.common.LocalDateClock
 import dev.mahin.core.database.cycle.CycleDashboard
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.entity.DailyLogEntity
@@ -34,6 +35,7 @@ class TodayViewModel
         private val repository: CycleTrackingRepository,
         private val pregnancyRepository: PregnancyTrackingRepository,
         private val notificationPreferencesRepository: NotificationPreferencesRepository,
+        private val localDateClock: LocalDateClock,
     ) : ViewModel() {
         private val converter = PersianCivilDateConverter
         private val _uiState = MutableStateFlow(TodayUiState())
@@ -42,16 +44,17 @@ class TodayViewModel
         init {
             viewModelScope.launch {
                 combine(
-                    repository.observeDashboard(),
+                    repository.observeDashboard(localDateClock.today()),
                     repository.observePeriods(),
                 ) { dashboard, periods ->
                     val anchor = resolveAnchor(periods, dashboard)
                     val snapshot = buildCycleSnapshot(dashboard, periods, anchor)
                     Triple(dashboard, periods, snapshot)
                 }.collect { (dashboard, periods, snapshot) ->
-                    val now = LocalDate.now()
+                    val now = localDateClock.today()
                     _uiState.update { state ->
                         state.copy(
+                            today = now,
                             dashboard = dashboard,
                             todaySnapshot = snapshot,
                             loggedSummary = dashboard.todayLog?.let { TodayLoggedSummaryMapper.fromEntity(it) },
@@ -78,7 +81,7 @@ class TodayViewModel
                             PregnancyDatingEngineV1.status(
                                 lmpDate = it.lmpDate,
                                 clinicalEddDate = it.clinicalEddDate,
-                                asOfDate = LocalDate.now(),
+                                asOfDate = localDateClock.today(),
                             )
                         }
                     val learnVisible =
@@ -89,6 +92,7 @@ class TodayViewModel
                         }
                     _uiState.update {
                         it.copy(
+                            today = localDateClock.today(),
                             reproductiveMode = mode,
                             pregnancyStatus = if (mode == ReproductiveMode.PREGNANT) status else null,
                             pregnancySnapshot =
@@ -99,8 +103,8 @@ class TodayViewModel
                                 },
                             postPregnancyTransition = mode == ReproductiveMode.POST_PREGNANCY_TRANSITION,
                             postTransitionLearnLinkVisible = learnVisible,
-                            weekStrip = buildWeekStrip(LocalDate.now()),
-                            weekStripWeeks = buildWeekStripWeeks(LocalDate.now()),
+                            weekStrip = buildWeekStrip(localDateClock.today()),
+                            weekStripWeeks = buildWeekStripWeeks(localDateClock.today()),
                         )
                     }
                 }
@@ -108,7 +112,7 @@ class TodayViewModel
             viewModelScope.launch {
                 combine(
                     notificationPreferencesRepository.observeSnapshot(),
-                    repository.observeDashboard(),
+                    repository.observeDashboard(localDateClock.today()),
                     pregnancyRepository.observeProfile(),
                     pregnancyRepository.observeActivePregnancy(),
                 ) { prefs, dashboard, profile, pregnancy ->
@@ -171,7 +175,7 @@ class TodayViewModel
             anchor: LocalDate?,
         ) = TodaySnapshotUseCase.fromCycle(
             CycleTodaySnapshotInput(
-                today = LocalDate.now(),
+                today = localDateClock.today(),
                 prediction = dashboard.prediction,
                 periodAnchorStart = anchor,
                 currentPeriod = resolveCurrentPeriod(periods, anchor),
@@ -203,7 +207,7 @@ class TodayViewModel
             }
 
         private fun weekDaysForCenter(center: LocalDate): List<TodayWeekDay> {
-            val today = LocalDate.now()
+            val today = localDateClock.today()
             return (0..6).map { offset ->
                 val date = center.minusDays(3).plusDays(offset.toLong())
                 TodayWeekDay(
@@ -287,11 +291,11 @@ class TodayViewModel
             val prediction = dashboard?.prediction ?: return DayMarkers()
             val logDates =
                 buildSet {
-                    if (dashboard.todayLog != null) add(LocalDate.now())
+                    if (dashboard.todayLog != null) add(localDateClock.today())
                 }
             return CycleDayMarkersMapper.forDate(
                 date = date,
-                today = LocalDate.now(),
+                today = localDateClock.today(),
                 periods = periods,
                 prediction = prediction,
                 datesWithLogEntries = logDates,

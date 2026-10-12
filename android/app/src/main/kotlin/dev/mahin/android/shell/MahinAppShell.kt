@@ -1,6 +1,8 @@
 package dev.mahin.android.shell
 
 import androidx.annotation.VisibleForTesting
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -12,6 +14,9 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.EntryPointAccessors
+import dev.mahin.android.cycle.editor.DayEditorCoordinator
+import dev.mahin.android.cycle.editor.DayEditorHost
+import dev.mahin.android.cycle.editor.DayEditorSession
 import dev.mahin.android.navigation.AppNavigationEntryPoint
 import dev.mahin.android.navigation.MahinTopLevelDestination
 import java.time.LocalDate
@@ -35,11 +40,16 @@ fun MahinAppShell(
 
 @VisibleForTesting
 @Composable
+@Suppress("LongParameterList")
 internal fun MahinAppShellWithNavigationOverride(
     shellNavigationStateOverride: ShellNavigationState,
     modifier: Modifier = Modifier,
     onLocalDataErased: () -> Unit = {},
     screenOverrides: MahinShellScreenOverrides = MahinShellScreenOverrides.Default,
+    dayEditorOverlay: @Composable (DayEditorSession?, () -> Unit) -> Unit = { session, onDismiss ->
+        DayEditorHost(session = session, onDismiss = onDismiss)
+    },
+    dayEditorCoordinatorOverride: DayEditorCoordinator? = null,
 ) {
     MahinAppShellContent(
         shellState = shellNavigationStateOverride,
@@ -47,16 +57,23 @@ internal fun MahinAppShellWithNavigationOverride(
         modifier = modifier,
         onLocalDataErased = onLocalDataErased,
         screenOverrides = screenOverrides,
+        dayEditorOverlay = dayEditorOverlay,
+        dayEditorCoordinatorOverride = dayEditorCoordinatorOverride,
     )
 }
 
 @Composable
+@Suppress("LongParameterList")
 internal fun MahinAppShellContent(
     shellState: ShellNavigationState,
     navController: NavHostController,
     modifier: Modifier = Modifier,
     onLocalDataErased: () -> Unit = {},
     screenOverrides: MahinShellScreenOverrides = MahinShellScreenOverrides.Default,
+    dayEditorOverlay: @Composable (DayEditorSession?, () -> Unit) -> Unit = { session, onDismiss ->
+        DayEditorHost(session = session, onDismiss = onDismiss)
+    },
+    dayEditorCoordinatorOverride: DayEditorCoordinator? = null,
 ) {
     val openHistory: () -> Unit = {
         navController.navigate(MahinTopLevelDestination.HISTORY_ROUTE) { launchSingleTop = true }
@@ -68,12 +85,16 @@ internal fun MahinAppShellContent(
         navController.navigate(MahinTopLevelDestination.Calendar.route) { launchSingleTop = true }
     }
     val context = LocalContext.current.applicationContext
-    val logTabDateRequest =
+    val navigationEntryPoint =
         remember(context) {
-            EntryPointAccessors
-                .fromApplication(context, AppNavigationEntryPoint::class.java)
-                .logTabDateRequest()
+            EntryPointAccessors.fromApplication(context, AppNavigationEntryPoint::class.java)
         }
+    val logTabDateRequest = remember(navigationEntryPoint) { navigationEntryPoint.logTabDateRequest() }
+    val dayEditorCoordinator =
+        dayEditorCoordinatorOverride
+            ?: remember(navigationEntryPoint) { navigationEntryPoint.dayEditorCoordinator() }
+    val dayEditorSession by dayEditorCoordinator.session.collectAsStateWithLifecycle()
+    val openDayEditor: (LocalDate) -> Unit = { date -> dayEditorCoordinator.open(date) }
     val openLogTab: (LocalDate?) -> Unit = { date ->
         if (date != null) {
             logTabDateRequest.request(date)
@@ -83,6 +104,9 @@ internal fun MahinAppShellContent(
             launchSingleTop = true
             restoreState = true
         }
+        if (date != null) {
+            dayEditorCoordinator.open(date)
+        }
     }
     val openPlan: () -> Unit = {
         navController.navigate(MahinTopLevelDestination.Plan.route) { launchSingleTop = true }
@@ -91,22 +115,25 @@ internal fun MahinAppShellContent(
         navController.navigate(MahinTopLevelDestination.PregnancyHub.route) { launchSingleTop = true }
     }
 
-    MahinShellLayout(
-        shellState = shellState,
-        navController = navController,
-        modifier = modifier,
-        navHost = {
-            MahinShellNavHost(
-                navController = navController,
-                onLocalDataErased = onLocalDataErased,
-                onOpenHistory = openHistory,
-                onOpenLearn = openLearn,
-                onOpenCycleCalendar = openCycleCalendar,
-                onOpenLogTab = openLogTab,
-                onOpenPlan = openPlan,
-                onOpenPregnancyTab = openPregnancyTab,
-                screenOverrides = screenOverrides,
-            )
-        },
-    )
+    Box(modifier = modifier.fillMaxSize()) {
+        MahinShellLayout(
+            shellState = shellState,
+            navController = navController,
+            navHost = {
+                MahinShellNavHost(
+                    navController = navController,
+                    onLocalDataErased = onLocalDataErased,
+                    onOpenHistory = openHistory,
+                    onOpenLearn = openLearn,
+                    onOpenCycleCalendar = openCycleCalendar,
+                    onOpenLogTab = openLogTab,
+                    onOpenDayEditor = openDayEditor,
+                    onOpenPlan = openPlan,
+                    onOpenPregnancyTab = openPregnancyTab,
+                    screenOverrides = screenOverrides,
+                )
+            },
+        )
+        dayEditorOverlay(dayEditorSession, dayEditorCoordinator::dismiss)
+    }
 }

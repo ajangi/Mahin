@@ -31,9 +31,10 @@ import java.time.LocalDate
 @Composable
 fun PregnancyStartSheetContent(
     onConfirm: (lmpDate: LocalDate, clinicalEdd: LocalDate?) -> Unit,
+    referenceDate: LocalDate,
     modifier: Modifier = Modifier,
 ) {
-    var lmpJalali by remember { mutableStateOf(PersianCivilDateConverter.toJalali(LocalDate.now().minusWeeks(8))) }
+    var lmpJalali by remember { mutableStateOf(PersianCivilDateConverter.toJalali(referenceDate.minusWeeks(8))) }
     var clinicalJalali by remember { mutableStateOf<JalaliDate?>(null) }
     var includeClinical by remember { mutableStateOf(false) }
     Column(modifier = modifier) {
@@ -105,12 +106,14 @@ fun PregnancyStartSheet(
     visible: Boolean,
     onDismiss: () -> Unit,
     onConfirm: (lmpDate: LocalDate, clinicalEdd: LocalDate?) -> Unit,
+    referenceDate: LocalDate,
 ) {
     if (!visible) return
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         PregnancyStartSheetContent(
             onConfirm = onConfirm,
+            referenceDate = referenceDate,
             modifier =
                 Modifier
                     .verticalScroll(rememberScrollState())

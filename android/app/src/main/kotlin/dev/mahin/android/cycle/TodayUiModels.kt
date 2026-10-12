@@ -24,6 +24,7 @@ data class TodayLoggedSummary(
 )
 
 data class TodayUiState(
+    val today: LocalDate = LocalDate.EPOCH,
     val reproductiveMode: dev.mahin.core.model.ReproductiveMode =
         dev.mahin.core.model.ReproductiveMode.CYCLE_TRACKING,
     val dashboard: dev.mahin.core.database.cycle.CycleDashboard? = null,

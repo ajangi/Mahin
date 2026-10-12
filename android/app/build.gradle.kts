@@ -137,9 +137,17 @@ tasks.withType<Test>().configureEach {
     // Robolectric + Compose screenshot tests deadlock when forked in parallel on CI.
     maxParallelForks = 1
     timeout.set(Duration.ofMinutes(30))
+    val verboseTestStreams =
+        providers
+            .environmentVariable("MAHIN_TEST_VERBOSE_STREAMS")
+            .orElse("false")
+            .map { it.equals("true", ignoreCase = true) }
     testLogging {
         events("started", "failed")
-        showStandardStreams = true
+        if (verboseTestStreams.get()) {
+            events("standard_error")
+        }
+        showStandardStreams = verboseTestStreams.get()
     }
     if (name == "testBenchmarkUnitTest") {
         // Benchmark build type is for macrobenchmark APK assembly only; Robolectric tests target debug.
@@ -155,6 +163,7 @@ tasks.withType<Test>().configureEach {
             excludeTestsMatching("dev.mahin.android.golden.M14bIconSheetGoldenTest")
             excludeTestsMatching("dev.mahin.android.golden.M14cShellGoldenTest")
             excludeTestsMatching("dev.mahin.android.golden.M15FullScreenGoldenTest")
+            excludeTestsMatching("dev.mahin.android.golden.M16FullScreenGoldenTest")
             excludeTestsMatching("dev.mahin.android.shell.MahinShellNavigationTest")
             excludeTestsMatching("dev.mahin.android.shell.ShellModeTransitionTest")
             excludeTestsMatching("dev.mahin.android.settings.SettingsScreenContentTest")
@@ -173,6 +182,14 @@ tasks.withType<Test>().configureEach {
             excludeTestsMatching("dev.mahin.android.pregnancy.PregnancyHubScreenScrollTest")
             excludeTestsMatching("dev.mahin.android.pregnancy.PregnancyStartSheetScrollTest")
             excludeTestsMatching("dev.mahin.android.assistant.AssistantSettingsScreenTest")
+            excludeTestsMatching("dev.mahin.android.cycle.TodayDayEditorIntegrationTest")
+            excludeTestsMatching("dev.mahin.android.cycle.LoggingLifestyleEnableTest")
+            excludeTestsMatching("dev.mahin.android.cycle.CalendarPeriodManagementUiTest")
+            excludeTestsMatching("dev.mahin.android.cycle.editor.DayEditorOptInTest")
+            excludeTestsMatching("dev.mahin.android.cycle.editor.DayEditorManageCategoriesPanelTest")
+            excludeTestsMatching("dev.mahin.android.cycle.editor.DayEditorCustomSymptomUiTest")
+            excludeTestsMatching("dev.mahin.android.cycle.editor.DayEditorPainStepperTest")
+            excludeTestsMatching("dev.mahin.android.cycle.CalendarDaySheetEditorTest")
         }
     }
 }

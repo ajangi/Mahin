@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.mahin.core.common.LocalDateClock
 import dev.mahin.core.content.ContentRepository
 import dev.mahin.core.database.entity.PregnancyRecordEntity
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
@@ -14,7 +15,6 @@ import dev.mahin.core.model.PregnancyOutcome
 import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.domain.pregnancy.PregnancyDatingEngineV1
 import dev.mahin.domain.pregnancy.PregnancyStatusSnapshot
-import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -52,6 +52,7 @@ class PregnancyHubViewModel
         private val repository: PregnancyTrackingRepository,
         private val timerPreferences: PregnancyTimerPreferencesRepository,
         private val contentRepository: ContentRepository,
+        private val localDateClock: LocalDateClock,
         savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
         private var lastFetchedWeek: Int? = null
@@ -82,7 +83,7 @@ class PregnancyHubViewModel
                             PregnancyDatingEngineV1.status(
                                 lmpDate = it.lmpDate,
                                 clinicalEddDate = it.clinicalEddDate,
-                                asOfDate = LocalDate.now(),
+                                asOfDate = localDateClock.today(),
                             )
                         }
                     val kickSessionId =

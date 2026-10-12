@@ -16,8 +16,16 @@ class TodayLoggedSummaryMapperTest {
                 logDate = LocalDate.now(),
                 symptomTags = "خستگی,سردرد",
                 moodTags = "آرام",
+                medicationTags = "",
+                localCustomSymptomTags = "",
                 painSeverity = null,
+                painLocation = null,
+                painNote = null,
                 note = null,
+                sleepLogged = false,
+                exerciseLogged = false,
+                waterGlasses = 0,
+                stressLevel = null,
                 updatedAtEpochMs = 0L,
             )
         val summary = TodayLoggedSummaryMapper.fromEntity(entity)

@@ -57,6 +57,7 @@ fun SettingsScreen(
                 visible = state.showPregnancyStartSheet,
                 onDismiss = viewModel::dismissPregnancyStartSheet,
                 onConfirm = viewModel::confirmPregnancyStart,
+                referenceDate = state.referenceToday,
             )
             SettingsScreenContent(
                 state = state,
@@ -73,6 +74,7 @@ fun SettingsScreen(
                         onOpenHistory = onOpenHistory,
                         onResumeCycle = viewModel::resumeCycleTracking,
                         onResumeTtc = viewModel::resumeTtc,
+                        onLifestyleModuleToggle = viewModel::setLifestyleModuleEnabled,
                     ),
                 modifier = modifier,
             )

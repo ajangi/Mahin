@@ -27,25 +27,7 @@ import org.robolectric.annotation.GraphicsMode
 private fun noopLogScreenActions(): LogScreenActions =
     LogScreenActions(
         onDateSelected = {},
-        onToggleLoggingPeriod = {},
-        onFlowLevelSelected = {},
-        onToggleSymptom = {},
-        onNoteChange = {},
-        onSave = {},
-        onTogglePregnancySymptom = {},
-        onPregnancyWeightChange = {},
-        onPregnancyBpSystolicChange = {},
-        onPregnancyBpDiastolicChange = {},
-        ttcCallbacks =
-            TtcLogFormCallbacks(
-                onBbtChange = {},
-                onOvulationTestSelected = {},
-                onCervicalMucusSelected = {},
-                onIntercourseOptInChanged = {},
-                onIntercourseToggle = {},
-                onIntercourseProtectedSelected = {},
-                onPregnancyTestSelected = {},
-            ),
+        onOpenDayEditor = {},
     )
 
 @RunWith(RobolectricTestRunner::class)

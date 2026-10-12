@@ -3,6 +3,7 @@ package dev.mahin.android.pregnancy
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.mahin.core.common.LocalDateClock
 import dev.mahin.core.database.entity.PregnancyAppointmentEntity
 import dev.mahin.core.database.entity.PregnancyRecordEntity
 import dev.mahin.core.database.pregnancy.PregnancyAppointmentInput
@@ -14,7 +15,6 @@ import dev.mahin.core.model.PregnancyAppointmentType
 import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.core.notifications.ReminderCoordinator
 import dev.mahin.domain.reminders.ReminderCategory
-import java.time.LocalDate
 import java.time.ZoneId
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,7 +34,7 @@ data class PregnancyAppointmentsUiState(
     val appointments: List<PregnancyAppointmentEntity> = emptyList(),
     val newAppointmentTitle: String = "",
     val newAppointmentType: PregnancyAppointmentType = PregnancyAppointmentType.CLINICIAN_VISIT,
-    val newAppointmentJalali: JalaliDate = PersianCivilDateConverter.toJalali(LocalDate.now()),
+    val newAppointmentJalali: JalaliDate,
 )
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -45,8 +45,15 @@ class PregnancyAppointmentsViewModel
         private val repository: PregnancyTrackingRepository,
         private val notificationPreferencesRepository: NotificationPreferencesRepository,
         private val reminderCoordinator: ReminderCoordinator,
+        private val localDateClock: LocalDateClock,
     ) : ViewModel() {
-        private val _uiState = MutableStateFlow(PregnancyAppointmentsUiState())
+        private val _uiState =
+            MutableStateFlow(
+                PregnancyAppointmentsUiState(
+                    newAppointmentJalali =
+                        PersianCivilDateConverter.toJalali(localDateClock.today()),
+                ),
+            )
         val uiState: StateFlow<PregnancyAppointmentsUiState> = _uiState.asStateFlow()
 
         init {

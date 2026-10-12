@@ -175,7 +175,7 @@ internal fun TodayScreenContent(
                             item {
                                 TodayQuickLogRow(
                                     showTtcTest = state.reproductiveMode == ReproductiveMode.TRYING_TO_CONCEIVE,
-                                    onQuickLog = { actions.onOpenLogForDate(LocalDate.now()) },
+                                    onQuickLog = { actions.onOpenLogForDate(state.today) },
                                 )
                             }
                             state.loggedSummary?.takeIf { it.chips.isNotEmpty() }?.let { summary ->
@@ -337,13 +337,16 @@ private fun TodayPregnancyHero(
         )
     MahinSurfaceCard(modifier = Modifier.padding(vertical = MahinSpacing.sm)) {
         Column {
-            val weekProgress = (hero.gestationalWeeks * 7 + hero.gestationalDays).toFloat() / hero.totalGestationalDays
+            val gestationalDay = hero.gestationalWeeks * 7 + hero.gestationalDays
+            val totalDays = hero.totalGestationalDays.coerceAtLeast(1)
+            val weekProgress = gestationalDay.toFloat() / totalDays
+            val markerFraction = TodayPregnancyHeroMapper.todayMarkerFraction(hero)
             MahinCycleProgressRing(
                 arcs = TodayPregnancyRingMapper.weekArcs(hero),
                 progressFraction = weekProgress.coerceIn(0f, 1f),
                 trackColor = TodayCycleHeroMapper.trackColor(),
                 progressColor = MaterialTheme.colorScheme.secondary,
-                todayMarkerFraction = weekProgress.coerceIn(0f, 1f),
+                todayMarkerFraction = markerFraction,
                 todayMarkerColor = MaterialTheme.colorScheme.secondary,
                 contentDescription = gaLabel,
             ) {
