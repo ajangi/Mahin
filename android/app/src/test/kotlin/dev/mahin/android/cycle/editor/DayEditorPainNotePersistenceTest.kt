@@ -9,7 +9,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import org.robolectric.shadows.ShadowLooper
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
@@ -26,7 +25,7 @@ class DayEditorPainNotePersistenceTest {
         runBlocking {
             viewModel.openDate(day)
             viewModel.setPain(PainLocation.HEAD, 5)
-            awaitUntil { viewModel.uiState.value.painSeverity == 5 }
+            awaitDailyLogOnMain { viewModel.uiState.value.painSeverity == 5 }
         }
     }
 
@@ -39,19 +38,7 @@ class DayEditorPainNotePersistenceTest {
     fun setPainNote_persistsToDailyLog() {
         runBlocking {
             viewModel.setPainNote("درد شدید")
-            awaitUntil { harness.dailyLogFor(day)?.painNote == "درد شدید" }
+            awaitDailyLogOnMain { harness.dailyLogFor(day)?.painNote == "درد شدید" }
         }
-    }
-
-    private suspend fun awaitUntil(
-        timeoutMs: Long = 5_000,
-        condition: () -> Boolean,
-    ) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            if (condition()) return
-            ShadowLooper.idleMainLooper()
-        }
-        throw AssertionError("Condition not met within ${timeoutMs}ms")
     }
 }
