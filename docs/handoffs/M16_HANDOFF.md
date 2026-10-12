@@ -1,51 +1,40 @@
-# M16 Handoff — Logging experience overhaul (Gatekeeper Round 5)
+# M16 Handoff — Logging experience overhaul
 
 **Milestone:** M16  
-**Status:** PR [#39](https://github.com/ajangi/Mahin/pull/39) — head `45226a5` — CI **green** ([38183318983](https://github.com/ajangi/Mahin/actions/runs/38183318983), android ~24m 24s)  
+**Status:** **Accepted** — **2026-10-12**; implementation [PR #39](https://github.com/ajangi/Mahin/pull/39) → squash-merge `32a2f5c`  
 **Next milestone:** **M17** only
 
-## Gatekeeper Round 5 — per-item evidence
+## Accepted decisions
 
-| # | Item | Status | Evidence |
-|---|------|--------|----------|
-| 1 | BBT undo snapshot from DB value (not stale `bbtInput`) | Met | `onBbtChange`: `saveMutex.withLock` → read `existing` → `captureUndo()` → `lastUndo.copy(bbtInput = existing?.toString().orEmpty())` → `persistTtcLogInMutex` |
-| 2 | Rapid BBT typing regression test | Met | `undo_restoresBbtAfterRapidChangesWithoutWaitingBetweenCalls` |
-| 3 | `DayEditorViewModelUndoTest` stability | Met | 20× local `./gradlew :app:testDebugUnitTest --tests dev.mahin.android.cycle.editor.DayEditorViewModelUndoTest --rerun-tasks` → **PASS** |
-| 4 | Manage-categories reorder a11y | Met | `day_editor_category_move_earlier` / `day_editor_category_move_later` on ↑/↓ `IconButton`s in `DayEditorManageCategoriesPanel` |
-| 5 | Sexual opt-in golden re-record (Round 4 follow-up) | Met | **3** PNGs re-recorded (`light_scale10` unchanged); md5s below |
-| 6 | `DayEditorManageCategoriesPanelTest` release exclusion | Met | `app/build.gradle.kts` `testReleaseUnitTest` excludes `DayEditorManageCategoriesPanelTest` (Robolectric Compose crash on release) |
+- **(a)** Custom symptoms are stored local-only in `daily_log.localCustomSymptomTags`, never in `symptomTags`, sync or export; whether they ever sync or export is an open owner decision.
+- **(b)** No production sync wiring in M16.
+- **(c)** Sexual activity is opt-in, can be disabled, and existing entries are kept.
+- **(d)** Most-used-first ordering keeps pinned categories first and derives counts from local Room logs when the editor opens.
+- **(e)** Compose and Robolectric editor tests may be excluded from release unit tests but must run in debug; non-Compose tests may not be excluded.
 
-### CI history (accurate)
+## Implementation notes
 
-| Tip | Run | Android job | Result |
-|-----|-----|-------------|--------|
-| `70da805` | [38179611519](https://github.com/ajangi/Mahin/actions/runs/38179611519) | ~16m 41s | Green |
-| `77b5ac1` | [38180817859](https://github.com/ajangi/Mahin/actions/runs/38180817859) | — | **Red** — flaky `DayEditorViewModelUndoTest.undo_restoresBbtInDatabase` (stale BBT undo snapshot; fixed in Round 5) |
-| `45226a5` | [38183318983](https://github.com/ajangi/Mahin/actions/runs/38183318983) | ~24m 24s | Green |
+- `DayEditorViewModel` undo for BBT reads the stored value under `saveMutex` before persisting so rapid typing restores the correct prior temperature.
+- M16 full-screen Roborazzi goldens (`M16FullScreenGoldenTest`) cover cycle, TTC, pregnancy, manage-categories, and sexual opt-in flows (light/dark × scale 1.0/1.3).
+- `DayEditorManageCategoriesPanelTest` is excluded from `:app:testReleaseUnitTest` (Robolectric Compose on release); it runs in debug.
 
-## Sexual opt-in golden MD5s
+## Limitations
 
-| PNG | MD5 | Re-recorded in Round 4/5 |
-|-----|-----|-------------------------|
-| `editor_sexualOptIn_light_scale10.png` | `748f38affc1093c62e9689de10d30b41` | No (unchanged) |
-| `editor_sexualOptIn_light_scale13.png` | `f6ba7e0a44e231af4117046bc0c09885` | Yes |
-| `editor_sexualOptIn_dark_scale10.png` | `fe26c76f538d872bfb2ae6d46d0827a7` | Yes |
-| `editor_sexualOptIn_dark_scale13.png` | `7912334f85e99f096fdc8bcab6724ff1` | Yes |
+- **Single undo step** snapshots the whole editor UI state (not per-field); a fast edit to another field can be reverted together with the last change.
+- **Room v7** schema export hash changed during M16; dev installs that migrated on an earlier `7.json` identity should reinstall or clear app data.
+- **Today day sheet** still uses `ModalBottomSheet`; calendar tab retains the M15 shared-element overlay where active.
+- **`testReleaseUnitTest`** excludes Robolectric Compose UI classes that crash or hang on release (editor panel tests only; domain and non-Compose tests are not excluded).
+- **Vitals autosave** (BBT, pregnancy weight/BP) persists on valid input without an explicit debounce layer; add debounce in a follow-up if typing performance or undo churn becomes an issue.
+- The **GitHub repository is public**; there is **no LICENSE file** in the tree yet — license choice remains an **owner** decision.
 
-## Commands / results (local, Round 5)
+## M17 carry-overs
 
-```bash
-cd android && for i in $(seq 1 20); do
-  ./gradlew :app:testDebugUnitTest \
-    --tests 'dev.mahin.android.cycle.editor.DayEditorViewModelUndoTest' \
-    --rerun-tasks -q || exit 1
-done
-# 20× PASS
-```
-
-## Schema note (v7 reinstall)
-
-Room schema export **`7.json` MD5:** `b94ab31bd25e8fe2b2745f717f96fdfd`. Dev installs that migrated on a **previous** `7.json` hash should reinstall or clear app data.
+- Undo snapshots capture the whole editor UI state (a fast edit to another field can be reverted).
+- `TodayDayEditorIntegrationTest` timeouts were raised, so watch for flakiness.
+- The `7.json` hash changed before release, so dev installs need a reinstall.
+- Debounce vitals autosave, if not done in M16.
+- The `log_category_opened` analytics event is allow-listed but never emitted.
+- **From M15 (still deferred):** component goldens and a tighter Roborazzi tolerance; review release-test exclusions (`app/build.gradle.kts`); align the Today day sheet with the calendar overlay; decide on redundant per-cell `invisibleToUser` when column `clearAndSetSemantics` is present; move `colorToHex` callers to composite-first usage consistently; changelog note for **`ringSize`** rename on `MahinCycleProgressRing`; baseline profiles; **`TestFailFastTimeoutRule`** reintroduction only with a non–main-looper timeout strategy; add `popUpTo` / `saveState` to Plan and Pregnancy navigation; make the benchmark helper **fail on timeout**.
 
 ## Next milestone
 
