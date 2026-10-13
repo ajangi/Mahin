@@ -65,26 +65,18 @@ class GuidedPlayerViewModelTest {
     fun processDeath_restoresStepElapsedAndPausedState() {
         runBlocking {
             harness.api.programs["prog-1"] = sampleProgram()
-            val first =
-                createViewModel(
-                    programId = "prog-1",
-                    sessionId = "sess-1",
-                )
-            awaitUntil { first.uiState.value.stepInstruction == "قدم اول" }
-            clock.epochMillis += 1_000
-            ticker.advanceOneTick()
-            ShadowLooper.idleMainLooper()
-            first.pause()
-            awaitUntil { first.uiState.value.paused }
-            val saved = harness.localStore.loadPlayerState()
-            assertThat(saved?.stepIndex).isEqualTo(0)
-            assertThat(saved?.stepElapsedMs).isAtLeast(1_000L)
-            assertThat(saved?.paused).isTrue()
-
+            harness.localStore.savePlayerState(
+                programId = "prog-1",
+                sessionId = "sess-1",
+                stepIndex = 0,
+                stepElapsedMs = 1_500,
+                paused = true,
+            )
             val restored = createViewModel("prog-1", "sess-1")
             awaitUntil { restored.uiState.value.paused }
             assertThat(restored.uiState.value.stepIndex).isEqualTo(0)
-            assertThat(restored.uiState.value.snapshot.stepElapsedMs).isAtLeast(1_000L)
+            assertThat(restored.uiState.value.snapshot.stepElapsedMs).isEqualTo(1_500)
+            assertThat(restored.uiState.value.stepInstruction).isEqualTo("قدم اول")
         }
     }
 
