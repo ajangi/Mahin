@@ -150,7 +150,7 @@ class DayEditorViewModelLogPortedTest {
             awaitUntil { viewModel.uiState.value.intercourseLogged }
             assertThat(viewModel.uiState.value.sexualActivityEnabled).isFalse()
             viewModel.setNote("یادداشت")
-            awaitUntil { harness.dailyLogFor(day)?.note == "یادداشت" }
+            awaitDailyLogOnMain { harness.dailyLogFor(day)?.note == "یادداشت" }
             val stored = harness.ttcRepository.getTtcLogForDate(day)
             assertThat(stored?.intercourseLogged).isTrue()
             assertThat(stored?.intercourseProtected).isTrue()

@@ -7,6 +7,7 @@ import dev.mahin.core.common.FixedLocalDateClock
 import dev.mahin.core.database.MahinDatabase
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.entity.CycleProfileEntity
+import dev.mahin.core.database.entity.DailyLogEntity
 import dev.mahin.core.database.logging.CustomSymptomTagRepository
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
 import dev.mahin.core.database.ttc.TtcTrackingRepository
@@ -20,7 +21,6 @@ import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.core.testing.ViewModelStoreTestHarness
 import java.time.LocalDate
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.robolectric.shadows.ShadowLooper
 
@@ -37,9 +37,9 @@ internal class DayEditorTestHarness private constructor(
     private val viewModelStore: ViewModelStoreTestHarness,
     val database: MahinDatabase,
 ) {
-    fun dailyLogFor(date: LocalDate) = runBlocking(Dispatchers.IO) { database.dailyLogDao().getForDate(date) }
+    fun dailyLogFor(date: LocalDate): DailyLogEntity? = runBlocking { database.dailyLogDao().getForDate(date) }
 
-    fun periodDayFor(date: LocalDate) = runBlocking(Dispatchers.IO) { database.periodDayDao().getForDate(date) }
+    fun periodDayFor(date: LocalDate) = runBlocking { database.periodDayDao().getForDate(date) }
 
     fun createViewModel(healthConnectActive: Boolean = false): DayEditorViewModel {
         val gate =

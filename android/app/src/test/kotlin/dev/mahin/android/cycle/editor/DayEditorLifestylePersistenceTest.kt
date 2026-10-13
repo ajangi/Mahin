@@ -9,7 +9,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import org.robolectric.shadows.ShadowLooper
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
@@ -26,7 +25,7 @@ class DayEditorLifestylePersistenceTest {
         runBlocking {
             harness.loggingPreferencesRepository.setLifestyleModuleEnabled(LogEditorCategory.SLEEP, true)
             viewModel.openDate(day)
-            awaitUntil { viewModel.uiState.value.date == day }
+            awaitDailyLogOnMain { viewModel.uiState.value.date == day }
         }
     }
 
@@ -39,24 +38,12 @@ class DayEditorLifestylePersistenceTest {
     fun toggleSleep_persistsToDailyLog() {
         runBlocking {
             viewModel.toggleLifestyleLogged(LogEditorCategory.SLEEP)
-            awaitUntil { harness.dailyLogFor(day)?.sleepLogged == true }
+            awaitDailyLogOnMain { harness.dailyLogFor(day)?.sleepLogged == true }
             viewModel.toggleLifestyleLogged(LogEditorCategory.SLEEP)
-            awaitUntil {
+            awaitDailyLogOnMain {
                 val log = harness.dailyLogFor(day)
                 log != null && !log.sleepLogged
             }
         }
-    }
-
-    private suspend fun awaitUntil(
-        timeoutMs: Long = 5_000,
-        condition: () -> Boolean,
-    ) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            if (condition()) return
-            ShadowLooper.idleMainLooper()
-        }
-        throw AssertionError("Condition not met within ${timeoutMs}ms")
     }
 }
