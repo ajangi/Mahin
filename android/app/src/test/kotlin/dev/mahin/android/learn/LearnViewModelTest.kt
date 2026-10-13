@@ -39,6 +39,10 @@ class LearnViewModelTest {
 
     @Before
     fun setUp() {
+        harness.api.searchResults = emptyList()
+        harness.api.collections = emptyList()
+        harness.api.lastSearchQuery = null
+        harness.api.lastSearchLifeStage = null
         val context = ApplicationProvider.getApplicationContext<Context>()
         database =
             Room
@@ -73,7 +77,7 @@ class LearnViewModelTest {
             val viewModel = createViewModel()
             viewModel.onQueryChange("علائم يك")
             viewModel.search()
-            awaitUntil { !viewModel.uiState.value.loading }
+            awaitUntil { harness.api.lastSearchQuery != null }
             assertThat(harness.api.lastSearchQuery).isEqualTo("علائم یک")
             assertThat(viewModel.uiState.value.searchResults).hasSize(1)
         }
