@@ -7,6 +7,7 @@ import dev.mahin.core.testing.ViewModelStoreTestHarness
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -98,7 +99,7 @@ class GuidedPlayerViewModelTest {
             ticker.advanceOneTick()
             advanceUntilIdle()
             first.pause()
-            advanceUntilIdle()
+            awaitPersisted { harness.localStore.loadPlayerState() != null }
             val saved = harness.localStore.loadPlayerState()
             assertThat(saved).isNotNull()
             assertThat(saved!!.paused).isTrue()
@@ -145,17 +146,23 @@ class GuidedPlayerViewModelTest {
             val viewModel = createViewModel("prog-1", "sess-1")
             awaitSessionLoaded(viewModel)
             viewModel.pause()
-            advanceUntilIdle()
-            assertThat(harness.localStore.loadPlayerState()).isNotNull()
+            awaitPersisted { harness.localStore.loadPlayerState() != null }
 
             viewModel.completeSession()
-            advanceUntilIdle()
+            awaitPersisted { harness.localStore.loadPlayerState() == null }
             assertThat(harness.localStore.programCompletionCount("prog-1")).isEqualTo(1)
-            assertThat(harness.localStore.loadPlayerState()).isNull()
         }
 
     private suspend fun awaitSessionLoaded(viewModel: GuidedPlayerViewModel) {
         viewModel.uiState.filter { it.stepInstruction.isNotEmpty() && !it.loadError }.first()
+    }
+
+    private suspend fun TestScope.awaitPersisted(predicate: suspend () -> Boolean) {
+        repeat(50) {
+            if (predicate()) return
+            advanceUntilIdle()
+        }
+        throw AssertionError("Persistence condition not met")
     }
 
     private fun createViewModel(

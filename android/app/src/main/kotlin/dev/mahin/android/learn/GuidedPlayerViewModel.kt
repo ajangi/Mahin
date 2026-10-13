@@ -58,6 +58,7 @@ class GuidedPlayerViewModel internal constructor(
     private var player: GuidedSessionPlayer? = null
     private var tickJob: Job? = null
     private var lastPersistFingerprint: GuidedPlayerPersistPolicy.Fingerprint? = null
+    private var persistEnabled: Boolean = true
 
     private val _uiState =
         MutableStateFlow(
@@ -144,6 +145,9 @@ class GuidedPlayerViewModel internal constructor(
     fun completeSession() {
         viewModelScope.launch {
             val currentSession = session ?: return@launch
+            persistEnabled = false
+            tickJob?.cancel()
+            tickJob = null
             localStore.logSessionCompletion(
                 id = RandomUuidFactory.random().toString(),
                 programId = programId,
@@ -156,6 +160,7 @@ class GuidedPlayerViewModel internal constructor(
     }
 
     fun stopSession() {
+        persistEnabled = false
         tickJob?.cancel()
         tickJob = null
         viewModelScope.launch {
@@ -181,6 +186,7 @@ class GuidedPlayerViewModel internal constructor(
     }
 
     private fun persistSnapshot(force: Boolean) {
+        if (!persistEnabled) return
         val engine = player ?: return
         val snap = engine.snapshot()
         val fingerprint = GuidedPlayerPersistPolicy.fingerprint(snap)
@@ -226,7 +232,9 @@ class GuidedPlayerViewModel internal constructor(
     }
 
     override fun onCleared() {
-        persistSnapshot(force = true)
+        if (persistEnabled) {
+            persistSnapshot(force = true)
+        }
         tickJob?.cancel()
         super.onCleared()
     }
