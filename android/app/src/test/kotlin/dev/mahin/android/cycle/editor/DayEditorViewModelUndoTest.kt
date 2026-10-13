@@ -135,9 +135,9 @@ class DayEditorViewModelUndoTest {
         runBlocking {
             harness.loggingPreferencesRepository.setLifestyleModuleEnabled(LogEditorCategory.SLEEP, true)
             viewModel.toggleLifestyleLogged(LogEditorCategory.SLEEP)
-            awaitUntilDb { harness.dailyLogFor(day)?.sleepLogged == true }
+            awaitDailyLogOnMain { harness.dailyLogFor(day)?.sleepLogged == true }
             viewModel.undoLastChange()
-            awaitUntilDb {
+            awaitDailyLogOnMain {
                 val log = harness.dailyLogFor(day)
                 log != null && !log.sleepLogged
             }
