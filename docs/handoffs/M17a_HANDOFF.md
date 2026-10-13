@@ -1,7 +1,7 @@
 # M17a Handoff — Wellness CMS content types
 
 **Milestone:** M17a (backend / CMS / admin / OpenAPI)  
-**Status:** ready for review (PR #42 round 2)  
+**Status:** **Accepted** (squash-merge `8660536df86fc74e04841abc5dccb31c093dc652`, **2026-10-13**, [PR #42](https://github.com/ajangi/Mahin/pull/42))  
 **Next milestone:** **M17b** only
 
 ## Commands and results
@@ -34,9 +34,13 @@ M17a wellness integration tests use `@ActiveProfiles("test")` so placeholder pub
 
 **Local dev:** set `MAHIN_ENV=local` in `.env` when you need to publish placeholder CMS fixtures or wellness samples from the admin UI; the backend default is `production` (see root `README.md`).
 
-## Unresolved
+## Carry-over to M17b
 
-- Premium collection gating (PRD §13) — not implemented.
+- **Premium collection gating** (PRD §13) — needs an owner decision before CMS or Android enforcement.
+- **Validate `mediaAssetId` references** on program steps and collection hero media (existence / governance metadata).
+- **N+1 lookups** in wellness public list endpoints (batch document/source resolution).
+- **Android Learn magazine, daily tip card, session player, Coil** remote images and offline degradation (`prompts/M17.md` M17b scope).
+- **Real clinical content** — tips, program instructions, safety/contraindications, and Learn collections must be authored and medically/editorially approved before launch (agents shipped placeholder infrastructure only).
 
 ## Next milestone
 
