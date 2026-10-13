@@ -8,6 +8,24 @@ export type ProgramStepDraft = {
   mediaAssetId: string;
 };
 
+export function updateProgramStep(
+  sessions: ProgramSessionDraft[],
+  sessionIndex: number,
+  stepIndex: number,
+  patch: Partial<ProgramStepDraft>,
+): ProgramSessionDraft[] {
+  return sessions.map((session, si) =>
+    si !== sessionIndex
+      ? session
+      : {
+          ...session,
+          steps: session.steps.map((step, sti) =>
+            sti !== stepIndex ? step : { ...step, ...patch },
+          ),
+        },
+  );
+}
+
 export type ProgramSessionDraft = {
   id: string;
   title: string;

@@ -14,6 +14,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
@@ -22,6 +23,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 class M17aGatekeeperIntegrationTest(
     @Autowired private val mockMvc: MockMvc,
     @Autowired private val objectMapper: ObjectMapper,
@@ -80,7 +82,7 @@ class M17aGatekeeperIntegrationTest(
                 content = objectMapper.writeValueAsString(body)
             }.andExpect {
                 status { isBadRequest() }
-                jsonPath("$.code") { value("program_requires_clinical_review") }
+                jsonPath("$.code") { value("wellness_requires_clinical_review") }
             }
     }
 
@@ -136,34 +138,98 @@ class M17aGatekeeperIntegrationTest(
         val tipId = createDailyTip(publish = false)
         val programId = createProgram(publish = false)
         val collectionId = createCollection(publish = false, articleIds = emptyList())
-        assertNotFoundAll(tipId, "/v1/content/daily-tips")
-        assertNotFoundAll(programId, "/v1/content/programs")
-        assertNotFoundAll(collectionId, "/v1/content/collections")
+        assertExcludedFromPublicDelivery(tipId, "/v1/content/daily-tips")
+        assertExcludedFromPublicDelivery(programId, "/v1/content/programs")
+        assertExcludedFromPublicDelivery(collectionId, "/v1/content/collections")
 
         val expiredTip =
             createDailyTip(
                 publish = true,
                 effectiveTo = Instant.now().minusSeconds(60).toString(),
             )
-        assertAbsentFromList(expiredTip, "/v1/content/daily-tips")
+        assertExcludedFromPublicDelivery(expiredTip, "/v1/content/daily-tips")
 
         val futureTip =
             createDailyTip(
                 publish = true,
                 effectiveFrom = Instant.now().plus(1, ChronoUnit.DAYS).toString(),
             )
-        assertAbsentFromList(futureTip, "/v1/content/daily-tips")
+        assertExcludedFromPublicDelivery(futureTip, "/v1/content/daily-tips")
 
         val atBoundaryTip =
             createDailyTip(
                 publish = true,
                 effectiveTo = Instant.now().toString(),
             )
-        assertAbsentFromList(atBoundaryTip, "/v1/content/daily-tips")
+        assertExcludedFromPublicDelivery(atBoundaryTip, "/v1/content/daily-tips")
+
+        val withdrawnTip = createDailyTip(publish = true, thenWithdraw = true)
+        assertExcludedFromPublicDelivery(withdrawnTip, "/v1/content/daily-tips")
 
         val publishedTip = createDailyTip(publish = true)
-        mockMvc.get("/v1/content/daily-tips/$publishedTip").andExpect { status { isOk() } }
-        mockMvc.get("/v1/content/daily-tips/by-slug/${slugFor(publishedTip)}").andExpect { status { isOk() } }
+        assertPublishedAccessible(publishedTip, "/v1/content/daily-tips")
+
+        val expiredProgram =
+            createProgram(
+                publish = true,
+                effectiveTo = Instant.now().minusSeconds(60).toString(),
+            )
+        assertExcludedFromPublicDelivery(expiredProgram, "/v1/content/programs")
+
+        val futureProgram =
+            createProgram(
+                publish = true,
+                effectiveFrom = Instant.now().plus(1, ChronoUnit.DAYS).toString(),
+            )
+        assertExcludedFromPublicDelivery(futureProgram, "/v1/content/programs")
+
+        val withdrawnProgram = createProgram(publish = true, thenWithdraw = true)
+        assertExcludedFromPublicDelivery(withdrawnProgram, "/v1/content/programs")
+
+        val publishedProgram = createProgram(publish = true)
+        assertPublishedAccessible(publishedProgram, "/v1/content/programs")
+
+        val expiredCollection =
+            createCollection(
+                publish = true,
+                articleIds = emptyList(),
+                effectiveTo = Instant.now().minusSeconds(60).toString(),
+            )
+        assertExcludedFromPublicDelivery(expiredCollection, "/v1/content/collections")
+
+        val futureCollection =
+            createCollection(
+                publish = true,
+                articleIds = emptyList(),
+                effectiveFrom = Instant.now().plus(1, ChronoUnit.DAYS).toString(),
+            )
+        assertExcludedFromPublicDelivery(futureCollection, "/v1/content/collections")
+
+        val withdrawnCollection =
+            createCollection(
+                publish = true,
+                articleIds = emptyList(),
+                thenWithdraw = true,
+            )
+        assertExcludedFromPublicDelivery(withdrawnCollection, "/v1/content/collections")
+
+        val publishedCollection =
+            createCollection(
+                publish = true,
+                articleIds = emptyList(),
+            )
+        assertPublishedAccessible(publishedCollection, "/v1/content/collections")
+    }
+
+    @Test
+    fun publishedProgramIncludesSafetyFieldsAndSessions() {
+        val documentId = createProgram(publish = true, stepInstruction = "نمونه — غیرپزشکی")
+        mockMvc.get("/v1/content/programs/$documentId").andExpect {
+            status { isOk() }
+            jsonPath("$.safetyNotice") { value("نمونه") }
+            jsonPath("$.contraindications") { value("نمونه") }
+            jsonPath("$.sessions[0].steps[0].instruction") { value("نمونه — غیرپزشکی") }
+        }
     }
 
     @Test
@@ -197,35 +263,53 @@ class M17aGatekeeperIntegrationTest(
             }
     }
 
-    private fun assertNotFoundAll(
+    private fun assertExcludedFromPublicDelivery(
         id: String,
         basePath: String,
     ) {
+        val slug = slugFor(id)
         mockMvc.get("$basePath/$id").andExpect { status { isNotFound() } }
+        mockMvc.get("$basePath/by-slug/$slug").andExpect { status { isNotFound() } }
         mockMvc.get(basePath).andExpect {
             status { isOk() }
             jsonPath("$.items[?(@.id == '$id')]") { doesNotExist() }
         }
     }
 
-    private fun assertAbsentFromList(
+    private fun assertPublishedAccessible(
         id: String,
         basePath: String,
     ) {
-        mockMvc.get(basePath).andExpect {
-            status { isOk() }
-            jsonPath("$.items[?(@.id == '$id')]") { doesNotExist() }
+        val slug = slugFor(id)
+        mockMvc.get("$basePath/$id").andExpect { status { isOk() } }
+        mockMvc.get("$basePath/by-slug/$slug").andExpect { status { isOk() } }
+        if (basePath.endsWith("daily-tips")) {
+            mockMvc
+                .get(basePath) {
+                    param("mode", "cycle")
+                }.andExpect {
+                    status { isOk() }
+                    jsonPath("$.items[?(@.id == '$id')].id") { value(id) }
+                }
+        } else {
+            mockMvc.get(basePath).andExpect {
+                status { isOk() }
+                jsonPath("$.items[?(@.id == '$id')].id") { value(id) }
+            }
         }
-        mockMvc.get("$basePath/$id").andExpect { status { isNotFound() } }
     }
 
     private fun slugFor(documentId: String): String =
         documentRepository.findById(UUID.fromString(documentId)).orElseThrow().slug
 
+    @Suppress("LongParameterList")
     private fun createDailyTip(
         publish: Boolean,
         effectiveFrom: String? = null,
         effectiveTo: String? = null,
+        thenWithdraw: Boolean = false,
+        targeting: Map<String, Any> = mapOf("modes" to listOf("cycle")),
+        bodyRichtext: String = "متن",
     ): String {
         val sourceId = WellnessContentTestSupport.createSource(mockMvc, objectMapper, tokens.editorToken)
         val body =
@@ -233,19 +317,19 @@ class M17aGatekeeperIntegrationTest(
                 "slug" to "tip-${UUID.randomUUID()}",
                 "locale" to "fa-IR",
                 "title" to "نکتهٔ نمونه",
-                "bodyRichtext" to "متن",
+                "bodyRichtext" to bodyRichtext,
                 "contentType" to ContentTypes.DAILY_TIP,
                 "medicalRiskLevel" to "general_education",
                 "sourceIds" to listOf(sourceId),
                 "typePayload" to
                     mapOf(
                         "placeholder" to true,
-                        "targeting" to mapOf("modes" to listOf("cycle")),
+                        "targeting" to targeting,
                     ),
                 "effectiveFrom" to effectiveFrom,
                 "effectiveTo" to effectiveTo,
             ).filterValues { it != null }
-        return createAndMaybePublish(body, publish)
+        return createAndMaybePublish(body, publish, thenWithdraw)
     }
 
     private fun createProgramDraft(): String {
@@ -264,24 +348,35 @@ class M17aGatekeeperIntegrationTest(
         return created.get("versionId").asText()
     }
 
-    private fun createProgram(publish: Boolean): String {
-        val versionId = createProgramDraft()
-        val documentId = versionIdToDocumentId(versionId)
-        if (publish) {
-            WellnessContentTestSupport.publishWellness(
-                mockMvc,
-                objectMapper,
-                versionId,
-                tokens.editorToken,
-                tokens.medicalToken,
-            )
-        }
-        return documentId
+    private fun createProgram(
+        publish: Boolean,
+        effectiveFrom: String? = null,
+        effectiveTo: String? = null,
+        thenWithdraw: Boolean = false,
+        stepInstruction: String = "نمونه",
+    ): String {
+        val sourceId = WellnessContentTestSupport.createSource(mockMvc, objectMapper, tokens.editorToken)
+        val body =
+            mapOf(
+                "slug" to "program-${UUID.randomUUID()}",
+                "locale" to "fa-IR",
+                "title" to "برنامه",
+                "contentType" to ContentTypes.PROGRAM,
+                "medicalRiskLevel" to "general_education",
+                "sourceIds" to listOf(sourceId),
+                "typePayload" to minimalProgramPayload(stepInstruction),
+                "effectiveFrom" to effectiveFrom,
+                "effectiveTo" to effectiveTo,
+            ).filterValues { it != null }
+        return createAndMaybePublish(body, publish, thenWithdraw)
     }
 
     private fun createCollection(
         publish: Boolean,
         articleIds: List<String>,
+        effectiveFrom: String? = null,
+        effectiveTo: String? = null,
+        thenWithdraw: Boolean = false,
     ): String {
         val sourceId = WellnessContentTestSupport.createSource(mockMvc, objectMapper, tokens.editorToken)
         val body =
@@ -298,8 +393,10 @@ class M17aGatekeeperIntegrationTest(
                         "category" to "cycle",
                         "articleDocumentIds" to articleIds,
                     ),
-            )
-        return createAndMaybePublish(body, publish)
+                "effectiveFrom" to effectiveFrom,
+                "effectiveTo" to effectiveTo,
+            ).filterValues { it != null }
+        return createAndMaybePublish(body, publish, thenWithdraw)
     }
 
     private fun createArticle(
@@ -351,7 +448,7 @@ class M17aGatekeeperIntegrationTest(
         return documentId
     }
 
-    private fun minimalProgramPayload(): Map<String, Any> =
+    private fun minimalProgramPayload(stepInstruction: String = "نمونه"): Map<String, Any> =
         mapOf(
             "placeholder" to true,
             "programType" to "breathing",
@@ -363,7 +460,7 @@ class M17aGatekeeperIntegrationTest(
                         "id" to "s1",
                         "title" to "جلسه",
                         "order" to 1,
-                        "steps" to listOf(mapOf("instruction" to "نمونه")),
+                        "steps" to listOf(mapOf("instruction" to stepInstruction)),
                     ),
                 ),
         )
@@ -371,6 +468,7 @@ class M17aGatekeeperIntegrationTest(
     private fun createAndMaybePublish(
         body: Map<String, Any?>,
         publish: Boolean,
+        thenWithdraw: Boolean = false,
     ): String {
         val created = createDocument(body)
         val versionId = created.get("versionId").asText()
@@ -383,6 +481,17 @@ class M17aGatekeeperIntegrationTest(
                 tokens.editorToken,
                 tokens.medicalToken,
             )
+            if (thenWithdraw) {
+                WellnessContentTestSupport.workflow(
+                    WellnessContentTestSupport.WorkflowCall(
+                        mockMvc,
+                        objectMapper,
+                        versionId,
+                        "retire",
+                        tokens.editorToken,
+                    ),
+                )
+            }
         }
         return documentId
     }
@@ -399,11 +508,4 @@ class M17aGatekeeperIntegrationTest(
                 .response.contentAsString
         return objectMapper.readTree(response)
     }
-
-    private fun versionIdToDocumentId(versionId: String): String =
-        mockMvc
-            .get("/v1/admin/content/versions/$versionId") {
-                header(HttpHeaders.AUTHORIZATION, "Bearer ${tokens.editorToken}")
-            }.andReturn()
-            .let { objectMapper.readTree(it.response.contentAsString).get("documentId").asText() }
 }

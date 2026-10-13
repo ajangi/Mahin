@@ -13,6 +13,14 @@ object ContentEffectiveDates {
             .getOrElse { throw ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid_effective_window") }
     }
 
+    fun parseNextReviewDueAt(raw: String?): Instant? {
+        if (raw.isNullOrBlank()) {
+            return null
+        }
+        return runCatching { Instant.parse(raw) }
+            .getOrElse { throw ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid_next_review_due_at") }
+    }
+
     fun validateForContentType(
         contentType: String,
         effectiveFrom: Instant?,

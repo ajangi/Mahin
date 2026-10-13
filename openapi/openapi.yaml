@@ -691,6 +691,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdminContentVersion"
+        "400":
+          description: |
+            Validation failed. Codes include `invalid_effective_window`, `invalid_type_payload`,
+            `invalid_type_payload_shape`, `wellness_requires_clinical_review`, and other payload field codes.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: |
+            Conflict. Codes include `slug_exists` and workflow conflicts surfaced on create when applicable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /v1/admin/content/documents/{documentId}/versions:
     post:
       tags: [Admin]
@@ -718,6 +733,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdminContentVersion"
+        "400":
+          description: |
+            Validation failed. Codes include `invalid_effective_window`, `invalid_type_payload`,
+            `invalid_type_payload_shape`, `wellness_requires_clinical_review`, and other payload field codes.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Conflict (`slug_exists` or illegal state for revision).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /v1/admin/content/versions/{versionId}:
     get:
       tags: [Admin]
@@ -770,6 +799,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdminContentVersion"
+        "400":
+          description: |
+            Validation failed. Codes include `invalid_next_review_due_at` on medical approval when provided.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: |
+            Workflow conflict. Codes include `clinical_review_required`, `placeholder_publish_not_allowed`,
+            `illegal_workflow_transition`, and `sources_required`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /v1/admin/content/documents/{documentId}/audit:
     get:
       tags: [Admin]

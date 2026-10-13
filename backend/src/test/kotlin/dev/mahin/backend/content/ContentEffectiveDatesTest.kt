@@ -29,6 +29,15 @@ class ContentEffectiveDatesTest {
     }
 
     @Test
+    fun rejectsInvalidNextReviewDueAt() {
+        val ex =
+            assertThrows(ResponseStatusException::class.java) {
+                ContentEffectiveDates.parseNextReviewDueAt("not-an-instant")
+            }
+        assertEquals("invalid_next_review_due_at", ex.reason)
+    }
+
+    @Test
     fun rejectsEffectiveWindowOnArticle() {
         val ex =
             assertThrows(ResponseStatusException::class.java) {

@@ -9,7 +9,7 @@ import {
   type AdminAuth,
   type WellnessContentKind,
 } from "./cmsApi";
-import { WORKFLOW_REVIEW_ACTIONS } from "./contentEditorUtils";
+import { visibleWorkflowActions } from "./contentEditorUtils";
 import { WellnessContentEditor } from "./WellnessContentEditor";
 import { WellnessReviewPanel } from "./WellnessReviewPanel";
 
@@ -40,12 +40,7 @@ export function App() {
     try {
       const slug = `fixture-${Date.now()}`;
       const created = await createFixtureDocument(auth.accessToken, slug);
-      const versionId = created.versionId as string;
-      await workflow(auth.accessToken, versionId, "submit_medical_review");
-      await workflow(auth.accessToken, versionId, "approve_medical", {});
-      await workflow(auth.accessToken, versionId, "approve_editorial");
-      await workflow(auth.accessToken, versionId, "publish");
-      setStatusMessage(`منتشر شد: ${slug}`);
+      setStatusMessage(`پیش‌نویس نمونه ایجاد شد — شناسهٔ نسخه: ${String(created.versionId)}`);
     } catch {
       setStatusMessage("گردش کار ناموفق — نقش‌ها یا مراحل را بررسی کنید.");
     }
@@ -134,7 +129,7 @@ function FoundationPanel() {
   );
 }
 
-function ContentPanel({
+export function ContentPanel({
   auth,
   loginEmail,
   loginPassword,
@@ -246,7 +241,7 @@ function ContentPanel({
           </label>
           <button type="button" onClick={onLoadReview}>بارگذاری نسخه</button>
           <div className="token-row">
-            {WORKFLOW_REVIEW_ACTIONS.map((action) => (
+            {visibleWorkflowActions(auth.roles).map((action) => (
               <button key={action} type="button" onClick={() => onWorkflowAction(action)}>
                 {action}
               </button>

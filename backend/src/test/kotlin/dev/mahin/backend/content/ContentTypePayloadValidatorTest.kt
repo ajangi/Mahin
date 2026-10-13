@@ -101,6 +101,6 @@ class ContentTypePayloadValidatorTest {
                     MedicalRiskLevel.NONE,
                 )
             }
-        assertEquals("program_requires_clinical_review", ex.reason)
+        assertEquals("wellness_requires_clinical_review", ex.reason)
     }
 }

@@ -134,9 +134,7 @@ class ContentAdminService(
                     }
                 version.clinicalReviewer = staff.displayName
                 version.clinicalReviewedAt = Instant.now()
-                request.nextReviewDueAt?.let {
-                    version.nextReviewDueAt = Instant.parse(it)
-                }
+                version.nextReviewDueAt = ContentEffectiveDates.parseNextReviewDueAt(request.nextReviewDueAt)
             }
             ContentWorkflowAction.SUBMIT_EDITORIAL_REVIEW -> {
                 version.status = "review"

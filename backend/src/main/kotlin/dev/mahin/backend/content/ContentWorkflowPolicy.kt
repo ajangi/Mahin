@@ -55,7 +55,7 @@ object ContentWorkflowPolicy {
         ) {
             throw org.springframework.web.server.ResponseStatusException(
                 org.springframework.http.HttpStatus.BAD_REQUEST,
-                "program_requires_clinical_review",
+                "wellness_requires_clinical_review",
             )
         }
     }

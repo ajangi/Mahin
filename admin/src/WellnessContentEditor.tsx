@@ -3,6 +3,7 @@ import type { WellnessContentKind } from "./cmsApi";
 import { COLLECTION_CATEGORIES, PROGRAM_TYPES } from "./contentEditorUtils";
 import {
   buildCreateDocumentBody,
+  updateProgramStep,
   type CollectionEditorState,
   type DailyTipEditorState,
   type ProgramEditorState,
@@ -225,11 +226,14 @@ export function WellnessContentEditor({ kind, onSubmit }: WellnessContentEditorP
                     <textarea
                       aria-label="instruction"
                       value={step.instruction}
-                      onChange={(e) => {
-                        const next = [...program.sessions];
-                        next[sessionIndex].steps[stepIndex].instruction = e.target.value;
-                        setProgram((s) => ({ ...s, sessions: next }));
-                      }}
+                      onChange={(e) =>
+                        setProgram((s) => ({
+                          ...s,
+                          sessions: updateProgramStep(s.sessions, sessionIndex, stepIndex, {
+                            instruction: e.target.value,
+                          }),
+                        }))
+                      }
                     />
                   </label>
                   <label>
@@ -237,11 +241,14 @@ export function WellnessContentEditor({ kind, onSubmit }: WellnessContentEditorP
                     <input
                       aria-label="durationSeconds"
                       value={step.durationSeconds}
-                      onChange={(e) => {
-                        const next = [...program.sessions];
-                        next[sessionIndex].steps[stepIndex].durationSeconds = e.target.value;
-                        setProgram((s) => ({ ...s, sessions: next }));
-                      }}
+                      onChange={(e) =>
+                        setProgram((s) => ({
+                          ...s,
+                          sessions: updateProgramStep(s.sessions, sessionIndex, stepIndex, {
+                            durationSeconds: e.target.value,
+                          }),
+                        }))
+                      }
                     />
                   </label>
                   <label>
@@ -249,11 +256,14 @@ export function WellnessContentEditor({ kind, onSubmit }: WellnessContentEditorP
                     <input
                       aria-label="reps"
                       value={step.reps}
-                      onChange={(e) => {
-                        const next = [...program.sessions];
-                        next[sessionIndex].steps[stepIndex].reps = e.target.value;
-                        setProgram((s) => ({ ...s, sessions: next }));
-                      }}
+                      onChange={(e) =>
+                        setProgram((s) => ({
+                          ...s,
+                          sessions: updateProgramStep(s.sessions, sessionIndex, stepIndex, {
+                            reps: e.target.value,
+                          }),
+                        }))
+                      }
                     />
                   </label>
                   <label>
@@ -261,11 +271,14 @@ export function WellnessContentEditor({ kind, onSubmit }: WellnessContentEditorP
                     <input
                       aria-label="restSeconds"
                       value={step.restSeconds}
-                      onChange={(e) => {
-                        const next = [...program.sessions];
-                        next[sessionIndex].steps[stepIndex].restSeconds = e.target.value;
-                        setProgram((s) => ({ ...s, sessions: next }));
-                      }}
+                      onChange={(e) =>
+                        setProgram((s) => ({
+                          ...s,
+                          sessions: updateProgramStep(s.sessions, sessionIndex, stepIndex, {
+                            restSeconds: e.target.value,
+                          }),
+                        }))
+                      }
                     />
                   </label>
                   <label>
@@ -273,11 +286,14 @@ export function WellnessContentEditor({ kind, onSubmit }: WellnessContentEditorP
                     <input
                       aria-label="mediaAssetId"
                       value={step.mediaAssetId}
-                      onChange={(e) => {
-                        const next = [...program.sessions];
-                        next[sessionIndex].steps[stepIndex].mediaAssetId = e.target.value;
-                        setProgram((s) => ({ ...s, sessions: next }));
-                      }}
+                      onChange={(e) =>
+                        setProgram((s) => ({
+                          ...s,
+                          sessions: updateProgramStep(s.sessions, sessionIndex, stepIndex, {
+                            mediaAssetId: e.target.value,
+                          }),
+                        }))
+                      }
                     />
                   </label>
                 </div>

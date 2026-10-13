@@ -41,7 +41,7 @@ springdoc:
 
 mahin:
   api-version: 0.0.1
-  environment: ${MAHIN_ENV:local}
+  environment: ${MAHIN_ENV:production}
   features:
     health-connect: ${MAHIN_FEATURE_HEALTH_CONNECT:false}
     health-assistant: ${MAHIN_FEATURE_HEALTH_ASSISTANT:false}

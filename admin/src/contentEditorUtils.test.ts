@@ -4,6 +4,7 @@ import {
   buildDailyTipPayload,
   buildProgramPayload,
   validateWellnessDraft,
+  visibleWorkflowActions,
   WORKFLOW_REVIEW_ACTIONS,
 } from "./contentEditorUtils";
 
@@ -36,5 +37,10 @@ describe("content editor utils", () => {
   it("lists governed workflow actions for review screens", () => {
     expect(WORKFLOW_REVIEW_ACTIONS).toContain("approve_medical");
     expect(WORKFLOW_REVIEW_ACTIONS).toContain("publish");
+  });
+
+  it("exposes approve_medical only to medical reviewers", () => {
+    expect(visibleWorkflowActions(["EDITOR"])).not.toContain("approve_medical");
+    expect(visibleWorkflowActions(["MEDICAL_REVIEWER"])).toContain("approve_medical");
   });
 });

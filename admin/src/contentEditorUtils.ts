@@ -67,3 +67,14 @@ export const WORKFLOW_REVIEW_ACTIONS = [
   "publish",
   "retire",
 ] as const;
+
+export function visibleWorkflowActions(roles: string[]): string[] {
+  const isEditor = roles.includes("EDITOR") || roles.includes("SUPER_ADMIN");
+  const isMedical = roles.includes("MEDICAL_REVIEWER") || roles.includes("SUPER_ADMIN");
+  return WORKFLOW_REVIEW_ACTIONS.filter((action) => {
+    if (action === "approve_medical") {
+      return isMedical;
+    }
+    return isEditor;
+  });
+}
