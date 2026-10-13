@@ -26,7 +26,7 @@ Merging the V2 plan approves the M14a–M18 scope. Execute in order: M14a → M1
 - M14c — App shell (5 tabs per mode, PRD §5) & Settings — **accepted** ([PR #35](https://github.com/ajangi/Mahin/pull/35), squash-merge `d951c201efcec6e9565f6cdce8251a4d33ce8569`, **2026-10-08**; owner approved at merge)
 - M15 — Today home & calendar redesign — **accepted** ([PR #37](https://github.com/ajangi/Mahin/pull/37), squash-merge `01bed769d32af751d235e531982197050190869f`, **2026-10-11**; owner approved at merge)
 - M16 — Logging experience overhaul — **accepted** ([PR #39](https://github.com/ajangi/Mahin/pull/39), squash-merge `32a2f5c`, **2026-10-12**)
-- M17a — Wellness CMS content types (backend/admin/OpenAPI) — **in progress**
+- M17a — Wellness CMS content types (backend/admin/OpenAPI) — **accepted** ([PR #42](https://github.com/ajangi/Mahin/pull/42), squash-merge `8660536df86fc74e04841abc5dccb31c093dc652`, **2026-10-13**)
 - M17b — Learn magazine, daily tip card, session player, Coil — **after M17a**
 - M18 — Pregnancy companion depth (split into M18a/M18b before execution) — **approved, not started**
 - M19 — Postpartum, breastfeeding & baby growth — **gated (owner approval + PRD amendment)**
