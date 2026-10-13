@@ -35,6 +35,8 @@ class ContentVersionEntity(
     var gestationalWeek: Int? = null,
     @Column(name = "tags_json", columnDefinition = "TEXT")
     var tagsJson: String? = "[]",
+    @Column(name = "type_payload_json", columnDefinition = "TEXT")
+    var typePayloadJson: String? = null,
     @Column(name = "medical_risk_level", nullable = false, length = 32)
     var medicalRiskLevel: String = "none",
     @Column(name = "status", nullable = false, length = 32)

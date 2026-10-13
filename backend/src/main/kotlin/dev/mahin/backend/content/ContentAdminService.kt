@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import dev.mahin.backend.api.currentCmsRoles
 import dev.mahin.backend.api.currentCmsStaff
 import dev.mahin.backend.cms.CmsRole
+import dev.mahin.backend.cms.persistence.CmsStaffRepository
 import dev.mahin.backend.content.persistence.ContentAuditEventRepository
 import dev.mahin.backend.content.persistence.ContentDocumentEntity
 import dev.mahin.backend.content.persistence.ContentDocumentRepository
@@ -16,6 +17,7 @@ import dev.mahin.backend.content.persistence.ContentVersionSourceRepository
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.util.UUID
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -32,6 +34,8 @@ class ContentAdminService(
     private val auditService: ContentAuditService,
     private val auditRepository: ContentAuditEventRepository,
     private val objectMapper: ObjectMapper,
+    private val cmsStaffRepository: CmsStaffRepository,
+    @Value("\${mahin.environment}") private val environment: String,
 ) {
     @Transactional
     fun createDocument(request: CreateContentDocumentRequest): AdminContentVersionResponse {
@@ -39,6 +43,10 @@ class ContentAdminService(
         if (documentRepository.findBySlugAndLocale(request.slug, request.locale).isPresent) {
             throw ResponseStatusException(HttpStatus.CONFLICT, "slug_exists")
         }
+        ContentWorkflowPolicy.validateMedicalRiskForContentType(request.contentType, request.medicalRiskLevel)
+        val effectiveFrom = ContentEffectiveDates.parseInstant(request.effectiveFrom)
+        val effectiveTo = ContentEffectiveDates.parseInstant(request.effectiveTo)
+        ContentEffectiveDates.validateForContentType(request.contentType, effectiveFrom, effectiveTo)
         val now = Instant.now()
         val document =
             documentRepository.save(
@@ -49,7 +57,8 @@ class ContentAdminService(
                     updatedAt = now,
                 ),
             )
-        val version = newVersion(document, request, versionNumber = 1)
+        val version = newVersion(document, request, versionNumber = 1, effectiveFrom, effectiveTo)
+        validateTypePayload(version)
         linkSources(version, request.sourceIds)
         auditService.record(currentCmsStaff(), "document_created", document.id, version.id)
         return toAdminResponse(document, version)
@@ -65,9 +74,15 @@ class ContentAdminService(
             documentRepository.findById(documentId).orElseThrow {
                 ResponseStatusException(HttpStatus.NOT_FOUND, "document_not_found")
             }
+        ContentWorkflowPolicy.validateMedicalRiskForContentType(request.contentType, request.medicalRiskLevel)
+        val effectiveFrom = ContentEffectiveDates.parseInstant(request.effectiveFrom)
+        val effectiveTo = ContentEffectiveDates.parseInstant(request.effectiveTo)
+        ContentEffectiveDates.validateForContentType(request.contentType, effectiveFrom, effectiveTo)
         val latest =
             versionRepository.findTopByDocumentIdOrderByVersionNumberDesc(document.id).orElseThrow()
-        val version = newVersion(document, request, versionNumber = latest.versionNumber + 1)
+        val version =
+            newVersion(document, request, versionNumber = latest.versionNumber + 1, effectiveFrom, effectiveTo)
+        validateTypePayload(version)
         linkSources(version, request.sourceIds)
         document.updatedAt = Instant.now()
         documentRepository.save(document)
@@ -113,11 +128,13 @@ class ContentAdminService(
                 version.reviewStage = ReviewStage.MEDICAL.name.lowercase()
             }
             ContentWorkflowAction.APPROVE_MEDICAL -> {
-                version.clinicalReviewer = request.clinicalReviewer ?: actor.email
+                val staff =
+                    cmsStaffRepository.findById(actor.staffId).orElseThrow {
+                        ResponseStatusException(HttpStatus.NOT_FOUND, "staff_not_found")
+                    }
+                version.clinicalReviewer = staff.displayName
                 version.clinicalReviewedAt = Instant.now()
-                request.nextReviewDueAt?.let {
-                    version.nextReviewDueAt = Instant.parse(it)
-                }
+                version.nextReviewDueAt = ContentEffectiveDates.parseNextReviewDueAt(request.nextReviewDueAt)
             }
             ContentWorkflowAction.SUBMIT_EDITORIAL_REVIEW -> {
                 version.status = "review"
@@ -238,19 +255,22 @@ class ContentAdminService(
         version: ContentVersionEntity,
     ) {
         val risk = ContentMapper.parseMedicalRiskLevel(version.medicalRiskLevel)
-        if (ContentWorkflowPolicy.requiresClinicalReviewBeforePublish(risk) &&
+        ContentWorkflowPolicy.validateMedicalRiskForContentType(version.contentType, risk)
+        if (ContentWorkflowPolicy.requiresClinicalReviewBeforePublish(version.contentType, risk) &&
             version.clinicalReviewedAt == null
         ) {
             throw ResponseStatusException(HttpStatus.CONFLICT, "clinical_review_required")
         }
+        assertPlaceholderPublishAllowed(version)
         if (risk != MedicalRiskLevel.NONE) {
             val linkedSources = versionSourceRepository.findByVersionId(version.id)
             if (linkedSources.isEmpty()) {
                 throw ResponseStatusException(HttpStatus.CONFLICT, "sources_required")
             }
         }
+        ContentTypePayloadValidator.validateForPublish(version.contentType, version.typePayloadJson, objectMapper)
         version.status = "published"
-        version.effectiveFrom = Instant.now()
+        version.effectiveFrom = version.effectiveFrom ?: Instant.now()
         document.publishedVersionId = version.id
         document.withdrawnAt = null
         catalogService.bumpPublicationRevision()
@@ -271,7 +291,15 @@ class ContentAdminService(
         document: ContentDocumentEntity,
         request: CreateContentDocumentRequest,
         versionNumber: Int,
+        effectiveFrom: Instant?,
+        effectiveTo: Instant?,
     ): ContentVersionEntity {
+        val payloadJson =
+            if (ContentTypes.isWellnessType(request.contentType)) {
+                ContentTypePayloadCodec.encodeValidated(objectMapper, request.contentType, request.typePayload)
+            } else {
+                null
+            }
         val version =
             versionRepository.save(
                 ContentVersionEntity(
@@ -285,12 +313,45 @@ class ContentAdminService(
                     lifeStage = request.lifeStage,
                     gestationalWeek = request.gestationalWeek,
                     tagsJson = objectMapper.writeValueAsString(request.tags),
+                    typePayloadJson = payloadJson,
                     medicalRiskLevel = request.medicalRiskLevel.wireValue(),
                     status = "draft",
+                    effectiveFrom = effectiveFrom,
+                    effectiveTo = effectiveTo,
                     createdByStaffId = currentCmsStaff().staffId,
                 ),
             )
         return version
+    }
+
+    private fun assertPlaceholderPublishAllowed(version: ContentVersionEntity) {
+        if (!ContentTypes.isWellnessType(version.contentType)) {
+            return
+        }
+        if (environment == "local" || environment == "test") {
+            return
+        }
+        val placeholder =
+            when (version.contentType) {
+                ContentTypes.DAILY_TIP ->
+                    ContentTypePayloadCodec.parseDailyTip(objectMapper, version.typePayloadJson)?.placeholder
+                ContentTypes.PROGRAM ->
+                    ContentTypePayloadCodec.parseProgram(objectMapper, version.typePayloadJson)?.placeholder
+                ContentTypes.COLLECTION ->
+                    ContentTypePayloadCodec.parseCollection(objectMapper, version.typePayloadJson)?.placeholder
+                else -> false
+            } ?: false
+        if (placeholder) {
+            throw ResponseStatusException(HttpStatus.CONFLICT, "placeholder_publish_not_allowed")
+        }
+    }
+
+    private fun validateTypePayload(version: ContentVersionEntity) {
+        ContentTypePayloadValidator.validateForSave(
+            version.contentType,
+            version.typePayloadJson,
+            objectMapper,
+        )
     }
 
     private fun linkSources(
@@ -314,7 +375,7 @@ class ContentAdminService(
         version: ContentVersionEntity,
     ): AdminContentVersionResponse {
         val sourceIds = versionSourceRepository.findByVersionId(version.id).map { it.sourceId }
-        return ContentMapper.toAdminVersionResponse(document, version, sourceIds)
+        return ContentMapper.toAdminVersionResponse(document, version, sourceIds, objectMapper)
     }
 
     private fun requireEditor() {

@@ -43,7 +43,7 @@ class ContentPublicService(
             versionRepository.findById(publishedVersionId).orElseThrow {
                 ResponseStatusException(HttpStatus.NOT_FOUND, "article_not_found")
             }
-        if (version.status != "published") {
+        if (!ContentPublicVisibility.isArticleEndpointEligible(document, version)) {
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "article_not_found")
         }
         return mapArticle(document, version, includeBody = true)
@@ -66,10 +66,14 @@ class ContentPublicService(
         lifeStage: String?,
     ): ContentSearchResponse {
         val normalized = query?.let { PersianSearchNormalizer.normalize(it) }
+        val now = Instant.now()
         val items =
-            versionRepository.searchPublished(normalized, locale, lifeStage).map { version ->
+            versionRepository.searchPublished(normalized, locale, lifeStage).mapNotNull { version ->
                 val document =
-                    documentRepository.findById(version.documentId).orElseThrow()
+                    documentRepository.findById(version.documentId).orElse(null) ?: return@mapNotNull null
+                if (!ContentPublicVisibility.isArticleEndpointEligible(document, version, now)) {
+                    return@mapNotNull null
+                }
                 ContentArticleSummary(
                     id = document.id.toString(),
                     slug = document.slug,
@@ -99,18 +103,29 @@ class ContentPublicService(
             documentRepository.findById(version.documentId).orElseThrow {
                 ResponseStatusException(HttpStatus.NOT_FOUND, "pregnancy_week_not_found")
             }
+        if (!ContentPublicationRules.isPublishedOnCatalog(document, version)) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "pregnancy_week_not_found")
+        }
         return mapArticle(document, version, includeBody = true)
     }
 
     fun listPregnancyWeeks(locale: String): PregnancyWeekListResponse {
+        val now = Instant.now()
         val weeks =
             versionRepository
                 .searchPublished(
                     null,
                     locale,
                     "pregnancy",
-                ).mapNotNull { it.gestationalWeek }
-                .distinct()
+                ).mapNotNull { version ->
+                    val document = documentRepository.findById(version.documentId).orElse(null)
+                    if (document == null ||
+                        !ContentPublicVisibility.isArticleEndpointEligible(document, version, now)
+                    ) {
+                        return@mapNotNull null
+                    }
+                    version.gestationalWeek
+                }.distinct()
                 .sorted()
         return PregnancyWeekListResponse(locale = locale, weeks = weeks)
     }
@@ -118,7 +133,15 @@ class ContentPublicService(
     @Transactional
     fun addBookmark(documentId: UUID) {
         val user = currentRegisteredUser()
-        if (!documentRepository.existsById(documentId)) {
+        val document =
+            documentRepository.findById(documentId).orElseThrow {
+                ResponseStatusException(HttpStatus.NOT_FOUND, "article_not_found")
+            }
+        val versionId = document.publishedVersionId
+        val version =
+            versionId?.let { versionRepository.findById(it).orElse(null) }
+                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "article_not_found")
+        if (!ContentPublicVisibility.isArticleEndpointEligible(document, version)) {
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "article_not_found")
         }
         if (!bookmarkRepository.existsByUserIdAndDocumentId(user.userId, documentId)) {
@@ -140,12 +163,16 @@ class ContentPublicService(
 
     fun listBookmarks(): ContentBookmarkListResponse {
         val user = currentRegisteredUser()
+        val now = Instant.now()
         val bookmarks = bookmarkRepository.findByUserIdOrderByCreatedAtDesc(user.userId)
         val summaries =
             bookmarks.mapNotNull { bookmark ->
                 val document = documentRepository.findById(bookmark.documentId).orElse(null) ?: return@mapNotNull null
                 val versionId = document.publishedVersionId ?: return@mapNotNull null
                 val version = versionRepository.findById(versionId).orElse(null) ?: return@mapNotNull null
+                if (!ContentPublicVisibility.isArticleEndpointEligible(document, version, now)) {
+                    return@mapNotNull null
+                }
                 ContentArticleSummary(
                     id = document.id.toString(),
                     slug = document.slug,

@@ -30,6 +30,7 @@ interface ContentVersionRepository : JpaRepository<ContentVersionEntity, UUID> {
         WHERE d.publishedVersionId = v.id
           AND d.withdrawnAt IS NULL
           AND v.status = 'published'
+          AND v.contentType NOT IN ('daily_tip', 'program', 'collection')
           AND (:locale IS NULL OR d.locale = :locale)
           AND (:lifeStage IS NULL OR v.lifeStage = :lifeStage)
           AND (
@@ -61,6 +62,23 @@ interface ContentVersionRepository : JpaRepository<ContentVersionEntity, UUID> {
         @Param("week") week: Int,
         @Param("locale") locale: String,
     ): Optional<ContentVersionEntity>
+
+    @Query(
+        """
+        SELECT v FROM ContentVersionEntity v
+        JOIN ContentDocumentEntity d ON d.id = v.documentId
+        WHERE d.publishedVersionId = v.id
+          AND d.withdrawnAt IS NULL
+          AND v.status = 'published'
+          AND v.contentType = :contentType
+          AND (:locale IS NULL OR d.locale = :locale)
+        ORDER BY v.title ASC
+        """,
+    )
+    fun findPublishedByContentType(
+        @Param("contentType") contentType: String,
+        @Param("locale") locale: String?,
+    ): List<ContentVersionEntity>
 }
 
 interface ContentCatalogStateRepository : JpaRepository<ContentCatalogStateEntity, Int>

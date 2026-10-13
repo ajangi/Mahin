@@ -2,12 +2,23 @@ import { useCallback, useState } from "react";
 import {
   adminLogin,
   createFixtureDocument,
+  createWellnessDocument,
   fetchFreshness,
+  fetchVersion,
   workflow,
   type AdminAuth,
+  type WellnessContentKind,
 } from "./cmsApi";
+import { visibleWorkflowActions } from "./contentEditorUtils";
+import { WellnessContentEditor } from "./WellnessContentEditor";
+import { WellnessReviewPanel } from "./WellnessReviewPanel";
 
 type Section = "foundation" | "content" | "media" | "freshness";
+
+export async function publishFixtureDraft(auth: AdminAuth) {
+  const slug = `fixture-${Date.now()}`;
+  return createFixtureDocument(auth.accessToken, slug);
+}
 
 export function App() {
   const [section, setSection] = useState<Section>("content");
@@ -32,16 +43,8 @@ export function App() {
     if (!auth) return;
     setStatusMessage(null);
     try {
-      const slug = `fixture-${Date.now()}`;
-      const created = await createFixtureDocument(auth.accessToken, slug);
-      const versionId = created.versionId as string;
-      await workflow(auth.accessToken, versionId, "submit_medical_review");
-      await workflow(auth.accessToken, versionId, "approve_medical", {
-        clinicalReviewer: "reviewer@mahin.test",
-      });
-      await workflow(auth.accessToken, versionId, "approve_editorial");
-      await workflow(auth.accessToken, versionId, "publish");
-      setStatusMessage(`منتشر شد: ${slug}`);
+      const created = await publishFixtureDraft(auth);
+      setStatusMessage(`پیش‌نویس نمونه ایجاد شد — شناسهٔ نسخه: ${String(created.versionId)}`);
     } catch {
       setStatusMessage("گردش کار ناموفق — نقش‌ها یا مراحل را بررسی کنید.");
     }
@@ -60,7 +63,7 @@ export function App() {
   return (
     <div className="shell">
       <h1 className="brand">ماهین</h1>
-      <p className="muted">پنل CMS — M6. بدون متن پزشکی ساختگی در رابط.</p>
+      <p className="muted">پنل CMS — M17a. نمونه‌ها با برچسب placeholder؛ بدون راهنمای بالینی واقعی.</p>
       <nav aria-label="بخش‌های مدیریت">
         <NavButton current={section} id="foundation" onSelect={setSection}>
           زیرساخت
@@ -86,6 +89,7 @@ export function App() {
           onPasswordChange={setLoginPassword}
           onLogin={onLogin}
           onPublishFixture={onPublishFixture}
+          onStatus={setStatusMessage}
         />
       )}
       {section === "freshness" && (
@@ -129,7 +133,7 @@ function FoundationPanel() {
   );
 }
 
-function ContentPanel({
+export function ContentPanel({
   auth,
   loginEmail,
   loginPassword,
@@ -137,6 +141,7 @@ function ContentPanel({
   onPasswordChange,
   onLogin,
   onPublishFixture,
+  onStatus,
 }: {
   auth: AdminAuth | null;
   loginEmail: string;
@@ -145,11 +150,43 @@ function ContentPanel({
   onPasswordChange: (v: string) => void;
   onLogin: () => void;
   onPublishFixture: () => void;
+  onStatus: (message: string | null) => void;
 }) {
+  const [editorKind, setEditorKind] = useState<WellnessContentKind>("daily_tip");
+  const [reviewVersionId, setReviewVersionId] = useState("");
+  const [reviewSnapshot, setReviewSnapshot] = useState<Record<string, unknown> | null>(null);
+  const [workflowError, setWorkflowError] = useState<string | null>(null);
+
+  const onLoadReview = useCallback(async () => {
+    if (!auth || !reviewVersionId.trim()) return;
+    try {
+      const data = await fetchVersion(auth.accessToken, reviewVersionId.trim());
+      setReviewSnapshot(data as Record<string, unknown>);
+      setWorkflowError(null);
+    } catch {
+      onStatus("بارگذاری نسخه برای بازبینی ناموفق بود.");
+    }
+  }, [auth, onStatus, reviewVersionId]);
+
+  const onWorkflowAction = useCallback(
+    async (action: string) => {
+      if (!auth || !reviewVersionId.trim()) return;
+      setWorkflowError(null);
+      try {
+        const updated = await workflow(auth.accessToken, reviewVersionId.trim(), action, {});
+        setReviewSnapshot(updated as Record<string, unknown>);
+        onStatus(`گردش کار: ${action}`);
+      } catch (err) {
+        const code = err instanceof Error ? err.message : "workflow_failed";
+        setWorkflowError(code);
+      }
+    },
+    [auth, onStatus, reviewVersionId],
+  );
+
   return (
-    <section className="card">
-      <h2>CMS</h2>
-      <p>ورود پرسنل، انتشار نمونهٔ غیرپزشکی، و بازنشستگی از طریق API.</p>
+    <section className="card" dir="rtl">
+      <h2>CMS — M17a</h2>
       {!auth ? (
         <form
           onSubmit={(event) => {
@@ -175,8 +212,48 @@ function ContentPanel({
         <>
           <p>نقش‌ها: {auth.roles.join(", ")}</p>
           <button type="button" onClick={onPublishFixture}>
-            انتشار نمونه (غیرپزشکی)
+            انتشار نمونهٔ مقاله (غیرپزشکی)
           </button>
+          <div className="token-row">
+            {(["daily_tip", "program", "collection"] as WellnessContentKind[]).map((kind) => (
+              <button
+                key={kind}
+                type="button"
+                aria-pressed={editorKind === kind}
+                onClick={() => setEditorKind(kind)}
+              >
+                {kind}
+              </button>
+            ))}
+          </div>
+          <WellnessContentEditor
+            kind={editorKind}
+            onSubmit={async (body) => {
+              const created = await createWellnessDocument(auth.accessToken, body as never);
+              setReviewVersionId(String(created.versionId));
+              setReviewSnapshot(created as Record<string, unknown>);
+              onStatus("پیش‌نویس ذخیره شد.");
+            }}
+          />
+          <h3>بازبینی</h3>
+          <label>
+            شناسهٔ نسخه
+            <input
+              value={reviewVersionId}
+              onChange={(e) => setReviewVersionId(e.target.value)}
+              placeholder="version UUID"
+            />
+          </label>
+          <button type="button" onClick={onLoadReview}>بارگذاری نسخه</button>
+          <div className="token-row">
+            {visibleWorkflowActions(auth.roles).map((action) => (
+              <button key={action} type="button" onClick={() => onWorkflowAction(action)}>
+                {action}
+              </button>
+            ))}
+          </div>
+          {workflowError && <p role="alert">{workflowError}</p>}
+          <WellnessReviewPanel version={reviewSnapshot} />
         </>
       )}
     </section>
@@ -195,7 +272,6 @@ function FreshnessPanel({
   return (
     <section className="card">
       <h2>تازگی محتوا</h2>
-      <p className="muted">بازبینی معوق، منابع قدیمی، و برداشت‌های اخیر.</p>
       <button type="button" disabled={!auth} onClick={onRefresh}>
         بارگذاری داشبورد
       </button>
@@ -208,7 +284,7 @@ function MediaPanel() {
   return (
     <section className="card">
       <h2>رسانه</h2>
-      <p>مسیر: CMS → ذخیرهٔ شیء → CDN → کش اندروید.</p>
+      <p>مسیر: CMS → ذخیرهٔ شیء → CDN → کش اندروید (M17b).</p>
     </section>
   );
 }

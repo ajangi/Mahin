@@ -1,6 +1,7 @@
 package dev.mahin.backend.content
 
 import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import dev.mahin.backend.content.persistence.ContentDocumentEntity
 import dev.mahin.backend.content.persistence.ContentSourceEntity
@@ -10,6 +11,8 @@ import java.util.UUID
 
 object ContentMapper {
     private val instantFormatter = DateTimeFormatter.ISO_INSTANT
+
+    fun formatInstant(instant: java.time.Instant): String = instantFormatter.format(instant)
 
     fun toArticleResponse(
         document: ContentDocumentEntity,
@@ -63,6 +66,7 @@ object ContentMapper {
         document: ContentDocumentEntity,
         version: ContentVersionEntity,
         sourceIds: List<UUID>,
+        objectMapper: ObjectMapper,
     ): AdminContentVersionResponse =
         AdminContentVersionResponse(
             documentId = document.id.toString(),
@@ -85,7 +89,20 @@ object ContentMapper {
             clinicalReviewedAt = version.clinicalReviewedAt?.let { instantFormatter.format(it) },
             nextReviewDueAt = version.nextReviewDueAt?.let { instantFormatter.format(it) },
             published = document.publishedVersionId == version.id && document.withdrawnAt == null,
+            typePayload = parseTypePayloadNode(objectMapper, version.typePayloadJson),
+            effectiveFrom = version.effectiveFrom?.let { instantFormatter.format(it) },
+            effectiveTo = version.effectiveTo?.let { instantFormatter.format(it) },
         )
+
+    private fun parseTypePayloadNode(
+        objectMapper: ObjectMapper,
+        raw: String?,
+    ): JsonNode? {
+        if (raw.isNullOrBlank()) {
+            return null
+        }
+        return runCatching { objectMapper.readTree(raw) }.getOrNull()
+    }
 
     fun parseMedicalRiskLevel(value: String): MedicalRiskLevel =
         when (value) {

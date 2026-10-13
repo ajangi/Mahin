@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/v1/content")
 class ContentController(
     private val publicService: ContentPublicService,
+    private val wellnessPublicService: ContentWellnessPublicService,
 ) {
     @GetMapping("/catalog-status")
     fun catalogStatus(): ContentCatalogStatusResponse = publicService.catalogStatus()
@@ -62,4 +63,66 @@ class ContentController(
     ) {
         publicService.removeBookmark(documentId)
     }
+
+    @GetMapping("/daily-tips")
+    fun listDailyTips(
+        @RequestParam(defaultValue = "fa-IR") locale: String,
+        @RequestParam(required = false) mode: String?,
+        @RequestParam(required = false) cyclePhase: String?,
+        @RequestParam(required = false) pregnancyWeek: Int?,
+    ): ContentDailyTipListResponse {
+        ContentWellnessQueryValidator.validateDailyTipQuery(mode, cyclePhase, pregnancyWeek)
+        return wellnessPublicService.listDailyTips(locale, mode, cyclePhase, pregnancyWeek)
+    }
+
+    @GetMapping("/daily-tips/{documentId}")
+    fun getDailyTip(
+        @PathVariable documentId: UUID,
+    ): ContentDailyTipResponse = wellnessPublicService.getDailyTip(documentId)
+
+    @GetMapping("/daily-tips/by-slug/{slug}")
+    fun getDailyTipBySlug(
+        @PathVariable slug: String,
+        @RequestParam(defaultValue = "fa-IR") locale: String,
+    ): ContentDailyTipResponse = wellnessPublicService.getDailyTipBySlug(slug, locale)
+
+    @GetMapping("/programs")
+    fun listPrograms(
+        @RequestParam(defaultValue = "fa-IR") locale: String,
+        @RequestParam(required = false) programType: String?,
+    ): ContentProgramListResponse {
+        ContentWellnessQueryValidator.validateProgramType(programType)
+        return wellnessPublicService.listPrograms(locale, programType)
+    }
+
+    @GetMapping("/programs/{documentId}")
+    fun getProgram(
+        @PathVariable documentId: UUID,
+    ): ContentProgramResponse = wellnessPublicService.getProgram(documentId)
+
+    @GetMapping("/programs/by-slug/{slug}")
+    fun getProgramBySlug(
+        @PathVariable slug: String,
+        @RequestParam(defaultValue = "fa-IR") locale: String,
+    ): ContentProgramResponse = wellnessPublicService.getProgramBySlug(slug, locale)
+
+    @GetMapping("/collections")
+    fun listCollections(
+        @RequestParam(defaultValue = "fa-IR") locale: String,
+        @RequestParam(required = false) category: String?,
+    ): ContentCollectionListResponse {
+        ContentWellnessQueryValidator.validateCollectionCategory(category)
+        return wellnessPublicService.listCollections(locale, category)
+    }
+
+    @GetMapping("/collections/{documentId}")
+    fun getCollection(
+        @PathVariable documentId: UUID,
+    ): ContentCollectionResponse = wellnessPublicService.getCollection(documentId)
+
+    @GetMapping("/collections/by-slug/{slug}")
+    fun getCollectionBySlug(
+        @PathVariable slug: String,
+        @RequestParam(defaultValue = "fa-IR") locale: String,
+    ): ContentCollectionResponse = wellnessPublicService.getCollectionBySlug(slug, locale)
 }

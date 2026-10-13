@@ -8,6 +8,8 @@ info:
     M5 adds identity, auth, device sessions, and outbox sync endpoints.
     M6 adds CMS admin workflows, governed content delivery, search, bookmarks,
     pregnancy-week API, and catalog revision for remote withdrawal/cache invalidation.
+    M17a adds governed `daily_tip`, `program`, and `collection` content types with
+    structured payloads, admin authoring, and public delivery APIs (approved/published only).
     M7 adds device push-token registration (hashed at rest) for future campaign push;
     reminder delivery remains on-device via WorkManager in the Android app.
     M8 adds server-verifiable entitlements and Google Play purchase verification (hashed tokens),
@@ -394,6 +396,263 @@ paths:
       responses:
         "200":
           description: Bookmark removed
+  /v1/content/daily-tips:
+    get:
+      tags: [Content]
+      operationId: listDailyTips
+      summary: List published daily tips matching optional targeting filters
+      parameters:
+        - name: locale
+          in: query
+          schema:
+            type: string
+            default: fa-IR
+        - name: mode
+          in: query
+          schema:
+            type: string
+            enum: [cycle, ttc, pregnancy]
+        - name: cyclePhase
+          in: query
+          schema:
+            type: string
+            enum: [menstrual, follicular, ovulation, luteal]
+        - name: pregnancyWeek
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 42
+      responses:
+        "200":
+          description: Matching published tips (empty when none)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentDailyTipListResponse"
+        "400":
+          description: >
+            Invalid filter (`invalid_daily_tip_mode`, `invalid_daily_tip_cycle_phase`,
+            `invalid_daily_tip_pregnancy_week`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/content/daily-tips/{documentId}:
+    get:
+      tags: [Content]
+      operationId: getDailyTip
+      summary: Fetch a published daily tip by document id
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Published daily tip
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentDailyTip"
+        "404":
+          description: Not published, expired, or unknown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/content/daily-tips/by-slug/{slug}:
+    get:
+      tags: [Content]
+      operationId: getDailyTipBySlug
+      summary: Fetch a published daily tip by slug and locale
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: locale
+          in: query
+          schema:
+            type: string
+            default: fa-IR
+      responses:
+        "200":
+          description: Published daily tip
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentDailyTip"
+        "404":
+          description: Not published, expired, or unknown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/content/programs:
+    get:
+      tags: [Content]
+      operationId: listPrograms
+      summary: List published guided programs
+      parameters:
+        - name: locale
+          in: query
+          schema:
+            type: string
+            default: fa-IR
+        - name: programType
+          in: query
+          schema:
+            type: string
+            enum: [pelvic_floor, movement, breathing]
+      responses:
+        "200":
+          description: Published programs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentProgramListResponse"
+  /v1/content/programs/{documentId}:
+    get:
+      tags: [Content]
+      operationId: getProgram
+      summary: Fetch a published guided program with sessions and steps
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Published program
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentProgram"
+        "404":
+          description: Not published or unknown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/content/programs/by-slug/{slug}:
+    get:
+      tags: [Content]
+      operationId: getProgramBySlug
+      summary: Fetch a published program by slug and locale
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: locale
+          in: query
+          schema:
+            type: string
+            default: fa-IR
+      responses:
+        "200":
+          description: Published program
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentProgram"
+        "404":
+          description: Not published or unknown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/content/collections:
+    get:
+      tags: [Content]
+      operationId: listCollections
+      summary: List published Learn magazine collections
+      parameters:
+        - name: locale
+          in: query
+          schema:
+            type: string
+            default: fa-IR
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum:
+              - cycle
+              - fertility
+              - pregnancy
+              - symptoms
+              - nutrition
+              - tests
+              - lifestyle
+      responses:
+        "200":
+          description: Published collections
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentCollectionListResponse"
+  /v1/content/collections/{documentId}:
+    get:
+      tags: [Content]
+      operationId: getCollection
+      summary: Fetch a published collection with resolved article summaries
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Published collection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentCollection"
+        "404":
+          description: Not published or unknown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/content/collections/by-slug/{slug}:
+    get:
+      tags: [Content]
+      operationId: getCollectionBySlug
+      summary: Fetch a published collection by slug and locale
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: locale
+          in: query
+          schema:
+            type: string
+            default: fa-IR
+      responses:
+        "200":
+          description: Published collection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentCollection"
+        "404":
+          description: Not published or unknown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /v1/admin/auth/login:
     post:
       tags: [Admin]
@@ -432,6 +691,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdminContentVersion"
+        "400":
+          description: |
+            Validation failed. Codes include `invalid_effective_window`, `invalid_type_payload`,
+            `invalid_type_payload_shape`, `wellness_requires_clinical_review`, and other payload field codes.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: |
+            Conflict. Codes include `slug_exists` and workflow conflicts surfaced on create when applicable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /v1/admin/content/documents/{documentId}/versions:
     post:
       tags: [Admin]
@@ -459,6 +733,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdminContentVersion"
+        "400":
+          description: |
+            Validation failed. Codes include `invalid_effective_window`, `invalid_type_payload`,
+            `invalid_type_payload_shape`, `wellness_requires_clinical_review`, and other payload field codes.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Conflict (`slug_exists` or illegal state for revision).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /v1/admin/content/versions/{versionId}:
     get:
       tags: [Admin]
@@ -511,6 +799,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdminContentVersion"
+        "400":
+          description: |
+            Validation failed. Codes include `invalid_next_review_due_at` on medical approval when provided.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: |
+            Workflow conflict. Codes include `clinical_review_required`, `placeholder_publish_not_allowed`,
+            `illegal_workflow_transition`, and `sources_required`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /v1/admin/content/documents/{documentId}/audit:
     get:
       tags: [Admin]
@@ -1359,6 +1662,20 @@ components:
           items:
             type: string
             format: uuid
+        typePayload:
+          description: >
+            Structured payload for wellness content types (`daily_tip`, `program`, `collection`).
+            Required when `contentType` is one of those values.
+          oneOf:
+            - $ref: "#/components/schemas/DailyTipPayload"
+            - $ref: "#/components/schemas/ProgramPayload"
+            - $ref: "#/components/schemas/CollectionPayload"
+        effectiveFrom:
+          type: string
+          format: date-time
+        effectiveTo:
+          type: string
+          format: date-time
     AdminContentVersion:
       type: object
       properties:
@@ -1372,6 +1689,17 @@ components:
           type: string
         published:
           type: boolean
+        typePayload:
+          type: object
+          additionalProperties: true
+        effectiveFrom:
+          type: string
+          format: date-time
+          nullable: true
+        effectiveTo:
+          type: string
+          format: date-time
+          nullable: true
     WorkflowTransitionRequest:
       type: object
       properties:
@@ -1523,6 +1851,291 @@ components:
           nullable: true
         withdrawn:
           type: boolean
+    DailyTipPayload:
+      type: object
+      required: [placeholder, targeting]
+      properties:
+        placeholder:
+          type: boolean
+        targeting:
+          $ref: "#/components/schemas/DailyTipTargeting"
+    ProgramPayload:
+      type: object
+      required: [placeholder, programType, sessions]
+      properties:
+        placeholder:
+          type: boolean
+        programType:
+          type: string
+          enum: [pelvic_floor, movement, breathing]
+        safetyNotice:
+          type: string
+        contraindications:
+          type: string
+        essentialSafetyInformation:
+          type: string
+        sessions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProgramSession"
+    CollectionPayload:
+      type: object
+      required: [placeholder, category, articleDocumentIds]
+      properties:
+        placeholder:
+          type: boolean
+        category:
+          type: string
+          enum:
+            - cycle
+            - fertility
+            - pregnancy
+            - symptoms
+            - nutrition
+            - tests
+            - lifestyle
+        heroMediaAssetId:
+          type: string
+          format: uuid
+        articleDocumentIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        featured:
+          type: boolean
+    DailyTipTargeting:
+      type: object
+      properties:
+        modes:
+          type: array
+          items:
+            type: string
+            enum: [cycle, ttc, pregnancy]
+        cyclePhases:
+          type: array
+          items:
+            type: string
+            enum: [menstrual, follicular, ovulation, luteal]
+        pregnancyWeeks:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+            maximum: 42
+    ContentDailyTip:
+      type: object
+      required: [id, slug, locale, title, contentVersion, medicalRiskLevel, placeholder, targeting]
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        locale:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+          nullable: true
+        body:
+          type: string
+          nullable: true
+        medicalRiskLevel:
+          type: string
+          enum: [none, general_education, contact_clinician, urgent]
+        contentVersion:
+          type: integer
+        sourceReferences:
+          type: array
+          items:
+            type: string
+        clinicalReviewer:
+          type: string
+          nullable: true
+        clinicalReviewedAt:
+          type: string
+          format: date-time
+          nullable: true
+        effectiveFrom:
+          type: string
+          format: date-time
+          nullable: true
+        effectiveTo:
+          type: string
+          format: date-time
+          nullable: true
+        placeholder:
+          type: boolean
+        targeting:
+          $ref: "#/components/schemas/DailyTipTargeting"
+    ContentDailyTipListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentDailyTip"
+    ProgramStep:
+      type: object
+      required: [instruction]
+      properties:
+        instruction:
+          type: string
+        durationSeconds:
+          type: integer
+          nullable: true
+        reps:
+          type: integer
+          nullable: true
+        restSeconds:
+          type: integer
+          nullable: true
+        mediaAssetId:
+          type: string
+          format: uuid
+          nullable: true
+    ProgramSession:
+      type: object
+      required: [id, title, order, steps]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        order:
+          type: integer
+        steps:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProgramStep"
+    ContentProgramSummary:
+      type: object
+      required: [id, slug, locale, title, programType, placeholder]
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        locale:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+          nullable: true
+        programType:
+          type: string
+          enum: [pelvic_floor, movement, breathing]
+        placeholder:
+          type: boolean
+    ContentProgram:
+      allOf:
+        - $ref: "#/components/schemas/ContentProgramSummary"
+        - type: object
+          required: [contentVersion, medicalRiskLevel, sessions]
+          properties:
+            medicalRiskLevel:
+              type: string
+              enum: [none, general_education, contact_clinician, urgent]
+            contentVersion:
+              type: integer
+            sourceReferences:
+              type: array
+              items:
+                type: string
+            clinicalReviewer:
+              type: string
+              nullable: true
+            clinicalReviewedAt:
+              type: string
+              format: date-time
+              nullable: true
+            safetyNotice:
+              type: string
+              nullable: true
+            contraindications:
+              type: string
+              nullable: true
+            essentialSafetyInformation:
+              type: string
+              nullable: true
+            sessions:
+              type: array
+              items:
+                $ref: "#/components/schemas/ProgramSession"
+    ContentProgramListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentProgramSummary"
+    ContentCollectionSummary:
+      type: object
+      required: [id, slug, locale, title, category, featured, placeholder]
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        locale:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+          nullable: true
+        category:
+          type: string
+          enum:
+            - cycle
+            - fertility
+            - pregnancy
+            - symptoms
+            - nutrition
+            - tests
+            - lifestyle
+        featured:
+          type: boolean
+        placeholder:
+          type: boolean
+    ContentCollection:
+      allOf:
+        - $ref: "#/components/schemas/ContentCollectionSummary"
+        - type: object
+          required: [contentVersion, medicalRiskLevel, articles]
+          properties:
+            medicalRiskLevel:
+              type: string
+              enum: [none, general_education, contact_clinician, urgent]
+            contentVersion:
+              type: integer
+            sourceReferences:
+              type: array
+              items:
+                type: string
+            heroMediaAssetId:
+              type: string
+              format: uuid
+              nullable: true
+            articles:
+              type: array
+              items:
+                $ref: "#/components/schemas/ContentArticleSummary"
+    ContentCollectionListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentCollectionSummary"
     ErrorResponse:
       type: object
       required: [code, message, requestId]

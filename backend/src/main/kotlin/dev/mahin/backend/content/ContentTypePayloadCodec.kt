@@ -1,0 +1,83 @@
+package dev.mahin.backend.content
+
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
+import org.springframework.http.HttpStatus
+import org.springframework.web.server.ResponseStatusException
+
+object ContentTypePayloadCodec {
+    fun encodeValidated(
+        mapper: ObjectMapper,
+        contentType: String,
+        node: JsonNode?,
+    ): String? {
+        if (node == null || node.isNull) {
+            return null
+        }
+        val rawBytes =
+            runCatching { mapper.writeValueAsBytes(node) }
+                .getOrElse { badRequest("invalid_type_payload") }
+        if (rawBytes.size > ContentTypePayloadLimits.MAX_PAYLOAD_BYTES) {
+            badRequest("type_payload_too_large")
+        }
+        val strict = strictMapper(mapper)
+        val canonical =
+            when (contentType) {
+                ContentTypes.DAILY_TIP ->
+                    strict.writeValueAsString(parseDailyTip(strict, nodeToJson(strict, node)))
+                ContentTypes.PROGRAM ->
+                    strict.writeValueAsString(parseProgram(strict, nodeToJson(strict, node)))
+                ContentTypes.COLLECTION ->
+                    strict.writeValueAsString(parseCollection(strict, nodeToJson(strict, node)))
+                else -> badRequest("type_payload_not_allowed")
+            }
+        ContentTypePayloadValidator.validatePayloadSize(canonical)
+        return canonical
+    }
+
+    fun parseDailyTip(
+        mapper: ObjectMapper,
+        raw: String?,
+    ): DailyTipPayload? = parse(mapper, raw, DailyTipPayload::class.java)
+
+    fun parseProgram(
+        mapper: ObjectMapper,
+        raw: String?,
+    ): ProgramPayload? = parse(mapper, raw, ProgramPayload::class.java)
+
+    fun parseCollection(
+        mapper: ObjectMapper,
+        raw: String?,
+    ): CollectionPayload? = parse(mapper, raw, CollectionPayload::class.java)
+
+    private fun nodeToJson(
+        mapper: ObjectMapper,
+        node: JsonNode,
+    ): String = mapper.writeValueAsString(node)
+
+    private fun strictMapper(mapper: ObjectMapper): ObjectMapper =
+        mapper.copy().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true)
+
+    private fun <T> parse(
+        mapper: ObjectMapper,
+        raw: String?,
+        type: Class<T>,
+    ): T? {
+        if (raw.isNullOrBlank()) {
+            return null
+        }
+        return runCatching { mapper.readValue(raw, type) }
+            .getOrElse { ex ->
+                val code =
+                    if (ex is com.fasterxml.jackson.core.JsonProcessingException) {
+                        "invalid_type_payload"
+                    } else {
+                        "invalid_type_payload_shape"
+                    }
+                badRequest(code)
+            }
+    }
+
+    private fun badRequest(code: String): Nothing = throw ResponseStatusException(HttpStatus.BAD_REQUEST, code)
+}
