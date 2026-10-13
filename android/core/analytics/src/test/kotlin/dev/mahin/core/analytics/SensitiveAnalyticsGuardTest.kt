@@ -42,6 +42,20 @@ class SensitiveAnalyticsGuardTest {
         )
     }
 
+    @Test(expected = IllegalStateException::class)
+    fun rejectsProgramIdentifiersInProperties() {
+        SensitiveAnalyticsGuard.sanitize(
+            AnalyticsEvent("program_session_started", mapOf("programId" to "prog-1")),
+        )
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun rejectsProgramTitleInProperties() {
+        SensitiveAnalyticsGuard.sanitize(
+            AnalyticsEvent("article_opened", mapOf("title" to "secret")),
+        )
+    }
+
     @Test
     fun acceptsLogCategoryOpenedWithCoarseSurface() {
         val event =

@@ -36,6 +36,8 @@ data class GuidedPlayerUiState(
     val progress: Float,
     val paused: Boolean,
     val completed: Boolean,
+    val offline: Boolean = false,
+    val loadError: Boolean = false,
     val snapshot: dev.mahin.domain.content.GuidedPlayerSnapshot,
 )
 

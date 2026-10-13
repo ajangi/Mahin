@@ -1,67 +1,56 @@
 # M17b Handoff — Android Learn, daily tip, player, Coil
 
 **Milestone:** M17b (Android)  
-**Status:** Ready for review  
+**Status:** PR #44 review round 1 addressed  
 **Next milestone:** **M18a** only
 
 ## Commands and results
 
 ```bash
-cd android && ./gradlew :domain:content:test :core:database:test :core:content:test \
-  :core:analytics:test :app:testDebugUnitTest :app:verifyRoborazziDebug \
-  lintDebug ktlintCheck detekt assembleDebug
-# BUILD SUCCESSFUL (local VM with Android SDK 35)
+cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug assembleRelease \
+  :app:verifyRoborazziDebug :core:designsystem:verifyRoborazziDebug
+# Run on CI after push (full android job in .github/workflows/ci.yml)
 ```
 
-## Implemented scope
+## Implemented scope (incl. review round 1)
 
 | Area | Notes |
 |------|--------|
-| `ContentApi` + DTOs | Daily tips, programs, collections, article by id, `MediaAssetDto` |
-| `ContentRepository` | Network + DataStore daily-tip cache + Room article/media cache |
-| Learn magazine | Carousel, category chips, contextual rail, programs, search, bookmarks, recent |
-| Article / program / player | Nested `LearnScreen` navigation; CMS safety block; analytics guard events |
-| Today daily tip | Targeting by mode/phase/week; dismiss per day; offline cache fallback |
-| Coil / illustrations | `CmsMahinIllustrationSource`, `MediaModule` disk cache (64 MiB), gating tests |
-| Player | `GuidedSessionPlayer` (domain) + Room restore row; haptic on step change |
-| Room v8 | `content_article_cache`, `content_recent_view`, `media_asset_cache`, `guided_player_state`, `program_session_completion` |
+| Daily tip fetch | `DailyTipFetchResult` separates success-empty vs `NetworkFailure`; cache cleared on success-empty; cache only on network failure when `DailyTipTargetingKey` matches |
+| Guided player | Empty/null program or empty steps → `loadError`/`offline` UI, no ticker; `GuidedSessionPlayer` no-ops safely; program cached in Room `content_program_cache` (v9) |
+| Learn magazine | `LearnViewModel` observes profile mode + pregnancy week for contextual search |
+| Media URLs | `MediaDeliveryUrlGuard` (no throw); unsafe CMS URLs fail to neutral frame |
+| Coil disk cache | `CoilMediaImageLoaderFactory` — `mahin_media_coil` dir, 64 MiB (`CoilMediaImageLoaderFactoryTest`) |
+| Analytics | `program_id`, `program_type`, `title` rejected in telemetry keys |
+| Player persistence | Room state saved on snapshot change (step/pause), not every tick |
+| Today placeholder tips | Debug `نمونه` badge when `BuildConfig.DEBUG` |
 
 ## Migrations
 
-- `MIGRATION_7_8` — additive wellness/content tables only.
-- Schema export: `android/core/database/schemas/dev.mahin.core.database.MahinDatabase/8.json`
+- `MIGRATION_7_8` — wellness/content tables.
+- `MIGRATION_8_9` — `content_program_cache`.
+- Schema exports: `8.json`, `9.json`.
 
-## ADRs
+## Tests added/updated
 
-- None new (follows ADR 0005 content governance, ADR 0013 illustration boundaries).
-
-## Acceptance criteria (M17b / Android)
-
-| Criterion | Evidence |
-|-----------|----------|
-| Tip hidden when API empty | `TodayViewModelTest.dailyTip_hiddenWhenApiReturnsNothingAndNoCache` |
-| Tip hidden offline without cache | `TodayViewModelTest.dailyTip_hiddenWhenOfflineWithoutCache` |
-| Remote images: cache, offline fallback, gating, no user IDs in URLs | `CmsMahinIllustrationSourceTest`, `MahinIllustrationGatingTest` (M14b) |
-| Player timing, pause/resume, process-death restore | `GuidedSessionPlayerTest` |
-| Goldens Learn/article/program/player light/dark × 1.0/1.3 RTL | `M17bFullScreenGoldenTest` + `verifyRoborazziDebug` |
-| Sensitive analytics guard for new events | `SensitiveAnalyticsGuardTest.acceptsProgramSessionEventsWithCoarseSurface` |
+| Test | Purpose |
+|------|---------|
+| `TodayViewModelTest` | Non-vacuous tip tests; API empty clears stale cache; offline shows matching cache |
+| `ContentRepositoryDailyTipTest` | Success-empty vs network failure |
+| `GuidedSessionPlayerTest` | Empty steps, overflow across steps, timing fix |
+| `GuidedPlayerViewModelTest` | Offline/empty steps, process-death restore, completion log |
+| `LearnViewModelTest` / `ArticleViewModelTest` / `ProgramDetailViewModelTest` | Mode/week, Persian search, offline article, bookmarks, completions |
+| `MediaDeliveryUrlGuardTest` / `CmsMahinIllustrationSourceTest` | Safe `cycle` paths; query/userId blocked |
+| `SensitiveAnalyticsGuardTest` | Rejects program/title properties |
+| `MahinDatabaseMigrationTest.migrate8To9_*` | Program cache table |
 
 ## Deferred / carry-over
 
-- **Premium collection gating** — owner decision: all collections FREE; no Android/CMS enforcement.
-- M17a: `mediaAssetId` validation, N+1 public list lookups (backend; unchanged).
-- Optional **program reminder** via reminders domain (discreet copy).
-- Optional **sound pacing** for pelvic-floor steps (haptics only in M17b).
-- **Real clinical content** before launch (tips, programs, collections).
-
-## Clinical content required before launch
-
-Authored and medically reviewed daily tips, program instructions, safety/contraindications, and Learn collections via CMS (M17a workflow).
-
-## Unresolved questions
-
-- Production `MEDIA_PUBLIC_BASE_URL` for release builds (currently `https://media.mahin.app` BuildConfig placeholder).
+- Premium collection gating — all collections FREE (unchanged).
+- Coil HTTP cache-hit integration test was attempted; Roborazzi/Coil execute tests hung in this VM — bounded cache dir/size covered by factory unit test.
+- M17a media validation / N+1 (backend).
+- Real clinical CMS content before launch.
 
 ## Next milestone
 
-**M18a** — `care_schedule` / `checklist_template` backend and pregnancy timeline tools hub.
+**M18a** — care schedule / checklist backend and pregnancy timeline tools hub.

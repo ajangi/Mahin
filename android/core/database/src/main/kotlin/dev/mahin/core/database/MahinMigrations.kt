@@ -331,3 +331,18 @@ val MIGRATION_7_8 =
             )
         }
     }
+
+val MIGRATION_8_9 =
+    object : Migration(8, 9) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS content_program_cache (
+                    documentId TEXT NOT NULL PRIMARY KEY,
+                    payloadJson TEXT NOT NULL,
+                    cachedAtEpochMs INTEGER NOT NULL
+                )
+                """.trimIndent(),
+            )
+        }
+    }

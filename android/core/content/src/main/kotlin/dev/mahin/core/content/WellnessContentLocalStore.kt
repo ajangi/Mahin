@@ -2,6 +2,7 @@ package dev.mahin.core.content
 
 import dev.mahin.core.database.dao.WellnessContentDao
 import dev.mahin.core.database.entity.ContentArticleCacheEntity
+import dev.mahin.core.database.entity.ContentProgramCacheEntity
 import dev.mahin.core.database.entity.ContentRecentViewEntity
 import dev.mahin.core.database.entity.GuidedPlayerStateEntity
 import dev.mahin.core.database.entity.MediaAssetCacheEntity
@@ -100,4 +101,19 @@ class WellnessContentLocalStore
         }
 
         suspend fun programCompletionCount(programId: String): Int = dao.completionCountForProgram(programId)
+
+        suspend fun cacheProgram(program: ContentProgramDto) {
+            dao.upsertProgramCache(
+                ContentProgramCacheEntity(
+                    documentId = program.id,
+                    payloadJson = json.encodeToString(program),
+                    cachedAtEpochMs = System.currentTimeMillis(),
+                ),
+            )
+        }
+
+        suspend fun cachedProgram(documentId: String): ContentProgramDto? =
+            dao.programCache(documentId)?.let { row ->
+                runCatching { json.decodeFromString<ContentProgramDto>(row.payloadJson) }.getOrNull()
+            }
     }

@@ -2,12 +2,12 @@ package dev.mahin.core.media.di
 
 import android.content.Context
 import coil.ImageLoader
-import coil.disk.DiskCache
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import dev.mahin.core.media.CoilMediaImageLoaderFactory
 import dev.mahin.core.media.MediaCachePolicy
 import javax.inject.Singleton
 
@@ -19,16 +19,7 @@ object MediaModule {
     fun provideImageLoader(
         @ApplicationContext context: Context,
         cachePolicy: MediaCachePolicy,
-    ): ImageLoader =
-        ImageLoader
-            .Builder(context)
-            .diskCache {
-                DiskCache
-                    .Builder()
-                    .directory(context.cacheDir.resolve("mahin_media_coil"))
-                    .maxSizeBytes(cachePolicy.maxSizeBytes)
-                    .build()
-            }.build()
+    ): ImageLoader = CoilMediaImageLoaderFactory.buildImageLoader(context, cachePolicy)
 
     @Provides
     @Singleton

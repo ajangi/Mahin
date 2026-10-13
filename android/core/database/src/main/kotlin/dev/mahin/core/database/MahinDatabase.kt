@@ -19,6 +19,7 @@ import dev.mahin.core.database.dao.PregnancyRecordDao
 import dev.mahin.core.database.dao.TtcDayLogDao
 import dev.mahin.core.database.dao.WellnessContentDao
 import dev.mahin.core.database.entity.ContentArticleCacheEntity
+import dev.mahin.core.database.entity.ContentProgramCacheEntity
 import dev.mahin.core.database.entity.ContentRecentViewEntity
 import dev.mahin.core.database.entity.ContractionEventEntity
 import dev.mahin.core.database.entity.ContractionSessionEntity
@@ -60,6 +61,7 @@ import dev.mahin.core.database.entity.TtcDayLogEntity
         ProgramSessionCompletionEntity::class,
         GuidedPlayerStateEntity::class,
         MediaAssetCacheEntity::class,
+        ContentProgramCacheEntity::class,
     ],
     version = MahinDatabase.VERSION,
     exportSchema = true,
@@ -99,7 +101,7 @@ abstract class MahinDatabase : RoomDatabase() {
     abstract fun wellnessContentDao(): WellnessContentDao
 
     companion object {
-        const val VERSION: Int = 8
+        const val VERSION: Int = 9
         const val EXPORTS_SCHEMA: Boolean = true
     }
 }

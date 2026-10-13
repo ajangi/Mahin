@@ -19,9 +19,10 @@ class ConfiguredMediaUrlResolver(
     override fun resolve(asset: MediaAssetRef): MediaRequest? {
         if (!asset.isAuthoritativeProductionContent) return null
         val url = config.urlFor(asset.storageKey)
-        check(!url.contains("userId", ignoreCase = true))
-        check(!url.contains("cycle"))
-        check('?' !in url) { "Media URLs must not carry query parameters in M0 public delivery" }
+        if (!MediaDeliveryUrlGuard.isSafePublicMediaUrl(url)) {
+            MediaDeliveryUrlGuard.logUnsafeUrl("media_resolver")
+            return null
+        }
         return MediaRequest(url = url, asset = asset, isAuthoritative = true)
     }
 }

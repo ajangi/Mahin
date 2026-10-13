@@ -30,59 +30,60 @@ class GuidedSessionPlayer(
     private var completed: Boolean = false
     private var lastTickInstant: Instant? = null
     private var pauseStartedAt: Instant? = null
-    private var accumulatedPauseMs: Long = 0L
+
+    val hasSteps: Boolean get() = steps.isNotEmpty()
 
     fun snapshot(): GuidedPlayerSnapshot =
         GuidedPlayerSnapshot(
-            stepIndex = stepIndex,
+            stepIndex = stepIndex.coerceAtMost(steps.lastIndex.coerceAtLeast(0)),
             stepElapsedMs = stepElapsedMs,
             paused = paused,
-            completed = completed,
+            completed = completed || steps.isEmpty(),
         )
 
     fun restore(snapshot: GuidedPlayerSnapshot) {
-        require(snapshot.stepIndex in steps.indices || snapshot.completed) {
-            "Invalid restored step index"
+        if (steps.isEmpty()) {
+            stepIndex = 0
+            stepElapsedMs = 0L
+            paused = snapshot.paused
+            completed = true
+            lastTickInstant = null
+            pauseStartedAt = null
+            return
         }
-        stepIndex = snapshot.stepIndex.coerceIn(0, steps.lastIndex.coerceAtLeast(0))
+        val maxIndex = steps.lastIndex
+        stepIndex = snapshot.stepIndex.coerceIn(0, maxIndex)
         stepElapsedMs = snapshot.stepElapsedMs.coerceAtLeast(0L)
         paused = snapshot.paused
         completed = snapshot.completed
         lastTickInstant = null
         pauseStartedAt = null
-        accumulatedPauseMs = 0L
     }
 
     fun pause() {
-        if (completed || paused) return
+        if (completed || paused || steps.isEmpty()) return
         paused = true
         pauseStartedAt = clock.now()
     }
 
     fun resume() {
-        if (completed || !paused) return
-        val pauseStart = pauseStartedAt
-        if (pauseStart != null) {
-            accumulatedPauseMs += (clock.now().toEpochMilli() - pauseStart.toEpochMilli()).coerceAtLeast(0L)
-        }
+        if (completed || !paused || steps.isEmpty()) return
         pauseStartedAt = null
         paused = false
         lastTickInstant = clock.now()
     }
 
     fun tick(): GuidedPlayerSnapshot {
-        if (completed) return snapshot()
+        if (completed || steps.isEmpty()) {
+            completed = steps.isEmpty() || completed
+            return snapshot()
+        }
         val now = clock.now()
         if (!paused) {
             val previous = lastTickInstant
             if (previous != null) {
                 val delta = (now.toEpochMilli() - previous.toEpochMilli()).coerceAtLeast(0L)
-                stepElapsedMs += delta
-                val step = steps[stepIndex]
-                val targetMs = stepDurationMs(step)
-                if (targetMs != null && stepElapsedMs >= targetMs) {
-                    advanceStep()
-                }
+                applyElapsed(delta)
             }
         }
         lastTickInstant = now
@@ -94,13 +95,28 @@ class GuidedSessionPlayer(
         paused = false
     }
 
-    private fun advanceStep() {
-        if (stepIndex >= steps.lastIndex) {
-            completed = true
-            return
+    private fun applyElapsed(deltaMs: Long) {
+        var remaining = deltaMs
+        while (remaining > 0 && !completed) {
+            val target = stepDurationMs(steps[stepIndex])
+            if (target == null) {
+                stepElapsedMs += remaining
+                return
+            }
+            val needed = target - stepElapsedMs
+            if (remaining < needed) {
+                stepElapsedMs += remaining
+                return
+            }
+            remaining -= needed
+            if (stepIndex >= steps.lastIndex) {
+                completed = true
+                stepElapsedMs = remaining
+                return
+            }
+            stepIndex += 1
+            stepElapsedMs = 0L
         }
-        stepIndex += 1
-        stepElapsedMs = 0L
     }
 
     private fun stepDurationMs(step: GuidedPlayerStep): Long? {

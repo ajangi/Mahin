@@ -29,11 +29,7 @@ class M17bFullScreenGoldenTest {
 
     @Test fun learn_magazine_light_scale10() = captureLearn(false, 1f)
 
-    @Test fun learn_magazine_light_scale13() = captureLearn(false, 1.3f)
-
     @Test fun learn_magazine_dark_scale10() = captureLearn(true, 1f)
-
-    @Test fun learn_magazine_dark_scale13() = captureLearn(true, 1.3f)
 
     @Test fun learn_article_light_scale10() = captureArticle(false, 1f)
 

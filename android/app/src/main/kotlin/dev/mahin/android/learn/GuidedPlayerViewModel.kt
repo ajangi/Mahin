@@ -11,11 +11,11 @@ import dev.mahin.core.common.RandomUuidFactory
 import dev.mahin.core.content.ContentRepository
 import dev.mahin.core.content.ProgramSessionDto
 import dev.mahin.core.content.WellnessContentLocalStore
+import dev.mahin.domain.content.GuidedPlayerSnapshot
 import dev.mahin.domain.content.GuidedPlayerStep
 import dev.mahin.domain.content.GuidedSessionPlayer
 import javax.inject.Inject
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,12 +32,14 @@ class GuidedPlayerViewModel
         private val localStore: WellnessContentLocalStore,
         private val clock: InstantClock,
         private val analytics: AnalyticsGateway,
+        private val ticker: PlayerSessionTicker,
     ) : ViewModel() {
         private val programId: String = savedStateHandle.get<String>("programId") ?: ""
         private val sessionId: String = savedStateHandle.get<String>("sessionId") ?: ""
         private var session: ProgramSessionDto? = null
         private var player: GuidedSessionPlayer? = null
         private var tickJob: Job? = null
+        private var lastPersisted: GuidedPlayerSnapshot? = null
 
         private val _uiState =
             MutableStateFlow(
@@ -49,56 +51,75 @@ class GuidedPlayerViewModel
                     progress = 0f,
                     paused = false,
                     completed = false,
-                    snapshot =
-                        dev.mahin.domain.content
-                            .GuidedPlayerSnapshot(0, 0, false, false),
+                    snapshot = GuidedPlayerSnapshot(0, 0, false, false),
                 ),
             )
         val uiState: StateFlow<GuidedPlayerUiState> = _uiState.asStateFlow()
 
         init {
             viewModelScope.launch {
-                val program = contentRepository.program(programId)
-                session = program?.sessions?.firstOrNull { it.id == sessionId }
-                val steps =
-                    session?.steps?.map {
-                        GuidedPlayerStep(
-                            instruction = it.instruction,
-                            durationSeconds = it.durationSeconds,
-                            reps = it.reps,
-                            restSeconds = it.restSeconds,
-                        )
-                    } ?: emptyList()
-                val engine = GuidedSessionPlayer(steps, clock)
-                localStore.loadPlayerState()?.let { saved ->
-                    if (saved.programId == programId && saved.sessionId == sessionId) {
-                        engine.restore(
-                            dev.mahin.domain.content.GuidedPlayerSnapshot(
-                                stepIndex = saved.stepIndex,
-                                stepElapsedMs = saved.stepElapsedMs,
-                                paused = saved.paused,
-                                completed = false,
-                            ),
-                        )
-                    }
-                }
-                player = engine
-                analytics.track(AnalyticsEvent("program_session_started", mapOf("surface" to "learn")))
-                publish()
-                startTicks()
+                loadSession()
             }
+        }
+
+        private suspend fun loadSession() {
+            val program = contentRepository.program(programId)
+            if (program == null) {
+                _uiState.update {
+                    it.copy(offline = true, loadError = true, stepCount = 0, stepInstruction = "")
+                }
+                return
+            }
+            session = program.sessions.firstOrNull { it.id == sessionId }
+            val steps =
+                session?.steps?.map {
+                    GuidedPlayerStep(
+                        instruction = it.instruction,
+                        durationSeconds = it.durationSeconds,
+                        reps = it.reps,
+                        restSeconds = it.restSeconds,
+                    )
+                } ?: emptyList()
+            if (steps.isEmpty()) {
+                _uiState.update {
+                    it.copy(
+                        offline = true,
+                        loadError = true,
+                        sessionTitle = session?.title ?: "",
+                        stepCount = 0,
+                    )
+                }
+                return
+            }
+            val engine = GuidedSessionPlayer(steps, clock)
+            localStore.loadPlayerState()?.let { saved ->
+                if (saved.programId == programId && saved.sessionId == sessionId) {
+                    engine.restore(
+                        GuidedPlayerSnapshot(
+                            stepIndex = saved.stepIndex,
+                            stepElapsedMs = saved.stepElapsedMs,
+                            paused = saved.paused,
+                            completed = false,
+                        ),
+                    )
+                }
+            }
+            player = engine
+            analytics.track(AnalyticsEvent("program_session_started", mapOf("surface" to "learn")))
+            publish()
+            startTicks()
         }
 
         fun pause() {
             player?.pause()
-            persist()
             publish()
+            persistIfChanged()
         }
 
         fun resume() {
             player?.resume()
-            persist()
             publish()
+            persistIfChanged()
         }
 
         fun completeSession() {
@@ -110,7 +131,17 @@ class GuidedPlayerViewModel
                     sessionId = currentSession.id,
                 )
                 localStore.clearPlayerState()
+                lastPersisted = null
                 analytics.track(AnalyticsEvent("program_session_completed", mapOf("surface" to "learn")))
+            }
+        }
+
+        fun stopSession() {
+            tickJob?.cancel()
+            tickJob = null
+            viewModelScope.launch {
+                localStore.clearPlayerState()
+                lastPersisted = null
             }
         }
 
@@ -119,17 +150,23 @@ class GuidedPlayerViewModel
             tickJob =
                 viewModelScope.launch {
                     while (isActive) {
+                        val before = player?.snapshot()
                         player?.tick()
+                        val after = player?.snapshot()
                         publish()
-                        persist()
-                        delay(250)
+                        if (before != after) {
+                            persistIfChanged()
+                        }
+                        ticker.waitNextTick()
                     }
                 }
         }
 
-        private fun persist() {
+        private fun persistIfChanged() {
             val engine = player ?: return
             val snap = engine.snapshot()
+            if (snap == lastPersisted) return
+            lastPersisted = snap
             viewModelScope.launch {
                 localStore.savePlayerState(
                     programId = programId,
@@ -163,6 +200,8 @@ class GuidedPlayerViewModel
                     paused = snap.paused,
                     completed = snap.completed,
                     snapshot = snap,
+                    loadError = false,
+                    offline = false,
                 )
             }
         }

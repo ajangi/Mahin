@@ -284,6 +284,41 @@ class MahinDatabaseMigrationTest {
         migrated.close()
     }
 
+    @Test
+    fun migrate8To9_addsProgramCacheTable() {
+        helper.createDatabase(TEST_DB, 8).apply {
+            execSQL(
+                """
+                INSERT INTO guided_player_state (
+                    id, programId, sessionId, stepIndex, stepElapsedMs, paused, updatedAtEpochMs
+                ) VALUES (1, 'p', 's', 0, 0, 0, 0)
+                """.trimIndent(),
+            )
+            close()
+        }
+        val migrated =
+            helper.runMigrationsAndValidate(
+                TEST_DB,
+                9,
+                true,
+                MIGRATION_1_2,
+                MIGRATION_2_3,
+                MIGRATION_3_4,
+                MIGRATION_4_5,
+                MIGRATION_5_6,
+                MIGRATION_6_7,
+                MIGRATION_7_8,
+                MIGRATION_8_9,
+            )
+        migrated
+            .query(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='content_program_cache'",
+            ).use { cursor ->
+                assertThat(cursor.moveToFirst()).isTrue()
+            }
+        migrated.close()
+    }
+
     private companion object {
         const val TEST_DB = "migration-test"
     }

@@ -39,6 +39,21 @@ fun GuidedPlayerScreenContent(
                 .padding(MahinSpacing.md)
                 .testTag("learn_guided_player_screen"),
     ) {
+        if (state.loadError) {
+            Text(
+                text =
+                    stringResource(
+                        if (state.offline) {
+                            R.string.learn_player_offline
+                        } else {
+                            R.string.learn_player_load_error
+                        },
+                    ),
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.testTag("learn_guided_player_error"),
+            )
+            return
+        }
         Text(text = state.sessionTitle, style = MaterialTheme.typography.headlineSmall)
         Text(
             text = stringResource(R.string.learn_player_step_label, state.stepIndex + 1, state.stepCount),

@@ -28,6 +28,11 @@ object SensitiveLogRedactor {
             "authorization",
             "phone",
             "email",
+            "program_id",
+            "programid",
+            "program_type",
+            "programtype",
+            "title",
         )
 
     private val forbiddenSubstrings =

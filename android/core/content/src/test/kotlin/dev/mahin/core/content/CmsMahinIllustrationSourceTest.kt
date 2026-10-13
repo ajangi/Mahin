@@ -39,6 +39,27 @@ class CmsMahinIllustrationSourceTest {
     }
 
     @Test
+    fun unsafeUrl_failsSafeWithoutRemoteImagery() {
+        cache.put(
+            MediaAssetDto(
+                id = "asset-unsafe",
+                storageKey = "cycle/editorial/hero/v1",
+                family = "editorial",
+                version = 1,
+                locale = "fa-IR",
+                approvalStatus = "published",
+                medicalGoverned = false,
+                altText = "نمونه",
+                publicUrl = "http://localhost:9000/mahin-media/cycle/hero?sig=1",
+            ),
+        )
+        val meta = source.metadataFor("asset-unsafe")
+        assertThat(meta).isNotNull()
+        assertThat(meta!!.remoteUrl).isNull()
+        assertThat(meta.mayRenderImagery()).isFalse()
+    }
+
+    @Test
     fun unapprovedMedicalAsset_failsSafeWithoutImagery() {
         cache.put(
             MediaAssetDto(

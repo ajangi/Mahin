@@ -5,6 +5,7 @@ import dev.mahin.core.media.illustration.BundledMahinIllustrationCatalog
 import dev.mahin.core.media.illustration.MahinIllustrationMetadata
 import dev.mahin.core.media.illustration.MahinIllustrationSource
 import dev.mahin.core.media.illustration.isMedicalGovernedIllustrationId
+import dev.mahin.core.media.MediaDeliveryUrlGuard
 import dev.mahin.core.model.MediaApprovalStatus
 import dev.mahin.core.model.MediaFamily
 import javax.inject.Inject
@@ -32,8 +33,19 @@ class CmsMahinIllustrationSource
             val url =
                 cached.publicUrl?.takeIf { it.isNotBlank() }
                     ?: mediaDeliveryConfig.urlFor(cached.storageKey)
-            check(!url.contains("userId", ignoreCase = true))
-            check(!url.contains("user", ignoreCase = true))
+            if (!MediaDeliveryUrlGuard.isSafePublicMediaUrl(url)) {
+                MediaDeliveryUrlGuard.logUnsafeUrl("cms_asset")
+                return MahinIllustrationMetadata(
+                    assetId = assetId,
+                    drawableRes = null,
+                    remoteUrl = null,
+                    placeholder = family == MediaFamily.NON_MEDICAL_PLACEHOLDER,
+                    approvalStatus = approval,
+                    contentDescriptionRes = null,
+                    altText = cached.altText,
+                    medicalGoverned = medical || isMedicalGovernedIllustrationId(assetId),
+                )
+            }
             return MahinIllustrationMetadata(
                 assetId = assetId,
                 drawableRes = null,

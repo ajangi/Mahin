@@ -43,34 +43,43 @@ class ContentRepository
                 runCatching { api.pregnancyWeek(week) }.getOrNull()
             }
 
-        override suspend fun dailyTips(
-            mode: String?,
-            cyclePhase: String?,
-            pregnancyWeek: Int?,
-        ): List<ContentDailyTipDto> =
+        override suspend fun fetchDailyTips(key: DailyTipTargetingKey): DailyTipFetchResult =
             withContext(Dispatchers.IO) {
                 awaitCatalogSync()
                 runCatching {
                     api
                         .dailyTips(
                             locale = "fa-IR",
-                            mode = mode,
-                            cyclePhase = cyclePhase,
-                            pregnancyWeek = pregnancyWeek,
+                            mode = key.mode,
+                            cyclePhase = key.cyclePhase,
+                            pregnancyWeek = key.pregnancyWeek,
                         ).items
-                }.getOrElse { emptyList() }
+                }.fold(
+                    onSuccess = { DailyTipFetchResult.Success(it) },
+                    onFailure = { DailyTipFetchResult.NetworkFailure(it) },
+                )
             }
 
-        override suspend fun cachedDailyTip(): ContentDailyTipDto? =
+        override suspend fun cachedDailyTipFor(key: DailyTipTargetingKey): ContentDailyTipDto? =
             withContext(Dispatchers.IO) {
-                cachePreferences.cachedDailyTipJson()?.let { payload ->
-                    runCatching { json.decodeFromString<ContentDailyTipDto>(payload) }.getOrNull()
-                }
+                cachePreferences.cachedDailyTipEnvelopeJson()?.let { payload ->
+                    runCatching { json.decodeFromString<CachedDailyTipEnvelope>(payload) }.getOrNull()
+                }?.takeIf { envelope -> envelope.key == key }?.tip
             }
 
-        override suspend fun cacheDailyTip(tip: ContentDailyTipDto) {
+        override suspend fun cacheDailyTip(
+            tip: ContentDailyTipDto,
+            key: DailyTipTargetingKey,
+        ) {
             withContext(Dispatchers.IO) {
-                cachePreferences.setCachedDailyTipJson(json.encodeToString(tip))
+                val envelope = CachedDailyTipEnvelope(tip = tip, key = key)
+                cachePreferences.setCachedDailyTipEnvelopeJson(json.encodeToString(envelope))
+            }
+        }
+
+        override suspend fun clearCachedDailyTip() {
+            withContext(Dispatchers.IO) {
+                cachePreferences.clearCachedDailyTip()
             }
         }
 
@@ -84,7 +93,9 @@ class ContentRepository
         suspend fun program(documentId: String): ContentProgramDto? =
             withContext(Dispatchers.IO) {
                 awaitCatalogSync()
-                runCatching { api.program(documentId) }.getOrNull()
+                runCatching { api.program(documentId) }
+                    .onSuccess { localStore.cacheProgram(it) }
+                    .getOrElse { localStore.cachedProgram(documentId) }
             }
 
         suspend fun collections(category: String? = null): List<ContentCollectionSummaryDto> =

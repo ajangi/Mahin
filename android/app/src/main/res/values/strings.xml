@@ -300,6 +300,9 @@
     <string name="learn_player_pause">توقف</string>
     <string name="learn_player_resume">ادامه</string>
     <string name="learn_player_finish">پایان</string>
+    <string name="learn_player_offline">برای این جلسه به اینترنت نیاز است.</string>
+    <string name="learn_player_load_error">بارگذاری جلسه ممکن نشد.</string>
+    <string name="today_daily_tip_sample_badge">نمونه</string>
     <string name="onboarding_goal_pregnancy">باردار هستم</string>
     <string name="onboarding_pregnancy_setup_title">شروع پیگیری بارداری</string>
     <string name="onboarding_pregnancy_setup_body">تاریخ اولین روز آخرین پریود (LMP) برای تخمین سن بارداری لازم است. این تخمین پزشکی نیست.</string>

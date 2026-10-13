@@ -30,6 +30,7 @@ import androidx.compose.ui.semantics.invisibleToUser
 import androidx.compose.ui.semantics.semantics
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.mahin.android.BuildConfig
 import dev.mahin.android.R
 import dev.mahin.android.pregnancy.PostPregnancyTransitionActions
 import dev.mahin.android.pregnancy.PostPregnancyTransitionSection
@@ -416,6 +417,14 @@ private fun TodayDailyTipCard(
     ) {
         Column(modifier = Modifier.padding(MahinSpacing.md)) {
             Text(text = stringResource(R.string.today_daily_tip_title), style = MaterialTheme.typography.titleSmall)
+            if (tip.placeholder && BuildConfig.DEBUG) {
+                Text(
+                    text = stringResource(R.string.today_daily_tip_sample_badge),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.padding(bottom = MahinSpacing.xs),
+                )
+            }
             Text(text = tip.title, style = MaterialTheme.typography.titleMedium)
             tip.summary?.let {
                 Text(

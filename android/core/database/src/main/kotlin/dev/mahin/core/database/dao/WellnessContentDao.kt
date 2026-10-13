@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import dev.mahin.core.database.entity.ContentArticleCacheEntity
+import dev.mahin.core.database.entity.ContentProgramCacheEntity
 import dev.mahin.core.database.entity.ContentRecentViewEntity
 import dev.mahin.core.database.entity.GuidedPlayerStateEntity
 import dev.mahin.core.database.entity.MediaAssetCacheEntity
@@ -44,4 +45,10 @@ interface WellnessContentDao {
 
     @Query("SELECT COUNT(*) FROM program_session_completion WHERE programId = :programId")
     suspend fun completionCountForProgram(programId: String): Int
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertProgramCache(entity: ContentProgramCacheEntity)
+
+    @Query("SELECT * FROM content_program_cache WHERE documentId = :documentId LIMIT 1")
+    suspend fun programCache(documentId: String): ContentProgramCacheEntity?
 }

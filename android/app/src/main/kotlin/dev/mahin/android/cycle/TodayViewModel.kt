@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.mahin.core.common.LocalDateClock
 import dev.mahin.core.content.DailyTipDataSource
+import dev.mahin.core.content.DailyTipFetchResult
+import dev.mahin.core.content.DailyTipTargetingKey
 import dev.mahin.core.database.cycle.CycleDashboard
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.entity.DailyLogEntity
@@ -322,20 +324,28 @@ class TodayViewModel
                 } else {
                     null
                 }
-            val tips =
-                runCatching {
-                    dailyTipDataSource.dailyTips(
-                        mode = apiMode,
-                        cyclePhase = cyclePhase,
-                        pregnancyWeek = pregnancyWeek,
-                    )
-                }.getOrElse { emptyList() }
+            val targetingKey =
+                DailyTipTargetingKey(
+                    mode = apiMode,
+                    cyclePhase = cyclePhase,
+                    pregnancyWeek = pregnancyWeek,
+                    localDateIso = localDateClock.today().toString(),
+                )
             val tip =
-                tips.firstOrNull()
-                    ?: dailyTipDataSource.cachedDailyTip()
-            if (tip != null) {
-                dailyTipDataSource.cacheDailyTip(tip)
-            }
+                when (val fetch = dailyTipDataSource.fetchDailyTips(targetingKey)) {
+                    is DailyTipFetchResult.Success -> {
+                        val resolved = fetch.tips.firstOrNull()
+                        if (resolved == null) {
+                            dailyTipDataSource.clearCachedDailyTip()
+                            null
+                        } else {
+                            dailyTipDataSource.cacheDailyTip(resolved, targetingKey)
+                            resolved
+                        }
+                    }
+                    is DailyTipFetchResult.NetworkFailure ->
+                        dailyTipDataSource.cachedDailyTipFor(targetingKey)
+                }
             val dismissed =
                 tip != null &&
                     contentCachePreferences.isDailyTipDismissed(tip.id, localDateClock.today().toString())

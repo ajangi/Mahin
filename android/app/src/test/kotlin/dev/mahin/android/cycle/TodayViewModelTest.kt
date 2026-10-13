@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import dev.mahin.core.common.FixedLocalDateClock
 import dev.mahin.core.content.ContentDailyTipDto
+import dev.mahin.core.content.DailyTipTargetingKey
 import dev.mahin.core.database.MahinDatabase
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.entity.CycleProfileEntity
@@ -20,6 +21,7 @@ import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.core.testing.ViewModelStoreTestHarness
 import java.time.LocalDate
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -243,9 +245,8 @@ class TodayViewModelTest {
         runBlocking {
             seedCycleProfile()
             dailyTipDataSource.tips = emptyList()
-            dailyTipDataSource.cached = null
             val viewModel = createViewModel()
-            awaitUntil { viewModel.uiState.value.dailyTip == null }
+            awaitUntil { dailyTipDataSource.fetchCount > 0 }
             assertThat(viewModel.uiState.value.dailyTip).isNull()
         }
     }
@@ -255,10 +256,56 @@ class TodayViewModelTest {
         runBlocking {
             seedCycleProfile()
             dailyTipDataSource.throwOnFetch = true
-            dailyTipDataSource.cached = null
             val viewModel = createViewModel()
-            awaitUntil { viewModel.uiState.value.dailyTip == null }
+            awaitUntil { dailyTipDataSource.fetchCount > 0 }
             assertThat(viewModel.uiState.value.dailyTip).isNull()
+        }
+    }
+
+    @Test
+    fun dailyTip_hiddenWhenApiEmptyDespiteStaleCache() {
+        runBlocking {
+            seedCycleProfile()
+            val staleTip =
+                ContentDailyTipDto(
+                    id = "stale",
+                    slug = "stale",
+                    locale = "fa-IR",
+                    title = "قدیمی",
+                    medicalRiskLevel = "none",
+                    contentVersion = 1,
+                )
+            val key = expectedDailyTipKey()
+            dailyTipDataSource.seedCache(staleTip, key)
+            dailyTipDataSource.tips = emptyList()
+            val viewModel = createViewModel()
+            awaitUntil { dailyTipDataSource.fetchCount > 0 }
+            assertThat(viewModel.uiState.value.dailyTip).isNull()
+            assertThat(dailyTipDataSource.cachedDailyTipFor(key)).isNull()
+        }
+    }
+
+    @Test
+    fun dailyTip_shownWhenOfflineWithMatchingCache() {
+        runBlocking {
+            seedCycleProfile()
+            val cachedTip =
+                ContentDailyTipDto(
+                    id = "cached",
+                    slug = "cached",
+                    locale = "fa-IR",
+                    title = "ذخیره‌شده",
+                    medicalRiskLevel = "none",
+                    contentVersion = 1,
+                )
+            dailyTipDataSource.seedCache(cachedTip, expectedDailyTipKey())
+            dailyTipDataSource.throwOnFetch = true
+            val viewModel = createViewModel()
+            awaitUntil { viewModel.uiState.value.dailyTip != null }
+            assertThat(
+                viewModel.uiState.value.dailyTip
+                    ?.title,
+            ).isEqualTo("ذخیره‌شده")
         }
     }
 
@@ -337,6 +384,26 @@ class TodayViewModelTest {
                 onboardingCompleted = true,
                 updatedAtEpochMs = 0L,
             ),
+        )
+    }
+
+    private suspend fun expectedDailyTipKey(): DailyTipTargetingKey {
+        val dashboard = cycleRepository.observeDashboard(fixedToday).first()
+        val cyclePhase =
+            DailyTipTargetingMapper.cyclePhase(
+                cycleDay = dashboard.prediction.cycleDay,
+                onPeriodToday = dashboard.onPeriodToday,
+                inFertileWindow =
+                    dashboard.prediction.fertileWindow?.let { range ->
+                        val today = fixedToday
+                        !today.isBefore(range.earliest) && !today.isAfter(range.latest)
+                    } == true,
+            )
+        return DailyTipTargetingKey(
+            mode = "cycle",
+            cyclePhase = cyclePhase,
+            pregnancyWeek = null,
+            localDateIso = fixedToday.toString(),
         )
     }
 

@@ -3,15 +3,21 @@ package dev.mahin.android.learn
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.mahin.core.common.LocalDateClock
 import dev.mahin.core.content.ContentArticleSummaryDto
 import dev.mahin.core.content.ContentRepository
+import dev.mahin.core.database.cycle.CycleTrackingRepository
+import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
 import dev.mahin.core.datastore.ContentCachePreferencesRepository
 import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.domain.content.PersianSearchNormalizer
+import dev.mahin.domain.pregnancy.PregnancyDatingEngineV1
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -21,6 +27,9 @@ class LearnViewModel
     constructor(
         private val contentRepository: ContentRepository,
         private val cachePreferences: ContentCachePreferencesRepository,
+        private val cycleRepository: CycleTrackingRepository,
+        private val pregnancyRepository: PregnancyTrackingRepository,
+        private val localDateClock: LocalDateClock,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(LearnUiState())
         val uiState: StateFlow<LearnUiState> = _uiState.asStateFlow()
@@ -29,7 +38,30 @@ class LearnViewModel
             viewModelScope.launch {
                 val bookmarks = cachePreferences.localBookmarkIds()
                 _uiState.update { it.copy(bookmarkedIds = bookmarks) }
-                refreshMagazine()
+            }
+            viewModelScope.launch {
+                combine(
+                    cycleRepository.observeDashboard(localDateClock.today()),
+                    pregnancyRepository.observeProfile(),
+                    pregnancyRepository.observeActivePregnancy(),
+                ) { dashboard, profile, pregnancy ->
+                    val mode = profile?.reproductiveMode ?: ReproductiveMode.CYCLE_TRACKING
+                    val pregnancyWeek =
+                        if (mode == ReproductiveMode.PREGNANT && pregnancy != null) {
+                            PregnancyDatingEngineV1
+                                .status(
+                                    lmpDate = pregnancy.lmpDate,
+                                    clinicalEddDate = pregnancy.clinicalEddDate,
+                                    asOfDate = localDateClock.today(),
+                                ).displayWeekNumber
+                        } else {
+                            null
+                        }
+                    mode to pregnancyWeek
+                }.distinctUntilChanged()
+                    .collect { (mode, pregnancyWeek) ->
+                        refreshMagazine(reproductiveMode = mode, pregnancyWeek = pregnancyWeek)
+                    }
             }
         }
 
@@ -96,9 +128,6 @@ class LearnViewModel
                         }
                 val recentIds = contentRepository.recentArticleIds()
                 val recentArticles = recentIds.mapNotNull { id -> resolveSummary(id, contextual) }
-                featured.forEach { collection ->
-                    collection.id.let { /* hero media preloaded when detail opens */ }
-                }
                 _uiState.update {
                     it.copy(
                         loading = false,
