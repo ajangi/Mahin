@@ -1,6 +1,7 @@
 package dev.mahin.backend.content
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.JsonNode
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.NotBlank
@@ -87,6 +88,9 @@ data class CreateContentDocumentRequest(
     val tags: List<String> = emptyList(),
     val medicalRiskLevel: MedicalRiskLevel = MedicalRiskLevel.GENERAL_EDUCATION,
     val sourceIds: List<String> = emptyList(),
+    val typePayload: JsonNode? = null,
+    val effectiveFrom: String? = null,
+    val effectiveTo: String? = null,
 )
 
 data class AdminContentVersionResponse(
@@ -110,6 +114,9 @@ data class AdminContentVersionResponse(
     val clinicalReviewedAt: String?,
     val nextReviewDueAt: String?,
     val published: Boolean,
+    val typePayload: JsonNode? = null,
+    val effectiveFrom: String? = null,
+    val effectiveTo: String? = null,
 )
 
 data class WorkflowTransitionRequest(

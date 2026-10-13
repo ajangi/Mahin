@@ -50,6 +50,7 @@ class ContentAdminService(
                 ),
             )
         val version = newVersion(document, request, versionNumber = 1)
+        validateTypePayload(version)
         linkSources(version, request.sourceIds)
         auditService.record(currentCmsStaff(), "document_created", document.id, version.id)
         return toAdminResponse(document, version)
@@ -68,6 +69,7 @@ class ContentAdminService(
         val latest =
             versionRepository.findTopByDocumentIdOrderByVersionNumberDesc(document.id).orElseThrow()
         val version = newVersion(document, request, versionNumber = latest.versionNumber + 1)
+        validateTypePayload(version)
         linkSources(version, request.sourceIds)
         document.updatedAt = Instant.now()
         documentRepository.save(document)
@@ -249,8 +251,9 @@ class ContentAdminService(
                 throw ResponseStatusException(HttpStatus.CONFLICT, "sources_required")
             }
         }
+        ContentTypePayloadValidator.validateForPublish(version.contentType, version.typePayloadJson, objectMapper)
         version.status = "published"
-        version.effectiveFrom = Instant.now()
+        version.effectiveFrom = version.effectiveFrom ?: Instant.now()
         document.publishedVersionId = version.id
         document.withdrawnAt = null
         catalogService.bumpPublicationRevision()
@@ -285,12 +288,23 @@ class ContentAdminService(
                     lifeStage = request.lifeStage,
                     gestationalWeek = request.gestationalWeek,
                     tagsJson = objectMapper.writeValueAsString(request.tags),
+                    typePayloadJson = ContentTypePayloadCodec.serialize(objectMapper, request.typePayload),
                     medicalRiskLevel = request.medicalRiskLevel.wireValue(),
                     status = "draft",
+                    effectiveFrom = request.effectiveFrom?.let { Instant.parse(it) },
+                    effectiveTo = request.effectiveTo?.let { Instant.parse(it) },
                     createdByStaffId = currentCmsStaff().staffId,
                 ),
             )
         return version
+    }
+
+    private fun validateTypePayload(version: ContentVersionEntity) {
+        ContentTypePayloadValidator.validateForSave(
+            version.contentType,
+            version.typePayloadJson,
+            objectMapper,
+        )
     }
 
     private fun linkSources(
@@ -314,7 +328,7 @@ class ContentAdminService(
         version: ContentVersionEntity,
     ): AdminContentVersionResponse {
         val sourceIds = versionSourceRepository.findByVersionId(version.id).map { it.sourceId }
-        return ContentMapper.toAdminVersionResponse(document, version, sourceIds)
+        return ContentMapper.toAdminVersionResponse(document, version, sourceIds, objectMapper)
     }
 
     private fun requireEditor() {
