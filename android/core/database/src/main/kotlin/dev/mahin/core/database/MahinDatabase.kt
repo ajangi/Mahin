@@ -17,19 +17,25 @@ import dev.mahin.core.database.dao.PregnancyDatingRevisionDao
 import dev.mahin.core.database.dao.PregnancyDayLogDao
 import dev.mahin.core.database.dao.PregnancyRecordDao
 import dev.mahin.core.database.dao.TtcDayLogDao
+import dev.mahin.core.database.dao.WellnessContentDao
+import dev.mahin.core.database.entity.ContentArticleCacheEntity
+import dev.mahin.core.database.entity.ContentRecentViewEntity
 import dev.mahin.core.database.entity.ContractionEventEntity
 import dev.mahin.core.database.entity.ContractionSessionEntity
 import dev.mahin.core.database.entity.CustomSymptomTagEntity
 import dev.mahin.core.database.entity.CycleProfileEntity
 import dev.mahin.core.database.entity.DailyLogEntity
+import dev.mahin.core.database.entity.GuidedPlayerStateEntity
 import dev.mahin.core.database.entity.KickEventEntity
 import dev.mahin.core.database.entity.KickSessionEntity
+import dev.mahin.core.database.entity.MediaAssetCacheEntity
 import dev.mahin.core.database.entity.PeriodDayEntity
 import dev.mahin.core.database.entity.PeriodRecordEntity
 import dev.mahin.core.database.entity.PregnancyAppointmentEntity
 import dev.mahin.core.database.entity.PregnancyDatingRevisionEntity
 import dev.mahin.core.database.entity.PregnancyDayLogEntity
 import dev.mahin.core.database.entity.PregnancyRecordEntity
+import dev.mahin.core.database.entity.ProgramSessionCompletionEntity
 import dev.mahin.core.database.entity.TtcDayLogEntity
 
 @Database(
@@ -49,6 +55,11 @@ import dev.mahin.core.database.entity.TtcDayLogEntity
         ContractionSessionEntity::class,
         ContractionEventEntity::class,
         CustomSymptomTagEntity::class,
+        ContentArticleCacheEntity::class,
+        ContentRecentViewEntity::class,
+        ProgramSessionCompletionEntity::class,
+        GuidedPlayerStateEntity::class,
+        MediaAssetCacheEntity::class,
     ],
     version = MahinDatabase.VERSION,
     exportSchema = true,
@@ -85,8 +96,10 @@ abstract class MahinDatabase : RoomDatabase() {
 
     abstract fun customSymptomTagDao(): CustomSymptomTagDao
 
+    abstract fun wellnessContentDao(): WellnessContentDao
+
     companion object {
-        const val VERSION: Int = 7
+        const val VERSION: Int = 8
         const val EXPORTS_SCHEMA: Boolean = true
     }
 }

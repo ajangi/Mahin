@@ -226,6 +226,11 @@ class M14aFullScreenGoldenTest {
                 onQueryChange = {},
                 onSearch = {},
                 onToggleBookmark = {},
+                onSelectCategory = {},
+                onOpenArticle = {},
+                onOpenProgram = {},
+                onOpenCollection = {},
+                illustrationSource = dev.mahin.core.media.illustration.BundledMahinIllustrationCatalog,
                 modifier = Modifier.fillMaxSize(),
             )
         }

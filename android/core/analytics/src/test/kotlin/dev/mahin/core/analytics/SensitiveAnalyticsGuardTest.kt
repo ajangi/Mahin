@@ -33,6 +33,16 @@ class SensitiveAnalyticsGuardTest {
     }
 
     @Test
+    fun acceptsProgramSessionEventsWithCoarseSurface() {
+        SensitiveAnalyticsGuard.sanitize(
+            AnalyticsEvent("program_session_started", mapOf("surface" to "learn")),
+        )
+        SensitiveAnalyticsGuard.sanitize(
+            AnalyticsEvent("program_session_completed", mapOf("surface" to "learn")),
+        )
+    }
+
+    @Test
     fun acceptsLogCategoryOpenedWithCoarseSurface() {
         val event =
             SensitiveAnalyticsGuard.sanitize(

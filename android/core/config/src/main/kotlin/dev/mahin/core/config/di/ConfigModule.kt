@@ -5,7 +5,9 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import dev.mahin.core.config.AppEnvironment
 import dev.mahin.core.config.FeatureFlagGateway
+import dev.mahin.core.config.MediaDeliveryConfig
 import dev.mahin.core.config.MetaApi
 import dev.mahin.core.config.RemoteFeatureFlagGateway
 import dev.mahin.core.network.BuildConfig
@@ -29,4 +31,17 @@ object ConfigProvidesModule {
         MahinHttpClientFactory()
             .create(BuildConfig.MAHIN_API_BASE_URL)
             .create(MetaApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideMediaDeliveryConfig(): MediaDeliveryConfig {
+        val base = dev.mahin.core.config.BuildConfig.MEDIA_PUBLIC_BASE_URL
+        val environment =
+            if (base.startsWith("https://")) {
+                AppEnvironment.PRODUCTION
+            } else {
+                AppEnvironment.LOCAL
+            }
+        return MediaDeliveryConfig(publicBaseUrl = base, environment = environment)
+    }
 }

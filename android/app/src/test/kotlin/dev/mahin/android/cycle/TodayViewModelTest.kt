@@ -5,11 +5,13 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import dev.mahin.core.common.FixedLocalDateClock
+import dev.mahin.core.content.ContentDailyTipDto
 import dev.mahin.core.database.MahinDatabase
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.entity.CycleProfileEntity
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
 import dev.mahin.core.datastore.CalendarUiPreferencesRepository
+import dev.mahin.core.datastore.ContentCachePreferencesRepository
 import dev.mahin.core.datastore.NotificationPreferencesRepository
 import dev.mahin.core.datastore.PregnancyTimerPreferencesRepository
 import dev.mahin.core.model.CycleRegularity
@@ -35,6 +37,8 @@ class TodayViewModelTest {
     private lateinit var database: MahinDatabase
     private lateinit var cycleRepository: CycleTrackingRepository
     private lateinit var pregnancyRepository: PregnancyTrackingRepository
+    private lateinit var contentCachePreferences: ContentCachePreferencesRepository
+    private val dailyTipDataSource = FakeDailyTipDataSource()
     private val viewModelStore = ViewModelStoreTestHarness()
 
     @Before
@@ -48,6 +52,7 @@ class TodayViewModelTest {
         database.openHelper.writableDatabase
         cycleRepository = CycleTrackingRepository(database)
         pregnancyRepository = PregnancyTrackingRepository(database, PregnancyTimerPreferencesRepository(context))
+        contentCachePreferences = ContentCachePreferencesRepository(context)
     }
 
     @After
@@ -57,6 +62,7 @@ class TodayViewModelTest {
             val context = ApplicationProvider.getApplicationContext<Context>()
             NotificationPreferencesRepository(context).clear()
             CalendarUiPreferencesRepository(context).clear()
+            contentCachePreferences.clearCachedArticles()
         }
         database.close()
     }
@@ -232,9 +238,64 @@ class TodayViewModelTest {
         }
     }
 
+    @Test
+    fun dailyTip_hiddenWhenApiReturnsNothingAndNoCache() {
+        runBlocking {
+            seedCycleProfile()
+            dailyTipDataSource.tips = emptyList()
+            dailyTipDataSource.cached = null
+            val viewModel = createViewModel()
+            awaitUntil { viewModel.uiState.value.dailyTip == null }
+            assertThat(viewModel.uiState.value.dailyTip).isNull()
+        }
+    }
+
+    @Test
+    fun dailyTip_hiddenWhenOfflineWithoutCache() {
+        runBlocking {
+            seedCycleProfile()
+            dailyTipDataSource.throwOnFetch = true
+            dailyTipDataSource.cached = null
+            val viewModel = createViewModel()
+            awaitUntil { viewModel.uiState.value.dailyTip == null }
+            assertThat(viewModel.uiState.value.dailyTip).isNull()
+        }
+    }
+
+    @Test
+    fun dailyTip_showsFromApiWhenAvailable() {
+        runBlocking {
+            seedCycleProfile()
+            dailyTipDataSource.tips =
+                listOf(
+                    ContentDailyTipDto(
+                        id = "tip-1",
+                        slug = "tip",
+                        locale = "fa-IR",
+                        title = "نکته",
+                        medicalRiskLevel = "none",
+                        contentVersion = 1,
+                    ),
+                )
+            val viewModel = createViewModel()
+            awaitUntil { viewModel.uiState.value.dailyTip != null }
+            assertThat(
+                viewModel.uiState.value.dailyTip
+                    ?.title,
+            ).isEqualTo("نکته")
+        }
+    }
+
     private fun createViewModel(): TodayViewModel =
         viewModelStore.hold(
-            TodayViewModel(cycleRepository, pregnancyRepository, notificationPrefs(), localDateClock),
+            TodayViewModel(
+                cycleRepository,
+                pregnancyRepository,
+                notificationPrefs(),
+                dailyTipDataSource,
+                contentCachePreferences,
+                localDateClock,
+            ),
         )
 
     private fun notificationPrefs(): NotificationPreferencesRepository {

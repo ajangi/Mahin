@@ -8,9 +8,12 @@ import dev.mahin.core.model.MediaApprovalStatus
 data class MahinIllustrationMetadata(
     val assetId: String,
     val drawableRes: Int?,
+    val remoteUrl: String? = null,
     val placeholder: Boolean,
     val approvalStatus: MediaApprovalStatus?,
     val contentDescriptionRes: Int?,
+    val altText: String? = null,
+    val medicalGoverned: Boolean = false,
 )
 
 /**
@@ -30,7 +33,12 @@ fun isMedicalGovernedIllustrationId(assetId: String): Boolean =
  */
 fun MahinIllustrationMetadata.mayRenderBundledImagery(): Boolean {
     if (drawableRes == null) return false
-    val medical = isMedicalGovernedIllustrationId(assetId)
+    return mayRenderImagery()
+}
+
+fun MahinIllustrationMetadata.mayRenderImagery(): Boolean {
+    if (drawableRes == null && remoteUrl.isNullOrBlank()) return false
+    val medical = medicalGoverned || isMedicalGovernedIllustrationId(assetId)
     return when {
         placeholder -> !medical
         !medical -> true

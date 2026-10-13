@@ -5,6 +5,17 @@ plugins {
 
 android {
     namespace = "dev.mahin.core.config"
+    buildFeatures {
+        buildConfig = true
+    }
+    defaultConfig {
+        buildConfigField("String", "MEDIA_PUBLIC_BASE_URL", "\"http://10.0.2.2:9000/mahin-media\"")
+    }
+    buildTypes {
+        release {
+            buildConfigField("String", "MEDIA_PUBLIC_BASE_URL", "\"https://media.mahin.app\"")
+        }
+    }
 }
 
 dependencies {

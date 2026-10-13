@@ -8,4 +8,5 @@ data class TodayScreenActions(
     val onOpenPlan: () -> Unit = {},
     val onOpenPregnancyTab: () -> Unit = {},
     val onOpenCalendar: () -> Unit = {},
+    val onDismissDailyTip: () -> Unit = {},
 )

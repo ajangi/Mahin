@@ -164,6 +164,7 @@ tasks.withType<Test>().configureEach {
             excludeTestsMatching("dev.mahin.android.golden.M14cShellGoldenTest")
             excludeTestsMatching("dev.mahin.android.golden.M15FullScreenGoldenTest")
             excludeTestsMatching("dev.mahin.android.golden.M16FullScreenGoldenTest")
+            excludeTestsMatching("dev.mahin.android.golden.M17bFullScreenGoldenTest")
             excludeTestsMatching("dev.mahin.android.shell.MahinShellNavigationTest")
             excludeTestsMatching("dev.mahin.android.shell.ShellModeTransitionTest")
             excludeTestsMatching("dev.mahin.android.settings.SettingsScreenContentTest")

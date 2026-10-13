@@ -244,6 +244,46 @@ class MahinDatabaseMigrationTest {
         migrated.close()
     }
 
+    @Test
+    fun migrate7To8_addsWellnessContentTables() {
+        helper.createDatabase(TEST_DB, 7).apply {
+            execSQL(
+                """
+                INSERT INTO daily_log (
+                    id, logDate, moodTags, symptomTags, medicationTags, painSeverity,
+                    painLocation, painNote, note, localCustomSymptomTags, sleepLogged,
+                    exerciseLogged, waterGlasses, stressLevel, updatedAtEpochMs
+                ) VALUES ('d1', '2025-01-01', '', 'سردرد', '', NULL, NULL, NULL, NULL, '', 0, 0, 0, NULL, 0)
+                """.trimIndent(),
+            )
+            close()
+        }
+        val migrated =
+            helper.runMigrationsAndValidate(
+                TEST_DB,
+                8,
+                true,
+                MIGRATION_1_2,
+                MIGRATION_2_3,
+                MIGRATION_3_4,
+                MIGRATION_4_5,
+                MIGRATION_5_6,
+                MIGRATION_6_7,
+                MIGRATION_7_8,
+            )
+        migrated
+            .query(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='content_article_cache'",
+            ).use { cursor ->
+                assertThat(cursor.moveToFirst()).isTrue()
+            }
+        migrated.query("SELECT symptomTags FROM daily_log WHERE id = 'd1'").use { cursor ->
+            assertThat(cursor.moveToFirst()).isTrue()
+            assertThat(cursor.getString(0)).isEqualTo("سردرد")
+        }
+        migrated.close()
+    }
+
     private companion object {
         const val TEST_DB = "migration-test"
     }

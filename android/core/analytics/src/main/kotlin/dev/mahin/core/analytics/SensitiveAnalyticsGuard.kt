@@ -18,6 +18,8 @@ object SensitiveAnalyticsGuard {
             "pregnancy_week_opened",
             "appointment_created",
             "article_opened",
+            "program_session_started",
+            "program_session_completed",
             "paywall_viewed",
             "subscription_started",
             "sync_failed",
