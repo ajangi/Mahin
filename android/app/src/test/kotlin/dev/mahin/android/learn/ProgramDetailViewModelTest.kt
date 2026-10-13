@@ -6,6 +6,7 @@ import dev.mahin.core.testing.ViewModelStoreTestHarness
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -15,8 +16,13 @@ import org.robolectric.shadows.ShadowLooper
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class ProgramDetailViewModelTest {
-    private val harness = LearnContentTestHarness()
+    private lateinit var harness: LearnContentTestHarness
     private val viewModelStore = ViewModelStoreTestHarness()
+
+    @Before
+    fun setUp() {
+        harness = LearnContentTestHarness()
+    }
 
     @After
     fun tearDown() {

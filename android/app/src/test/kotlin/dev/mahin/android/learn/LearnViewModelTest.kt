@@ -30,7 +30,7 @@ import org.robolectric.shadows.ShadowLooper
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class LearnViewModelTest {
-    private val harness = LearnContentTestHarness()
+    private lateinit var harness: LearnContentTestHarness
     private val viewModelStore = ViewModelStoreTestHarness()
     private lateinit var database: MahinDatabase
     private lateinit var cycleRepository: CycleTrackingRepository
@@ -39,6 +39,7 @@ class LearnViewModelTest {
 
     @Before
     fun setUp() {
+        harness = LearnContentTestHarness()
         harness.api.searchResults = emptyList()
         harness.api.collections = emptyList()
         harness.api.lastSearchQuery = null
