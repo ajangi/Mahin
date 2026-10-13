@@ -22,7 +22,7 @@ cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug assemble
 | Media URLs | `MediaDeliveryUrlGuard` (no throw); unsafe CMS URLs fail to neutral frame |
 | Coil disk cache | `CoilMediaImageLoaderFactory` — `mahin_media_coil` dir, 64 MiB (`CoilMediaImageLoaderFactoryTest`) |
 | Analytics | `program_id`, `program_type`, `title` rejected in telemetry keys |
-| Player persistence | Room state saved on snapshot change (step/pause), not every tick |
+| Player persistence | Room writes on step/pause/completed/5s checkpoint + pause/stop/onCleared; not every elapsed tick |
 | Today placeholder tips | Debug `نمونه` badge when `BuildConfig.DEBUG` |
 
 ## Migrations
@@ -47,7 +47,7 @@ cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug assemble
 ## Deferred / carry-over
 
 - Premium collection gating — all collections FREE (unchanged).
-- Coil HTTP cache-hit integration test was attempted; Roborazzi/Coil execute tests hung in this VM — bounded cache dir/size covered by factory unit test.
+- **1.3× Learn magazine goldens** removed from M17b; scale coverage remains via M14a `learn_populated` goldens.
 - M17a media validation / N+1 (backend).
 - Real clinical CMS content before launch.
 

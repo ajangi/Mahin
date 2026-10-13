@@ -9,6 +9,7 @@ class FakeDailyTipDataSource : DailyTipDataSource {
     var tips: List<ContentDailyTipDto> = emptyList()
     var throwOnFetch: Boolean = false
     var fetchCount: Int = 0
+    var dailyTipRefreshCompleted: Int = 0
     var lastFetchKey: DailyTipTargetingKey? = null
 
     private var cachedTip: ContentDailyTipDto? = null
@@ -17,10 +18,14 @@ class FakeDailyTipDataSource : DailyTipDataSource {
     override suspend fun fetchDailyTips(key: DailyTipTargetingKey): DailyTipFetchResult {
         fetchCount += 1
         lastFetchKey = key
-        if (throwOnFetch) {
-            return DailyTipFetchResult.NetworkFailure(IllegalStateException("offline"))
-        }
-        return DailyTipFetchResult.Success(tips)
+        val result =
+            if (throwOnFetch) {
+                DailyTipFetchResult.NetworkFailure(IllegalStateException("offline"))
+            } else {
+                DailyTipFetchResult.Success(tips)
+            }
+        dailyTipRefreshCompleted += 1
+        return result
     }
 
     override suspend fun cachedDailyTipFor(key: DailyTipTargetingKey): ContentDailyTipDto? {

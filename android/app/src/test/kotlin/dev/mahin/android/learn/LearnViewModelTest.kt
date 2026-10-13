@@ -14,22 +14,30 @@ import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
 import dev.mahin.core.datastore.PregnancyTimerPreferencesRepository
 import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
+import dev.mahin.core.testing.MainDispatcherRule
 import dev.mahin.core.testing.ViewModelStoreTestHarness
 import dev.mahin.domain.pregnancy.PregnancyDatingEngineV1
 import java.time.LocalDate
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import org.robolectric.shadows.ShadowLooper
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class LearnViewModelTest {
+    private val testDispatcher = StandardTestDispatcher()
+
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule(testDispatcher)
+
     private lateinit var harness: LearnContentTestHarness
     private val viewModelStore = ViewModelStoreTestHarness()
     private lateinit var database: MahinDatabase
@@ -62,8 +70,8 @@ class LearnViewModelTest {
     }
 
     @Test
-    fun search_normalizesPersianQueryBeforeRepositoryCall() {
-        runBlocking {
+    fun search_normalizesPersianQueryBeforeRepositoryCall() =
+        runTest(testDispatcher) {
             seedCycleProfile()
             harness.api.searchResults =
                 listOf(
@@ -76,17 +84,17 @@ class LearnViewModelTest {
                     ),
                 )
             val viewModel = createViewModel()
+            viewModel.uiState.filter { !it.loading }.first()
             viewModel.onQueryChange("علائم يك")
             viewModel.search()
-            awaitUntil { harness.api.lastSearchQuery != null }
+            viewModel.uiState.filter { it.searchResults.isNotEmpty() }.first()
             assertThat(harness.api.lastSearchQuery).isEqualTo("علائم یک")
             assertThat(viewModel.uiState.value.searchResults).hasSize(1)
         }
-    }
 
     @Test
-    fun refreshMagazine_usesTtcLifeStageWhenProfileIsTtc() {
-        runBlocking {
+    fun refreshMagazine_usesTtcLifeStageWhenProfileIsTtc() =
+        runTest(testDispatcher) {
             database.cycleProfileDao().upsert(
                 CycleProfileEntity(
                     reproductiveMode = ReproductiveMode.TRYING_TO_CONCEIVE,
@@ -109,17 +117,13 @@ class LearnViewModelTest {
                     ),
                 )
             val viewModel = createViewModel()
-            awaitUntil {
-                viewModel.uiState.value.featuredCollections
-                    .isNotEmpty()
-            }
-            awaitUntil { harness.api.lastSearchLifeStage == "ttc" }
+            viewModel.uiState.filter { it.featuredCollections.isNotEmpty() }.first()
+            assertThat(harness.api.lastSearchLifeStage).isEqualTo("ttc")
         }
-    }
 
     @Test
-    fun refreshMagazine_filtersPregnancyWeekWhenPregnant() {
-        runBlocking {
+    fun refreshMagazine_filtersPregnancyWeekWhenPregnant() =
+        runTest(testDispatcher) {
             database.cycleProfileDao().upsert(
                 CycleProfileEntity(
                     reproductiveMode = ReproductiveMode.PREGNANT,
@@ -163,10 +167,7 @@ class LearnViewModelTest {
                     ),
                 )
             val viewModel = createViewModel()
-            awaitUntil {
-                viewModel.uiState.value.contextualArticles
-                    .isNotEmpty()
-            }
+            viewModel.uiState.filter { it.contextualArticles.isNotEmpty() }.first()
             assertThat(harness.api.lastSearchLifeStage).isEqualTo("pregnancy")
             assertThat(
                 viewModel.uiState.value.contextualArticles
@@ -177,21 +178,18 @@ class LearnViewModelTest {
                     .map { it.id },
             ).doesNotContain("w-other")
         }
-    }
 
     @Test
-    fun toggleBookmark_persistsLocally() {
-        runBlocking {
+    fun toggleBookmark_persistsLocally() =
+        runTest(testDispatcher) {
             seedCycleProfile()
             val viewModel = createViewModel()
+            viewModel.uiState.filter { !it.loading }.first()
             viewModel.toggleBookmark("article-1")
-            awaitUntil {
-                viewModel.uiState.value.bookmarkedIds
-                    .contains("article-1")
-            }
+            viewModel.uiState.filter { "article-1" in it.bookmarkedIds }.first()
+            assertThat(viewModel.uiState.value.bookmarkedIds).contains("article-1")
             assertThat(harness.cachePreferences.localBookmarkIds()).contains("article-1")
         }
-    }
 
     private fun createViewModel(): LearnViewModel =
         viewModelStore.hold(
@@ -215,14 +213,5 @@ class LearnViewModelTest {
                 updatedAtEpochMs = 0L,
             ),
         )
-    }
-
-    private suspend fun awaitUntil(predicate: () -> Boolean) {
-        repeat(200) {
-            if (predicate()) return
-            delay(10)
-            ShadowLooper.idleMainLooper()
-        }
-        throw AssertionError("Condition not met")
     }
 }

@@ -2,20 +2,28 @@ package dev.mahin.android.learn
 
 import androidx.lifecycle.SavedStateHandle
 import com.google.common.truth.Truth.assertThat
+import dev.mahin.core.testing.MainDispatcherRule
 import dev.mahin.core.testing.ViewModelStoreTestHarness
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import org.robolectric.shadows.ShadowLooper
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class ProgramDetailViewModelTest {
+    private val testDispatcher = StandardTestDispatcher()
+
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule(testDispatcher)
+
     private lateinit var harness: LearnContentTestHarness
     private val viewModelStore = ViewModelStoreTestHarness()
 
@@ -31,8 +39,8 @@ class ProgramDetailViewModelTest {
     }
 
     @Test
-    fun loadsProgramAndCompletionCount() {
-        runBlocking {
+    fun loadsProgramAndCompletionCount() =
+        runTest(testDispatcher) {
             harness.api.programs["prog-1"] = sampleProgram()
             harness.localStore.logSessionCompletion("c1", "prog-1", "sess-1")
             val viewModel =
@@ -43,21 +51,11 @@ class ProgramDetailViewModelTest {
                         localStore = harness.localStore,
                     ),
                 )
-            awaitUntil { !viewModel.uiState.value.loading }
+            viewModel.uiState.filter { it.program != null }.first()
             assertThat(
                 viewModel.uiState.value.program
                     ?.title,
             ).isEqualTo("برنامه")
             assertThat(viewModel.uiState.value.completionCount).isEqualTo(1)
         }
-    }
-
-    private suspend fun awaitUntil(predicate: () -> Boolean) {
-        repeat(200) {
-            if (predicate()) return
-            delay(10)
-            ShadowLooper.idleMainLooper()
-        }
-        throw AssertionError("Condition not met")
-    }
 }

@@ -246,7 +246,7 @@ class TodayViewModelTest {
             seedCycleProfile()
             dailyTipDataSource.tips = emptyList()
             val viewModel = createViewModel()
-            awaitUntil { dailyTipDataSource.fetchCount > 0 }
+            awaitUntil { dailyTipDataSource.dailyTipRefreshCompleted > 0 }
             assertThat(viewModel.uiState.value.dailyTip).isNull()
         }
     }
@@ -257,7 +257,7 @@ class TodayViewModelTest {
             seedCycleProfile()
             dailyTipDataSource.throwOnFetch = true
             val viewModel = createViewModel()
-            awaitUntil { dailyTipDataSource.fetchCount > 0 }
+            awaitUntil { dailyTipDataSource.dailyTipRefreshCompleted > 0 }
             assertThat(viewModel.uiState.value.dailyTip).isNull()
         }
     }
@@ -279,7 +279,7 @@ class TodayViewModelTest {
             dailyTipDataSource.seedCache(staleTip, key)
             dailyTipDataSource.tips = emptyList()
             val viewModel = createViewModel()
-            awaitUntil { dailyTipDataSource.fetchCount > 0 }
+            awaitUntil { dailyTipDataSource.dailyTipRefreshCompleted > 0 }
             assertThat(viewModel.uiState.value.dailyTip).isNull()
             assertThat(dailyTipDataSource.cachedDailyTipFor(key)).isNull()
         }

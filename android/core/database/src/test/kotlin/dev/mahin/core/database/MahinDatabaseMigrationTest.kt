@@ -316,6 +316,12 @@ class MahinDatabaseMigrationTest {
             ).use { cursor ->
                 assertThat(cursor.moveToFirst()).isTrue()
             }
+        migrated
+            .query("SELECT programId FROM guided_player_state WHERE id = 1")
+            .use { cursor ->
+                assertThat(cursor.moveToFirst()).isTrue()
+                assertThat(cursor.getString(0)).isEqualTo("p")
+            }
         migrated.close()
     }
 
