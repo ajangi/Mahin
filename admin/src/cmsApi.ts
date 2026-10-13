@@ -101,7 +101,12 @@ export async function workflow(
     body: JSON.stringify(body),
   });
   if (!response.ok) {
-    throw new Error(`workflow_${action}_failed`);
+    const body = (await response.json().catch(() => ({}))) as { code?: string };
+    const code =
+      typeof body.code === "string" && body.code.length > 0
+        ? body.code
+        : `workflow_${action}_failed`;
+    throw new Error(code);
   }
   return response.json();
 }

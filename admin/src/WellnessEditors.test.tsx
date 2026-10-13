@@ -1,12 +1,22 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { ContentPanel } from "./App";
+import { App, ContentPanel } from "./App";
 import { WellnessContentEditor } from "./WellnessContentEditor";
 import { WellnessReviewPanel } from "./WellnessReviewPanel";
 import * as cmsApi from "./cmsApi";
 
 const articleId = "11111111-1111-1111-1111-111111111111";
+
+const contentPanelBaseProps = {
+  loginEmail: "",
+  loginPassword: "",
+  onEmailChange: () => {},
+  onPasswordChange: () => {},
+  onLogin: () => {},
+  onPublishFixture: () => {},
+  onStatus: () => {},
+};
 
 describe("Wellness editors", () => {
   it("daily_tip editor submits exact payload after typing fields", async () => {
@@ -121,42 +131,36 @@ describe("ContentPanel workflow", () => {
   });
 
   it("hides approve_medical for editor-only roles and shows for medical reviewer", () => {
-    render(
+    const { rerender } = render(
       <ContentPanel
+        {...contentPanelBaseProps}
         auth={{ accessToken: "t", roles: ["EDITOR"] }}
-        loginEmail=""
-        loginPassword=""
-        onEmailChange={() => {}}
-        onPasswordChange={() => {}}
-        onLogin={() => {}}
-        onPublishFixture={() => {}}
-        onStatus={() => {}}
       />,
     );
     expect(screen.queryByRole("button", { name: "approve_medical" })).toBeNull();
     expect(screen.getByRole("button", { name: "submit_medical_review" })).toBeInTheDocument();
+
+    rerender(
+      <ContentPanel
+        {...contentPanelBaseProps}
+        auth={{ accessToken: "t", roles: ["MEDICAL_REVIEWER"] }}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "approve_medical" })).toBeInTheDocument();
   });
 
   it("runs a single workflow action with mocked fetch and surfaces errors", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 409,
-        json: async () => ({ code: "clinical_review_required" }),
-      });
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 409,
+      json: async () => ({ code: "clinical_review_required" }),
+    });
     vi.stubGlobal("fetch", fetchMock);
 
     render(
       <ContentPanel
+        {...contentPanelBaseProps}
         auth={{ accessToken: "token", roles: ["EDITOR", "MEDICAL_REVIEWER"] }}
-        loginEmail=""
-        loginPassword=""
-        onEmailChange={() => {}}
-        onPasswordChange={() => {}}
-        onLogin={() => {}}
-        onPublishFixture={() => {}}
-        onStatus={() => {}}
       />,
     );
 
@@ -172,30 +176,44 @@ describe("ContentPanel workflow", () => {
     expect(init.method).toBe("POST");
     expect(init.body).toBe("{}");
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("publish");
+    expect(await screen.findByRole("alert")).toHaveTextContent("clinical_review_required");
+  });
+});
+
+describe("App fixture publish", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("does not chain workflow steps when creating fixture draft", async () => {
+    vi.spyOn(cmsApi, "adminLogin").mockResolvedValue({
+      accessToken: "token",
+      roles: ["EDITOR"],
+    });
     const createSpy = vi.spyOn(cmsApi, "createFixtureDocument").mockResolvedValue({
       versionId: "v-fixture",
     });
     const workflowSpy = vi.spyOn(cmsApi, "workflow");
-    render(
-      <ContentPanel
-        auth={{ accessToken: "token", roles: ["EDITOR"] }}
-        loginEmail=""
-        loginPassword=""
-        onEmailChange={() => {}}
-        onPasswordChange={() => {}}
-        onLogin={() => {}}
-        onPublishFixture={async () => {
-          await cmsApi.createFixtureDocument("token", "slug-1");
-        }}
-        onStatus={() => {}}
-      />,
+    const workflowFetchUrls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (String(url).includes("/workflow/")) {
+          workflowFetchUrls.push(String(url));
+        }
+        return Promise.resolve({ ok: false, json: async () => ({}) });
+      }),
     );
+
+    render(<App />);
+    await userEvent.type(screen.getByLabelText("ایمیل"), "editor@mahin.test");
+    await userEvent.type(screen.getByLabelText("رمز"), "password-12-chars");
+    await userEvent.click(screen.getByRole("button", { name: "ورود" }));
     await userEvent.click(screen.getByRole("button", { name: /نمونهٔ مقاله/ }));
+
     expect(createSpy).toHaveBeenCalledTimes(1);
     expect(workflowSpy).not.toHaveBeenCalled();
+    expect(workflowFetchUrls).toHaveLength(0);
+    vi.unstubAllGlobals();
   });
 });

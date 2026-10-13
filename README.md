@@ -27,6 +27,8 @@ Read `AGENTS.md`, then `docs/PRD.md`, `docs/DECISIONS.md`, `docs/DESIGN_SYSTEM.m
 ## Local development
 Copy `.env.example` to `.env`. Android SDK path lives in `android/local.properties` (see `android/local.properties.example`).
 
+For local CMS/backend work with **placeholder** wellness or fixture content, set `MAHIN_ENV=local` in `.env` (production is the default and blocks publishing placeholders publicly).
+
 ```bash
 python3 scripts/check_design_tokens.py
 cd backend && ./gradlew test

@@ -15,6 +15,11 @@ import { WellnessReviewPanel } from "./WellnessReviewPanel";
 
 type Section = "foundation" | "content" | "media" | "freshness";
 
+export async function publishFixtureDraft(auth: AdminAuth) {
+  const slug = `fixture-${Date.now()}`;
+  return createFixtureDocument(auth.accessToken, slug);
+}
+
 export function App() {
   const [section, setSection] = useState<Section>("content");
   const [auth, setAuth] = useState<AdminAuth | null>(null);
@@ -38,8 +43,7 @@ export function App() {
     if (!auth) return;
     setStatusMessage(null);
     try {
-      const slug = `fixture-${Date.now()}`;
-      const created = await createFixtureDocument(auth.accessToken, slug);
+      const created = await publishFixtureDraft(auth);
       setStatusMessage(`پیش‌نویس نمونه ایجاد شد — شناسهٔ نسخه: ${String(created.versionId)}`);
     } catch {
       setStatusMessage("گردش کار ناموفق — نقش‌ها یا مراحل را بررسی کنید.");
@@ -172,8 +176,9 @@ export function ContentPanel({
         const updated = await workflow(auth.accessToken, reviewVersionId.trim(), action, {});
         setReviewSnapshot(updated as Record<string, unknown>);
         onStatus(`گردش کار: ${action}`);
-      } catch {
-        setWorkflowError(`اجرای ${action} ناموفق بود.`);
+      } catch (err) {
+        const code = err instanceof Error ? err.message : "workflow_failed";
+        setWorkflowError(code);
       }
     },
     [auth, onStatus, reviewVersionId],
