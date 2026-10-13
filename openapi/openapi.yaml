@@ -430,6 +430,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ContentDailyTipListResponse"
+        "400":
+          description: >
+            Invalid filter (`invalid_daily_tip_mode`, `invalid_daily_tip_cycle_phase`,
+            `invalid_daily_tip_pregnancy_week`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /v1/content/daily-tips/{documentId}:
     get:
       tags: [Content]
@@ -1611,11 +1619,13 @@ components:
             type: string
             format: uuid
         typePayload:
-          type: object
           description: >
             Structured payload for wellness content types (`daily_tip`, `program`, `collection`).
             Required when `contentType` is one of those values.
-          additionalProperties: true
+          oneOf:
+            - $ref: "#/components/schemas/DailyTipPayload"
+            - $ref: "#/components/schemas/ProgramPayload"
+            - $ref: "#/components/schemas/CollectionPayload"
         effectiveFrom:
           type: string
           format: date-time
@@ -1796,6 +1806,59 @@ components:
           format: date-time
           nullable: true
         withdrawn:
+          type: boolean
+    DailyTipPayload:
+      type: object
+      required: [placeholder, targeting]
+      properties:
+        placeholder:
+          type: boolean
+        targeting:
+          $ref: "#/components/schemas/DailyTipTargeting"
+    ProgramPayload:
+      type: object
+      required: [placeholder, programType, sessions]
+      properties:
+        placeholder:
+          type: boolean
+        programType:
+          type: string
+          enum: [pelvic_floor, movement, breathing]
+        safetyNotice:
+          type: string
+        contraindications:
+          type: string
+        essentialSafetyInformation:
+          type: string
+        sessions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProgramSession"
+    CollectionPayload:
+      type: object
+      required: [placeholder, category, articleDocumentIds]
+      properties:
+        placeholder:
+          type: boolean
+        category:
+          type: string
+          enum:
+            - cycle
+            - fertility
+            - pregnancy
+            - symptoms
+            - nutrition
+            - tests
+            - lifestyle
+        heroMediaAssetId:
+          type: string
+          format: uuid
+        articleDocumentIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        featured:
           type: boolean
     DailyTipTargeting:
       type: object

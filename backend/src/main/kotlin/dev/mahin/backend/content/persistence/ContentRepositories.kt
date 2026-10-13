@@ -30,6 +30,7 @@ interface ContentVersionRepository : JpaRepository<ContentVersionEntity, UUID> {
         WHERE d.publishedVersionId = v.id
           AND d.withdrawnAt IS NULL
           AND v.status = 'published'
+          AND v.contentType NOT IN ('daily_tip', 'program', 'collection')
           AND (:locale IS NULL OR d.locale = :locale)
           AND (:lifeStage IS NULL OR v.lifeStage = :lifeStage)
           AND (

@@ -57,16 +57,7 @@ export async function createFixtureDocument(token: string, slug: string) {
 
 export async function createWellnessDocument(
   token: string,
-  input: {
-    slug: string;
-    title: string;
-    summary?: string;
-    bodyRichtext?: string;
-    contentType: WellnessContentKind;
-    typePayload: Record<string, unknown>;
-    medicalRiskLevel?: string;
-    sourceIds?: string[];
-  },
+  input: Record<string, unknown>,
 ) {
   const response = await fetch(`${apiBase}/v1/admin/content/documents`, {
     method: "POST",
@@ -75,9 +66,7 @@ export async function createWellnessDocument(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      locale: "fa-IR",
-      medicalRiskLevel: input.medicalRiskLevel ?? "none",
-      sourceIds: input.sourceIds ?? [],
+      sourceIds: [],
       ...input,
     }),
   });

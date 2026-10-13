@@ -1,13 +1,16 @@
 package dev.mahin.backend.content
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 
+@JsonIgnoreProperties(ignoreUnknown = false)
 data class DailyTipTargeting(
     val modes: List<String> = emptyList(),
     val cyclePhases: List<String> = emptyList(),
     val pregnancyWeeks: List<Int> = emptyList(),
 )
 
+@JsonIgnoreProperties(ignoreUnknown = false)
 data class DailyTipPayload(
     val placeholder: Boolean = false,
     val targeting: DailyTipTargeting = DailyTipTargeting(),
@@ -32,6 +35,7 @@ enum class ProgramKind {
         }
 }
 
+@JsonIgnoreProperties(ignoreUnknown = false)
 data class ProgramStepPayload(
     val instruction: String,
     val durationSeconds: Int? = null,
@@ -40,6 +44,7 @@ data class ProgramStepPayload(
     val mediaAssetId: String? = null,
 )
 
+@JsonIgnoreProperties(ignoreUnknown = false)
 data class ProgramSessionPayload(
     val id: String,
     val title: String,
@@ -47,6 +52,7 @@ data class ProgramSessionPayload(
     val steps: List<ProgramStepPayload>,
 )
 
+@JsonIgnoreProperties(ignoreUnknown = false)
 data class ProgramPayload(
     val placeholder: Boolean = false,
     val programType: String,
@@ -56,6 +62,7 @@ data class ProgramPayload(
     val sessions: List<ProgramSessionPayload> = emptyList(),
 )
 
+@JsonIgnoreProperties(ignoreUnknown = false)
 data class CollectionPayload(
     val placeholder: Boolean = false,
     val category: String,

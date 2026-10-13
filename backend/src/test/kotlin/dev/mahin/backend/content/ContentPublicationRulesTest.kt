@@ -25,6 +25,26 @@ class ContentPublicationRulesTest {
     }
 
     @Test
+    fun exactlyAtEffectiveToIsExcluded() {
+        val boundary = Instant.parse("2026-06-01T12:00:00Z")
+        val version = ContentVersionEntity(effectiveTo = boundary)
+        assertFalse(ContentPublicationRules.isWithinEffectiveWindow(version, boundary))
+    }
+
+    @Test
+    fun instantBeforeEffectiveToIsIncluded() {
+        val boundary = Instant.parse("2026-06-01T12:00:00Z")
+        val version = ContentVersionEntity(effectiveTo = boundary)
+        assertTrue(ContentPublicationRules.isWithinEffectiveWindow(version, boundary.minusMillis(1)))
+    }
+
+    @Test
+    fun futureEffectiveFromIsExcluded() {
+        val version = ContentVersionEntity(effectiveFrom = Instant.parse("2099-01-01T00:00:00Z"))
+        assertFalse(ContentPublicationRules.isWithinEffectiveWindow(version, Instant.parse("2026-01-01T00:00:00Z")))
+    }
+
+    @Test
     fun dailyTipTargetingRequiresModeWhenConfigured() {
         val payload =
             DailyTipPayload(

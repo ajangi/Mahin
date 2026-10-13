@@ -9,6 +9,7 @@ import dev.mahin.backend.content.persistence.ContentVersionRepository
 import dev.mahin.backend.content.persistence.ContentVersionSourceRepository
 import java.time.Instant
 import java.util.UUID
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
@@ -20,6 +21,7 @@ class ContentWellnessPublicService(
     private val versionSourceRepository: ContentVersionSourceRepository,
     private val sourceRepository: ContentSourceRepository,
     private val objectMapper: ObjectMapper,
+    @Value("\${mahin.environment}") private val environment: String,
 ) {
     fun listDailyTips(
         locale: String,
@@ -41,6 +43,9 @@ class ContentWellnessPublicService(
         val payload =
             ContentTypePayloadCodec.parseDailyTip(objectMapper, version.typePayloadJson)
                 ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "daily_tip_not_found")
+        if (!isPayloadPublic(payload.placeholder)) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "daily_tip_not_found")
+        }
         return ContentWellnessMapper.toDailyTipResponse(
             document,
             version,
@@ -71,6 +76,9 @@ class ContentWellnessPublicService(
                     val payload =
                         ContentTypePayloadCodec.parseProgram(objectMapper, version.typePayloadJson)
                             ?: return@mapNotNull null
+                    if (!isPayloadPublic(payload.placeholder)) {
+                        return@mapNotNull null
+                    }
                     if (programType != null && payload.programType != programType) {
                         return@mapNotNull null
                     }
@@ -85,6 +93,9 @@ class ContentWellnessPublicService(
         val payload =
             ContentTypePayloadCodec.parseProgram(objectMapper, version.typePayloadJson)
                 ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "program_not_found")
+        if (!isPayloadPublic(payload.placeholder)) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "program_not_found")
+        }
         return ContentWellnessMapper.toProgramResponse(document, version, payload, citationKeys(version))
     }
 
@@ -110,6 +121,9 @@ class ContentWellnessPublicService(
                     val payload =
                         ContentTypePayloadCodec.parseCollection(objectMapper, version.typePayloadJson)
                             ?: return@mapNotNull null
+                    if (!isPayloadPublic(payload.placeholder)) {
+                        return@mapNotNull null
+                    }
                     if (category != null && payload.category != category) {
                         return@mapNotNull null
                     }
@@ -124,6 +138,9 @@ class ContentWellnessPublicService(
         val payload =
             ContentTypePayloadCodec.parseCollection(objectMapper, version.typePayloadJson)
                 ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "collection_not_found")
+        if (!isPayloadPublic(payload.placeholder)) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "collection_not_found")
+        }
         val articles = resolveCollectionArticles(payload, document.locale)
         return ContentWellnessMapper.toCollectionResponse(
             document,
@@ -152,7 +169,8 @@ class ContentWellnessPublicService(
             document != null &&
                 payload != null &&
                 ContentPublicationRules.isPublishedOnCatalog(document, version, now) &&
-                ContentPublicationRules.matchesDailyTipTargeting(payload, mode, cyclePhase, pregnancyWeek)
+                ContentPublicationRules.matchesDailyTipTargeting(payload, mode, cyclePhase, pregnancyWeek) &&
+                isPayloadPublic(payload.placeholder)
         if (!visible || document == null || payload == null) {
             return null
         }
@@ -242,4 +260,7 @@ class ContentWellnessPublicService(
         versionSourceRepository.findByVersionId(version.id).mapNotNull { link ->
             sourceRepository.findById(link.sourceId).orElse(null)?.citationKey
         }
+
+    private fun isPayloadPublic(placeholder: Boolean): Boolean =
+        !ContentPublicVisibility.isPlaceholderHiddenInProduction(placeholder, environment)
 }

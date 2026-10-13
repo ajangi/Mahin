@@ -70,7 +70,10 @@ class ContentController(
         @RequestParam(required = false) mode: String?,
         @RequestParam(required = false) cyclePhase: String?,
         @RequestParam(required = false) pregnancyWeek: Int?,
-    ): ContentDailyTipListResponse = wellnessPublicService.listDailyTips(locale, mode, cyclePhase, pregnancyWeek)
+    ): ContentDailyTipListResponse {
+        ContentWellnessQueryValidator.validateDailyTipQuery(mode, cyclePhase, pregnancyWeek)
+        return wellnessPublicService.listDailyTips(locale, mode, cyclePhase, pregnancyWeek)
+    }
 
     @GetMapping("/daily-tips/{documentId}")
     fun getDailyTip(
@@ -87,7 +90,10 @@ class ContentController(
     fun listPrograms(
         @RequestParam(defaultValue = "fa-IR") locale: String,
         @RequestParam(required = false) programType: String?,
-    ): ContentProgramListResponse = wellnessPublicService.listPrograms(locale, programType)
+    ): ContentProgramListResponse {
+        ContentWellnessQueryValidator.validateProgramType(programType)
+        return wellnessPublicService.listPrograms(locale, programType)
+    }
 
     @GetMapping("/programs/{documentId}")
     fun getProgram(
@@ -104,7 +110,10 @@ class ContentController(
     fun listCollections(
         @RequestParam(defaultValue = "fa-IR") locale: String,
         @RequestParam(required = false) category: String?,
-    ): ContentCollectionListResponse = wellnessPublicService.listCollections(locale, category)
+    ): ContentCollectionListResponse {
+        ContentWellnessQueryValidator.validateCollectionCategory(category)
+        return wellnessPublicService.listCollections(locale, category)
+    }
 
     @GetMapping("/collections/{documentId}")
     fun getCollection(

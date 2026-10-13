@@ -1,70 +1,106 @@
 package dev.mahin.backend.content
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import org.junit.jupiter.api.Assertions.assertDoesNotThrow
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.springframework.web.server.ResponseStatusException
 
 class ContentTypePayloadValidatorTest {
-    private val mapper = ObjectMapper()
+    private val mapper = jacksonObjectMapper()
 
     @Test
-    fun acceptsPersianPlaceholderDailyTip() {
-        val json =
-            mapper.writeValueAsString(
-                DailyTipPayload(
-                    placeholder = true,
-                    targeting =
-                        DailyTipTargeting(
-                            modes = listOf("cycle"),
-                            cyclePhases = listOf("luteal"),
-                        ),
-                ),
-            )
-        assertDoesNotThrow {
-            ContentTypePayloadValidator.validateForSave(ContentTypes.DAILY_TIP, json, mapper)
-        }
+    fun rejectsMalformedJsonWithInvalidTypePayload() {
+        val ex =
+            assertThrows(ResponseStatusException::class.java) {
+                ContentTypePayloadCodec.parseProgram(mapper, "{not-json")
+            }
+        assertEquals("invalid_type_payload", ex.reason)
     }
 
     @Test
-    fun rejectsProgramWithoutSessions() {
+    fun rejectsUnknownFieldsWithShapeCode() {
+        val node =
+            mapper.readTree(
+                """
+                {"placeholder":true,"programType":"breathing","unknown":1,"sessions":[{"id":"s","title":"t","order":1,"steps":[{"instruction":"x"}]}],"safetyNotice":"a","contraindications":"b"}
+                """.trimIndent(),
+            )
+        val ex =
+            assertThrows(ResponseStatusException::class.java) {
+                ContentTypePayloadCodec.encodeValidated(mapper, ContentTypes.PROGRAM, node)
+            }
+        assertEquals("invalid_type_payload", ex.reason)
+    }
+
+    @Test
+    fun rejectsOversizedPayload() {
+        val padding = "x".repeat(ContentTypePayloadLimits.MAX_PAYLOAD_BYTES)
+        val json =
+            """
+            {"placeholder":true,"programType":"breathing","safetyNotice":"a","contraindications":"b","sessions":[{"id":"s1","title":"t","order":1,"steps":[{"instruction":"$padding"}]}]}
+            """.trimIndent()
+        val ex =
+            assertThrows(ResponseStatusException::class.java) {
+                ContentTypePayloadValidator.validatePayloadSize(json)
+            }
+        assertEquals("type_payload_too_large", ex.reason)
+    }
+
+    @Test
+    fun requiresSafetyFieldsOnPublishEvenForPlaceholder() {
+        val json =
+            """
+            {"placeholder":true,"programType":"breathing","sessions":[{"id":"s1","title":"جلسه","order":1,"steps":[{"instruction":"نمونه"}]}]}
+            """.trimIndent()
+        val ex =
+            assertThrows(ResponseStatusException::class.java) {
+                ContentTypePayloadValidator.validateForPublish(ContentTypes.PROGRAM, json, mapper)
+            }
+        assertEquals("program_safety_fields_required", ex.reason, "expected safety validation on publish")
+    }
+
+    @Test
+    fun scriptTagRoundTripsAsLiteralText() {
+        val script = "<script>alert(1)</script>"
         val json =
             mapper.writeValueAsString(
                 ProgramPayload(
                     placeholder = true,
-                    programType = "breathing",
-                    sessions = emptyList(),
-                ),
-            )
-        assertThrows(ResponseStatusException::class.java) {
-            ContentTypePayloadValidator.validateForSave(ContentTypes.PROGRAM, json, mapper)
-        }
-    }
-
-    @Test
-    fun requiresSafetyFieldsWhenPublishingNonPlaceholderProgram() {
-        val json =
-            mapper.writeValueAsString(
-                ProgramPayload(
-                    placeholder = false,
-                    programType = "pelvic_floor",
+                    programType = "movement",
+                    safetyNotice = "safe",
+                    contraindications = "none",
                     sessions =
                         listOf(
                             ProgramSessionPayload(
                                 id = "s1",
-                                title = "جلسهٔ نمونه",
+                                title = "t",
                                 order = 1,
-                                steps =
-                                    listOf(
-                                        ProgramStepPayload(instruction = "نمونه — غیرپزشکی"),
-                                    ),
+                                steps = listOf(ProgramStepPayload(instruction = script)),
                             ),
                         ),
                 ),
             )
-        assertThrows(ResponseStatusException::class.java) {
-            ContentTypePayloadValidator.validateForPublish(ContentTypes.PROGRAM, json, mapper)
-        }
+        val parsed = ContentTypePayloadCodec.parseProgram(mapper, json)!!
+        assertEquals(
+            script,
+            parsed.sessions
+                .first()
+                .steps
+                .first()
+                .instruction,
+        )
+    }
+
+    @Test
+    fun rejectsProgramWithNoneRiskLevel() {
+        val ex =
+            assertThrows(ResponseStatusException::class.java) {
+                ContentWorkflowPolicy.validateMedicalRiskForContentType(
+                    ContentTypes.PROGRAM,
+                    MedicalRiskLevel.NONE,
+                )
+            }
+        assertEquals("program_requires_clinical_review", ex.reason)
     }
 }

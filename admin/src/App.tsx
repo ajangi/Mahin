@@ -9,15 +9,9 @@ import {
   type AdminAuth,
   type WellnessContentKind,
 } from "./cmsApi";
-import {
-  buildCollectionPayload,
-  buildDailyTipPayload,
-  buildProgramPayload,
-  COLLECTION_CATEGORIES,
-  PROGRAM_TYPES,
-  validateWellnessDraft,
-  WORKFLOW_REVIEW_ACTIONS,
-} from "./contentEditorUtils";
+import { WORKFLOW_REVIEW_ACTIONS } from "./contentEditorUtils";
+import { WellnessContentEditor } from "./WellnessContentEditor";
+import { WellnessReviewPanel } from "./WellnessReviewPanel";
 
 type Section = "foundation" | "content" | "media" | "freshness";
 
@@ -48,9 +42,7 @@ export function App() {
       const created = await createFixtureDocument(auth.accessToken, slug);
       const versionId = created.versionId as string;
       await workflow(auth.accessToken, versionId, "submit_medical_review");
-      await workflow(auth.accessToken, versionId, "approve_medical", {
-        clinicalReviewer: "reviewer@mahin.test",
-      });
+      await workflow(auth.accessToken, versionId, "approve_medical", {});
       await workflow(auth.accessToken, versionId, "approve_editorial");
       await workflow(auth.accessToken, versionId, "publish");
       setStatusMessage(`منتشر شد: ${slug}`);
@@ -162,62 +154,16 @@ function ContentPanel({
   onStatus: (message: string | null) => void;
 }) {
   const [editorKind, setEditorKind] = useState<WellnessContentKind>("daily_tip");
-  const [title, setTitle] = useState("نکتهٔ نمونه");
-  const [targetMode, setTargetMode] = useState("cycle");
-  const [targetPhase, setTargetPhase] = useState("follicular");
-  const [programType, setProgramType] = useState<string>(PROGRAM_TYPES[0]);
-  const [collectionCategory, setCollectionCategory] = useState<string>(COLLECTION_CATEGORIES[0]);
   const [reviewVersionId, setReviewVersionId] = useState("");
-  const [reviewSnapshot, setReviewSnapshot] = useState<unknown>(null);
-
-  const onCreateWellnessDraft = useCallback(async () => {
-    if (!auth) return;
-    const validationError = validateWellnessDraft(editorKind, title);
-    if (validationError) {
-      onStatus(validationError);
-      return;
-    }
-    onStatus(null);
-    try {
-      const slug = `${editorKind}-${Date.now()}`;
-      let typePayload: Record<string, unknown>;
-      if (editorKind === "daily_tip") {
-        typePayload = buildDailyTipPayload(targetMode, targetPhase);
-      } else if (editorKind === "program") {
-        typePayload = buildProgramPayload(programType);
-      } else {
-        typePayload = buildCollectionPayload(collectionCategory, []);
-      }
-      const created = await createWellnessDocument(auth.accessToken, {
-        slug,
-        title,
-        summary: "نمونه — غیرپزشکی",
-        bodyRichtext: editorKind === "daily_tip" ? "متن نمونه برای آزمون زیرساخت." : undefined,
-        contentType: editorKind,
-        typePayload,
-        medicalRiskLevel: editorKind === "program" ? "general_education" : "none",
-      });
-      setReviewVersionId(created.versionId as string);
-      onStatus(`پیش‌نویس ${editorKind} ذخیره شد.`);
-    } catch {
-      onStatus("ایجاد پیش‌نویس ناموفق بود.");
-    }
-  }, [
-    auth,
-    collectionCategory,
-    editorKind,
-    onStatus,
-    programType,
-    targetMode,
-    targetPhase,
-    title,
-  ]);
+  const [reviewSnapshot, setReviewSnapshot] = useState<Record<string, unknown> | null>(null);
+  const [workflowError, setWorkflowError] = useState<string | null>(null);
 
   const onLoadReview = useCallback(async () => {
     if (!auth || !reviewVersionId.trim()) return;
     try {
       const data = await fetchVersion(auth.accessToken, reviewVersionId.trim());
-      setReviewSnapshot(data);
+      setReviewSnapshot(data as Record<string, unknown>);
+      setWorkflowError(null);
     } catch {
       onStatus("بارگذاری نسخه برای بازبینی ناموفق بود.");
     }
@@ -226,14 +172,13 @@ function ContentPanel({
   const onWorkflowAction = useCallback(
     async (action: string) => {
       if (!auth || !reviewVersionId.trim()) return;
+      setWorkflowError(null);
       try {
-        const extra: Record<string, string> =
-          action === "approve_medical" ? { clinicalReviewer: "reviewer@mahin.test" } : {};
-        const updated = await workflow(auth.accessToken, reviewVersionId.trim(), action, extra);
-        setReviewSnapshot(updated);
+        const updated = await workflow(auth.accessToken, reviewVersionId.trim(), action, {});
+        setReviewSnapshot(updated as Record<string, unknown>);
         onStatus(`گردش کار: ${action}`);
       } catch {
-        onStatus(`اجرای ${action} ناموفق بود.`);
+        setWorkflowError(`اجرای ${action} ناموفق بود.`);
       }
     },
     [auth, onStatus, reviewVersionId],
@@ -242,7 +187,6 @@ function ContentPanel({
   return (
     <section className="card" dir="rtl">
       <h2>CMS — M17a</h2>
-      <p>ویرایشگرهای نکتهٔ روزانه، برنامهٔ هدایت‌شده و مجموعهٔ Learn؛ بازبینی از طریق گردش کار موجود.</p>
       {!auth ? (
         <form
           onSubmit={(event) => {
@@ -270,8 +214,6 @@ function ContentPanel({
           <button type="button" onClick={onPublishFixture}>
             انتشار نمونهٔ مقاله (غیرپزشکی)
           </button>
-
-          <h3>ویرایشگر نوع محتوا</h3>
           <div className="token-row">
             {(["daily_tip", "program", "collection"] as WellnessContentKind[]).map((kind) => (
               <button
@@ -284,59 +226,16 @@ function ContentPanel({
               </button>
             ))}
           </div>
-          <label>
-            عنوان
-            <input value={title} onChange={(e) => setTitle(e.target.value)} />
-          </label>
-          {editorKind === "daily_tip" && (
-            <>
-              <label>
-                حالت
-                <select value={targetMode} onChange={(e) => setTargetMode(e.target.value)}>
-                  <option value="cycle">cycle</option>
-                  <option value="ttc">ttc</option>
-                  <option value="pregnancy">pregnancy</option>
-                </select>
-              </label>
-              <label>
-                فاز چرخه
-                <select value={targetPhase} onChange={(e) => setTargetPhase(e.target.value)}>
-                  <option value="menstrual">menstrual</option>
-                  <option value="follicular">follicular</option>
-                  <option value="ovulation">ovulation</option>
-                  <option value="luteal">luteal</option>
-                </select>
-              </label>
-            </>
-          )}
-          {editorKind === "program" && (
-            <label>
-              نوع برنامه
-              <select value={programType} onChange={(e) => setProgramType(e.target.value)}>
-                {PROGRAM_TYPES.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-            </label>
-          )}
-          {editorKind === "collection" && (
-            <label>
-              دستهٔ Learn
-              <select
-                value={collectionCategory}
-                onChange={(e) => setCollectionCategory(e.target.value)}
-              >
-                {COLLECTION_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </label>
-          )}
-          <button type="button" onClick={onCreateWellnessDraft}>
-            ذخیرهٔ پیش‌نویس نمونه (placeholder)
-          </button>
-
-          <h3>بازبینی و گردش کار</h3>
+          <WellnessContentEditor
+            kind={editorKind}
+            onSubmit={async (body) => {
+              const created = await createWellnessDocument(auth.accessToken, body as never);
+              setReviewVersionId(String(created.versionId));
+              setReviewSnapshot(created as Record<string, unknown>);
+              onStatus("پیش‌نویس ذخیره شد.");
+            }}
+          />
+          <h3>بازبینی</h3>
           <label>
             شناسهٔ نسخه
             <input
@@ -345,9 +244,7 @@ function ContentPanel({
               placeholder="version UUID"
             />
           </label>
-          <button type="button" onClick={onLoadReview}>
-            بارگذاری نسخه
-          </button>
+          <button type="button" onClick={onLoadReview}>بارگذاری نسخه</button>
           <div className="token-row">
             {WORKFLOW_REVIEW_ACTIONS.map((action) => (
               <button key={action} type="button" onClick={() => onWorkflowAction(action)}>
@@ -355,7 +252,8 @@ function ContentPanel({
               </button>
             ))}
           </div>
-          <pre>{reviewSnapshot ? JSON.stringify(reviewSnapshot, null, 2) : "—"}</pre>
+          {workflowError && <p role="alert">{workflowError}</p>}
+          <WellnessReviewPanel version={reviewSnapshot} />
         </>
       )}
     </section>
@@ -374,7 +272,6 @@ function FreshnessPanel({
   return (
     <section className="card">
       <h2>تازگی محتوا</h2>
-      <p className="muted">بازبینی معوق، منابع قدیمی، و برداشت‌های اخیر.</p>
       <button type="button" disabled={!auth} onClick={onRefresh}>
         بارگذاری داشبورد
       </button>

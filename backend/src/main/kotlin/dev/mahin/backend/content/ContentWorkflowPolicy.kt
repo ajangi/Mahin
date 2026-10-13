@@ -35,5 +35,28 @@ object ContentWorkflowPolicy {
         }
     }
 
-    fun requiresClinicalReviewBeforePublish(risk: MedicalRiskLevel): Boolean = risk != MedicalRiskLevel.NONE
+    fun requiresClinicalReviewBeforePublish(
+        contentType: String,
+        risk: MedicalRiskLevel,
+    ): Boolean {
+        if (contentType == ContentTypes.PROGRAM || contentType == ContentTypes.DAILY_TIP) {
+            return true
+        }
+        return risk != MedicalRiskLevel.NONE
+    }
+
+    fun validateMedicalRiskForContentType(
+        contentType: String,
+        risk: MedicalRiskLevel,
+    ) {
+        if (
+            (contentType == ContentTypes.PROGRAM || contentType == ContentTypes.DAILY_TIP) &&
+            risk == MedicalRiskLevel.NONE
+        ) {
+            throw org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.BAD_REQUEST,
+                "program_requires_clinical_review",
+            )
+        }
+    }
 }

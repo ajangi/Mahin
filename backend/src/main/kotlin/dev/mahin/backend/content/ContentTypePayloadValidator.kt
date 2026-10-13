@@ -37,6 +37,7 @@ object ContentTypePayloadValidator {
             contentType == ContentTypes.COLLECTION ->
                 validateCollection(ContentTypePayloadCodec.parseCollection(mapper, typePayloadJson)!!)
         }
+        validatePayloadSize(typePayloadJson)
     }
 
     fun validateForPublish(
@@ -56,9 +57,21 @@ object ContentTypePayloadValidator {
                 validateCollection(ContentTypePayloadCodec.parseCollection(mapper, typePayloadJson)!!)
             else -> reject("unsupported_content_type")
         }
+        validatePayloadSize(typePayloadJson)
+    }
+
+    fun validatePayloadSize(typePayloadJson: String?) {
+        if (typePayloadJson != null &&
+            typePayloadJson.toByteArray(Charsets.UTF_8).size > ContentTypePayloadLimits.MAX_PAYLOAD_BYTES
+        ) {
+            reject("type_payload_too_large")
+        }
     }
 
     fun validateArticleDocumentIds(ids: List<String>) {
+        if (ids.size > ContentTypePayloadLimits.MAX_COLLECTION_ARTICLES) {
+            reject("collection_article_ids_too_many")
+        }
         val invalid = ids.any { runCatching { UUID.fromString(it) }.isFailure }
         if (invalid) {
             reject("invalid_article_document_id")
@@ -84,17 +97,43 @@ object ContentTypePayloadValidator {
         payload: ProgramPayload,
         publishing: Boolean,
     ) {
+        if (publishing &&
+            (payload.safetyNotice.isNullOrBlank() || payload.contraindications.isNullOrBlank())
+        ) {
+            reject("program_safety_fields_required")
+        }
         when {
             payload.programType !in programKinds -> reject("invalid_program_type")
+            payload.sessions.size > ContentTypePayloadLimits.MAX_SESSIONS -> reject("program_sessions_too_many")
             payload.sessions.isEmpty() -> reject("program_sessions_required")
             payload.sessions.any { it.steps.isEmpty() } -> reject("program_steps_required")
+            payload.sessions.any { it.steps.size > ContentTypePayloadLimits.MAX_STEPS_PER_SESSION } ->
+                reject("program_steps_too_many")
             payload.sessions.any { session -> session.steps.any { it.instruction.isBlank() } } ->
                 reject("program_step_instruction_required")
-            publishing &&
-                !payload.placeholder &&
-                (payload.safetyNotice.isNullOrBlank() || payload.contraindications.isNullOrBlank()) ->
-                reject("program_safety_fields_required")
+            else -> validateProgramStrings(payload)
         }
+        payload.sessions.forEach { session ->
+            session.steps.forEach { step -> validateStepNumbers(step) }
+        }
+    }
+
+    private fun validateProgramStrings(payload: ProgramPayload) {
+        listOfNotNull(
+            payload.safetyNotice,
+            payload.contraindications,
+            payload.essentialSafetyInformation,
+        ).forEach { validateStringLength(it) }
+        payload.sessions.forEach { session ->
+            validateStringLength(session.title)
+            session.steps.forEach { validateStringLength(it.instruction) }
+        }
+    }
+
+    private fun validateStepNumbers(step: ProgramStepPayload) {
+        step.durationSeconds?.let { requireNonNegative(it, "invalid_program_step_duration") }
+        step.reps?.let { requireNonNegative(it, "invalid_program_step_reps") }
+        step.restSeconds?.let { requireNonNegative(it, "invalid_program_step_rest") }
     }
 
     private fun validateCollection(payload: CollectionPayload) {
@@ -102,6 +141,21 @@ object ContentTypePayloadValidator {
             reject("invalid_collection_category")
         }
         validateArticleDocumentIds(payload.articleDocumentIds)
+    }
+
+    private fun validateStringLength(value: String) {
+        if (value.length > ContentTypePayloadLimits.MAX_STRING_CHARS) {
+            reject("type_payload_string_too_long")
+        }
+    }
+
+    private fun requireNonNegative(
+        value: Int,
+        code: String,
+    ) {
+        if (value < 0) {
+            reject(code)
+        }
     }
 
     private fun reject(code: String): Unit = throw ResponseStatusException(HttpStatus.BAD_REQUEST, code)
