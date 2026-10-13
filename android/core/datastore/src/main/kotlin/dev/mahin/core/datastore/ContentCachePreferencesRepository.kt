@@ -57,8 +57,7 @@ class ContentCachePreferencesRepository
             }
         }
 
-        suspend fun cachedDailyTipEnvelopeJson(): String? =
-            dataStore.data.map { it[CACHED_DAILY_TIP_JSON] }.first()
+        suspend fun cachedDailyTipEnvelopeJson(): String? = dataStore.data.map { it[CACHED_DAILY_TIP_JSON] }.first()
 
         suspend fun clearCachedDailyTip() {
             dataStore.edit { prefs ->

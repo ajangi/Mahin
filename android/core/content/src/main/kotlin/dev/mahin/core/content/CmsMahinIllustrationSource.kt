@@ -1,11 +1,11 @@
 package dev.mahin.core.content
 
 import dev.mahin.core.config.MediaDeliveryConfig
+import dev.mahin.core.media.MediaDeliveryUrlGuard
 import dev.mahin.core.media.illustration.BundledMahinIllustrationCatalog
 import dev.mahin.core.media.illustration.MahinIllustrationMetadata
 import dev.mahin.core.media.illustration.MahinIllustrationSource
 import dev.mahin.core.media.illustration.isMedicalGovernedIllustrationId
-import dev.mahin.core.media.MediaDeliveryUrlGuard
 import dev.mahin.core.model.MediaApprovalStatus
 import dev.mahin.core.model.MediaFamily
 import javax.inject.Inject

@@ -62,9 +62,12 @@ class ContentRepository
 
         override suspend fun cachedDailyTipFor(key: DailyTipTargetingKey): ContentDailyTipDto? =
             withContext(Dispatchers.IO) {
-                cachePreferences.cachedDailyTipEnvelopeJson()?.let { payload ->
-                    runCatching { json.decodeFromString<CachedDailyTipEnvelope>(payload) }.getOrNull()
-                }?.takeIf { envelope -> envelope.key == key }?.tip
+                cachePreferences
+                    .cachedDailyTipEnvelopeJson()
+                    ?.let { payload ->
+                        runCatching { json.decodeFromString<CachedDailyTipEnvelope>(payload) }.getOrNull()
+                    }?.takeIf { envelope -> envelope.key == key }
+                    ?.tip
             }
 
         override suspend fun cacheDailyTip(
