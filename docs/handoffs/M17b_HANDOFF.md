@@ -1,7 +1,7 @@
 # M17b Handoff — Android Learn, daily tip, player, Coil
 
 **Milestone:** M17b (Android)  
-**Status:** PR #44 review round 1 addressed  
+**Status:** **Accepted** (squash-merge `fc2cb34`, **2026-10-14**, [PR #44](https://github.com/ajangi/Mahin/pull/44))  
 **Next milestone:** **M18a** only
 
 ## Commands and results
@@ -9,10 +9,10 @@
 ```bash
 cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug assembleRelease \
   :app:verifyRoborazziDebug :core:designsystem:verifyRoborazziDebug
-# Run on CI after push (full android job in .github/workflows/ci.yml)
+# CI android job green on merge commit fc2cb34 (PR #44)
 ```
 
-## Implemented scope (incl. review round 1)
+## Implemented scope (incl. review rounds)
 
 | Area | Notes |
 |------|--------|
@@ -38,15 +38,20 @@ cd android && ./gradlew lintDebug ktlintCheck detekt test assembleDebug assemble
 | `TodayViewModelTest` | Non-vacuous tip tests; API empty clears stale cache; offline shows matching cache |
 | `ContentRepositoryDailyTipTest` | Success-empty vs network failure |
 | `GuidedSessionPlayerTest` | Empty steps, overflow across steps, timing fix |
-| `GuidedPlayerViewModelTest` | Offline/empty steps, process-death restore, completion log |
+| `GuidedPlayerViewModelTest` | Offline/empty steps, process-death restore, completion log, cache-offline play |
+| `MahinIllustrationCoilOfflineTest` | Neutral frame + description when fetch fails |
 | `LearnViewModelTest` / `ArticleViewModelTest` / `ProgramDetailViewModelTest` | Mode/week, Persian search, offline article, bookmarks, completions |
 | `MediaDeliveryUrlGuardTest` / `CmsMahinIllustrationSourceTest` | Safe `cycle` paths; query/userId blocked |
 | `SensitiveAnalyticsGuardTest` | Rejects program/title properties |
-| `MahinDatabaseMigrationTest.migrate8To9_*` | Program cache table |
+| `MahinDatabaseMigrationTest.migrate8To9_*` | Program cache table; `guided_player_state` seed survives |
 
 ## Deferred / carry-over
 
-- Premium collection gating — all collections FREE (unchanged).
+- **Guided player `onCleared` save** — simplify or remove redundant persistence after session complete/stop.
+- **Coil illustration test** — positive-control remote success path (shows imagery tag), in addition to offline failure test.
+- **Double TalkBack description** — remote `MahinIllustration` may expose description on both frame and image; unify for screen readers.
+- **`DayEditorViewModelUndoTest`** — flaky on release unit tests in CI; needs deterministic idling.
+- **Premium collection gating** — all collections **FREE** for now (unchanged).
 - **1.3× Learn magazine goldens** removed from M17b; scale coverage remains via M14a `learn_populated` goldens.
 - M17a media validation / N+1 (backend).
 - Real clinical CMS content before launch.
