@@ -88,7 +88,7 @@ Ungated milestones (M14a–M18) can be executed by a cloud agent without further
 | M14c | App shell: Mahin bottom bar (5 tabs per mode per PRD §5), top app bar, Settings screen | **accepted** — merge `d951c20` **2026-10-08** ([PR #35](https://github.com/ajangi/Mahin/pull/35)); gatekeeper rounds through round 5 | `prompts/M14c.md` |
 | M15 | Today home & calendar redesign | **accepted** — merge `01bed76` **2026-10-11** ([PR #37](https://github.com/ajangi/Mahin/pull/37)); owner approved at merge | `prompts/M15.md` |
 | M16 | Logging experience overhaul (local-only custom tags) | **accepted** — merge `32a2f5c` **2026-10-12** ([PR #39](https://github.com/ajangi/Mahin/pull/39)) | `prompts/M16.md` |
-| M17 | Daily wellness, Learn magazine, guided programs, remote CMS images (Coil) | **M17a accepted** — merge `8660536df86fc74e04841abc5dccb31c093dc652` **2026-10-13** ([PR #42](https://github.com/ajangi/Mahin/pull/42)); M17b Android UI + Coil; real content needs clinical review before launch | `prompts/M17.md` |
+| M17 | Daily wellness, Learn magazine, guided programs, remote CMS images (Coil) | **M17a + M17b accepted** — M17a `8660536df86fc74e04841abc5dccb31c093dc652` **2026-10-13** ([PR #42](https://github.com/ajangi/Mahin/pull/42)); M17b `fc2cb34` **2026-10-14** ([PR #44](https://github.com/ajangi/Mahin/pull/44)); real content needs clinical review before launch | `prompts/M17.md` |
 | M18 | Pregnancy companion depth (local-only checklist and expenses) | schedules/warning-sign content need clinical review before launch | `prompts/M18.md` |
 | M19 | Postpartum, breastfeeding & baby growth | **owner approval + PRD amendment** | `prompts/M19.md` |
 | M20 | Iran distribution: Bazaar/Myket billing, phone OTP | **owner decisions + vendor secrets** | `prompts/M20.md` |
@@ -102,7 +102,7 @@ Ungated milestones (M14a–M18) can be executed by a cloud agent without further
 - M19 depends on M18. M20 is independent of M14–M19. M21 depends on M20 (payments + phone identity). M22 depends on M17.
 
 **Planned splits before launch.** M17 and M18 are each too large for one reviewable PR. Before an agent starts them, each prompt will be split:
-- **M17a**: backend/CMS/admin/OpenAPI for `daily_tip`, `program` and `collection` — **accepted** (squash-merge `8660536df86fc74e04841abc5dccb31c093dc652`, **2026-10-13**, [PR #42](https://github.com/ajangi/Mahin/pull/42)). **M17b**: Android Learn magazine, daily tip card, session player and Coil remote image loading.
+- **M17a**: backend/CMS/admin/OpenAPI for `daily_tip`, `program` and `collection` — **accepted** (squash-merge `8660536df86fc74e04841abc5dccb31c093dc652`, **2026-10-13**, [PR #42](https://github.com/ajangi/Mahin/pull/42)). **M17b**: Android Learn magazine, daily tip card, session player and Coil remote image loading — **accepted** (squash-merge `fc2cb34`, **2026-10-14**, [PR #44](https://github.com/ajangi/Mahin/pull/44)).
 - **M18a**: `care_schedule` and `checklist_template` content types, pregnancy timeline and tools hub. **M18b**: local-only expense tracker, warning signs/BP flagging, weight chart, and kick-counter/contraction-timer polish.
 
 ## 6. Human work that agents cannot substitute
