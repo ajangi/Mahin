@@ -88,7 +88,18 @@ class TodayScreenBehaviorTest {
     fun dailyTipSlot_whenVisible_rendersSlotContent() {
         androidComposeRule.setContent {
             MahinTheme {
-                TodayScreenContent(state = TodayUiState(showDailyTipSlot = true))
+                TodayScreenContent(
+                    state =
+                        TodayUiState(
+                            dailyTip =
+                                TodayDailyTipCard(
+                                    id = "tip-1",
+                                    title = "[نمونه] نکتهٔ روز",
+                                    summary = "متن آزمایشی",
+                                    placeholder = true,
+                                ),
+                        ),
+                )
             }
         }
         androidComposeRule.onNodeWithTag("today_daily_tip_slot").assertIsDisplayed()

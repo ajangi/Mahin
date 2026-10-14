@@ -51,9 +51,45 @@ class ContentCachePreferencesRepository
             }
         }
 
+        suspend fun setCachedDailyTipEnvelopeJson(payload: String) {
+            dataStore.edit { prefs ->
+                prefs[CACHED_DAILY_TIP_JSON] = payload
+            }
+        }
+
+        suspend fun cachedDailyTipEnvelopeJson(): String? = dataStore.data.map { it[CACHED_DAILY_TIP_JSON] }.first()
+
+        suspend fun clearCachedDailyTip() {
+            dataStore.edit { prefs ->
+                prefs.remove(CACHED_DAILY_TIP_JSON)
+            }
+        }
+
+        suspend fun dismissDailyTip(
+            tipId: String,
+            localDateIso: String,
+        ) {
+            dataStore.edit { prefs ->
+                prefs[DISMISSED_DAILY_TIP_ID] = tipId
+                prefs[DISMISSED_DAILY_TIP_DATE] = localDateIso
+            }
+        }
+
+        suspend fun isDailyTipDismissed(
+            tipId: String,
+            localDateIso: String,
+        ): Boolean =
+            dataStore.data
+                .map { prefs ->
+                    prefs[DISMISSED_DAILY_TIP_ID] == tipId && prefs[DISMISSED_DAILY_TIP_DATE] == localDateIso
+                }.first()
+
         companion object {
             private val PUBLICATION_REVISION = longPreferencesKey("publication_revision")
             private val BOOKMARK_IDS = stringSetPreferencesKey("local_bookmark_ids")
             private val CACHED_ARTICLES_JSON = stringPreferencesKey("cached_articles_json")
+            private val CACHED_DAILY_TIP_JSON = stringPreferencesKey("cached_daily_tip_json")
+            private val DISMISSED_DAILY_TIP_ID = stringPreferencesKey("dismissed_daily_tip_id")
+            private val DISMISSED_DAILY_TIP_DATE = stringPreferencesKey("dismissed_daily_tip_date")
         }
     }

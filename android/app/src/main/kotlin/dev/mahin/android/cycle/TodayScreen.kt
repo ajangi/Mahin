@@ -18,6 +18,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -27,9 +28,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.invisibleToUser
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.mahin.android.BuildConfig
 import dev.mahin.android.R
 import dev.mahin.android.pregnancy.PostPregnancyTransitionActions
 import dev.mahin.android.pregnancy.PostPregnancyTransitionSection
@@ -70,6 +71,7 @@ fun TodayScreen(
         onDismissDaySheet = viewModel::dismissDaySheet,
         onOpenConfidenceSheet = viewModel::openConfidenceSheet,
         onDismissConfidenceSheet = viewModel::dismissConfidenceSheet,
+        onDismissDailyTip = viewModel::dismissDailyTip,
         postPregnancyActions =
             PostPregnancyTransitionActions(
                 onResumeCycle = viewModel::resumeCycleTracking,
@@ -91,6 +93,7 @@ internal fun TodayScreenContent(
     onDismissDaySheet: () -> Unit = {},
     onOpenConfidenceSheet: () -> Unit = {},
     onDismissConfidenceSheet: () -> Unit = {},
+    onDismissDailyTip: () -> Unit = {},
     postPregnancyActions: PostPregnancyTransitionActions? = null,
 ) {
     val converter = PersianCivilDateConverter
@@ -109,7 +112,12 @@ internal fun TodayScreenContent(
             )
         }
         item {
-            TodayDailyTipSlot(visible = state.showDailyTipSlot)
+            state.dailyTip?.let { tip ->
+                TodayDailyTipCard(
+                    tip = tip,
+                    onDismiss = onDismissDailyTip,
+                )
+            }
         }
         if (state.postPregnancyTransition && postPregnancyActions != null) {
             item {
@@ -396,15 +404,44 @@ private fun TodaySwipeableWeekStrip(
 }
 
 @Composable
-private fun TodayDailyTipSlot(visible: Boolean) {
-    if (visible) {
-        Spacer(
-            modifier =
-                Modifier
-                    .testTag("today_daily_tip_slot")
-                    .fillMaxWidth()
-                    .height(1.dp),
-        )
+private fun TodayDailyTipCard(
+    tip: TodayDailyTipCard,
+    onDismiss: () -> Unit,
+) {
+    MahinSurfaceCard(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = MahinSpacing.sm)
+                .testTag("today_daily_tip_slot"),
+    ) {
+        Column(modifier = Modifier.padding(MahinSpacing.md)) {
+            Text(text = stringResource(R.string.today_daily_tip_title), style = MaterialTheme.typography.titleSmall)
+            if (tip.placeholder && BuildConfig.DEBUG) {
+                Text(
+                    text = stringResource(R.string.today_daily_tip_sample_badge),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.padding(bottom = MahinSpacing.xs),
+                )
+            }
+            Text(text = tip.title, style = MaterialTheme.typography.titleMedium)
+            tip.summary?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = MahinSpacing.xs),
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.today_daily_tip_dismiss))
+                }
+            }
+        }
     }
 }
 

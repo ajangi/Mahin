@@ -16,11 +16,51 @@ interface ContentApi {
         @Query("lifeStage") lifeStage: String? = null,
     ): ContentSearchResponseDto
 
+    @GET("v1/content/articles/{articleId}")
+    suspend fun article(
+        @Path("articleId") articleId: String,
+    ): ContentArticleDto
+
     @GET("v1/content/pregnancy/weeks/{week}")
     suspend fun pregnancyWeek(
         @Path("week") week: Int,
         @Query("locale") locale: String = "fa-IR",
     ): ContentArticleDto
+
+    @GET("v1/content/daily-tips")
+    suspend fun dailyTips(
+        @Query("locale") locale: String = "fa-IR",
+        @Query("mode") mode: String? = null,
+        @Query("cyclePhase") cyclePhase: String? = null,
+        @Query("pregnancyWeek") pregnancyWeek: Int? = null,
+    ): ContentDailyTipListResponseDto
+
+    @GET("v1/content/programs")
+    suspend fun programs(
+        @Query("locale") locale: String = "fa-IR",
+        @Query("programType") programType: String? = null,
+    ): ContentProgramListResponseDto
+
+    @GET("v1/content/programs/{documentId}")
+    suspend fun program(
+        @Path("documentId") documentId: String,
+    ): ContentProgramDto
+
+    @GET("v1/content/collections")
+    suspend fun collections(
+        @Query("locale") locale: String = "fa-IR",
+        @Query("category") category: String? = null,
+    ): ContentCollectionListResponseDto
+
+    @GET("v1/content/collections/{documentId}")
+    suspend fun collection(
+        @Path("documentId") documentId: String,
+    ): ContentCollectionDto
+
+    @GET("v1/media/assets/{assetId}")
+    suspend fun mediaAsset(
+        @Path("assetId") assetId: String,
+    ): MediaAssetDto
 }
 
 @Serializable
@@ -54,7 +94,12 @@ data class ContentArticleDto(
     val title: String,
     val summary: String? = null,
     val body: String? = null,
-    val contentType: String,
+    val contentType: String = "article",
     val status: String,
     val withdrawn: Boolean = false,
+    val medicalRiskLevel: String? = null,
+    val contentVersion: Int? = null,
+    val sourceReferences: List<String> = emptyList(),
+    val clinicalReviewer: String? = null,
+    val clinicalReviewedAt: String? = null,
 )

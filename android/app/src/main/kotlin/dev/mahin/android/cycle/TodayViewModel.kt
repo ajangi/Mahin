@@ -4,11 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.mahin.core.common.LocalDateClock
+import dev.mahin.core.content.DailyTipDataSource
+import dev.mahin.core.content.DailyTipFetchResult
+import dev.mahin.core.content.DailyTipTargetingKey
 import dev.mahin.core.database.cycle.CycleDashboard
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.entity.DailyLogEntity
 import dev.mahin.core.database.entity.PeriodRecordEntity
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
+import dev.mahin.core.datastore.ContentCachePreferencesRepository
 import dev.mahin.core.datastore.NotificationPreferencesRepository
 import dev.mahin.core.datetime.PersianCivilDateConverter
 import dev.mahin.core.model.ReproductiveMode
@@ -35,6 +39,8 @@ class TodayViewModel
         private val repository: CycleTrackingRepository,
         private val pregnancyRepository: PregnancyTrackingRepository,
         private val notificationPreferencesRepository: NotificationPreferencesRepository,
+        private val dailyTipDataSource: DailyTipDataSource,
+        private val contentCachePreferences: ContentCachePreferencesRepository,
         private val localDateClock: LocalDateClock,
     ) : ViewModel() {
         private val converter = PersianCivilDateConverter
@@ -107,6 +113,17 @@ class TodayViewModel
                             weekStripWeeks = buildWeekStripWeeks(localDateClock.today()),
                         )
                     }
+                }
+            }
+            viewModelScope.launch {
+                combine(
+                    repository.observeDashboard(localDateClock.today()),
+                    pregnancyRepository.observeProfile(),
+                    pregnancyRepository.observeActivePregnancy(),
+                ) { dashboard, profile, pregnancy ->
+                    Triple(dashboard, profile, pregnancy)
+                }.collect { (dashboard, profile, pregnancy) ->
+                    refreshDailyTip(dashboard, profile?.reproductiveMode, pregnancy)
                 }
             }
             viewModelScope.launch {
@@ -259,6 +276,91 @@ class TodayViewModel
 
         fun dismissConfidenceSheet() {
             _uiState.update { it.copy(showConfidenceSheet = false) }
+        }
+
+        fun dismissDailyTip() {
+            val tip = _uiState.value.dailyTip ?: return
+            viewModelScope.launch {
+                contentCachePreferences.dismissDailyTip(tip.id, localDateClock.today().toString())
+                _uiState.update { it.copy(dailyTip = null) }
+            }
+        }
+
+        @Suppress("CyclomaticComplexMethod")
+        private suspend fun refreshDailyTip(
+            dashboard: CycleDashboard?,
+            mode: ReproductiveMode?,
+            pregnancy: dev.mahin.core.database.entity.PregnancyRecordEntity?,
+        ) {
+            val reproductiveMode = mode ?: ReproductiveMode.CYCLE_TRACKING
+            val apiMode =
+                when (reproductiveMode) {
+                    ReproductiveMode.TRYING_TO_CONCEIVE -> "ttc"
+                    ReproductiveMode.PREGNANT -> "pregnancy"
+                    else -> "cycle"
+                }
+            val cyclePhase =
+                if (reproductiveMode == ReproductiveMode.PREGNANT) {
+                    null
+                } else {
+                    DailyTipTargetingMapper.cyclePhase(
+                        cycleDay = dashboard?.prediction?.cycleDay,
+                        onPeriodToday = dashboard?.onPeriodToday == true,
+                        inFertileWindow =
+                            dashboard?.prediction?.fertileWindow?.let { range ->
+                                val today = localDateClock.today()
+                                !today.isBefore(range.earliest) && !today.isAfter(range.latest)
+                            } == true,
+                    )
+                }
+            val pregnancyWeek =
+                if (reproductiveMode == ReproductiveMode.PREGNANT && pregnancy != null) {
+                    PregnancyDatingEngineV1
+                        .status(
+                            lmpDate = pregnancy.lmpDate,
+                            clinicalEddDate = pregnancy.clinicalEddDate,
+                            asOfDate = localDateClock.today(),
+                        ).displayWeekNumber
+                } else {
+                    null
+                }
+            val targetingKey =
+                DailyTipTargetingKey(
+                    mode = apiMode,
+                    cyclePhase = cyclePhase,
+                    pregnancyWeek = pregnancyWeek,
+                    localDateIso = localDateClock.today().toString(),
+                )
+            val tip =
+                when (val fetch = dailyTipDataSource.fetchDailyTips(targetingKey)) {
+                    is DailyTipFetchResult.Success -> {
+                        val resolved = fetch.tips.firstOrNull()
+                        if (resolved == null) {
+                            dailyTipDataSource.clearCachedDailyTip()
+                            null
+                        } else {
+                            dailyTipDataSource.cacheDailyTip(resolved, targetingKey)
+                            resolved
+                        }
+                    }
+                    is DailyTipFetchResult.NetworkFailure ->
+                        dailyTipDataSource.cachedDailyTipFor(targetingKey)
+                }
+            val dismissed =
+                tip != null &&
+                    contentCachePreferences.isDailyTipDismissed(tip.id, localDateClock.today().toString())
+            val card =
+                if (tip != null && !dismissed) {
+                    TodayDailyTipCard(
+                        id = tip.id,
+                        title = tip.title,
+                        summary = tip.summary,
+                        placeholder = tip.placeholder,
+                    )
+                } else {
+                    null
+                }
+            _uiState.update { it.copy(dailyTip = card) }
         }
 
         fun resumeCycleTracking() {

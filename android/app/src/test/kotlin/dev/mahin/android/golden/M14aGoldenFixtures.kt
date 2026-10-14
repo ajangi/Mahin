@@ -127,7 +127,7 @@ object M14aGoldenFixtures {
     fun learnPopulated(): LearnUiState =
         LearnUiState(
             query = "",
-            results =
+            searchResults =
                 listOf(
                     ContentArticleSummaryDto(
                         id = "fixture-article-1",
@@ -143,6 +143,29 @@ object M14aGoldenFixtures {
                         locale = "fa-IR",
                         title = "[نمونه] چرخه قاعدگی",
                         summary = "داده نمایشی برای تست طلایی.",
+                        contentType = "article",
+                    ),
+                ),
+            featuredCollections =
+                listOf(
+                    dev.mahin.core.content.ContentCollectionSummaryDto(
+                        id = "fixture-collection-1",
+                        slug = "synthetic-featured",
+                        locale = "fa-IR",
+                        title = "[نمونه] مجموعهٔ ویژه",
+                        summary = "داده نمایشی.",
+                        category = "cycle",
+                        featured = true,
+                    ),
+                ),
+            contextualArticles =
+                listOf(
+                    ContentArticleSummaryDto(
+                        id = "fixture-article-1",
+                        slug = "synthetic-wellness",
+                        locale = "fa-IR",
+                        title = "[نمونه] برای فاز شما",
+                        summary = "متن آزمایشی.",
                         contentType = "article",
                     ),
                 ),

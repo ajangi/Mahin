@@ -270,3 +270,79 @@ val MIGRATION_6_7 =
             db.execSQL("ALTER TABLE daily_log ADD COLUMN stressLevel INTEGER")
         }
     }
+
+val MIGRATION_7_8 =
+    object : Migration(7, 8) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS content_article_cache (
+                    documentId TEXT NOT NULL PRIMARY KEY,
+                    payloadJson TEXT NOT NULL,
+                    cachedAtEpochMs INTEGER NOT NULL
+                )
+                """.trimIndent(),
+            )
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS content_recent_view (
+                    documentId TEXT NOT NULL PRIMARY KEY,
+                    viewedAtEpochMs INTEGER NOT NULL
+                )
+                """.trimIndent(),
+            )
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS program_session_completion (
+                    id TEXT NOT NULL PRIMARY KEY,
+                    programId TEXT NOT NULL,
+                    sessionId TEXT NOT NULL,
+                    completedAtEpochMs INTEGER NOT NULL
+                )
+                """.trimIndent(),
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS index_program_session_completion_programId ON program_session_completion(programId)",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS index_program_session_completion_sessionId ON program_session_completion(sessionId)",
+            )
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS guided_player_state (
+                    id INTEGER NOT NULL PRIMARY KEY,
+                    programId TEXT NOT NULL,
+                    sessionId TEXT NOT NULL,
+                    stepIndex INTEGER NOT NULL,
+                    stepElapsedMs INTEGER NOT NULL,
+                    paused INTEGER NOT NULL,
+                    updatedAtEpochMs INTEGER NOT NULL
+                )
+                """.trimIndent(),
+            )
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS media_asset_cache (
+                    assetId TEXT NOT NULL PRIMARY KEY,
+                    payloadJson TEXT NOT NULL,
+                    cachedAtEpochMs INTEGER NOT NULL
+                )
+                """.trimIndent(),
+            )
+        }
+    }
+
+val MIGRATION_8_9 =
+    object : Migration(8, 9) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS content_program_cache (
+                    documentId TEXT NOT NULL PRIMARY KEY,
+                    payloadJson TEXT NOT NULL,
+                    cachedAtEpochMs INTEGER NOT NULL
+                )
+                """.trimIndent(),
+            )
+        }
+    }

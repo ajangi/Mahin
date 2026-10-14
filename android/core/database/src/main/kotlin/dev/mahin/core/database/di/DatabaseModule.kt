@@ -10,6 +10,7 @@ import dev.mahin.core.database.DatabaseEncryptionMode
 import dev.mahin.core.database.MahinDatabase
 import dev.mahin.core.database.MahinDatabaseFactory
 import dev.mahin.core.database.MahinDatabaseProvider
+import dev.mahin.core.database.dao.WellnessContentDao
 import dev.mahin.core.security.DeviceKeyMaterial
 import javax.inject.Singleton
 
@@ -34,4 +35,7 @@ object DatabaseModule {
         object : MahinDatabaseProvider {
             override fun database(): MahinDatabase = database
         }
+
+    @Provides
+    fun provideWellnessContentDao(database: MahinDatabase): WellnessContentDao = database.wellnessContentDao()
 }

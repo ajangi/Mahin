@@ -15,6 +15,9 @@ roborazzi {
 
 android {
     namespace = "dev.mahin.android"
+    buildFeatures {
+        buildConfig = true
+    }
     defaultConfig {
         // Non-production working identity. Production applicationId is NOT locked in M0.
         // See docs/adr/0003-android-application-id.md
@@ -126,6 +129,7 @@ dependencies {
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.room.runtime)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.kotlinx.serialization.json)
     testImplementation(libs.androidx.compose.ui.test.junit4)
     testImplementation(libs.androidx.compose.ui.test.manifest)
     testImplementation(libs.roborazzi)
@@ -164,6 +168,7 @@ tasks.withType<Test>().configureEach {
             excludeTestsMatching("dev.mahin.android.golden.M14cShellGoldenTest")
             excludeTestsMatching("dev.mahin.android.golden.M15FullScreenGoldenTest")
             excludeTestsMatching("dev.mahin.android.golden.M16FullScreenGoldenTest")
+            excludeTestsMatching("dev.mahin.android.golden.M17bFullScreenGoldenTest")
             excludeTestsMatching("dev.mahin.android.shell.MahinShellNavigationTest")
             excludeTestsMatching("dev.mahin.android.shell.ShellModeTransitionTest")
             excludeTestsMatching("dev.mahin.android.settings.SettingsScreenContentTest")

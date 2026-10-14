@@ -23,6 +23,13 @@ data class TodayLoggedSummary(
     val chips: List<TodayLoggedChip>,
 )
 
+data class TodayDailyTipCard(
+    val id: String,
+    val title: String,
+    val summary: String?,
+    val placeholder: Boolean,
+)
+
 data class TodayUiState(
     val today: LocalDate = LocalDate.EPOCH,
     val reproductiveMode: dev.mahin.core.model.ReproductiveMode =
@@ -35,8 +42,7 @@ data class TodayUiState(
     val loggedSummary: TodayLoggedSummary? = null,
     val upcomingReminder: TodayUpcomingReminder? = null,
     val upcomingAppointment: TodayUpcomingAppointment? = null,
-    /** M17 CMS slot; always hidden in M15 but container is present for layout tests. */
-    val showDailyTipSlot: Boolean = false,
+    val dailyTip: TodayDailyTipCard? = null,
     val weekStripWeeks: List<List<TodayWeekDay>> = emptyList(),
     val showConfidenceSheet: Boolean = false,
     val daySheetDate: LocalDate? = null,
