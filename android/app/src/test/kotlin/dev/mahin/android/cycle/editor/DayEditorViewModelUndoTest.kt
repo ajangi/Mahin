@@ -95,7 +95,8 @@ class DayEditorViewModelUndoTest {
                 log != null && log.moodTags.contains("آرام")
             }
             awaitDailyLogOnMain {
-                viewModel.uiState.value.moodTags.contains("آرام")
+                viewModel.uiState.value.moodTags
+                    .contains("آرام")
             }
             viewModel.toggleMedication("ویتامین")
             awaitDailyLogOnMain {
@@ -103,7 +104,8 @@ class DayEditorViewModelUndoTest {
                 log != null && log.medicationTags.contains("ویتامین")
             }
             awaitDailyLogOnMain {
-                viewModel.uiState.value.medicationTags.contains("ویتامین")
+                viewModel.uiState.value.medicationTags
+                    .contains("ویتامین")
             }
             viewModel.undoLastChange()
             awaitDailyLogOnMain {
