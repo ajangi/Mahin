@@ -1,9 +1,21 @@
 import { useMemo, useState } from "react";
 import type { WellnessContentKind } from "./cmsApi";
-import { COLLECTION_CATEGORIES, PROGRAM_TYPES } from "./contentEditorUtils";
+import {
+  CARE_SCHEDULE_CATEGORIES,
+  CARE_SCHEDULE_REGIONS,
+  CHECKLIST_KINDS,
+  COLLECTION_CATEGORIES,
+  PROGRAM_TYPES,
+} from "./contentEditorUtils";
 import {
   buildCreateDocumentBody,
+  updateCareScheduleItem,
+  updateChecklistItem,
   updateProgramStep,
+  type CareScheduleEditorState,
+  type CareScheduleItemDraft,
+  type ChecklistItemTemplateDraft,
+  type ChecklistTemplateEditorState,
   type CollectionEditorState,
   type DailyTipEditorState,
   type ProgramEditorState,
@@ -14,6 +26,23 @@ export type WellnessContentEditorProps = {
   kind: WellnessContentKind;
   onSubmit: (body: Record<string, unknown>) => Promise<void>;
 };
+
+const defaultCareScheduleItem = (): CareScheduleItemDraft => ({
+  id: `item-${Date.now()}`,
+  title: "آزمایش نمونه",
+  category: CARE_SCHEDULE_CATEGORIES[0],
+  weekStart: "8",
+  weekEnd: "10",
+  description: "نمونه — غیرپزشکی",
+  appointmentTypeHint: "",
+});
+
+const defaultChecklistItem = (): ChecklistItemTemplateDraft => ({
+  id: `c-${Date.now()}`,
+  label: "لیست نمونه",
+  section: "مدارک",
+  order: "1",
+});
 
 const defaultSession = (): ProgramSessionDraft => ({
   id: `session-${Date.now()}`,
@@ -67,13 +96,47 @@ export function WellnessContentEditor({ kind, onSubmit }: WellnessContentEditorP
     effectiveTo: "",
     placeholder: true,
   });
+  const [careSchedule, setCareSchedule] = useState<CareScheduleEditorState>({
+    title: "زمان‌بندی مراقبت نمونه",
+    summary: "خلاصه",
+    locale: "fa-IR",
+    regionContext: CARE_SCHEDULE_REGIONS[0],
+    items: [defaultCareScheduleItem()],
+    effectiveFrom: "",
+    effectiveTo: "",
+    placeholder: true,
+  });
+  const [checklistTemplate, setChecklistTemplate] = useState<ChecklistTemplateEditorState>({
+    title: "چک‌لیست نمونه",
+    summary: "خلاصه",
+    locale: "fa-IR",
+    checklistKind: CHECKLIST_KINDS[0],
+    sections: "مدارک",
+    items: [defaultChecklistItem()],
+    effectiveFrom: "",
+    effectiveTo: "",
+    placeholder: true,
+  });
   const [error, setError] = useState<string | null>(null);
+
+  const patchShared = <K extends "title" | "locale" | "effectiveFrom" | "effectiveTo" | "placeholder">(
+    key: K,
+    value: string | boolean,
+  ) => {
+    if (kind === "daily_tip") setDaily((s) => ({ ...s, [key]: value }));
+    else if (kind === "program") setProgram((s) => ({ ...s, [key]: value }));
+    else if (kind === "collection") setCollection((s) => ({ ...s, [key]: value }));
+    else if (kind === "care_schedule") setCareSchedule((s) => ({ ...s, [key]: value }));
+    else setChecklistTemplate((s) => ({ ...s, [key]: value }));
+  };
 
   const state = useMemo(() => {
     if (kind === "daily_tip") return daily;
     if (kind === "program") return program;
-    return collection;
-  }, [kind, daily, program, collection]);
+    if (kind === "collection") return collection;
+    if (kind === "care_schedule") return careSchedule;
+    return checklistTemplate;
+  }, [kind, daily, program, collection, careSchedule, checklistTemplate]);
 
   return (
     <section dir="rtl" aria-label={`ویرایشگر ${kind}`}>
@@ -82,12 +145,7 @@ export function WellnessContentEditor({ kind, onSubmit }: WellnessContentEditorP
         <input
           aria-label="عنوان"
           value={state.title}
-          onChange={(e) => {
-            const title = e.target.value;
-            if (kind === "daily_tip") setDaily((s) => ({ ...s, title }));
-            else if (kind === "program") setProgram((s) => ({ ...s, title }));
-            else setCollection((s) => ({ ...s, title }));
-          }}
+          onChange={(e) => patchShared("title", e.target.value)}
         />
       </label>
       <label>
@@ -95,12 +153,7 @@ export function WellnessContentEditor({ kind, onSubmit }: WellnessContentEditorP
         <input
           aria-label="locale"
           value={state.locale}
-          onChange={(e) => {
-            const locale = e.target.value;
-            if (kind === "daily_tip") setDaily((s) => ({ ...s, locale }));
-            else if (kind === "program") setProgram((s) => ({ ...s, locale }));
-            else setCollection((s) => ({ ...s, locale }));
-          }}
+          onChange={(e) => patchShared("locale", e.target.value)}
         />
       </label>
       <label>
@@ -108,12 +161,7 @@ export function WellnessContentEditor({ kind, onSubmit }: WellnessContentEditorP
         <input
           aria-label="effectiveFrom"
           value={state.effectiveFrom}
-          onChange={(e) => {
-            const v = e.target.value;
-            if (kind === "daily_tip") setDaily((s) => ({ ...s, effectiveFrom: v }));
-            else if (kind === "program") setProgram((s) => ({ ...s, effectiveFrom: v }));
-            else setCollection((s) => ({ ...s, effectiveFrom: v }));
-          }}
+          onChange={(e) => patchShared("effectiveFrom", e.target.value)}
         />
       </label>
       <label>
@@ -121,12 +169,7 @@ export function WellnessContentEditor({ kind, onSubmit }: WellnessContentEditorP
         <input
           aria-label="effectiveTo"
           value={state.effectiveTo}
-          onChange={(e) => {
-            const v = e.target.value;
-            if (kind === "daily_tip") setDaily((s) => ({ ...s, effectiveTo: v }));
-            else if (kind === "program") setProgram((s) => ({ ...s, effectiveTo: v }));
-            else setCollection((s) => ({ ...s, effectiveTo: v }));
-          }}
+          onChange={(e) => patchShared("effectiveTo", e.target.value)}
         />
       </label>
       {kind === "daily_tip" && (
@@ -326,16 +369,210 @@ export function WellnessContentEditor({ kind, onSubmit }: WellnessContentEditorP
           </label>
         </>
       )}
+      {kind === "care_schedule" && (
+        <>
+          <label>
+            زمینهٔ منطقه
+            <select
+              aria-label="regionContext"
+              value={careSchedule.regionContext}
+              onChange={(e) => setCareSchedule((s) => ({ ...s, regionContext: e.target.value }))}
+            >
+              {CARE_SCHEDULE_REGIONS.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          </label>
+          {careSchedule.items.map((item, itemIndex) => (
+            <fieldset key={item.id}>
+              <legend>آیتم {itemIndex + 1}</legend>
+              <label>
+                شناسه
+                <input
+                  aria-label="careScheduleItemId"
+                  value={item.id}
+                  onChange={(e) =>
+                    setCareSchedule((s) => ({
+                      ...s,
+                      items: updateCareScheduleItem(s.items, itemIndex, { id: e.target.value }),
+                    }))
+                  }
+                />
+              </label>
+              <label>
+                عنوان
+                <input
+                  aria-label="careScheduleItemTitle"
+                  value={item.title}
+                  onChange={(e) =>
+                    setCareSchedule((s) => ({
+                      ...s,
+                      items: updateCareScheduleItem(s.items, itemIndex, { title: e.target.value }),
+                    }))
+                  }
+                />
+              </label>
+              <label>
+                دسته
+                <select
+                  aria-label="careScheduleItemCategory"
+                  value={item.category}
+                  onChange={(e) =>
+                    setCareSchedule((s) => ({
+                      ...s,
+                      items: updateCareScheduleItem(s.items, itemIndex, { category: e.target.value }),
+                    }))
+                  }
+                >
+                  {CARE_SCHEDULE_CATEGORIES.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                هفتهٔ شروع
+                <input
+                  aria-label="careScheduleWeekStart"
+                  value={item.weekStart}
+                  onChange={(e) =>
+                    setCareSchedule((s) => ({
+                      ...s,
+                      items: updateCareScheduleItem(s.items, itemIndex, { weekStart: e.target.value }),
+                    }))
+                  }
+                />
+              </label>
+              <label>
+                هفتهٔ پایان
+                <input
+                  aria-label="careScheduleWeekEnd"
+                  value={item.weekEnd}
+                  onChange={(e) =>
+                    setCareSchedule((s) => ({
+                      ...s,
+                      items: updateCareScheduleItem(s.items, itemIndex, { weekEnd: e.target.value }),
+                    }))
+                  }
+                />
+              </label>
+              <label>
+                توضیح
+                <textarea
+                  aria-label="careScheduleDescription"
+                  value={item.description}
+                  onChange={(e) =>
+                    setCareSchedule((s) => ({
+                      ...s,
+                      items: updateCareScheduleItem(s.items, itemIndex, { description: e.target.value }),
+                    }))
+                  }
+                />
+              </label>
+              <label>
+                appointmentTypeHint
+                <input
+                  aria-label="appointmentTypeHint"
+                  value={item.appointmentTypeHint}
+                  onChange={(e) =>
+                    setCareSchedule((s) => ({
+                      ...s,
+                      items: updateCareScheduleItem(s.items, itemIndex, {
+                        appointmentTypeHint: e.target.value,
+                      }),
+                    }))
+                  }
+                />
+              </label>
+            </fieldset>
+          ))}
+        </>
+      )}
+      {kind === "checklist_template" && (
+        <>
+          <label>
+            نوع چک‌لیست
+            <select
+              aria-label="checklistKind"
+              value={checklistTemplate.checklistKind}
+              onChange={(e) => setChecklistTemplate((s) => ({ ...s, checklistKind: e.target.value }))}
+            >
+              {CHECKLIST_KINDS.map((k) => (
+                <option key={k} value={k}>{k}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            بخش‌ها (با ویرگول)
+            <input
+              aria-label="checklistSections"
+              value={checklistTemplate.sections}
+              onChange={(e) => setChecklistTemplate((s) => ({ ...s, sections: e.target.value }))}
+            />
+          </label>
+          {checklistTemplate.items.map((item, itemIndex) => (
+            <fieldset key={item.id}>
+              <legend>ردیف {itemIndex + 1}</legend>
+              <label>
+                شناسه
+                <input
+                  aria-label="checklistItemId"
+                  value={item.id}
+                  onChange={(e) =>
+                    setChecklistTemplate((s) => ({
+                      ...s,
+                      items: updateChecklistItem(s.items, itemIndex, { id: e.target.value }),
+                    }))
+                  }
+                />
+              </label>
+              <label>
+                برچسب
+                <input
+                  aria-label="checklistItemLabel"
+                  value={item.label}
+                  onChange={(e) =>
+                    setChecklistTemplate((s) => ({
+                      ...s,
+                      items: updateChecklistItem(s.items, itemIndex, { label: e.target.value }),
+                    }))
+                  }
+                />
+              </label>
+              <label>
+                بخش
+                <input
+                  aria-label="checklistItemSection"
+                  value={item.section}
+                  onChange={(e) =>
+                    setChecklistTemplate((s) => ({
+                      ...s,
+                      items: updateChecklistItem(s.items, itemIndex, { section: e.target.value }),
+                    }))
+                  }
+                />
+              </label>
+              <label>
+                ترتیب
+                <input
+                  aria-label="checklistItemOrder"
+                  value={item.order}
+                  onChange={(e) =>
+                    setChecklistTemplate((s) => ({
+                      ...s,
+                      items: updateChecklistItem(s.items, itemIndex, { order: e.target.value }),
+                    }))
+                  }
+                />
+              </label>
+            </fieldset>
+          ))}
+        </>
+      )}
       <label>
         <input
           type="checkbox"
           checked={state.placeholder}
-          onChange={(e) => {
-            const placeholder = e.target.checked;
-            if (kind === "daily_tip") setDaily((s) => ({ ...s, placeholder }));
-            else if (kind === "program") setProgram((s) => ({ ...s, placeholder }));
-            else setCollection((s) => ({ ...s, placeholder }));
-          }}
+          onChange={(e) => patchShared("placeholder", e.target.checked)}
         />
         placeholder (نمونه)
       </label>

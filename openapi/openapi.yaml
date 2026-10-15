@@ -678,7 +678,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ContentCareScheduleListResponse"
         "400":
-          description: Invalid gestational week
+          description: |
+            Invalid filter. Codes: `invalid_gestational_week`.
           content:
             application/json:
               schema:
@@ -703,7 +704,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ContentCareSchedule"
         "404":
-          description: Not published or unknown
+          description: |
+            Not published or unknown. Codes: `content_not_found`.
           content:
             application/json:
               schema:
@@ -761,7 +763,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ContentChecklistTemplateListResponse"
         "400":
-          description: Invalid checklist kind
+          description: |
+            Invalid filter. Codes: `invalid_checklist_kind`.
           content:
             application/json:
               schema:
@@ -861,7 +864,9 @@ paths:
         "400":
           description: |
             Validation failed. Codes include `invalid_effective_window`, `invalid_type_payload`,
-            `invalid_type_payload_shape`, `wellness_requires_clinical_review`, and other payload field codes.
+            `invalid_type_payload_shape`, `wellness_requires_clinical_review`, `care_schedule_items_required`,
+            `invalid_care_schedule_week_window`, `invalid_care_schedule_region`, `checklist_items_required`,
+            `invalid_checklist_kind`, `type_payload_too_large`, and related payload field codes.
           content:
             application/json:
               schema:

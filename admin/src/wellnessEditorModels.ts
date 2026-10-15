@@ -72,10 +72,73 @@ export type CollectionEditorState = {
   placeholder: boolean;
 };
 
+export type CareScheduleItemDraft = {
+  id: string;
+  title: string;
+  category: string;
+  weekStart: string;
+  weekEnd: string;
+  description: string;
+  appointmentTypeHint: string;
+};
+
+export function updateCareScheduleItem(
+  items: CareScheduleItemDraft[],
+  itemIndex: number,
+  patch: Partial<CareScheduleItemDraft>,
+): CareScheduleItemDraft[] {
+  return items.map((item, i) => (i !== itemIndex ? item : { ...item, ...patch }));
+}
+
+export type CareScheduleEditorState = {
+  title: string;
+  summary: string;
+  locale: string;
+  regionContext: string;
+  items: CareScheduleItemDraft[];
+  effectiveFrom: string;
+  effectiveTo: string;
+  placeholder: boolean;
+};
+
+export type ChecklistItemTemplateDraft = {
+  id: string;
+  label: string;
+  section: string;
+  order: string;
+};
+
+export function updateChecklistItem(
+  items: ChecklistItemTemplateDraft[],
+  itemIndex: number,
+  patch: Partial<ChecklistItemTemplateDraft>,
+): ChecklistItemTemplateDraft[] {
+  return items.map((item, i) => (i !== itemIndex ? item : { ...item, ...patch }));
+}
+
+export type ChecklistTemplateEditorState = {
+  title: string;
+  summary: string;
+  locale: string;
+  checklistKind: string;
+  sections: string;
+  items: ChecklistItemTemplateDraft[];
+  effectiveFrom: string;
+  effectiveTo: string;
+  placeholder: boolean;
+};
+
+export type WellnessEditorState =
+  | DailyTipEditorState
+  | ProgramEditorState
+  | CollectionEditorState
+  | CareScheduleEditorState
+  | ChecklistTemplateEditorState;
+
 export function buildCreateDocumentBody(
   kind: WellnessContentKind,
   slug: string,
-  state: DailyTipEditorState | ProgramEditorState | CollectionEditorState,
+  state: WellnessEditorState,
 ): Record<string, unknown> {
   const base = {
     slug,
@@ -132,20 +195,64 @@ export function buildCreateDocumentBody(
       },
     };
   }
-  const s = state as CollectionEditorState;
+  if (kind === "collection") {
+    const s = state as CollectionEditorState;
+    return {
+      ...base,
+      medicalRiskLevel: "none",
+      typePayload: {
+        placeholder: s.placeholder,
+        category: s.category,
+        featured: s.featured,
+        articleDocumentIds: s.articleDocumentIds
+          .split(",")
+          .map((v) => v.trim())
+          .filter(Boolean),
+      },
+    };
+  }
+  if (kind === "care_schedule") {
+    const s = state as CareScheduleEditorState;
+    return {
+      ...base,
+      typePayload: {
+        placeholder: s.placeholder,
+        regionContext: s.regionContext,
+        items: s.items.map((item) => ({
+          id: item.id,
+          title: item.title,
+          category: item.category,
+          weekStart: parseRequiredInt(item.weekStart, 1),
+          weekEnd: parseRequiredInt(item.weekEnd, 1),
+          description: item.description || undefined,
+          appointmentTypeHint: item.appointmentTypeHint || undefined,
+        })),
+      },
+    };
+  }
+  const s = state as ChecklistTemplateEditorState;
   return {
     ...base,
-    medicalRiskLevel: "none",
     typePayload: {
       placeholder: s.placeholder,
-      category: s.category,
-      featured: s.featured,
-      articleDocumentIds: s.articleDocumentIds
+      checklistKind: s.checklistKind,
+      sections: s.sections
         .split(",")
         .map((v) => v.trim())
         .filter(Boolean),
+      items: s.items.map((item) => ({
+        id: item.id,
+        label: item.label,
+        section: item.section,
+        order: parseRequiredInt(item.order, 1),
+      })),
     },
   };
+}
+
+function parseRequiredInt(raw: string, fallback: number): number {
+  const n = Number.parseInt(raw.trim(), 10);
+  return Number.isNaN(n) ? fallback : n;
 }
 
 function parseOptionalInt(raw: string): number | undefined {

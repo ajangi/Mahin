@@ -65,6 +65,41 @@ class PregnancyChecklistRepository
             dao.setChecked(id, checked, System.currentTimeMillis())
         }
 
+        suspend fun addItem(
+            section: String,
+            label: String,
+        ) {
+            val trimmed = label.trim()
+            if (trimmed.isEmpty()) return
+            val now = System.currentTimeMillis()
+            val order = dao.maxSortOrder(HOSPITAL_BAG_KIND, section) + 1
+            dao.insert(
+                PregnancyChecklistItemEntity(
+                    id = UUID.randomUUID().toString(),
+                    checklistKind = HOSPITAL_BAG_KIND,
+                    section = section,
+                    label = trimmed,
+                    sortOrder = order,
+                    checked = false,
+                    templateItemId = null,
+                    updatedAtEpochMs = now,
+                ),
+            )
+        }
+
+        suspend fun renameItem(
+            id: String,
+            label: String,
+        ) {
+            val trimmed = label.trim()
+            if (trimmed.isEmpty()) return
+            dao.updateLabel(id, trimmed, System.currentTimeMillis())
+        }
+
+        suspend fun deleteItem(id: String) {
+            dao.deleteById(id)
+        }
+
         data class TemplateItem(
             val templateId: String,
             val section: String,

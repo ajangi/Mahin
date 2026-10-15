@@ -215,8 +215,8 @@ class DayEditorViewModel
         }
 
         fun openDate(date: LocalDate) {
+            _uiState.update { it.copy(date = date, loading = true) }
             viewModelScope.launch {
-                _uiState.update { it.copy(date = date, loading = true) }
                 loadDay(date)
             }
         }

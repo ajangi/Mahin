@@ -19,11 +19,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mahin.android.R
+import dev.mahin.android.learn.LearnIllustrationViewModel
 import dev.mahin.core.designsystem.MahinSpacing
 import dev.mahin.core.designsystem.MahinTypographyRole
 import dev.mahin.core.designsystem.component.MahinScreenHeader
 import dev.mahin.core.designsystem.mahinTextStyle
-import dev.mahin.core.media.illustration.BundledMahinIllustrationCatalog
 import dev.mahin.core.media.illustration.MahinIllustration
 import dev.mahin.core.media.illustration.MahinIllustrationSource
 
@@ -45,13 +45,13 @@ data class PregnancyWeekByWeekUiState(
 @Composable
 fun PregnancyWeekByWeekScreen(
     modifier: Modifier = Modifier,
-    illustrationSource: MahinIllustrationSource = BundledMahinIllustrationCatalog,
+    illustrationViewModel: LearnIllustrationViewModel = hiltViewModel(),
     viewModel: PregnancyWeekByWeekViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     PregnancyWeekByWeekScreenContent(
         state = state,
-        illustrationSource = illustrationSource,
+        illustrationSource = illustrationViewModel.illustrationSource,
         onWeekSelected = viewModel::onWeekSelected,
         modifier = modifier,
     )

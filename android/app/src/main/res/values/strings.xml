@@ -337,6 +337,11 @@
     <string name="pregnancy_checklist_subtitle">بر اساس الگوی مراقبتی؛ ویرایش محلی</string>
     <string name="pregnancy_checklist_empty_title">لیست هنوز آماده نیست</string>
     <string name="pregnancy_checklist_empty_body">پس از انتشار محتوای تأییدشده در سامانه، الگو اینجا کپی می‌شود.</string>
+    <string name="pregnancy_checklist_new_item_label">عنوان مورد جدید</string>
+    <string name="pregnancy_checklist_add_item">افزودن</string>
+    <string name="pregnancy_checklist_rename">ویرایش نام</string>
+    <string name="pregnancy_checklist_save_rename">ذخیره</string>
+    <string name="pregnancy_checklist_delete">حذف</string>
     <string name="pregnancy_plan_timeline_title">خط زمان مراقبت</string>
     <string name="pregnancy_plan_care_plan_framing">طبق برنامهٔ مراقبتی شما (آموزشی)</string>
     <string name="pregnancy_plan_add_appointment">افزودن به قرارها</string>

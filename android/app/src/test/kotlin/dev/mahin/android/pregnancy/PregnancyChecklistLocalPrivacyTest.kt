@@ -9,12 +9,12 @@ import dev.mahin.core.billing.HealthExportResult
 import dev.mahin.core.billing.HealthExportService
 import dev.mahin.core.database.MahinDatabase
 import dev.mahin.core.database.cycle.CycleTrackingRepository
-import dev.mahin.core.database.entity.PregnancyChecklistItemEntity
 import dev.mahin.core.database.pregnancy.PregnancyChecklistRepository
 import dev.mahin.core.datastore.SubscriptionPreferencesRepository
 import dev.mahin.core.security.DisabledAppLockGateway
-import dev.mahin.core.sync.SyncOutbox
+import dev.mahin.core.sync.InMemorySyncOutbox
 import dev.mahin.domain.subscription.EntitlementTier
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -28,6 +28,7 @@ import org.robolectric.annotation.Config
 class PregnancyChecklistLocalPrivacyTest {
     private lateinit var database: MahinDatabase
     private lateinit var checklistRepository: PregnancyChecklistRepository
+    private lateinit var outbox: InMemorySyncOutbox
 
     @Before
     fun setUp() {
@@ -38,6 +39,7 @@ class PregnancyChecklistLocalPrivacyTest {
                 .allowMainThreadQueries()
                 .build()
         checklistRepository = PregnancyChecklistRepository(database)
+        outbox = InMemorySyncOutbox()
     }
 
     @After
@@ -46,10 +48,38 @@ class PregnancyChecklistLocalPrivacyTest {
     }
 
     @Test
-    fun checklistRepository_hasNoSyncOutboxDependency() {
-        val params =
-            PregnancyChecklistRepository::class.java.constructors.flatMap { it.parameterTypes.toList() }
-        assertThat(params.any { it == SyncOutbox::class.java }).isFalse()
+    fun checklistMutations_leaveSyncOutboxEmpty() {
+        runBlocking {
+            checklistRepository.seedFromTemplate(
+                listOf(
+                    PregnancyChecklistRepository.TemplateItem(
+                        templateId = "t1",
+                        section = "مدارک",
+                        label = "کارت ملی",
+                        order = 1,
+                    ),
+                ),
+            )
+            val dao = database.pregnancyChecklistDao()
+            val kind = PregnancyChecklistRepository.HOSPITAL_BAG_KIND
+            val firstId =
+                dao
+                    .observeByKind(kind)
+                    .first()
+                    .first()
+                    .id
+            checklistRepository.setChecked(firstId, true)
+            checklistRepository.addItem("لوازم", "شال")
+            val customId =
+                dao
+                    .observeByKind(kind)
+                    .first()
+                    .first { it.label == "شال" }
+                    .id
+            checklistRepository.renameItem(customId, "شال گرم")
+            checklistRepository.deleteItem(customId)
+            assertThat(outbox.pending()).isEmpty()
+        }
     }
 
     @Test
@@ -93,25 +123,30 @@ class PregnancyChecklistLocalPrivacyTest {
                     ),
                 )
             val before = exportService.buildJsonExport() as HealthExportResult.Success
-            database.pregnancyChecklistDao().upsertAll(
+            checklistRepository.seedFromTemplate(
                 listOf(
-                    PregnancyChecklistItemEntity(
-                        id = "c1",
-                        checklistKind = PregnancyChecklistRepository.HOSPITAL_BAG_KIND,
+                    PregnancyChecklistRepository.TemplateItem(
+                        templateId = "t1",
                         section = "مدارک",
                         label = "کارت ملی",
-                        sortOrder = 1,
-                        checked = true,
-                        templateItemId = "t1",
-                        updatedAtEpochMs = 1L,
+                        order = 1,
                     ),
                 ),
             )
-            checklistRepository.setChecked("c1", true)
+            val itemId =
+                database
+                    .pregnancyChecklistDao()
+                    .observeByKind(PregnancyChecklistRepository.HOSPITAL_BAG_KIND)
+                    .first()
+                    .first()
+                    .id
+            checklistRepository.setChecked(itemId, true)
+            checklistRepository.addItem("مدارک", "بیمه")
             val after = exportService.buildJsonExport() as HealthExportResult.Success
             val pattern = Regex(""""exportedAtEpochMs"\s*:\s*\d+""")
             assertThat(pattern.replace(after.json, """"exportedAtEpochMs":0"""))
                 .isEqualTo(pattern.replace(before.json, """"exportedAtEpochMs":0"""))
+            assertThat(outbox.pending()).isEmpty()
         }
     }
 }

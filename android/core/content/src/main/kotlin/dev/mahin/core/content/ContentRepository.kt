@@ -37,10 +37,27 @@ class ContentRepository
                     .getOrElse { localStore.cachedArticle(documentId) }
             }
 
+        sealed interface PregnancyWeekFetch {
+            data class Loaded(
+                val article: ContentArticleDto?,
+            ) : PregnancyWeekFetch
+
+            data object NetworkError : PregnancyWeekFetch
+        }
+
         suspend fun pregnancyWeek(week: Int): ContentArticleDto? =
+            when (val result = pregnancyWeekFetch(week)) {
+                is PregnancyWeekFetch.Loaded -> result.article
+                is PregnancyWeekFetch.NetworkError -> null
+            }
+
+        suspend fun pregnancyWeekFetch(week: Int): PregnancyWeekFetch =
             withContext(Dispatchers.IO) {
                 awaitCatalogSync()
-                runCatching { api.pregnancyWeek(week) }.getOrNull()
+                runCatching { api.pregnancyWeek(week) }.fold(
+                    onSuccess = { PregnancyWeekFetch.Loaded(it) },
+                    onFailure = { PregnancyWeekFetch.NetworkError },
+                )
             }
 
         override suspend fun fetchDailyTips(key: DailyTipTargetingKey): DailyTipFetchResult =

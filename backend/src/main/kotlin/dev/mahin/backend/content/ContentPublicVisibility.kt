@@ -11,7 +11,8 @@ object ContentPublicVisibility {
         now: Instant = Instant.now(),
     ): Boolean {
         if (ContentTypes.isWellnessType(version.contentType) ||
-            ContentTypes.isPregnancyCompanionType(version.contentType)
+            ContentTypes.isPregnancyCompanionType(version.contentType) ||
+            version.contentType == ContentTypes.PREGNANCY_WEEK
         ) {
             return false
         }

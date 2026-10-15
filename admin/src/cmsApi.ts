@@ -5,7 +5,12 @@ export type AdminAuth = {
   roles: string[];
 };
 
-export type WellnessContentKind = "daily_tip" | "program" | "collection";
+export type WellnessContentKind =
+  | "daily_tip"
+  | "program"
+  | "collection"
+  | "care_schedule"
+  | "checklist_template";
 
 export async function adminLogin(email: string, password: string): Promise<AdminAuth> {
   const response = await fetch(`${apiBase}/v1/admin/auth/login`, {

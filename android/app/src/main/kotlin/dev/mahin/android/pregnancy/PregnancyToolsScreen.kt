@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.navigation.compose.hiltViewModel
 import dev.mahin.android.R
 import dev.mahin.android.cycle.CycleFormatters
 import dev.mahin.core.datetime.PersianCivilDateConverter
@@ -37,6 +38,17 @@ data class PregnancyToolsResultState(
     val gestationalAgeLabel: String,
     val displayWeek: String,
 )
+
+@Composable
+fun PregnancyToolsScreen(
+    modifier: Modifier = Modifier,
+    viewModel: PregnancyToolsViewModel = hiltViewModel(),
+) {
+    PregnancyToolsScreenContent(
+        referenceDate = viewModel.referenceDate(),
+        modifier = modifier,
+    )
+}
 
 @Composable
 fun PregnancyToolsScreenContent(

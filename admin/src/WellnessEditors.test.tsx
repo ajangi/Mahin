@@ -98,6 +98,115 @@ describe("Wellness editors", () => {
     expect(payload.articleDocumentIds).toEqual([articleId]);
   });
 
+  it("care_schedule editor submits region, week window and items", async () => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    render(<WellnessContentEditor kind="care_schedule" onSubmit={onSubmit} />);
+    const section = screen.getByLabelText("ویرایشگر care_schedule");
+    expect(section).toHaveAttribute("dir", "rtl");
+
+    await userEvent.clear(screen.getByLabelText("careScheduleItemTitle"));
+    await userEvent.type(screen.getByLabelText("careScheduleItemTitle"), "آزمایش ویرایش‌شده");
+    await userEvent.selectOptions(screen.getByLabelText("careScheduleItemCategory"), "ultrasound");
+    await userEvent.clear(screen.getByLabelText("careScheduleWeekStart"));
+    await userEvent.type(screen.getByLabelText("careScheduleWeekStart"), "12");
+    await userEvent.clear(screen.getByLabelText("careScheduleWeekEnd"));
+    await userEvent.type(screen.getByLabelText("careScheduleWeekEnd"), "14");
+    await userEvent.clear(screen.getByLabelText("effectiveFrom"));
+    await userEvent.type(screen.getByLabelText("effectiveFrom"), "2026-07-01T00:00:00Z");
+
+    await userEvent.click(screen.getByRole("button", { name: "ذخیرهٔ پیش‌نویس" }));
+    const body = onSubmit.mock.calls[0][0] as Record<string, unknown>;
+    expect(body).toMatchObject({
+      contentType: "care_schedule",
+      effectiveFrom: "2026-07-01T00:00:00Z",
+    });
+    const payload = body.typePayload as {
+      regionContext: string;
+      items: { title: string; category: string; weekStart: number; weekEnd: number }[];
+    };
+    expect(payload.regionContext).toBe("iran");
+    expect(payload.items[0]).toMatchObject({
+      title: "آزمایش ویرایش‌شده",
+      category: "ultrasound",
+      weekStart: 12,
+      weekEnd: 14,
+    });
+  });
+
+  it("checklist_template editor submits sections, items and effective window", async () => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    render(<WellnessContentEditor kind="checklist_template" onSubmit={onSubmit} />);
+
+    await userEvent.clear(screen.getByLabelText("checklistSections"));
+    await userEvent.type(screen.getByLabelText("checklistSections"), "مدارک, لباس");
+    await userEvent.clear(screen.getByLabelText("checklistItemLabel"));
+    await userEvent.type(screen.getByLabelText("checklistItemLabel"), "شماره بیمه");
+    await userEvent.clear(screen.getByLabelText("checklistItemSection"));
+    await userEvent.type(screen.getByLabelText("checklistItemSection"), "مدارک");
+    await userEvent.clear(screen.getByLabelText("checklistItemOrder"));
+    await userEvent.type(screen.getByLabelText("checklistItemOrder"), "2");
+    await userEvent.clear(screen.getByLabelText("effectiveTo"));
+    await userEvent.type(screen.getByLabelText("effectiveTo"), "2026-08-15T23:59:59Z");
+
+    await userEvent.click(screen.getByRole("button", { name: "ذخیرهٔ پیش‌نویس" }));
+    const body = onSubmit.mock.calls[0][0] as Record<string, unknown>;
+    expect(body.effectiveTo).toBe("2026-08-15T23:59:59Z");
+    const payload = body.typePayload as {
+      checklistKind: string;
+      sections: string[];
+      items: { label: string; section: string; order: number }[];
+    };
+    expect(payload.checklistKind).toBe("hospital_bag");
+    expect(payload.sections).toEqual(["مدارک", "لباس"]);
+    expect(payload.items[0]).toMatchObject({
+      label: "شماره بیمه",
+      section: "مدارک",
+      order: 2,
+    });
+  });
+
+  it("renders care_schedule and checklist_template WellnessReviewPanel fields", () => {
+    const { rerender } = render(
+      <WellnessReviewPanel
+        version={{
+          title: "زمان‌بندی",
+          contentType: "care_schedule",
+          status: "draft",
+          typePayload: {
+            regionContext: "iran",
+            items: [
+              {
+                id: "i1",
+                title: "سونو",
+                category: "ultrasound",
+                weekStart: 12,
+                weekEnd: 14,
+              },
+            ],
+          },
+        }}
+      />,
+    );
+    expect(screen.getByText(/سونو/)).toBeInTheDocument();
+
+    rerender(
+      <WellnessReviewPanel
+        version={{
+          title: "کیف بیمارستان",
+          contentType: "checklist_template",
+          status: "draft",
+          typePayload: {
+            checklistKind: "hospital_bag",
+            sections: ["مدارک"],
+            items: [{ id: "c1", label: "کارت", section: "مدارک", order: 1 }],
+          },
+        }}
+      />,
+    );
+    const panel = screen.getByLabelText("بازبینی محتوا");
+    expect(within(panel).getByText(/کارت/)).toBeInTheDocument();
+  });
+
   it("renders structured WellnessReviewPanel fields", () => {
     render(
       <WellnessReviewPanel

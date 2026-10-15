@@ -19,7 +19,7 @@ import dev.mahin.android.navigation.MahinTopLevelDestination
 import dev.mahin.android.pregnancy.PregnancyChecklistScreen
 import dev.mahin.android.pregnancy.PregnancyHubScreen
 import dev.mahin.android.pregnancy.PregnancyPlanScreen
-import dev.mahin.android.pregnancy.PregnancyToolsScreenContent
+import dev.mahin.android.pregnancy.PregnancyToolsScreen
 import dev.mahin.android.pregnancy.PregnancyWeekByWeekScreen
 import dev.mahin.android.settings.SettingsScreen
 import dev.mahin.android.ttc.TtcInsightsScreen
@@ -204,7 +204,7 @@ data class MahinShellScreenOverrides(
                 },
                 plan = { PregnancyPlanScreen() },
                 pregnancyWeekByWeek = { PregnancyWeekByWeekScreen() },
-                pregnancyTools = { PregnancyToolsScreenContent(referenceDate = LocalDate.now()) },
+                pregnancyTools = { PregnancyToolsScreen() },
                 pregnancyChecklist = { PregnancyChecklistScreen() },
                 learn = { LearnScreen() },
                 history = { HistoryScreen() },

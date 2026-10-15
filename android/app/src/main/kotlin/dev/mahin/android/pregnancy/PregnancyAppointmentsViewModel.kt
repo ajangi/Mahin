@@ -114,14 +114,7 @@ class PregnancyAppointmentsViewModel
         }
 
         private suspend fun refreshCarePlan(pregnancy: PregnancyRecordEntity) {
-            val week =
-                PregnancyDatingEngineV1
-                    .status(
-                        lmpDate = pregnancy.lmpDate,
-                        clinicalEddDate = pregnancy.clinicalEddDate,
-                        asOfDate = localDateClock.today(),
-                    ).displayWeekNumber
-            val schedules = contentRepository.careSchedules(gestationalWeek = week)
+            val schedules = contentRepository.careSchedules(gestationalWeek = null)
             cachedCarePlan =
                 schedules.flatMap { schedule ->
                     schedule.items.map { item ->

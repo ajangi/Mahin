@@ -127,6 +127,9 @@ class M18aFullScreenGoldenTest {
             PregnancyChecklistScreenContent(
                 state = M18aGoldenFixtures.checklist(),
                 onToggle = { _, _ -> },
+                onAddItem = {},
+                onRenameItem = { _, _ -> },
+                onDeleteItem = {},
                 modifier = Modifier.fillMaxSize(),
             )
         }

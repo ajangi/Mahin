@@ -57,40 +57,40 @@ class PregnancyWeekByWeekViewModel
 
         fun onWeekSelected(week: Int) {
             if (week in loadedWeeks) {
-                _uiState.update {
-                    it.copy(
-                        currentWeek = week,
-                        pages =
-                            (1..42).map { w ->
-                                loadedWeeks[w]
-                                    ?: PregnancyWeekPageState(w, null, null, null, null, null)
-                            },
-                    )
-                }
+                publishPages(week)
                 return
             }
             viewModelScope.launch {
-                val article = contentRepository.pregnancyWeek(week)
-                val page =
-                    PregnancyWeekPageState(
-                        weekNumber = week,
-                        title = article?.title,
-                        fetalSummary = article?.fetalSummary ?: article?.summary,
-                        maternalSummary = article?.maternalSummary ?: article?.body,
-                        sizeComparisonLabel = article?.sizeComparisonLabel,
-                        illustrationAssetId = article?.illustrationMediaAssetId,
-                    )
-                loadedWeeks[week] = page
-                _uiState.update {
-                    it.copy(
-                        currentWeek = week,
-                        pages =
-                            (1..42).map { w ->
-                                loadedWeeks[w]
-                                    ?: PregnancyWeekPageState(w, null, null, null, null, null)
-                            },
-                    )
+                when (val fetch = contentRepository.pregnancyWeekFetch(week)) {
+                    is ContentRepository.PregnancyWeekFetch.NetworkError -> publishPages(week)
+                    is ContentRepository.PregnancyWeekFetch.Loaded -> {
+                        val article = fetch.article
+                        val page =
+                            PregnancyWeekPageState(
+                                weekNumber = week,
+                                title = article?.title,
+                                fetalSummary = article?.fetalSummary ?: article?.summary,
+                                maternalSummary = article?.maternalSummary ?: article?.body,
+                                sizeComparisonLabel = article?.sizeComparisonLabel,
+                                illustrationAssetId = article?.illustrationMediaAssetId,
+                            )
+                        loadedWeeks[week] = page
+                        publishPages(week)
+                    }
                 }
+            }
+        }
+
+        private fun publishPages(selectedWeek: Int) {
+            _uiState.update {
+                it.copy(
+                    currentWeek = selectedWeek,
+                    pages =
+                        (1..42).map { w ->
+                            loadedWeeks[w]
+                                ?: PregnancyWeekPageState(w, null, null, null, null, null)
+                        },
+                )
             }
         }
     }

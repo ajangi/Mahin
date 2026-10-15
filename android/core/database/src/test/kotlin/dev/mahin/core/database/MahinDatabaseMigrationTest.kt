@@ -349,6 +349,19 @@ class MahinDatabaseMigrationTest {
             ).use { cursor ->
                 assertThat(cursor.moveToFirst()).isTrue()
             }
+        migrated.execSQL(
+            """
+            INSERT INTO pregnancy_checklist_item
+            (id, checklistKind, section, label, sortOrder, checked, templateItemId, updatedAtEpochMs)
+            VALUES ('seed-1', 'hospital_bag', 'مدارک', 'کارت ملی', 1, 0, 't-seed', 1)
+            """.trimIndent(),
+        )
+        migrated
+            .query("SELECT label FROM pregnancy_checklist_item WHERE id = 'seed-1'")
+            .use { cursor ->
+                assertThat(cursor.moveToFirst()).isTrue()
+                assertThat(cursor.getString(0)).isEqualTo("کارت ملی")
+            }
         migrated.close()
     }
 

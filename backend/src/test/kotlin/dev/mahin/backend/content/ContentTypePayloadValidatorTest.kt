@@ -48,6 +48,19 @@ class ContentTypePayloadValidatorTest {
     }
 
     @Test
+    fun rejectsInvalidCareScheduleWeekWindow() {
+        val json =
+            """
+            {"placeholder":true,"regionContext":"iran","items":[{"id":"i1","title":"t","category":"test","weekStart":12,"weekEnd":8}]}
+            """.trimIndent()
+        val ex =
+            assertThrows(ResponseStatusException::class.java) {
+                ContentTypePayloadValidator.validateForPublish(ContentTypes.CARE_SCHEDULE, json, mapper)
+            }
+        assertEquals("invalid_care_schedule_week_window", ex.reason)
+    }
+
+    @Test
     fun requiresSafetyFieldsOnPublishEvenForPlaceholder() {
         val json =
             """

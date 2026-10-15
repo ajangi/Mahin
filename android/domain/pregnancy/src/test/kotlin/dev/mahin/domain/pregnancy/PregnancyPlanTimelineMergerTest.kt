@@ -41,4 +41,32 @@ class PregnancyPlanTimelineMergerTest {
         assertThat(merged[2]).isInstanceOf(PregnancyPlanTimelineMerger.TimelineEntry.CarePlan::class.java)
         assertThat((merged[2] as PregnancyPlanTimelineMerger.TimelineEntry.CarePlan).row.weekStart).isEqualTo(20)
     }
+
+    @Test
+    fun merge_careAndAppointmentInSameWeek_ordersCareBeforeAppointment() {
+        val care =
+            listOf(
+                PregnancyPlanTimelineMerger.CarePlanRow(
+                    itemId = "c1",
+                    documentId = "doc",
+                    title = "آزمایش",
+                    weekStart = 12,
+                    weekEnd = 12,
+                    category = "test",
+                ),
+            )
+        val appointments =
+            listOf(
+                PregnancyPlanTimelineMerger.AppointmentRow(
+                    appointmentId = "a1",
+                    title = "ویزیت",
+                    scheduledAtEpochMs = 100L,
+                    gestationalWeekAtVisit = 12,
+                ),
+            )
+        val merged = PregnancyPlanTimelineMerger.merge(care, appointments)
+        assertThat(merged).hasSize(2)
+        assertThat(merged[0]).isInstanceOf(PregnancyPlanTimelineMerger.TimelineEntry.CarePlan::class.java)
+        assertThat(merged[1]).isInstanceOf(PregnancyPlanTimelineMerger.TimelineEntry.Appointment::class.java)
+    }
 }

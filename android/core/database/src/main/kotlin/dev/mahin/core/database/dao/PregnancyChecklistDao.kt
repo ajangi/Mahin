@@ -27,4 +27,34 @@ interface PregnancyChecklistDao {
 
     @Query("SELECT COUNT(*) FROM pregnancy_checklist_item WHERE checklistKind = :kind")
     suspend fun countByKind(kind: String): Int
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(item: PregnancyChecklistItemEntity)
+
+    @Query("DELETE FROM pregnancy_checklist_item WHERE id = :id")
+    suspend fun deleteById(id: String)
+
+    @Query(
+        """
+        UPDATE pregnancy_checklist_item
+        SET label = :label, updatedAtEpochMs = :updatedAt
+        WHERE id = :id
+        """,
+    )
+    suspend fun updateLabel(
+        id: String,
+        label: String,
+        updatedAt: Long,
+    )
+
+    @Query(
+        """
+        SELECT COALESCE(MAX(sortOrder), 0) FROM pregnancy_checklist_item
+        WHERE checklistKind = :kind AND section = :section
+        """,
+    )
+    suspend fun maxSortOrder(
+        kind: String,
+        section: String,
+    ): Int
 }

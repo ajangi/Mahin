@@ -73,4 +73,29 @@ class PregnancyChecklistViewModel
                 checklistRepository.setChecked(id, checked)
             }
         }
+
+        fun addItem(label: String) {
+            viewModelScope.launch {
+                checklistRepository.addItem(section = DEFAULT_SECTION, label = label)
+            }
+        }
+
+        fun renameItem(
+            id: String,
+            label: String,
+        ) {
+            viewModelScope.launch {
+                checklistRepository.renameItem(id, label)
+            }
+        }
+
+        fun deleteItem(id: String) {
+            viewModelScope.launch {
+                checklistRepository.deleteItem(id)
+            }
+        }
+
+        companion object {
+            private const val DEFAULT_SECTION = "سایر"
+        }
     }
