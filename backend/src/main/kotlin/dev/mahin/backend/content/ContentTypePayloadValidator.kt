@@ -61,13 +61,18 @@ object ContentTypePayloadValidator {
                     ContentTypes.DAILY_TIP ->
                         validateDailyTip(ContentTypePayloadCodec.parseDailyTip(mapper, typePayloadJson)!!)
                     ContentTypes.PROGRAM ->
-                        validateProgram(ContentTypePayloadCodec.parseProgram(mapper, typePayloadJson)!!, publishing = true)
+                        validateProgram(
+                            ContentTypePayloadCodec.parseProgram(mapper, typePayloadJson)!!,
+                            publishing = true,
+                        )
                     ContentTypes.COLLECTION ->
                         validateCollection(ContentTypePayloadCodec.parseCollection(mapper, typePayloadJson)!!)
                     ContentTypes.CARE_SCHEDULE ->
                         validateCareSchedule(ContentTypePayloadCodec.parseCareSchedule(mapper, typePayloadJson)!!)
                     ContentTypes.CHECKLIST_TEMPLATE ->
-                        validateChecklistTemplate(ContentTypePayloadCodec.parseChecklistTemplate(mapper, typePayloadJson)!!)
+                        validateChecklistTemplate(
+                            ContentTypePayloadCodec.parseChecklistTemplate(mapper, typePayloadJson)!!,
+                        )
                     else -> reject("unsupported_content_type")
                 }
                 validatePayloadSize(typePayloadJson)

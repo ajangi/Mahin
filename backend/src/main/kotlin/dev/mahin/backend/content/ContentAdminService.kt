@@ -297,7 +297,8 @@ class ContentAdminService(
         val payloadJson =
             when {
                 ContentTypes.requiresStructuredPayload(request.contentType) ||
-                    request.contentType == ContentTypes.PREGNANCY_WEEK && request.typePayload != null ->
+                    request.contentType == ContentTypes.PREGNANCY_WEEK &&
+                    request.typePayload != null ->
                     ContentTypePayloadCodec.encodeValidated(objectMapper, request.contentType, request.typePayload)
                 else -> null
             }

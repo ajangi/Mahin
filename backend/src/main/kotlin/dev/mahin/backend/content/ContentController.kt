@@ -131,8 +131,7 @@ class ContentController(
     fun listCareSchedules(
         @RequestParam(defaultValue = "fa-IR") locale: String,
         @RequestParam(required = false) gestationalWeek: Int?,
-    ): ContentCareScheduleListResponse =
-        pregnancyCompanionPublicService.listCareSchedules(locale, gestationalWeek)
+    ): ContentCareScheduleListResponse = pregnancyCompanionPublicService.listCareSchedules(locale, gestationalWeek)
 
     @GetMapping("/care-schedules/{documentId}")
     fun getCareSchedule(
@@ -161,6 +160,5 @@ class ContentController(
     fun getChecklistTemplateBySlug(
         @PathVariable slug: String,
         @RequestParam(defaultValue = "fa-IR") locale: String,
-    ): ContentChecklistTemplateResponse =
-        pregnancyCompanionPublicService.getChecklistTemplateBySlug(slug, locale)
+    ): ContentChecklistTemplateResponse = pregnancyCompanionPublicService.getChecklistTemplateBySlug(slug, locale)
 }

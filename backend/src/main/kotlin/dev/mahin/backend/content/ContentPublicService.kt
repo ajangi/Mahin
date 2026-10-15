@@ -121,7 +121,9 @@ class ContentPublicService(
         return PregnancyWeekPublication(document, version)
     }
 
-    private fun isHiddenPregnancyWeekPlaceholder(version: dev.mahin.backend.content.persistence.ContentVersionEntity): Boolean {
+    private fun isHiddenPregnancyWeekPlaceholder(
+        version: dev.mahin.backend.content.persistence.ContentVersionEntity,
+    ): Boolean {
         val payload = ContentTypePayloadCodec.parsePregnancyWeek(objectMapper, version.typePayloadJson)
         return payload != null &&
             ContentPublicVisibility.isPlaceholderHiddenInProduction(payload.placeholder, environment)
