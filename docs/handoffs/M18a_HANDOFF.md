@@ -1,7 +1,7 @@
 # M18a Handoff — Pregnancy companion CMS + Android timeline/tools/checklist
 
 **Milestone:** M18a  
-**Status:** Draft PR [#47](https://github.com/ajangi/Mahin/pull/47) — review round 2 addressed (await CI on final head)  
+**Status:** Draft PR [#47](https://github.com/ajangi/Mahin/pull/47) — review round 2 addressed; CI green at `f4dad9a`  
 **Next milestone:** **M18b** only
 
 ## Commands and results
