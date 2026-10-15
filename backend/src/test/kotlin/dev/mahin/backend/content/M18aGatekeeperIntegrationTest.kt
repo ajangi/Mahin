@@ -74,7 +74,7 @@ class M18aGatekeeperIntegrationTest(
         assertExcludedFromPublicDelivery(draftCare, "/v1/content/care-schedules")
         assertExcludedFromPublicDelivery(draftChecklist, "/v1/content/checklist-templates")
 
-        val expiredCareCreated = createCareScheduleDocument(publish = false)
+        val expiredCareCreated = createCareScheduleDocument()
         publishVersion(expiredCareCreated.versionId, thenWithdraw = false)
         val expiredPublishedVersionId =
             documentRepository
@@ -89,7 +89,7 @@ class M18aGatekeeperIntegrationTest(
         )
         assertExcludedFromPublicDelivery(expiredCareCreated.documentId, "/v1/content/care-schedules")
 
-        val futureChecklistCreated = createChecklistDocument(publish = false)
+        val futureChecklistCreated = createChecklistDocument()
         applyEffectiveWindow(
             futureChecklistCreated.versionId,
             effectiveFrom = Instant.now().plus(1, ChronoUnit.DAYS).toString(),
@@ -171,7 +171,7 @@ class M18aGatekeeperIntegrationTest(
 
     @Test
     fun publishCareScheduleWithoutMedicalSignoffReturns409() {
-        val created = createCareScheduleDocument(publish = false)
+        val created = createCareScheduleDocument()
         val version = versionRepository.findById(UUID.fromString(created.versionId)).orElseThrow()
         version.status = "approved"
         version.clinicalReviewedAt = null
@@ -302,7 +302,7 @@ class M18aGatekeeperIntegrationTest(
         effectiveTo: String? = null,
         thenWithdraw: Boolean = false,
     ): String {
-        val created = createCareScheduleDocument(publish = false)
+        val created = createCareScheduleDocument()
         applyEffectiveWindow(created.versionId, effectiveFrom, effectiveTo)
         if (publish) {
             publishVersion(created.versionId, thenWithdraw)
@@ -393,7 +393,7 @@ class M18aGatekeeperIntegrationTest(
         }
     }
 
-    private fun createCareScheduleDocument(publish: Boolean): CreatedDocument {
+    private fun createCareScheduleDocument(): CreatedDocument {
         val sourceId = WellnessContentTestSupport.createSource(mockMvc, objectMapper, tokens.editorToken)
         val body =
             mapOf(
@@ -408,7 +408,7 @@ class M18aGatekeeperIntegrationTest(
         return createDocument(body)
     }
 
-    private fun createChecklistDocument(publish: Boolean): CreatedDocument {
+    private fun createChecklistDocument(): CreatedDocument {
         val sourceId = WellnessContentTestSupport.createSource(mockMvc, objectMapper, tokens.editorToken)
         val body =
             mapOf(

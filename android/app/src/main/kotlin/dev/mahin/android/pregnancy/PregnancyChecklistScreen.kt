@@ -57,6 +57,7 @@ fun PregnancyChecklistScreen(
 }
 
 @Composable
+@Suppress("LongParameterList")
 fun PregnancyChecklistScreenContent(
     state: PregnancyChecklistUiState,
     onToggle: (String, Boolean) -> Unit,
