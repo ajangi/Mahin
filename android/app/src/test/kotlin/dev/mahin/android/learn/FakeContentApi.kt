@@ -84,7 +84,8 @@ class FakeContentApi : ContentApi {
         locale: String,
         gestationalWeek: Int?,
     ): dev.mahin.core.content.ContentCareScheduleListResponseDto =
-        dev.mahin.core.content.ContentCareScheduleListResponseDto(emptyList())
+        dev.mahin.core.content
+            .ContentCareScheduleListResponseDto(emptyList())
 
     override suspend fun careSchedule(documentId: String): dev.mahin.core.content.ContentCareScheduleDto =
         error("unused")
@@ -93,7 +94,8 @@ class FakeContentApi : ContentApi {
         locale: String,
         checklistKind: String?,
     ): dev.mahin.core.content.ContentChecklistTemplateListResponseDto =
-        dev.mahin.core.content.ContentChecklistTemplateListResponseDto(emptyList())
+        dev.mahin.core.content
+            .ContentChecklistTemplateListResponseDto(emptyList())
 
     override suspend fun checklistTemplate(documentId: String): dev.mahin.core.content.ContentChecklistTemplateDto =
         error("unused")

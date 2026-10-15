@@ -5,19 +5,19 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.mahin.android.cycle.CycleFormatters
 import dev.mahin.core.common.LocalDateClock
+import dev.mahin.core.content.ContentRepository
 import dev.mahin.core.database.entity.PregnancyAppointmentEntity
 import dev.mahin.core.database.entity.PregnancyRecordEntity
-import dev.mahin.core.content.ContentRepository
 import dev.mahin.core.database.pregnancy.PregnancyAppointmentInput
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
-import dev.mahin.domain.pregnancy.PregnancyDatingEngineV1
-import dev.mahin.domain.pregnancy.PregnancyPlanTimelineMerger
 import dev.mahin.core.datastore.NotificationPreferencesRepository
 import dev.mahin.core.datetime.JalaliDate
 import dev.mahin.core.datetime.PersianCivilDateConverter
 import dev.mahin.core.model.PregnancyAppointmentType
 import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.core.notifications.ReminderCoordinator
+import dev.mahin.domain.pregnancy.PregnancyDatingEngineV1
+import dev.mahin.domain.pregnancy.PregnancyPlanTimelineMerger
 import dev.mahin.domain.reminders.ReminderCategory
 import java.time.Instant
 import java.time.ZoneId
@@ -115,11 +115,12 @@ class PregnancyAppointmentsViewModel
 
         private suspend fun refreshCarePlan(pregnancy: PregnancyRecordEntity) {
             val week =
-                PregnancyDatingEngineV1.status(
-                    lmpDate = pregnancy.lmpDate,
-                    clinicalEddDate = pregnancy.clinicalEddDate,
-                    asOfDate = localDateClock.today(),
-                ).displayWeekNumber
+                PregnancyDatingEngineV1
+                    .status(
+                        lmpDate = pregnancy.lmpDate,
+                        clinicalEddDate = pregnancy.clinicalEddDate,
+                        asOfDate = localDateClock.today(),
+                    ).displayWeekNumber
             val schedules = contentRepository.careSchedules(gestationalWeek = week)
             cachedCarePlan =
                 schedules.flatMap { schedule ->

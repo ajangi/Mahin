@@ -9,12 +9,12 @@ import dev.mahin.core.billing.HealthExportResult
 import dev.mahin.core.billing.HealthExportService
 import dev.mahin.core.database.MahinDatabase
 import dev.mahin.core.database.cycle.CycleTrackingRepository
-import dev.mahin.core.datastore.SubscriptionPreferencesRepository
-import dev.mahin.core.security.DisabledAppLockGateway
-import dev.mahin.domain.subscription.EntitlementTier
 import dev.mahin.core.database.entity.PregnancyChecklistItemEntity
 import dev.mahin.core.database.pregnancy.PregnancyChecklistRepository
+import dev.mahin.core.datastore.SubscriptionPreferencesRepository
+import dev.mahin.core.security.DisabledAppLockGateway
 import dev.mahin.core.sync.SyncOutbox
+import dev.mahin.domain.subscription.EntitlementTier
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -63,7 +63,8 @@ class PregnancyChecklistLocalPrivacyTest {
                     DisabledAppLockGateway,
                     EntitlementRepository(
                         SubscriptionPreferencesRepository(context),
-                        dev.mahin.core.datastore.AccountSessionRepository(context),
+                        dev.mahin.core.datastore
+                            .AccountSessionRepository(context),
                         object : dev.mahin.core.billing.EntitlementApi {
                             override suspend fun currentEntitlement(
                                 authorization: String,
@@ -79,13 +80,15 @@ class PregnancyChecklistLocalPrivacyTest {
                                 authorization: String,
                                 body: dev.mahin.core.billing.GooglePlayVerifyRequest,
                             ): dev.mahin.core.billing.GooglePlayBillingResponse =
-                                dev.mahin.core.billing.GooglePlayBillingResponse(EntitlementTier.FREE.name, null)
+                                dev.mahin.core.billing
+                                    .GooglePlayBillingResponse(EntitlementTier.FREE.name, null)
 
                             override suspend fun restorePurchases(
                                 authorization: String,
                                 body: dev.mahin.core.billing.GooglePlayRestoreRequest,
                             ): dev.mahin.core.billing.GooglePlayBillingResponse =
-                                dev.mahin.core.billing.GooglePlayBillingResponse(EntitlementTier.FREE.name, null)
+                                dev.mahin.core.billing
+                                    .GooglePlayBillingResponse(EntitlementTier.FREE.name, null)
                         },
                     ),
                 )

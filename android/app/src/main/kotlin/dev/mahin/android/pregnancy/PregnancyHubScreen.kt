@@ -7,6 +7,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
+@Suppress("LongParameterList")
 fun PregnancyHubScreen(
     modifier: Modifier = Modifier,
     onOpenHistory: (() -> Unit)? = null,

@@ -38,9 +38,7 @@ class PregnancyChecklistRepository
             }
         }
 
-        suspend fun seedFromTemplate(
-            items: List<TemplateItem>,
-        ) {
+        suspend fun seedFromTemplate(items: List<TemplateItem>) {
             if (items.isEmpty()) return
             val now = System.currentTimeMillis()
             dao.deleteByKind(HOSPITAL_BAG_KIND)

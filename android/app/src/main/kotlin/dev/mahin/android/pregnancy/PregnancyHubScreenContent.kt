@@ -64,6 +64,7 @@ data class PregnancyHubActions(
 )
 
 @Composable
+@Suppress("LongParameterList")
 fun PregnancyHubScreenContent(
     state: PregnancyHubContentState,
     actions: PregnancyHubActions,
@@ -113,6 +114,7 @@ fun PregnancyHubScreenContent(
 }
 
 @Composable
+@Suppress("LongParameterList")
 private fun ActivePregnancyHub(
     state: PregnancyHubContentState,
     actions: PregnancyHubActions,
@@ -179,7 +181,10 @@ private fun ActivePregnancyHub(
                 text = disclaimer,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = MahinSpacing.md),
+                modifier =
+                    Modifier
+                        .padding(top = MahinSpacing.md)
+                        .testTag("pregnancy_hub_safety_disclaimer"),
             )
         }
     }

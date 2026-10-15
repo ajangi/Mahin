@@ -30,26 +30,28 @@ class PregnancyWeekByWeekViewModel
 
         init {
             viewModelScope.launch {
-                kotlinx.coroutines.flow.combine(
-                    pregnancyRepository.observeProfile(),
-                    pregnancyRepository.observeActivePregnancy(),
-                ) { profile, record ->
-                    val pregnant = profile?.reproductiveMode == ReproductiveMode.PREGNANT
-                    val week =
-                        if (!pregnant || record == null) {
-                            1
-                        } else {
-                            PregnancyDatingEngineV1.status(
-                                lmpDate = record.lmpDate,
-                                clinicalEddDate = record.clinicalEddDate,
-                                asOfDate = localDateClock.today(),
-                            ).displayWeekNumber
-                        }
-                    week
-                }.collect { week ->
-                    _uiState.update { it.copy(isLoading = false, currentWeek = week) }
-                    onWeekSelected(week)
-                }
+                kotlinx.coroutines.flow
+                    .combine(
+                        pregnancyRepository.observeProfile(),
+                        pregnancyRepository.observeActivePregnancy(),
+                    ) { profile, record ->
+                        val pregnant = profile?.reproductiveMode == ReproductiveMode.PREGNANT
+                        val week =
+                            if (!pregnant || record == null) {
+                                1
+                            } else {
+                                PregnancyDatingEngineV1
+                                    .status(
+                                        lmpDate = record.lmpDate,
+                                        clinicalEddDate = record.clinicalEddDate,
+                                        asOfDate = localDateClock.today(),
+                                    ).displayWeekNumber
+                            }
+                        week
+                    }.collect { week ->
+                        _uiState.update { it.copy(isLoading = false, currentWeek = week) }
+                        onWeekSelected(week)
+                    }
             }
         }
 
@@ -58,7 +60,11 @@ class PregnancyWeekByWeekViewModel
                 _uiState.update {
                     it.copy(
                         currentWeek = week,
-                        pages = (1..42).map { w -> loadedWeeks[w] ?: PregnancyWeekPageState(w, null, null, null, null, null) },
+                        pages =
+                            (1..42).map { w ->
+                                loadedWeeks[w]
+                                    ?: PregnancyWeekPageState(w, null, null, null, null, null)
+                            },
                     )
                 }
                 return
@@ -78,7 +84,11 @@ class PregnancyWeekByWeekViewModel
                 _uiState.update {
                     it.copy(
                         currentWeek = week,
-                        pages = (1..42).map { w -> loadedWeeks[w] ?: PregnancyWeekPageState(w, null, null, null, null, null) },
+                        pages =
+                            (1..42).map { w ->
+                                loadedWeeks[w]
+                                    ?: PregnancyWeekPageState(w, null, null, null, null, null)
+                            },
                     )
                 }
             }
