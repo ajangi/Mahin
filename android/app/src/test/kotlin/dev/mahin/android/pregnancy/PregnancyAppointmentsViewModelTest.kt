@@ -20,14 +20,18 @@ import dev.mahin.core.model.PregnancyAppointmentType
 import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.core.notifications.ReminderCoordinator
 import dev.mahin.core.notifications.ReminderScheduler
+import dev.mahin.core.testing.MainDispatcherRule
 import dev.mahin.core.testing.ViewModelStoreTestHarness
 import dev.mahin.domain.reminders.PlannedReminder
 import java.time.LocalDate
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -37,6 +41,11 @@ import org.robolectric.shadows.ShadowLooper
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class PregnancyAppointmentsViewModelTest {
+    private val testDispatcher = StandardTestDispatcher()
+
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule(testDispatcher)
+
     private lateinit var database: MahinDatabase
     private lateinit var repository: PregnancyTrackingRepository
     private val viewModelStore = ViewModelStoreTestHarness()
@@ -64,8 +73,8 @@ class PregnancyAppointmentsViewModelTest {
 
     @Test
     @Suppress("LongMethod")
-    fun carePlanTimeline_includesItemsOutsideCurrentGestationalWindow() {
-        runBlocking {
+    fun carePlanTimeline_includesItemsOutsideCurrentGestationalWindow() =
+        runTest(testDispatcher) {
             database.cycleProfileDao().upsert(
                 CycleProfileEntity(
                     reproductiveMode = ReproductiveMode.PREGNANT,
@@ -137,20 +146,18 @@ class PregnancyAppointmentsViewModelTest {
                         localDateClock = FixedLocalDateClock(LocalDate.of(2025, 4, 1)),
                     ),
                 )
-            awaitUntil {
-                vm.uiState.value.timeline
-                    .any { it.title == "آزمایش اول" }
-            }
+            vm.uiState
+                .filter { state -> state.timeline.any { it.title == "آزمایش اول" } }
+                .first()
             assertThat(
                 vm.uiState.value.timeline
                     .map { it.title },
             ).contains("سونوگرافی")
         }
-    }
 
     @Test
-    fun addAppointment_persistsForActivePregnancy() {
-        runBlocking {
+    fun addAppointment_persistsForActivePregnancy() =
+        runTest(testDispatcher) {
             database.cycleProfileDao().upsert(
                 CycleProfileEntity(
                     reproductiveMode = ReproductiveMode.PREGNANT,
@@ -167,18 +174,17 @@ class PregnancyAppointmentsViewModelTest {
                 datingReason = null,
             )
             val vm = createViewModel()
-            awaitUntil { vm.uiState.value.hasActivePregnancy }
+            vm.uiState.filter { it.hasActivePregnancy }.first()
             vm.onNewAppointmentTitleChange("ویزیت")
             vm.onNewAppointmentTypeSelected(PregnancyAppointmentType.CLINICIAN_VISIT)
             vm.addAppointment()
-            awaitUntil { vm.uiState.value.appointments.size == 1 }
+            vm.uiState.filter { it.appointments.size == 1 }.first()
             assertThat(
                 vm.uiState.value.appointments
                     .first()
                     .title,
             ).isEqualTo("ویزیت")
         }
-    }
 
     private fun createViewModel(): PregnancyAppointmentsViewModel =
         viewModelStore
@@ -194,19 +200,6 @@ class PregnancyAppointmentsViewModelTest {
                     localDateClock = FixedLocalDateClock(LocalDate.of(2025, 4, 1)),
                 ),
             ).also { viewModel = it }
-
-    private suspend fun awaitUntil(
-        timeoutMs: Long = 2_000,
-        condition: () -> Boolean,
-    ) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            if (condition()) return
-            ShadowLooper.idleMainLooper()
-            delay(25)
-        }
-        throw AssertionError("Condition not met within ${timeoutMs}ms")
-    }
 
     private fun contentRepository(api: FakeContentApi = FakeContentApi()): ContentRepository {
         val context = ApplicationProvider.getApplicationContext<Context>()

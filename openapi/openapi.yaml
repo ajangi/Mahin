@@ -214,6 +214,10 @@ paths:
       tags: [Content]
       operationId: getContentArticle
       summary: Educational article envelope (no invented medical body)
+      description: >
+        Serves standard educational articles only. Wellness program/collection types and pregnancy
+        companion types (`care_schedule`, `checklist_template`, `pregnancy_week`) use dedicated
+        public endpoints; requests for those document IDs return `404` (`article_not_found`).
       parameters:
         - name: articleId
           in: path
@@ -239,6 +243,8 @@ paths:
       tags: [Content]
       operationId: getContentArticleBySlug
       summary: Fetch a published article by slug and locale
+      description: >
+        Same eligibility as `getContentArticle`; companion and wellness-only slugs return `404`.
       parameters:
         - name: slug
           in: path
@@ -280,6 +286,9 @@ paths:
       tags: [Content]
       operationId: searchContent
       summary: Search published educational articles (Persian-normalized server-side)
+      description: >
+        Excludes wellness-only and pregnancy companion content types; use `/v1/content/care-schedules`,
+        `/v1/content/checklist-templates`, and `/v1/content/pregnancy/weeks` for those catalogs.
       parameters:
         - name: q
           in: query

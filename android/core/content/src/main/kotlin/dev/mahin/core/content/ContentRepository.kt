@@ -8,6 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import retrofit2.HttpException
 
 @Singleton
 class ContentRepository
@@ -56,7 +57,13 @@ class ContentRepository
                 awaitCatalogSync()
                 runCatching { api.pregnancyWeek(week) }.fold(
                     onSuccess = { PregnancyWeekFetch.Loaded(it) },
-                    onFailure = { PregnancyWeekFetch.NetworkError },
+                    onFailure = { error ->
+                        if (error is HttpException && error.code() == 404) {
+                            PregnancyWeekFetch.Loaded(null)
+                        } else {
+                            PregnancyWeekFetch.NetworkError
+                        }
+                    },
                 )
             }
 

@@ -727,6 +727,9 @@ class DayEditorViewModel
             val usageCounts = computeCategoryUsageCounts(date)
             val bbtInput = ttc?.bbtCelsius?.toString() ?: ""
             _uiState.update { state ->
+                if (state.date != date) {
+                    return@update state
+                }
                 val withFields =
                     state.copy(
                         loading = false,

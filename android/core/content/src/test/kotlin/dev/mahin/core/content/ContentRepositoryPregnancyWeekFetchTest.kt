@@ -8,6 +8,9 @@ import dev.mahin.core.database.MahinDatabase
 import dev.mahin.core.datastore.ContentCachePreferencesRepository
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
+import okhttp3.ResponseBody.Companion.toResponseBody
+import retrofit2.HttpException
+import retrofit2.Response
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -43,12 +46,23 @@ class ContentRepositoryPregnancyWeekFetchTest {
     }
 
     @Test
+    fun pregnancyWeekFetch_notPublished_returnsLoadedWithNullArticle() {
+        runBlocking {
+            api.pregnancyWeekFailure =
+                HttpException(Response.error<ContentArticleDto>(404, "".toResponseBody(null)))
+            val missing = repository.pregnancyWeekFetch(8)
+            assertThat(missing).isInstanceOf(ContentRepository.PregnancyWeekFetch.Loaded::class.java)
+            assertThat((missing as ContentRepository.PregnancyWeekFetch.Loaded).article).isNull()
+        }
+    }
+
+    @Test
     fun pregnancyWeekFetch_networkFailure_isDistinctFromLoaded() {
         runBlocking {
-            api.throwOnPregnancyWeek = true
+            api.pregnancyWeekFailure = IllegalStateException("offline")
             assertThat(repository.pregnancyWeekFetch(8))
                 .isInstanceOf(ContentRepository.PregnancyWeekFetch.NetworkError::class.java)
-            api.throwOnPregnancyWeek = false
+            api.pregnancyWeekFailure = null
             api.pregnancyWeekArticle =
                 ContentArticleDto(
                     id = "w8",
@@ -67,7 +81,7 @@ class ContentRepositoryPregnancyWeekFetchTest {
     }
 
     private class RecordingContentApi : ContentApi {
-        var throwOnPregnancyWeek: Boolean = false
+        var pregnancyWeekFailure: Throwable? = null
         var pregnancyWeekArticle: ContentArticleDto? = null
 
         override suspend fun catalogStatus(): ContentCatalogStatusDto =
@@ -77,7 +91,7 @@ class ContentRepositoryPregnancyWeekFetchTest {
             week: Int,
             locale: String,
         ): ContentArticleDto {
-            if (throwOnPregnancyWeek) error("offline")
+            pregnancyWeekFailure?.let { throw it }
             return pregnancyWeekArticle ?: error("missing")
         }
 

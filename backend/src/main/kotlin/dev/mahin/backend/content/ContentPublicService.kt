@@ -138,14 +138,12 @@ class ContentPublicService(
         val now = Instant.now()
         val weeks =
             versionRepository
-                .searchPublished(
-                    null,
-                    locale,
-                    "pregnancy",
-                ).mapNotNull { version ->
+                .findPublishedPregnancyWeeks(locale)
+                .mapNotNull { version ->
                     val document = documentRepository.findById(version.documentId).orElse(null)
                     if (document == null ||
-                        !ContentPublicVisibility.isArticleEndpointEligible(document, version, now)
+                        !ContentPublicationRules.isPublishedOnCatalog(document, version, now) ||
+                        isHiddenPregnancyWeekPlaceholder(version)
                     ) {
                         return@mapNotNull null
                     }

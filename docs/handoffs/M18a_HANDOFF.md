@@ -1,7 +1,7 @@
 # M18a Handoff — Pregnancy companion CMS + Android timeline/tools/checklist
 
 **Milestone:** M18a  
-**Status:** Draft PR [#47](https://github.com/ajangi/Mahin/pull/47) — review round 1 addressed; CI green at `d6a562b`  
+**Status:** Draft PR [#47](https://github.com/ajangi/Mahin/pull/47) — review round 2 addressed (await CI on final head)  
 **Next milestone:** **M18b** only
 
 ## Commands and results
@@ -13,7 +13,7 @@ npx @redocly/cli@1.34.2 lint openapi/openapi.yaml --config redocly.yaml
 cd android && ./gradlew lintDebug ktlintCheck detekt test :app:verifyRoborazziDebug
 ```
 
-**GitHub Actions (PR #47, head `d6a562baa51c0fc5aa817b073657564410902428`):** admin, android, backend, design-tokens, openapi — all pass (run [38718325518](https://github.com/ajangi/Mahin/actions/runs/38718325518)).
+**GitHub Actions:** see final head SHA at bottom of this file after push.
 
 ## Implemented scope
 
@@ -21,13 +21,15 @@ cd android && ./gradlew lintDebug ktlintCheck detekt test :app:verifyRoborazziDe
 |------|--------|
 | CMS types | `care_schedule`, `checklist_template`; optional `pregnancy_week` structured payload |
 | Admin | RTL editors + review panels for companion types (M17a pattern) |
-| Public API | Care schedules + checklist templates; pregnancy week fields; documented error codes in OpenAPI |
-| Gatekeeper tests | `M18aGatekeeperIntegrationTest` (delivery matrix, filters, clinical sign-off, search/article exclusion) |
+| Public API | Care schedules + checklist templates; pregnancy week list via `findPublishedPregnancyWeeks` (not article search); documented error codes in OpenAPI |
+| Article/search | `care_schedule`, `checklist_template`, and `pregnancy_week` are **not** served by `/v1/content/articles` or `/v1/content/search` (404 / omitted); use companion and `/v1/content/pregnancy/weeks` endpoints — documented in OpenAPI |
+| Gatekeeper tests | `M18aGatekeeperIntegrationTest` (delivery matrix, filters, clinical sign-off, search/article exclusion, weeks list) |
+| Production placeholders | `M18aPlaceholderProductionIntegrationTest` hides placeholder companion + week docs on all public routes |
 | Android Plan | Full care schedule fetch; `PregnancyPlanTimelineMerger` + VM test between week windows |
 | Week-by-week | `CmsMahinIllustrationSource` via `LearnIllustrationViewModel`; network failure does not cache empty week |
 | Tools hub | `PregnancyToolsViewModel` + injected `LocalDateClock` (no persistence) |
-| Checklist | Local add/rename/delete + toggle; sync outbox stays empty in privacy test |
-| Privacy | Checklist excluded from export; `InMemorySyncOutbox` empty after seed/toggle/add/delete |
+| Checklist | Local add/rename/delete + toggle |
+| Privacy | Checklist excluded from export; **no production checklist code enqueues `SyncOutbox`** — privacy test asserts outbox table stays empty after local mutations (real isolation is export exclusion + no sync wiring) |
 
 ## Migrations
 
@@ -47,6 +49,10 @@ cd android && ./gradlew lintDebug ktlintCheck detekt test :app:verifyRoborazziDe
 
 - Real Iran-context care schedules and hospital-bag checklist copy (`placeholder: true` hidden in production).
 - Reviewed pregnancy week summaries and approved fetal-development illustrations.
+
+## Follow-ups (post-M18a)
+
+- Intermittent `LearnViewModelTest` timing under Robolectric release job (pre-existing; not introduced by M18a week illustration work) — track separately if release excludes are narrowed.
 
 ## Unresolved questions
 

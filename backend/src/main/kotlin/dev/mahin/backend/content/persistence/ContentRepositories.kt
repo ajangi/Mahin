@@ -72,6 +72,22 @@ interface ContentVersionRepository : JpaRepository<ContentVersionEntity, UUID> {
         WHERE d.publishedVersionId = v.id
           AND d.withdrawnAt IS NULL
           AND v.status = 'published'
+          AND v.contentType = 'pregnancy_week'
+          AND d.locale = :locale
+        ORDER BY v.gestationalWeek ASC
+        """,
+    )
+    fun findPublishedPregnancyWeeks(
+        @Param("locale") locale: String,
+    ): List<ContentVersionEntity>
+
+    @Query(
+        """
+        SELECT v FROM ContentVersionEntity v
+        JOIN ContentDocumentEntity d ON d.id = v.documentId
+        WHERE d.publishedVersionId = v.id
+          AND d.withdrawnAt IS NULL
+          AND v.status = 'published'
           AND v.contentType = :contentType
           AND (:locale IS NULL OR d.locale = :locale)
         ORDER BY v.title ASC

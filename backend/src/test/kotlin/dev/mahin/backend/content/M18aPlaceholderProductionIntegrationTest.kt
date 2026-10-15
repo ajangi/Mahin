@@ -38,10 +38,65 @@ class M18aPlaceholderProductionIntegrationTest(
 
     @Test
     fun misPublishedPlaceholderCareScheduleNotServedFromPublicApiInProduction() {
+        val published = publishPlaceholderCareSchedule()
+        assertCompanionHiddenFromPublicApi(
+            documentId = published.documentId,
+            slug = published.slug,
+            listPath = "/v1/content/care-schedules",
+        )
+    }
+
+    @Test
+    fun misPublishedPlaceholderChecklistTemplateNotServedFromPublicApiInProduction() {
+        val published = publishPlaceholderChecklist()
+        assertCompanionHiddenFromPublicApi(
+            documentId = published.documentId,
+            slug = published.slug,
+            listPath = "/v1/content/checklist-templates",
+        )
+    }
+
+    @Test
+    fun misPublishedPlaceholderPregnancyWeekNotServedFromPublicApiInProduction() {
+        val published = publishPlaceholderPregnancyWeek(week = 12)
+        mockMvc.get("/v1/content/pregnancy/weeks/${published.gestationalWeek}").andExpect {
+            status { isNotFound() }
+        }
+        mockMvc.get("/v1/content/pregnancy/weeks").andExpect {
+            status { isOk() }
+            jsonPath("$.weeks[?(@ == ${published.gestationalWeek})]") { doesNotExist() }
+        }
+        mockMvc.get("/v1/content/articles/${published.documentId}").andExpect { status { isNotFound() } }
+        mockMvc.get("/v1/content/search").andExpect {
+            status { isOk() }
+            jsonPath("$.items[?(@.id == '${published.documentId}')]") { doesNotExist() }
+        }
+    }
+
+    private fun assertCompanionHiddenFromPublicApi(
+        documentId: String,
+        slug: String,
+        listPath: String,
+    ) {
+        mockMvc.get("$listPath/$documentId").andExpect { status { isNotFound() } }
+        mockMvc.get("$listPath/by-slug/$slug").andExpect { status { isNotFound() } }
+        mockMvc.get(listPath).andExpect {
+            status { isOk() }
+            jsonPath("$.items[?(@.id == '$documentId')]") { doesNotExist() }
+        }
+        mockMvc.get("/v1/content/articles/$documentId").andExpect { status { isNotFound() } }
+        mockMvc.get("/v1/content/search").andExpect {
+            status { isOk() }
+            jsonPath("$.items[?(@.id == '$documentId')]") { doesNotExist() }
+        }
+    }
+
+    private fun publishPlaceholderCareSchedule(): PublishedPlaceholder {
         val sourceId = WellnessContentTestSupport.createSource(mockMvc, objectMapper, tokens.editorToken)
+        val slug = "care-${UUID.randomUUID()}"
         val body =
             mapOf(
-                "slug" to "care-${UUID.randomUUID()}",
+                "slug" to slug,
                 "locale" to "fa-IR",
                 "title" to "زمان‌بندی",
                 "contentType" to ContentTypes.CARE_SCHEDULE,
@@ -63,6 +118,66 @@ class M18aPlaceholderProductionIntegrationTest(
                             ),
                     ),
             )
+        return publishDocument(body)
+    }
+
+    private fun publishPlaceholderChecklist(): PublishedPlaceholder {
+        val sourceId = WellnessContentTestSupport.createSource(mockMvc, objectMapper, tokens.editorToken)
+        val slug = "checklist-${UUID.randomUUID()}"
+        val body =
+            mapOf(
+                "slug" to slug,
+                "locale" to "fa-IR",
+                "title" to "لیست",
+                "contentType" to ContentTypes.CHECKLIST_TEMPLATE,
+                "medicalRiskLevel" to "general_education",
+                "sourceIds" to listOf(sourceId),
+                "typePayload" to
+                    mapOf(
+                        "placeholder" to true,
+                        "checklistKind" to "hospital_bag",
+                        "sections" to listOf("مدارک"),
+                        "items" to
+                            listOf(
+                                mapOf(
+                                    "id" to "c1",
+                                    "label" to "نمونه",
+                                    "section" to "مدارک",
+                                    "order" to 1,
+                                ),
+                            ),
+                    ),
+            )
+        return publishDocument(body)
+    }
+
+    private fun publishPlaceholderPregnancyWeek(week: Int): PublishedPlaceholder {
+        val sourceId = WellnessContentTestSupport.createSource(mockMvc, objectMapper, tokens.editorToken)
+        val slug = "week-$week-${UUID.randomUUID()}"
+        val body =
+            mapOf(
+                "slug" to slug,
+                "locale" to "fa-IR",
+                "title" to "هفته $week",
+                "summary" to "خلاصه",
+                "contentType" to ContentTypes.PREGNANCY_WEEK,
+                "gestationalWeek" to week,
+                "medicalRiskLevel" to "general_education",
+                "sourceIds" to listOf(sourceId),
+                "typePayload" to
+                    mapOf(
+                        "placeholder" to true,
+                        "fetalSummary" to "نمونه",
+                        "maternalSummary" to "نمونه",
+                    ),
+            )
+        return publishDocument(body, gestationalWeek = week)
+    }
+
+    private fun publishDocument(
+        body: Map<String, Any?>,
+        gestationalWeek: Int? = null,
+    ): PublishedPlaceholder {
         val created =
             mockMvc
                 .post("/v1/admin/content/documents") {
@@ -80,11 +195,16 @@ class M18aPlaceholderProductionIntegrationTest(
         versionRepository.save(version)
         document.publishedVersionId = version.id
         documentRepository.save(document)
-
-        mockMvc.get("/v1/content/care-schedules/$documentId").andExpect { status { isNotFound() } }
-        mockMvc.get("/v1/content/checklist-templates").andExpect {
-            status { isOk() }
-            jsonPath("$.items[?(@.id == '$documentId')]") { doesNotExist() }
-        }
+        return PublishedPlaceholder(
+            documentId = documentId.toString(),
+            slug = document.slug,
+            gestationalWeek = gestationalWeek,
+        )
     }
+
+    private data class PublishedPlaceholder(
+        val documentId: String,
+        val slug: String,
+        val gestationalWeek: Int? = null,
+    )
 }

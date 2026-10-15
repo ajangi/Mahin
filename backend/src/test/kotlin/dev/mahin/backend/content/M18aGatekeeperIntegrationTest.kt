@@ -89,6 +89,21 @@ class M18aGatekeeperIntegrationTest(
         )
         assertExcludedFromPublicDelivery(expiredCareCreated.documentId, "/v1/content/care-schedules")
 
+        val expiredChecklistCreated = createChecklistDocument()
+        publishVersion(expiredChecklistCreated.versionId, thenWithdraw = false)
+        val expiredChecklistPublishedVersionId =
+            documentRepository
+                .findById(UUID.fromString(expiredChecklistCreated.documentId))
+                .orElseThrow()
+                .publishedVersionId!!
+                .toString()
+        applyEffectiveWindow(
+            expiredChecklistPublishedVersionId,
+            effectiveFrom = null,
+            effectiveTo = Instant.now().minusSeconds(60).toString(),
+        )
+        assertExcludedFromPublicDelivery(expiredChecklistCreated.documentId, "/v1/content/checklist-templates")
+
         val futureChecklistCreated = createChecklistDocument()
         applyEffectiveWindow(
             futureChecklistCreated.versionId,
@@ -98,8 +113,20 @@ class M18aGatekeeperIntegrationTest(
         publishVersion(futureChecklistCreated.versionId, thenWithdraw = false)
         assertExcludedFromPublicDelivery(futureChecklistCreated.documentId, "/v1/content/checklist-templates")
 
+        val futureCareCreated = createCareScheduleDocument()
+        applyEffectiveWindow(
+            futureCareCreated.versionId,
+            effectiveFrom = Instant.now().plus(1, ChronoUnit.DAYS).toString(),
+            effectiveTo = null,
+        )
+        publishVersion(futureCareCreated.versionId, thenWithdraw = false)
+        assertExcludedFromPublicDelivery(futureCareCreated.documentId, "/v1/content/care-schedules")
+
         val withdrawnCare = createCareSchedule(publish = true, thenWithdraw = true)
         assertExcludedFromPublicDelivery(withdrawnCare, "/v1/content/care-schedules")
+
+        val withdrawnChecklist = createChecklist(publish = true, thenWithdraw = true)
+        assertExcludedFromPublicDelivery(withdrawnChecklist, "/v1/content/checklist-templates")
 
         val publishedChecklist = createChecklist(publish = true)
         assertPublishedAccessible(publishedChecklist, "/v1/content/checklist-templates")
@@ -185,6 +212,15 @@ class M18aGatekeeperIntegrationTest(
                 status { isConflict() }
                 jsonPath("$.code") { value("clinical_review_required") }
             }
+    }
+
+    @Test
+    fun listPregnancyWeeksReturnsPublishedGestationalWeekNumbers() {
+        createPregnancyWeek(publish = true, week = 21)
+        mockMvc.get("/v1/content/pregnancy/weeks").andExpect {
+            status { isOk() }
+            jsonPath("$.weeks[?(@ == 21)]") { exists() }
+        }
     }
 
     @Test
