@@ -1,7 +1,7 @@
 # M18a Handoff — Pregnancy companion CMS + Android timeline/tools/checklist
 
 **Milestone:** M18a  
-**Status:** Draft PR [#47](https://github.com/ajangi/Mahin/pull/47) — CI re-run after ktlint/detekt/android fixes  
+**Status:** Draft PR [#47](https://github.com/ajangi/Mahin/pull/47) — all CI checks green (admin, android, backend, openapi, design-tokens)  
 **Next milestone:** **M18b** only
 
 ## Commands and results
