@@ -31,7 +31,7 @@ class DayEditorViewModelUndoTest {
         runBlocking {
             harness.loggingPreferencesRepository.setSexualActivityEnabled(true)
             viewModel.openDate(day)
-            awaitUntil { viewModel.uiState.value.date == day }
+            awaitDailyLogOnMain { viewModel.uiState.value.date == day }
         }
     }
 
@@ -90,28 +90,36 @@ class DayEditorViewModelUndoTest {
     fun undo_restoresDailyLogMedicationThenMood_withSecondUndoNoOp() {
         runBlocking {
             viewModel.toggleMood("آرام")
-            awaitUntilDb {
+            awaitDailyLogOnMain {
                 val log = harness.dailyLogFor(day)
                 log != null && log.moodTags.contains("آرام")
             }
-            awaitUntil {
+            awaitDailyLogOnMain {
                 viewModel.uiState.value.moodTags
                     .contains("آرام")
             }
             viewModel.toggleMedication("ویتامین")
-            awaitUntilDb {
+            awaitDailyLogOnMain {
                 val log = harness.dailyLogFor(day)
                 log != null && log.medicationTags.contains("ویتامین")
             }
+            awaitDailyLogOnMain {
+                viewModel.uiState.value.medicationTags
+                    .contains("ویتامین")
+            }
             viewModel.undoLastChange()
-            awaitUntilDb {
+            awaitDailyLogOnMain {
                 val log = harness.dailyLogFor(day)
                 log != null && !log.medicationTags.contains("ویتامین") && log.moodTags.contains("آرام")
             }
-            awaitUntil { viewModel.uiState.value.undoMessage == null }
+            awaitDailyLogOnMain { viewModel.uiState.value.undoMessage == null }
             val moodAfterFirstUndo = harness.dailyLogFor(day)?.moodTags
             assertThat(viewModel.uiState.value.undoMessage).isNull()
             viewModel.undoLastChange()
+            awaitDailyLogOnMain {
+                harness.dailyLogFor(day)?.moodTags == moodAfterFirstUndo &&
+                    harness.dailyLogFor(day)?.medicationTags?.contains("ویتامین") != true
+            }
             assertThat(harness.dailyLogFor(day)?.moodTags).isEqualTo(moodAfterFirstUndo)
             assertThat(harness.dailyLogFor(day)?.medicationTags).doesNotContain("ویتامین")
         }
@@ -142,18 +150,6 @@ class DayEditorViewModelUndoTest {
                 log != null && !log.sleepLogged
             }
         }
-    }
-
-    private suspend fun awaitUntil(
-        timeoutMs: Long = 10_000,
-        condition: () -> Boolean,
-    ) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            ShadowLooper.idleMainLooper()
-            if (condition()) return
-        }
-        throw AssertionError("Condition not met within ${timeoutMs}ms")
     }
 
     private suspend fun awaitUntilDb(condition: suspend () -> Boolean) {
