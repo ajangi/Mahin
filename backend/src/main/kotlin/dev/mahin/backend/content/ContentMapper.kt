@@ -19,6 +19,7 @@ object ContentMapper {
         version: ContentVersionEntity,
         sourceCitationKeys: List<String>,
         includeBody: Boolean,
+        objectMapper: ObjectMapper? = null,
     ): ContentArticleResponse {
         val published = document.publishedVersionId == version.id && document.withdrawnAt == null
         val status =
@@ -26,6 +27,12 @@ object ContentMapper {
                 ContentStatus.PUBLISHED
             } else {
                 parseContentStatus(version.status)
+            }
+        val weekPayload =
+            if (version.contentType == ContentTypes.PREGNANCY_WEEK && objectMapper != null) {
+                ContentTypePayloadCodec.parsePregnancyWeek(objectMapper, version.typePayloadJson)
+            } else {
+                null
             }
         return ContentArticleResponse(
             id = document.id.toString(),
@@ -48,6 +55,11 @@ object ContentMapper {
             effectiveFrom = version.effectiveFrom?.let { instantFormatter.format(it) },
             effectiveTo = version.effectiveTo?.let { instantFormatter.format(it) },
             withdrawn = document.withdrawnAt != null,
+            placeholder = weekPayload?.placeholder ?: false,
+            fetalSummary = weekPayload?.fetalSummary,
+            maternalSummary = weekPayload?.maternalSummary,
+            sizeComparisonLabel = weekPayload?.sizeComparisonLabel,
+            illustrationMediaAssetId = weekPayload?.illustrationMediaAssetId,
         )
     }
 

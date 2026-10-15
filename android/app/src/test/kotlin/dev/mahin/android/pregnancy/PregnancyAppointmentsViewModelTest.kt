@@ -7,7 +7,13 @@ import com.google.common.truth.Truth.assertThat
 import dev.mahin.core.common.FixedLocalDateClock
 import dev.mahin.core.database.MahinDatabase
 import dev.mahin.core.database.entity.CycleProfileEntity
+import dev.mahin.android.learn.FakeContentApi
+import dev.mahin.core.content.ContentRepository
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
+import dev.mahin.core.datastore.ContentCachePreferencesRepository
+import dev.mahin.core.content.WellnessContentLocalStore
+import dev.mahin.core.content.MediaAssetMemoryCache
+import kotlinx.serialization.json.Json
 import dev.mahin.core.datastore.NotificationPreferencesRepository
 import dev.mahin.core.datastore.PregnancyTimerPreferencesRepository
 import dev.mahin.core.model.CycleRegularity
@@ -93,6 +99,7 @@ class PregnancyAppointmentsViewModelTest {
             .hold(
                 PregnancyAppointmentsViewModel(
                     repository = repository,
+                    contentRepository = contentRepository(),
                     notificationPreferencesRepository =
                         NotificationPreferencesRepository(
                             ApplicationProvider.getApplicationContext(),
@@ -113,6 +120,17 @@ class PregnancyAppointmentsViewModelTest {
             delay(25)
         }
         throw AssertionError("Condition not met within ${timeoutMs}ms")
+    }
+
+    private fun contentRepository(): ContentRepository {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        return ContentRepository(
+            FakeContentApi(),
+            ContentCachePreferencesRepository(context),
+            WellnessContentLocalStore(database.wellnessContentDao(), Json { ignoreUnknownKeys = true }),
+            Json { ignoreUnknownKeys = true },
+            MediaAssetMemoryCache(),
+        )
     }
 
     private class NoOpReminderScheduler : ReminderScheduler {

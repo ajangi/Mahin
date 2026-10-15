@@ -39,6 +39,7 @@ object MahinDatabaseFactory {
                     MIGRATION_6_7,
                     MIGRATION_7_8,
                     MIGRATION_8_9,
+                    MIGRATION_9_10,
                 )
         when (encryptionMode) {
             DatabaseEncryptionMode.KEYSTORE_SQLCIPHER -> {

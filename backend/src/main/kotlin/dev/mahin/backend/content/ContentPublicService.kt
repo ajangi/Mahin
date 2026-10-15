@@ -23,6 +23,8 @@ class ContentPublicService(
     private val sourceRepository: ContentSourceRepository,
     private val bookmarkRepository: UserContentBookmarkRepository,
     private val catalogService: ContentCatalogService,
+    private val objectMapper: com.fasterxml.jackson.databind.ObjectMapper,
+    @org.springframework.beans.factory.annotation.Value("\${mahin.environment}") private val environment: String,
 ) {
     fun catalogStatus(): ContentCatalogStatusResponse = catalogService.currentStatus()
 
@@ -104,6 +106,13 @@ class ContentPublicService(
                 ResponseStatusException(HttpStatus.NOT_FOUND, "pregnancy_week_not_found")
             }
         if (!ContentPublicationRules.isPublishedOnCatalog(document, version)) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "pregnancy_week_not_found")
+        }
+        val payload =
+            ContentTypePayloadCodec.parsePregnancyWeek(objectMapper, version.typePayloadJson)
+        if (payload != null &&
+            ContentPublicVisibility.isPlaceholderHiddenInProduction(payload.placeholder, environment)
+        ) {
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "pregnancy_week_not_found")
         }
         return mapArticle(document, version, includeBody = true)
@@ -196,6 +205,6 @@ class ContentPublicService(
             versionSourceRepository.findByVersionId(version.id).mapNotNull { link ->
                 sourceRepository.findById(link.sourceId).orElse(null)?.citationKey
             }
-        return ContentMapper.toArticleResponse(document, version, citationKeys, includeBody)
+        return ContentMapper.toArticleResponse(document, version, citationKeys, includeBody, objectMapper)
     }
 }

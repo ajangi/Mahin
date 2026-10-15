@@ -114,6 +114,15 @@ internal fun MahinAppShellContent(
     val openPregnancyTab: () -> Unit = {
         navController.navigate(MahinTopLevelDestination.PregnancyHub.route) { launchSingleTop = true }
     }
+    val openPregnancyWeekByWeek: () -> Unit = {
+        navController.navigate(MahinTopLevelDestination.PREGNANCY_WEEK_BY_WEEK_ROUTE) { launchSingleTop = true }
+    }
+    val openPregnancyTools: () -> Unit = {
+        navController.navigate(MahinTopLevelDestination.PREGNANCY_TOOLS_ROUTE) { launchSingleTop = true }
+    }
+    val openPregnancyChecklist: () -> Unit = {
+        navController.navigate(MahinTopLevelDestination.PREGNANCY_CHECKLIST_ROUTE) { launchSingleTop = true }
+    }
 
     Box(modifier = modifier.fillMaxSize()) {
         MahinShellLayout(
@@ -130,6 +139,9 @@ internal fun MahinAppShellContent(
                     onOpenDayEditor = openDayEditor,
                     onOpenPlan = openPlan,
                     onOpenPregnancyTab = openPregnancyTab,
+                    onOpenPregnancyWeekByWeek = openPregnancyWeekByWeek,
+                    onOpenPregnancyTools = openPregnancyTools,
+                    onOpenPregnancyChecklist = openPregnancyChecklist,
                     screenOverrides = screenOverrides,
                 )
             },

@@ -1,8 +1,13 @@
 package dev.mahin.android.pregnancy
 
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -53,6 +58,8 @@ fun PregnancyPlanScreen(
     PregnancyPlanScreenContent(
         hasActivePregnancy = state.hasActivePregnancy,
         isLoading = state.isLoading,
+        timeline = state.timeline,
+        onAddCarePlanAsAppointment = viewModel::addCarePlanItemAsAppointment,
         formState = formState,
         formActions = formActions,
         modifier = modifier,
@@ -63,6 +70,8 @@ fun PregnancyPlanScreen(
 fun PregnancyPlanScreenContent(
     hasActivePregnancy: Boolean,
     isLoading: Boolean,
+    timeline: List<PregnancyPlanTimelineItemUi>,
+    onAddCarePlanAsAppointment: (PregnancyPlanTimelineItemUi) -> Unit,
     formState: PregnancyAppointmentsFormState,
     formActions: PregnancyAppointmentsActions,
     modifier: Modifier = Modifier,
@@ -92,6 +101,42 @@ fun PregnancyPlanScreenContent(
                 }
             }
             else -> {
+                if (timeline.isNotEmpty()) {
+                    item {
+                        Text(
+                            text = stringResource(R.string.pregnancy_plan_timeline_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(top = MahinSpacing.md),
+                        )
+                    }
+                    timeline.forEach { entry ->
+                        item {
+                            Column(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = MahinSpacing.xs)
+                                        .testTag("pregnancy_plan_timeline_item"),
+                            ) {
+                                Text(text = entry.title, style = MaterialTheme.typography.bodyLarge)
+                                Text(
+                                    text = entry.subtitle,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                if (entry.isCarePlan) {
+                                    Text(
+                                        text = stringResource(R.string.pregnancy_plan_care_plan_framing),
+                                        style = MaterialTheme.typography.bodySmall,
+                                    )
+                                    TextButton(onClick = { onAddCarePlanAsAppointment(entry) }) {
+                                        Text(stringResource(R.string.pregnancy_plan_add_appointment))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 item {
                     PregnancyAppointmentsSection(
                         state = formState,

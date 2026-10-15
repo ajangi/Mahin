@@ -653,6 +653,173 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /v1/content/care-schedules:
+    get:
+      tags: [Content]
+      operationId: listCareSchedules
+      summary: List published pregnancy care schedules (Iran context)
+      parameters:
+        - name: locale
+          in: query
+          schema:
+            type: string
+            default: fa-IR
+        - name: gestationalWeek
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 42
+      responses:
+        "200":
+          description: Published care schedules
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentCareScheduleListResponse"
+        "400":
+          description: Invalid gestational week
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/content/care-schedules/{documentId}:
+    get:
+      tags: [Content]
+      operationId: getCareSchedule
+      summary: Fetch a published care schedule
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Published care schedule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentCareSchedule"
+        "404":
+          description: Not published or unknown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/content/care-schedules/by-slug/{slug}:
+    get:
+      tags: [Content]
+      operationId: getCareScheduleBySlug
+      summary: Fetch a published care schedule by slug and locale
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: locale
+          in: query
+          schema:
+            type: string
+            default: fa-IR
+      responses:
+        "200":
+          description: Published care schedule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentCareSchedule"
+        "404":
+          description: Not published or unknown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/content/checklist-templates:
+    get:
+      tags: [Content]
+      operationId: listChecklistTemplates
+      summary: List published checklist templates (e.g. hospital bag)
+      parameters:
+        - name: locale
+          in: query
+          schema:
+            type: string
+            default: fa-IR
+        - name: checklistKind
+          in: query
+          schema:
+            type: string
+            enum: [hospital_bag]
+      responses:
+        "200":
+          description: Published checklist templates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentChecklistTemplateListResponse"
+        "400":
+          description: Invalid checklist kind
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/content/checklist-templates/{documentId}:
+    get:
+      tags: [Content]
+      operationId: getChecklistTemplate
+      summary: Fetch a published checklist template
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Published checklist template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentChecklistTemplate"
+        "404":
+          description: Not published or unknown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/content/checklist-templates/by-slug/{slug}:
+    get:
+      tags: [Content]
+      operationId: getChecklistTemplateBySlug
+      summary: Fetch a published checklist template by slug and locale
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: locale
+          in: query
+          schema:
+            type: string
+            default: fa-IR
+      responses:
+        "200":
+          description: Published checklist template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentChecklistTemplate"
+        "404":
+          description: Not published or unknown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /v1/admin/auth/login:
     post:
       tags: [Admin]
@@ -1851,6 +2018,21 @@ components:
           nullable: true
         withdrawn:
           type: boolean
+        placeholder:
+          type: boolean
+        fetalSummary:
+          type: string
+          nullable: true
+        maternalSummary:
+          type: string
+          nullable: true
+        sizeComparisonLabel:
+          type: string
+          nullable: true
+        illustrationMediaAssetId:
+          type: string
+          format: uuid
+          nullable: true
     DailyTipPayload:
       type: object
       required: [placeholder, targeting]
@@ -2136,6 +2318,173 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ContentCollectionSummary"
+    CareScheduleItem:
+      type: object
+      required: [id, title, category, weekStart, weekEnd]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        category:
+          type: string
+          enum: [test, ultrasound, visit, screening, vaccine, other]
+        weekStart:
+          type: integer
+          minimum: 1
+          maximum: 42
+        weekEnd:
+          type: integer
+          minimum: 1
+          maximum: 42
+        description:
+          type: string
+          nullable: true
+        appointmentTypeHint:
+          type: string
+          nullable: true
+    ContentCareScheduleSummary:
+      type: object
+      required: [id, slug, locale, title, placeholder, regionContext]
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        locale:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+          nullable: true
+        placeholder:
+          type: boolean
+        regionContext:
+          type: string
+          enum: [iran]
+    ContentCareSchedule:
+      allOf:
+        - $ref: "#/components/schemas/ContentCareScheduleSummary"
+        - type: object
+          required: [contentVersion, medicalRiskLevel, items]
+          properties:
+            medicalRiskLevel:
+              type: string
+              enum: [none, general_education, contact_clinician, urgent]
+            contentVersion:
+              type: integer
+            sourceReferences:
+              type: array
+              items:
+                type: string
+            clinicalReviewer:
+              type: string
+              nullable: true
+            clinicalReviewedAt:
+              type: string
+              format: date-time
+              nullable: true
+            effectiveFrom:
+              type: string
+              format: date-time
+              nullable: true
+            effectiveTo:
+              type: string
+              format: date-time
+              nullable: true
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/CareScheduleItem"
+    ContentCareScheduleListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentCareScheduleSummary"
+    ChecklistItemTemplate:
+      type: object
+      required: [id, label, section, order]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        section:
+          type: string
+        order:
+          type: integer
+    ContentChecklistTemplateSummary:
+      type: object
+      required: [id, slug, locale, title, placeholder, checklistKind]
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        locale:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+          nullable: true
+        placeholder:
+          type: boolean
+        checklistKind:
+          type: string
+          enum: [hospital_bag]
+    ContentChecklistTemplate:
+      allOf:
+        - $ref: "#/components/schemas/ContentChecklistTemplateSummary"
+        - type: object
+          required: [contentVersion, medicalRiskLevel, sections, items]
+          properties:
+            medicalRiskLevel:
+              type: string
+              enum: [none, general_education, contact_clinician, urgent]
+            contentVersion:
+              type: integer
+            sourceReferences:
+              type: array
+              items:
+                type: string
+            clinicalReviewer:
+              type: string
+              nullable: true
+            clinicalReviewedAt:
+              type: string
+              format: date-time
+              nullable: true
+            effectiveFrom:
+              type: string
+              format: date-time
+              nullable: true
+            effectiveTo:
+              type: string
+              format: date-time
+              nullable: true
+            sections:
+              type: array
+              items:
+                type: string
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/ChecklistItemTemplate"
+    ContentChecklistTemplateListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentChecklistTemplateSummary"
     ErrorResponse:
       type: object
       required: [code, message, requestId]

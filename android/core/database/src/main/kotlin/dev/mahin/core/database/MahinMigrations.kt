@@ -346,3 +346,26 @@ val MIGRATION_8_9 =
             )
         }
     }
+
+val MIGRATION_9_10 =
+    object : Migration(9, 10) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS pregnancy_checklist_item (
+                    id TEXT NOT NULL PRIMARY KEY,
+                    checklistKind TEXT NOT NULL,
+                    section TEXT NOT NULL,
+                    label TEXT NOT NULL,
+                    sortOrder INTEGER NOT NULL,
+                    checked INTEGER NOT NULL,
+                    templateItemId TEXT,
+                    updatedAtEpochMs INTEGER NOT NULL
+                )
+                """.trimIndent(),
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS index_pregnancy_checklist_item_checklistKind ON pregnancy_checklist_item(checklistKind)",
+            )
+        }
+    }

@@ -114,6 +114,28 @@ class ContentRepository
                 runCatching { api.collection(documentId) }.getOrNull()
             }
 
+        suspend fun careSchedules(gestationalWeek: Int? = null): List<ContentCareScheduleDto> =
+            withContext(Dispatchers.IO) {
+                awaitCatalogSync()
+                val summaries =
+                    runCatching {
+                        api.careSchedules(locale = "fa-IR", gestationalWeek = gestationalWeek).items
+                    }.getOrElse { emptyList() }
+                summaries.mapNotNull { summary ->
+                    runCatching { api.careSchedule(summary.id) }.getOrNull()
+                }
+            }
+
+        suspend fun checklistTemplate(kind: String = "hospital_bag"): ContentChecklistTemplateDto? =
+            withContext(Dispatchers.IO) {
+                awaitCatalogSync()
+                val summary =
+                    runCatching {
+                        api.checklistTemplates(locale = "fa-IR", checklistKind = kind).items.firstOrNull()
+                    }.getOrNull() ?: return@withContext null
+                runCatching { api.checklistTemplate(summary.id) }.getOrNull()
+            }
+
         suspend fun mediaAsset(assetId: String): MediaAssetDto? =
             withContext(Dispatchers.IO) {
                 mediaMemoryCache.get(assetId)?.let { return@withContext it }

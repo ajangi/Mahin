@@ -70,6 +70,9 @@ fun PregnancyHubScreenContent(
     modifier: Modifier = Modifier,
     onOpenHistory: (() -> Unit)? = null,
     onOpenCycleCalendar: (() -> Unit)? = null,
+    onOpenWeekByWeek: (() -> Unit)? = null,
+    onOpenTools: (() -> Unit)? = null,
+    onOpenChecklist: (() -> Unit)? = null,
 ) {
     when {
         state.isLoading -> {
@@ -101,6 +104,9 @@ fun PregnancyHubScreenContent(
                 modifier = modifier,
                 onOpenHistory = onOpenHistory,
                 onOpenCycleCalendar = onOpenCycleCalendar,
+                onOpenWeekByWeek = onOpenWeekByWeek,
+                onOpenTools = onOpenTools,
+                onOpenChecklist = onOpenChecklist,
             )
         }
     }
@@ -113,6 +119,9 @@ private fun ActivePregnancyHub(
     modifier: Modifier = Modifier,
     onOpenHistory: (() -> Unit)? = null,
     onOpenCycleCalendar: (() -> Unit)? = null,
+    onOpenWeekByWeek: (() -> Unit)? = null,
+    onOpenTools: (() -> Unit)? = null,
+    onOpenChecklist: (() -> Unit)? = null,
 ) {
     val status = state.status ?: return
     val disclaimer = stringResource(R.string.pregnancy_hub_safety_disclaimer)
@@ -139,8 +148,16 @@ private fun ActivePregnancyHub(
                     weekNumber = status.displayWeekNumber,
                     cmsTitle = state.weeklyCmsTitle,
                     cmsSummary = state.weeklyCmsSummary,
+                    onOpenWeekByWeek = onOpenWeekByWeek,
                 )
             }
+        }
+        item {
+            PregnancyCompanionToolsCard(
+                onOpenWeekByWeek = onOpenWeekByWeek,
+                onOpenTools = onOpenTools,
+                onOpenChecklist = onOpenChecklist,
+            )
         }
         item {
             KickCounterSection(state = state, actions = actions)
@@ -210,10 +227,48 @@ private fun PregnancyStatusCard(status: PregnancyStatusSnapshot) {
 }
 
 @Composable
+private fun PregnancyCompanionToolsCard(
+    onOpenWeekByWeek: (() -> Unit)?,
+    onOpenTools: (() -> Unit)?,
+    onOpenChecklist: (() -> Unit)?,
+) {
+    Card(modifier = Modifier.fillMaxWidth().testTag("pregnancy_tools_hub_card")) {
+        Column(modifier = Modifier.padding(MahinSpacing.md)) {
+            Text(
+                text = stringResource(R.string.pregnancy_tools_hub_title),
+                style = mahinTextStyle(MahinTypographyRole.Label),
+            )
+            onOpenWeekByWeek?.let {
+                MahinPrimaryButton(
+                    text = stringResource(R.string.pregnancy_week_by_week_title),
+                    onClick = it,
+                    modifier = Modifier.padding(top = MahinSpacing.sm),
+                )
+            }
+            onOpenTools?.let {
+                MahinPrimaryButton(
+                    text = stringResource(R.string.pregnancy_tools_title),
+                    onClick = it,
+                    modifier = Modifier.padding(top = MahinSpacing.xs),
+                )
+            }
+            onOpenChecklist?.let {
+                MahinPrimaryButton(
+                    text = stringResource(R.string.pregnancy_checklist_title),
+                    onClick = it,
+                    modifier = Modifier.padding(top = MahinSpacing.xs),
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun WeekPlaceholderCard(
     weekNumber: Int,
     cmsTitle: String? = null,
     cmsSummary: String? = null,
+    onOpenWeekByWeek: (() -> Unit)? = null,
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(MahinSpacing.md)) {
@@ -242,6 +297,13 @@ private fun WeekPlaceholderCard(
                     text = stringResource(R.string.pregnancy_week_placeholder_maternal),
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = MahinSpacing.xs),
+                )
+            }
+            onOpenWeekByWeek?.let {
+                MahinPrimaryButton(
+                    text = stringResource(R.string.pregnancy_week_by_week_open),
+                    onClick = it,
+                    modifier = Modifier.padding(top = MahinSpacing.sm),
                 )
             }
         }

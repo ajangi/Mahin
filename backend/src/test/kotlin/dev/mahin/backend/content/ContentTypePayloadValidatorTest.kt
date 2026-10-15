@@ -103,4 +103,17 @@ class ContentTypePayloadValidatorTest {
             }
         assertEquals("wellness_requires_clinical_review", ex.reason)
     }
+
+    @Test
+    fun rejectsCareScheduleWithInvalidWeekWindow() {
+        val json =
+            """
+            {"placeholder":true,"regionContext":"iran","items":[{"id":"i","title":"t","category":"test","weekStart":12,"weekEnd":8}]}
+            """.trimIndent()
+        val ex =
+            assertThrows(ResponseStatusException::class.java) {
+                ContentTypePayloadValidator.validateForSave(ContentTypes.CARE_SCHEDULE, json, mapper)
+            }
+        assertEquals("invalid_care_schedule_week_window", ex.reason)
+    }
 }

@@ -10,7 +10,9 @@ object ContentPublicVisibility {
         version: ContentVersionEntity,
         now: Instant = Instant.now(),
     ): Boolean {
-        if (ContentTypes.isWellnessType(version.contentType)) {
+        if (ContentTypes.isWellnessType(version.contentType) ||
+            ContentTypes.isPregnancyCompanionType(version.contentType)
+        ) {
             return false
         }
         return ContentPublicationRules.isPublishedOnCatalog(document, version, now)

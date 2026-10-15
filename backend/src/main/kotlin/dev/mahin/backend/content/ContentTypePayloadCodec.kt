@@ -30,6 +30,12 @@ object ContentTypePayloadCodec {
                     strict.writeValueAsString(parseProgram(strict, nodeToJson(strict, node)))
                 ContentTypes.COLLECTION ->
                     strict.writeValueAsString(parseCollection(strict, nodeToJson(strict, node)))
+                ContentTypes.PREGNANCY_WEEK ->
+                    strict.writeValueAsString(parsePregnancyWeek(strict, nodeToJson(strict, node)))
+                ContentTypes.CARE_SCHEDULE ->
+                    strict.writeValueAsString(parseCareSchedule(strict, nodeToJson(strict, node)))
+                ContentTypes.CHECKLIST_TEMPLATE ->
+                    strict.writeValueAsString(parseChecklistTemplate(strict, nodeToJson(strict, node)))
                 else -> badRequest("type_payload_not_allowed")
             }
         ContentTypePayloadValidator.validatePayloadSize(canonical)
@@ -50,6 +56,21 @@ object ContentTypePayloadCodec {
         mapper: ObjectMapper,
         raw: String?,
     ): CollectionPayload? = parse(mapper, raw, CollectionPayload::class.java)
+
+    fun parsePregnancyWeek(
+        mapper: ObjectMapper,
+        raw: String?,
+    ): PregnancyWeekPayload? = parse(mapper, raw, PregnancyWeekPayload::class.java)
+
+    fun parseCareSchedule(
+        mapper: ObjectMapper,
+        raw: String?,
+    ): CareSchedulePayload? = parse(mapper, raw, CareSchedulePayload::class.java)
+
+    fun parseChecklistTemplate(
+        mapper: ObjectMapper,
+        raw: String?,
+    ): ChecklistTemplatePayload? = parse(mapper, raw, ChecklistTemplatePayload::class.java)
 
     private fun nodeToJson(
         mapper: ObjectMapper,

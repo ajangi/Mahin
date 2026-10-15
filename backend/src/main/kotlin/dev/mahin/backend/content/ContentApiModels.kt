@@ -28,6 +28,11 @@ data class ContentArticleResponse(
     val effectiveFrom: String?,
     val effectiveTo: String?,
     val withdrawn: Boolean = false,
+    val placeholder: Boolean = false,
+    val fetalSummary: String? = null,
+    val maternalSummary: String? = null,
+    val sizeComparisonLabel: String? = null,
+    val illustrationMediaAssetId: String? = null,
 )
 
 data class ContentCatalogStatusResponse(

@@ -31,6 +31,9 @@ enum class MahinTopLevelDestination(
     companion object {
         const val HISTORY_ROUTE: String = "history"
         const val SETTINGS_ROUTE: String = "settings"
+        const val PREGNANCY_WEEK_BY_WEEK_ROUTE: String = "pregnancy_week_by_week"
+        const val PREGNANCY_TOOLS_ROUTE: String = "pregnancy_tools"
+        const val PREGNANCY_CHECKLIST_ROUTE: String = "pregnancy_checklist"
 
         fun forMode(mode: ReproductiveMode): List<MahinTopLevelDestination> =
             when (mode) {
