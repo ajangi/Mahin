@@ -72,6 +72,21 @@ object ContentTypePayloadCodec {
         raw: String?,
     ): ChecklistTemplatePayload? = parse(mapper, raw, ChecklistTemplatePayload::class.java)
 
+    fun placeholderFlag(
+        mapper: ObjectMapper,
+        contentType: String,
+        typePayloadJson: String?,
+    ): Boolean =
+        when (contentType) {
+            ContentTypes.DAILY_TIP -> parseDailyTip(mapper, typePayloadJson)?.placeholder
+            ContentTypes.PROGRAM -> parseProgram(mapper, typePayloadJson)?.placeholder
+            ContentTypes.COLLECTION -> parseCollection(mapper, typePayloadJson)?.placeholder
+            ContentTypes.CARE_SCHEDULE -> parseCareSchedule(mapper, typePayloadJson)?.placeholder
+            ContentTypes.CHECKLIST_TEMPLATE -> parseChecklistTemplate(mapper, typePayloadJson)?.placeholder
+            ContentTypes.PREGNANCY_WEEK -> parsePregnancyWeek(mapper, typePayloadJson)?.placeholder
+            else -> false
+        } ?: false
+
     private fun nodeToJson(
         mapper: ObjectMapper,
         node: JsonNode,

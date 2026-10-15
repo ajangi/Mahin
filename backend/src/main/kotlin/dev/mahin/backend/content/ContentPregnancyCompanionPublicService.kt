@@ -89,17 +89,18 @@ class ContentPregnancyCompanionPublicService(
         gestationalWeek: Int?,
         now: Instant,
     ): CareScheduleMapped? {
-        val document = documentRepository.findById(version.documentId).orElse(null) ?: return null
-        val payload =
-            ContentTypePayloadCodec.parseCareSchedule(objectMapper, version.typePayloadJson) ?: return null
-        if (!ContentPublicationRules.isPublishedOnCatalog(document, version, now) ||
-            !isPayloadPublic(payload.placeholder)
-        ) {
-            return null
-        }
-        if (gestationalWeek != null &&
-            payload.items.none { gestationalWeek in it.weekStart..it.weekEnd }
-        ) {
+        val document = documentRepository.findById(version.documentId).orElse(null)
+        val payload = ContentTypePayloadCodec.parseCareSchedule(objectMapper, version.typePayloadJson)
+        val weekMatches =
+            gestationalWeek == null ||
+                payload?.items?.any { gestationalWeek in it.weekStart..it.weekEnd } == true
+        val visible =
+            document != null &&
+                payload != null &&
+                ContentPublicationRules.isPublishedOnCatalog(document, version, now) &&
+                isPayloadPublic(payload.placeholder) &&
+                weekMatches
+        if (!visible || document == null || payload == null) {
             return null
         }
         val citations = citationKeys(version)
@@ -114,15 +115,16 @@ class ContentPregnancyCompanionPublicService(
         checklistKind: String?,
         now: Instant,
     ): ChecklistMapped? {
-        val document = documentRepository.findById(version.documentId).orElse(null) ?: return null
-        val payload =
-            ContentTypePayloadCodec.parseChecklistTemplate(objectMapper, version.typePayloadJson) ?: return null
-        if (!ContentPublicationRules.isPublishedOnCatalog(document, version, now) ||
-            !isPayloadPublic(payload.placeholder)
-        ) {
-            return null
-        }
-        if (checklistKind != null && payload.checklistKind != checklistKind) {
+        val document = documentRepository.findById(version.documentId).orElse(null)
+        val payload = ContentTypePayloadCodec.parseChecklistTemplate(objectMapper, version.typePayloadJson)
+        val kindMatches = checklistKind == null || payload?.checklistKind == checklistKind
+        val visible =
+            document != null &&
+                payload != null &&
+                ContentPublicationRules.isPublishedOnCatalog(document, version, now) &&
+                isPayloadPublic(payload.placeholder) &&
+                kindMatches
+        if (!visible || document == null || payload == null) {
             return null
         }
         val citations = citationKeys(version)

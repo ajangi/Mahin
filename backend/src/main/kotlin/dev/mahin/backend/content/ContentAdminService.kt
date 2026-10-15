@@ -337,21 +337,11 @@ class ContentAdminService(
             return
         }
         val placeholder =
-            when (version.contentType) {
-                ContentTypes.DAILY_TIP ->
-                    ContentTypePayloadCodec.parseDailyTip(objectMapper, version.typePayloadJson)?.placeholder
-                ContentTypes.PROGRAM ->
-                    ContentTypePayloadCodec.parseProgram(objectMapper, version.typePayloadJson)?.placeholder
-                ContentTypes.COLLECTION ->
-                    ContentTypePayloadCodec.parseCollection(objectMapper, version.typePayloadJson)?.placeholder
-                ContentTypes.CARE_SCHEDULE ->
-                    ContentTypePayloadCodec.parseCareSchedule(objectMapper, version.typePayloadJson)?.placeholder
-                ContentTypes.CHECKLIST_TEMPLATE ->
-                    ContentTypePayloadCodec.parseChecklistTemplate(objectMapper, version.typePayloadJson)?.placeholder
-                ContentTypes.PREGNANCY_WEEK ->
-                    ContentTypePayloadCodec.parsePregnancyWeek(objectMapper, version.typePayloadJson)?.placeholder
-                else -> false
-            } ?: false
+            ContentTypePayloadCodec.placeholderFlag(
+                objectMapper,
+                version.contentType,
+                version.typePayloadJson,
+            )
         if (placeholder) {
             throw ResponseStatusException(HttpStatus.CONFLICT, "placeholder_publish_not_allowed")
         }

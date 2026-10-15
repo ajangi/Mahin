@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
 
 @Service
+@Suppress("LongParameterList")
 class ContentPublicService(
     private val documentRepository: ContentDocumentRepository,
     private val versionRepository: ContentVersionRepository,
@@ -97,26 +98,39 @@ class ContentPublicService(
         if (week !in 1..42) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid_gestational_week")
         }
-        val version =
-            versionRepository.findPublishedPregnancyWeek(week, locale).orElseThrow {
-                ResponseStatusException(HttpStatus.NOT_FOUND, "pregnancy_week_not_found")
-            }
-        val document =
-            documentRepository.findById(version.documentId).orElseThrow {
-                ResponseStatusException(HttpStatus.NOT_FOUND, "pregnancy_week_not_found")
-            }
-        if (!ContentPublicationRules.isPublishedOnCatalog(document, version)) {
-            throw ResponseStatusException(HttpStatus.NOT_FOUND, "pregnancy_week_not_found")
-        }
-        val payload =
-            ContentTypePayloadCodec.parsePregnancyWeek(objectMapper, version.typePayloadJson)
-        if (payload != null &&
-            ContentPublicVisibility.isPlaceholderHiddenInProduction(payload.placeholder, environment)
-        ) {
-            throw ResponseStatusException(HttpStatus.NOT_FOUND, "pregnancy_week_not_found")
-        }
-        return mapArticle(document, version, includeBody = true)
+        val loaded = loadPublishedPregnancyWeek(week, locale)
+        return mapArticle(loaded.document, loaded.version, includeBody = true)
     }
+
+    private fun loadPublishedPregnancyWeek(
+        week: Int,
+        locale: String,
+    ): PregnancyWeekPublication {
+        val version =
+            versionRepository.findPublishedPregnancyWeek(week, locale).orElse(null)
+        val document =
+            version?.let { documentRepository.findById(it.documentId).orElse(null) }
+        val visible =
+            version != null &&
+                document != null &&
+                ContentPublicationRules.isPublishedOnCatalog(document, version) &&
+                !isHiddenPregnancyWeekPlaceholder(version)
+        if (!visible || version == null || document == null) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "pregnancy_week_not_found")
+        }
+        return PregnancyWeekPublication(document, version)
+    }
+
+    private fun isHiddenPregnancyWeekPlaceholder(version: dev.mahin.backend.content.persistence.ContentVersionEntity): Boolean {
+        val payload = ContentTypePayloadCodec.parsePregnancyWeek(objectMapper, version.typePayloadJson)
+        return payload != null &&
+            ContentPublicVisibility.isPlaceholderHiddenInProduction(payload.placeholder, environment)
+    }
+
+    private data class PregnancyWeekPublication(
+        val document: dev.mahin.backend.content.persistence.ContentDocumentEntity,
+        val version: dev.mahin.backend.content.persistence.ContentVersionEntity,
+    )
 
     fun listPregnancyWeeks(locale: String): PregnancyWeekListResponse {
         val now = Instant.now()
