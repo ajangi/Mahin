@@ -63,6 +63,7 @@ class PregnancyAppointmentsViewModelTest {
     }
 
     @Test
+    @Suppress("LongMethod")
     fun carePlanTimeline_includesItemsOutsideCurrentGestationalWindow() {
         runBlocking {
             database.cycleProfileDao().upsert(

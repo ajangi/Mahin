@@ -316,7 +316,7 @@ class M18aGatekeeperIntegrationTest(
         effectiveTo: String? = null,
         thenWithdraw: Boolean = false,
     ): String {
-        val created = createChecklistDocument(publish = false)
+        val created = createChecklistDocument()
         applyEffectiveWindow(created.versionId, effectiveFrom, effectiveTo)
         if (publish) {
             publishVersion(created.versionId, thenWithdraw)

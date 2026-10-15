@@ -113,7 +113,7 @@ class PregnancyAppointmentsViewModel
             }
         }
 
-        private suspend fun refreshCarePlan(pregnancy: PregnancyRecordEntity) {
+        private suspend fun refreshCarePlan(@Suppress("UNUSED_PARAMETER") pregnancy: PregnancyRecordEntity) {
             val schedules = contentRepository.careSchedules(gestationalWeek = null)
             cachedCarePlan =
                 schedules.flatMap { schedule ->
