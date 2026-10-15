@@ -1,7 +1,8 @@
 package dev.mahin.android.pregnancy
 
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import dev.mahin.core.designsystem.MahinTheme
 import dev.mahin.core.media.R
@@ -21,7 +22,7 @@ import org.robolectric.annotation.GraphicsMode
 @Config(sdk = [33], qualifiers = "fa-rIR")
 class PregnancyWeekByWeekIllustrationTest {
     @get:Rule
-    val composeRule = createComposeRule()
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     @Test
     fun approvedAsset_showsImagery() {
