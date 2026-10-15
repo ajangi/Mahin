@@ -1,7 +1,7 @@
 # M18a Handoff — Pregnancy companion CMS + Android timeline/tools/checklist
 
 **Milestone:** M18a  
-**Status:** Draft PR [#47](https://github.com/ajangi/Mahin/pull/47) — review round 2 addressed; CI green at `f4dad9a`  
+**Status:** Draft PR [#47](https://github.com/ajangi/Mahin/pull/47) — review round 2 addressed; CI green at `e8622ff`  
 **Next milestone:** **M18b** only
 
 ## Commands and results
@@ -13,7 +13,7 @@ npx @redocly/cli@1.34.2 lint openapi/openapi.yaml --config redocly.yaml
 cd android && ./gradlew lintDebug ktlintCheck detekt test :app:verifyRoborazziDebug
 ```
 
-**GitHub Actions:** see final head SHA at bottom of this file after push.
+**GitHub Actions (PR #47, head `f4dad9a40ab69ecf58252001c8cc6785d3df995c`):** admin, android, backend, design-tokens, openapi — all pass (run [38726921974](https://github.com/ajangi/Mahin/actions/runs/38726921974)).
 
 ## Implemented scope
 
