@@ -1,10 +1,10 @@
 # M18a Handoff — Pregnancy companion CMS + Android timeline/tools/checklist
 
 **Milestone:** M18a  
-**Status:** Draft PR [#47](https://github.com/ajangi/Mahin/pull/47) — review round 2 addressed; CI green at `e8622ff`  
+**Status:** **accepted** — squash-merged to `master` as `cf6bc27` on **2026-10-17** ([PR #47](https://github.com/ajangi/Mahin/pull/47))  
 **Next milestone:** **M18b** only
 
-## Commands and results
+## Commands and results (pre-merge)
 
 ```bash
 cd backend && ./gradlew ktlintCheck detekt test --rerun-tasks
@@ -13,7 +13,7 @@ npx @redocly/cli@1.34.2 lint openapi/openapi.yaml --config redocly.yaml
 cd android && ./gradlew lintDebug ktlintCheck detekt test :app:verifyRoborazziDebug
 ```
 
-**GitHub Actions (PR #47, head `f4dad9a40ab69ecf58252001c8cc6785d3df995c`):** admin, android, backend, design-tokens, openapi — all pass (run [38726921974](https://github.com/ajangi/Mahin/actions/runs/38726921974)).
+**GitHub Actions (PR #47, final head `f157d83e5331cdd8d9b5ab021a36a371e017288c`):** admin, android, backend, design-tokens, openapi — all pass (run [38734624820](https://github.com/ajangi/Mahin/actions/runs/38734624820)).
 
 ## Implemented scope
 
@@ -29,7 +29,12 @@ cd android && ./gradlew lintDebug ktlintCheck detekt test :app:verifyRoborazziDe
 | Week-by-week | `CmsMahinIllustrationSource` via `LearnIllustrationViewModel`; network failure does not cache empty week |
 | Tools hub | `PregnancyToolsViewModel` + injected `LocalDateClock` (no persistence) |
 | Checklist | Local add/rename/delete + toggle |
-| Privacy | Checklist excluded from export; **no production checklist code enqueues `SyncOutbox`** — privacy test asserts outbox table stays empty after local mutations (real isolation is export exclusion + no sync wiring) |
+| Day editor | Stale `loadDay` race fix (generation token); `DayEditorStaleLoadRaceTest` — shipped as M16 flaky-test follow-up in this milestone |
+| Privacy / export | Checklist excluded from export |
+
+## Privacy — SyncOutbox
+
+**No production M18a code writes to `SyncOutbox`.** The checklist privacy integration test only asserts the outbox table stays empty after local mutations; that is a **weak guarantee** (it would not catch a future bug that enqueued rows). The **real protection** today is **export exclusion** plus **no sync wiring** for checklist state.
 
 ## Migrations
 
@@ -40,19 +45,22 @@ cd android && ./gradlew lintDebug ktlintCheck detekt test :app:verifyRoborazziDe
 
 - `docs/adr/0023-m18a-pregnancy-companion-payloads.md`
 
-## Deferred to M18b
+## Deferred to M18b (milestone scope)
 
 - Pregnancy expense tracker, warning signs/BP, weight chart, kick/contraction polish
 - Expense/sync/export goldens and migrations
+
+## Deferred (engineering follow-ups)
+
+- **`awaitDailyLogOnMain`** — uses `withTimeout` + `yield` + `ShadowLooper` but does **not** advance virtual time; under some schedulers it can **hang indefinitely** instead of failing at 5s. Move Day Editor persistence tests to `runTest` + `MainDispatcherRule` / `uiState.first`.
+- **`LearnViewModelTest`** — intermittent timing flake on Robolectric release CI (pre-existing).
+- **Care schedule fetch** — Android N+1 pattern (list then per-document detail); batch or cache follow-up.
+- **`loadDay` errors** — if `loadDay` throws after `loading = true`, UI can retain stale fields without clearing `loading`.
 
 ## Clinical content required before launch
 
 - Real Iran-context care schedules and hospital-bag checklist copy (`placeholder: true` hidden in production).
 - Reviewed pregnancy week summaries and approved fetal-development illustrations.
-
-## Follow-ups (post-M18a)
-
-- Intermittent `LearnViewModelTest` timing under Robolectric release job (pre-existing; not introduced by M18a week illustration work) — track separately if release excludes are narrowed.
 
 ## Unresolved questions
 
