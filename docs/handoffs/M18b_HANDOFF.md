@@ -14,11 +14,11 @@ python3 scripts/check_design_tokens.py && python3 scripts/security_checklist.py
 cd android && ./gradlew lintDebug ktlintCheck detekt test :app:verifyRoborazziDebug
 ```
 
-**Git head:** `9daee79` (rebased onto `master` @ `7aee907` after M18a merge)
+**Git head:** `81b4adc` (on `master` @ `7aee907`)
 
 **Local (agent VM, 2026-10-16):** backend/admin/openapi/design-tokens scripts pass; Android `ktlintCheck`, `detekt`, `test`, `verifyRoborazziDebug` pass with `ANDROID_HOME=/tmp/android-sdk`.
 
-**CI:** pending on [PR #49](https://github.com/ajangi/Mahin/pull/49) after force-push to `master` base.
+**GitHub Actions (PR #49, head `81b4adc`):** admin, android, backend, design-tokens, openapi — all pass ([run 38978786470](https://github.com/ajangi/Mahin/actions/runs/38978786470)).
 
 ## Implemented scope
 
