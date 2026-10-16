@@ -73,7 +73,7 @@ class MahinShellNavigationTest {
                     }
                 }
             },
-            pregnancyHub = { onOpenHistory, onOpenCycleCalendar, _, _, _ ->
+            pregnancyHub = { onOpenHistory, onOpenCycleCalendar, _, _, _, _, _, _ ->
                 Column {
                     Box(Modifier.testTag("screen_pregnancy_hub"))
                     Button(onClick = onOpenHistory, modifier = Modifier.testTag("open_history_pregnancy")) {
@@ -87,6 +87,9 @@ class MahinShellNavigationTest {
             pregnancyWeekByWeek = { Box(Modifier.testTag("screen_pregnancy_week_by_week")) },
             pregnancyTools = { Box(Modifier.testTag("screen_pregnancy_tools")) },
             pregnancyChecklist = { Box(Modifier.testTag("screen_pregnancy_checklist")) },
+            pregnancyExpenses = { Box(Modifier.testTag("screen_pregnancy_expenses")) },
+            pregnancyWarningSigns = { Box(Modifier.testTag("screen_pregnancy_warning_signs")) },
+            pregnancyWeightChart = { Box(Modifier.testTag("screen_pregnancy_weight_chart")) },
             plan = {
                 var note by rememberSaveable { mutableStateOf("") }
                 Column {

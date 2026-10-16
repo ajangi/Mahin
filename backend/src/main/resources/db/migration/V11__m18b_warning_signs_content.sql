@@ -1,0 +1,1 @@
+-- M18b: warning_signs CMS type uses existing type_payload_json (bp thresholds + escalation copy).

@@ -63,7 +63,7 @@ internal fun MahinAppShellWithNavigationOverride(
 }
 
 @Composable
-@Suppress("LongParameterList")
+@Suppress("LongParameterList", "LongMethod")
 internal fun MahinAppShellContent(
     shellState: ShellNavigationState,
     navController: NavHostController,
@@ -123,6 +123,15 @@ internal fun MahinAppShellContent(
     val openPregnancyChecklist: () -> Unit = {
         navController.navigate(MahinTopLevelDestination.PREGNANCY_CHECKLIST_ROUTE) { launchSingleTop = true }
     }
+    val openPregnancyExpenses: () -> Unit = {
+        navController.navigate(MahinTopLevelDestination.PREGNANCY_EXPENSES_ROUTE) { launchSingleTop = true }
+    }
+    val openPregnancyWarningSigns: () -> Unit = {
+        navController.navigate(MahinTopLevelDestination.PREGNANCY_WARNING_SIGNS_ROUTE) { launchSingleTop = true }
+    }
+    val openPregnancyWeightChart: () -> Unit = {
+        navController.navigate(MahinTopLevelDestination.PREGNANCY_WEIGHT_CHART_ROUTE) { launchSingleTop = true }
+    }
 
     Box(modifier = modifier.fillMaxSize()) {
         MahinShellLayout(
@@ -142,6 +151,9 @@ internal fun MahinAppShellContent(
                     onOpenPregnancyWeekByWeek = openPregnancyWeekByWeek,
                     onOpenPregnancyTools = openPregnancyTools,
                     onOpenPregnancyChecklist = openPregnancyChecklist,
+                    onOpenPregnancyExpenses = openPregnancyExpenses,
+                    onOpenPregnancyWarningSigns = openPregnancyWarningSigns,
+                    onOpenPregnancyWeightChart = openPregnancyWeightChart,
                     screenOverrides = screenOverrides,
                 )
             },

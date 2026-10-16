@@ -21,3 +21,17 @@ class SystemInstantClock(
 ) : InstantClock {
     override fun now(): Instant = Instant.now(clock)
 }
+
+class FixedInstantClock(
+    private var fixed: Instant,
+) : InstantClock {
+    override fun now(): Instant = fixed
+
+    fun set(instant: Instant) {
+        fixed = instant
+    }
+
+    fun advanceMillis(millis: Long) {
+        fixed = fixed.plusMillis(millis)
+    }
+}

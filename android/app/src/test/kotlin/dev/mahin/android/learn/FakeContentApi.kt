@@ -107,6 +107,13 @@ class FakeContentApi : ContentApi {
     override suspend fun checklistTemplate(documentId: String): dev.mahin.core.content.ContentChecklistTemplateDto =
         error("unused")
 
+    override suspend fun warningSigns(locale: String): dev.mahin.core.content.ContentWarningSignsListResponseDto =
+        dev.mahin.core.content
+            .ContentWarningSignsListResponseDto(emptyList())
+
+    override suspend fun warningSignsDetail(documentId: String): dev.mahin.core.content.ContentWarningSignsDto =
+        error("unused")
+
     private fun ContentProgramDto.toSummary() =
         dev.mahin.core.content.ContentProgramSummaryDto(
             id = id,

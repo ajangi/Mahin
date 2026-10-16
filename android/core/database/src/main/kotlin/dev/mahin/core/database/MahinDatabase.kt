@@ -16,6 +16,7 @@ import dev.mahin.core.database.dao.PregnancyAppointmentDao
 import dev.mahin.core.database.dao.PregnancyChecklistDao
 import dev.mahin.core.database.dao.PregnancyDatingRevisionDao
 import dev.mahin.core.database.dao.PregnancyDayLogDao
+import dev.mahin.core.database.dao.PregnancyExpenseDao
 import dev.mahin.core.database.dao.PregnancyRecordDao
 import dev.mahin.core.database.dao.TtcDayLogDao
 import dev.mahin.core.database.dao.WellnessContentDao
@@ -37,6 +38,7 @@ import dev.mahin.core.database.entity.PregnancyAppointmentEntity
 import dev.mahin.core.database.entity.PregnancyChecklistItemEntity
 import dev.mahin.core.database.entity.PregnancyDatingRevisionEntity
 import dev.mahin.core.database.entity.PregnancyDayLogEntity
+import dev.mahin.core.database.entity.PregnancyExpenseEntity
 import dev.mahin.core.database.entity.PregnancyRecordEntity
 import dev.mahin.core.database.entity.ProgramSessionCompletionEntity
 import dev.mahin.core.database.entity.TtcDayLogEntity
@@ -54,6 +56,7 @@ import dev.mahin.core.database.entity.TtcDayLogEntity
         PregnancyDayLogEntity::class,
         PregnancyAppointmentEntity::class,
         PregnancyChecklistItemEntity::class,
+        PregnancyExpenseEntity::class,
         KickSessionEntity::class,
         KickEventEntity::class,
         ContractionSessionEntity::class,
@@ -93,6 +96,8 @@ abstract class MahinDatabase : RoomDatabase() {
 
     abstract fun pregnancyChecklistDao(): PregnancyChecklistDao
 
+    abstract fun pregnancyExpenseDao(): PregnancyExpenseDao
+
     abstract fun kickSessionDao(): KickSessionDao
 
     abstract fun kickEventDao(): KickEventDao
@@ -106,7 +111,7 @@ abstract class MahinDatabase : RoomDatabase() {
     abstract fun wellnessContentDao(): WellnessContentDao
 
     companion object {
-        const val VERSION: Int = 10
+        const val VERSION: Int = 11
         const val EXPORTS_SCHEMA: Boolean = true
     }
 }

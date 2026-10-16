@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.mahin.core.common.InstantClock
 import dev.mahin.core.common.LocalDateClock
 import dev.mahin.core.content.ContentRepository
 import dev.mahin.core.database.entity.PregnancyRecordEntity
@@ -53,6 +54,7 @@ class PregnancyHubViewModel
         private val timerPreferences: PregnancyTimerPreferencesRepository,
         private val contentRepository: ContentRepository,
         private val localDateClock: LocalDateClock,
+        private val instantClock: InstantClock,
         savedStateHandle: SavedStateHandle,
     ) : ViewModel() {
         private var lastFetchedWeek: Int? = null
@@ -227,15 +229,14 @@ class PregnancyHubViewModel
             tickerJob =
                 viewModelScope.launch {
                     while (isActive) {
-                        val now = System.currentTimeMillis()
+                        val now = instantClock.now().toEpochMilli()
                         val kickElapsed =
-                            kickTimer.startedAtEpochMs?.let { start ->
-                                ((now - start) / 1000L).coerceAtLeast(0L)
-                            } ?: 0L
+                            PregnancyHubTimerMath.elapsedSeconds(now, kickTimer.startedAtEpochMs)
                         val contractionElapsed =
-                            contractionTimer.openEventStartedEpochMs?.let { start ->
-                                ((now - start) / 1000L).coerceAtLeast(0L)
-                            } ?: 0L
+                            PregnancyHubTimerMath.elapsedSeconds(
+                                now,
+                                contractionTimer.openEventStartedEpochMs,
+                            )
                         _uiState.update {
                             it.copy(
                                 kickElapsedSeconds = kickElapsed,

@@ -83,6 +83,16 @@ interface ContentApi {
     suspend fun checklistTemplate(
         @Path("documentId") documentId: String,
     ): ContentChecklistTemplateDto
+
+    @GET("v1/content/warning-signs")
+    suspend fun warningSigns(
+        @Query("locale") locale: String = "fa-IR",
+    ): ContentWarningSignsListResponseDto
+
+    @GET("v1/content/warning-signs/{documentId}")
+    suspend fun warningSignsDetail(
+        @Path("documentId") documentId: String,
+    ): ContentWarningSignsDto
 }
 
 @Serializable

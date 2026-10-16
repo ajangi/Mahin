@@ -17,10 +17,13 @@ import dev.mahin.android.insights.CycleInsightsScreen
 import dev.mahin.android.learn.LearnScreen
 import dev.mahin.android.navigation.MahinTopLevelDestination
 import dev.mahin.android.pregnancy.PregnancyChecklistScreen
+import dev.mahin.android.pregnancy.PregnancyExpensesScreen
 import dev.mahin.android.pregnancy.PregnancyHubScreen
 import dev.mahin.android.pregnancy.PregnancyPlanScreen
 import dev.mahin.android.pregnancy.PregnancyToolsScreen
+import dev.mahin.android.pregnancy.PregnancyWarningSignsScreen
 import dev.mahin.android.pregnancy.PregnancyWeekByWeekScreen
+import dev.mahin.android.pregnancy.PregnancyWeightChartScreen
 import dev.mahin.android.settings.SettingsScreen
 import dev.mahin.android.ttc.TtcInsightsScreen
 import dev.mahin.core.designsystem.MahinMotionDuration
@@ -64,6 +67,9 @@ internal fun MahinShellNavHost(
     onOpenPregnancyWeekByWeek: () -> Unit = {},
     onOpenPregnancyTools: () -> Unit = {},
     onOpenPregnancyChecklist: () -> Unit = {},
+    onOpenPregnancyExpenses: () -> Unit = {},
+    onOpenPregnancyWarningSigns: () -> Unit = {},
+    onOpenPregnancyWeightChart: () -> Unit = {},
     screenOverrides: MahinShellScreenOverrides = MahinShellScreenOverrides.Default,
 ) {
     val fadeMs = mahinMotionDurationMs(MahinMotionDuration.FAST_MS)
@@ -104,6 +110,9 @@ internal fun MahinShellNavHost(
                 onOpenPregnancyWeekByWeek,
                 onOpenPregnancyTools,
                 onOpenPregnancyChecklist,
+                onOpenPregnancyExpenses,
+                onOpenPregnancyWarningSigns,
+                onOpenPregnancyWeightChart,
             )
         }
         composable(MahinTopLevelDestination.Plan.route) { screenOverrides.plan() }
@@ -115,6 +124,15 @@ internal fun MahinShellNavHost(
         }
         composable(MahinTopLevelDestination.PREGNANCY_CHECKLIST_ROUTE) {
             screenOverrides.pregnancyChecklist()
+        }
+        composable(MahinTopLevelDestination.PREGNANCY_EXPENSES_ROUTE) {
+            screenOverrides.pregnancyExpenses()
+        }
+        composable(MahinTopLevelDestination.PREGNANCY_WARNING_SIGNS_ROUTE) {
+            screenOverrides.pregnancyWarningSigns()
+        }
+        composable(MahinTopLevelDestination.PREGNANCY_WEIGHT_CHART_ROUTE) {
+            screenOverrides.pregnancyWeightChart()
         }
         composable(MahinTopLevelDestination.Learn.route) { screenOverrides.learn() }
         composable(MahinTopLevelDestination.HISTORY_ROUTE) { screenOverrides.history() }
@@ -151,11 +169,17 @@ data class MahinShellScreenOverrides(
         onOpenWeekByWeek: () -> Unit,
         onOpenTools: () -> Unit,
         onOpenChecklist: () -> Unit,
+        onOpenExpenses: () -> Unit,
+        onOpenWarningSigns: () -> Unit,
+        onOpenWeightChart: () -> Unit,
     ) -> Unit,
     val plan: @Composable () -> Unit,
     val pregnancyWeekByWeek: @Composable () -> Unit,
     val pregnancyTools: @Composable () -> Unit,
     val pregnancyChecklist: @Composable () -> Unit,
+    val pregnancyExpenses: @Composable () -> Unit,
+    val pregnancyWarningSigns: @Composable () -> Unit,
+    val pregnancyWeightChart: @Composable () -> Unit,
     val learn: @Composable () -> Unit,
     val history: @Composable () -> Unit,
     val settings: @Composable (
@@ -193,19 +217,34 @@ data class MahinShellScreenOverrides(
                 log = { LogScreen() },
                 cycleInsights = { onOpenHistory -> CycleInsightsScreen(onOpenHistory = onOpenHistory) },
                 ttcInsights = { onOpenHistory -> TtcInsightsScreen(onOpenHistory = onOpenHistory) },
-                pregnancyHub = { onOpenHistory, onOpenCycleCalendar, onOpenWeekByWeek, onOpenTools, onOpenChecklist ->
+                pregnancyHub = {
+                    onOpenHistory,
+                    onOpenCycleCalendar,
+                    onOpenWeekByWeek,
+                    onOpenTools,
+                    onOpenChecklist,
+                    onOpenExpenses,
+                    onOpenWarningSigns,
+                    onOpenWeightChart,
+                    ->
                     PregnancyHubScreen(
                         onOpenHistory = onOpenHistory,
                         onOpenCycleCalendar = onOpenCycleCalendar,
                         onOpenWeekByWeek = onOpenWeekByWeek,
                         onOpenTools = onOpenTools,
                         onOpenChecklist = onOpenChecklist,
+                        onOpenExpenses = onOpenExpenses,
+                        onOpenWarningSigns = onOpenWarningSigns,
+                        onOpenWeightChart = onOpenWeightChart,
                     )
                 },
                 plan = { PregnancyPlanScreen() },
                 pregnancyWeekByWeek = { PregnancyWeekByWeekScreen() },
                 pregnancyTools = { PregnancyToolsScreen() },
                 pregnancyChecklist = { PregnancyChecklistScreen() },
+                pregnancyExpenses = { PregnancyExpensesScreen() },
+                pregnancyWarningSigns = { PregnancyWarningSignsScreen() },
+                pregnancyWeightChart = { PregnancyWeightChartScreen() },
                 learn = { LearnScreen() },
                 history = { HistoryScreen() },
                 settings = { onNavigateUp, onOpenHistory, onLocalDataErased ->

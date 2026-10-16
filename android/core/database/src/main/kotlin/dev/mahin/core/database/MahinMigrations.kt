@@ -369,3 +369,25 @@ val MIGRATION_9_10 =
             )
         }
     }
+
+val MIGRATION_10_11 =
+    object : Migration(10, 11) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS pregnancy_expense (
+                    id TEXT NOT NULL PRIMARY KEY,
+                    category TEXT NOT NULL,
+                    amountMinor INTEGER NOT NULL,
+                    currencyUnit TEXT NOT NULL,
+                    expenseDate TEXT NOT NULL,
+                    note TEXT,
+                    updatedAtEpochMs INTEGER NOT NULL
+                )
+                """.trimIndent(),
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS index_pregnancy_expense_expenseDate ON pregnancy_expense(expenseDate)",
+            )
+        }
+    }

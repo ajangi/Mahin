@@ -288,7 +288,7 @@ paths:
       summary: Search published educational articles (Persian-normalized server-side)
       description: >
         Excludes wellness-only and pregnancy companion content types; use `/v1/content/care-schedules`,
-        `/v1/content/checklist-templates`, and `/v1/content/pregnancy/weeks` for those catalogs.
+        `/v1/content/checklist-templates`, `/v1/content/warning-signs`, and `/v1/content/pregnancy/weeks` for those catalogs.
       parameters:
         - name: q
           in: query
@@ -797,6 +797,78 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ContentChecklistTemplate"
+        "404":
+          description: Not published or unknown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/content/warning-signs:
+    get:
+      tags: [Content]
+      operationId: listWarningSigns
+      summary: List published pregnancy warning-sign cards (reviewed thresholds + escalation copy)
+      parameters:
+        - name: locale
+          in: query
+          schema:
+            type: string
+            default: fa-IR
+      responses:
+        "200":
+          description: Published warning-sign documents
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentWarningSignsListResponse"
+  /v1/content/warning-signs/{documentId}:
+    get:
+      tags: [Content]
+      operationId: getWarningSigns
+      summary: Fetch a published warning-sign card
+      parameters:
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Published warning-sign card
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentWarningSigns"
+        "404":
+          description: Not published or unknown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /v1/content/warning-signs/by-slug/{slug}:
+    get:
+      tags: [Content]
+      operationId: getWarningSignsBySlug
+      summary: Fetch a published warning-sign card by slug and locale
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: locale
+          in: query
+          schema:
+            type: string
+            default: fa-IR
+      responses:
+        "200":
+          description: Published warning-sign card
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContentWarningSigns"
         "404":
           description: Not published or unknown
           content:
@@ -2499,6 +2571,109 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ContentChecklistTemplateSummary"
+    ContentWarningSignsSummary:
+      type: object
+      required: [id, slug, locale, title, placeholder]
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        locale:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+          nullable: true
+        placeholder:
+          type: boolean
+    PregnancyBpThresholds:
+      type: object
+      required: [elevatedSystolic, elevatedDiastolic, urgentSystolic, urgentDiastolic]
+      properties:
+        elevatedSystolic:
+          type: integer
+        elevatedDiastolic:
+          type: integer
+        urgentSystolic:
+          type: integer
+        urgentDiastolic:
+          type: integer
+    WarningSignItem:
+      type: object
+      required: [id, title, summary]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+    ContentWarningSigns:
+      allOf:
+        - $ref: "#/components/schemas/ContentWarningSignsSummary"
+        - type: object
+          required:
+            - contentVersion
+            - medicalRiskLevel
+            - introTitle
+            - introBody
+            - signs
+            - escalationTitle
+            - escalationBody
+            - contactClinicianLabel
+            - bpThresholds
+          properties:
+            medicalRiskLevel:
+              type: string
+              enum: [none, general_education, contact_clinician, urgent]
+            contentVersion:
+              type: integer
+            sourceReferences:
+              type: array
+              items:
+                type: string
+            clinicalReviewer:
+              type: string
+              nullable: true
+            clinicalReviewedAt:
+              type: string
+              format: date-time
+              nullable: true
+            effectiveFrom:
+              type: string
+              format: date-time
+              nullable: true
+            effectiveTo:
+              type: string
+              format: date-time
+              nullable: true
+            introTitle:
+              type: string
+            introBody:
+              type: string
+            signs:
+              type: array
+              items:
+                $ref: "#/components/schemas/WarningSignItem"
+            escalationTitle:
+              type: string
+            escalationBody:
+              type: string
+            contactClinicianLabel:
+              type: string
+            bpThresholds:
+              $ref: "#/components/schemas/PregnancyBpThresholds"
+    ContentWarningSignsListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentWarningSignsSummary"
     ErrorResponse:
       type: object
       required: [code, message, requestId]

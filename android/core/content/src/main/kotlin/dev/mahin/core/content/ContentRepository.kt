@@ -160,6 +160,15 @@ class ContentRepository
                 runCatching { api.checklistTemplate(summary.id) }.getOrNull()
             }
 
+        suspend fun warningSignsCard(): ContentWarningSignsDto? =
+            withContext(Dispatchers.IO) {
+                awaitCatalogSync()
+                val summary =
+                    runCatching { api.warningSigns(locale = "fa-IR").items.firstOrNull() }
+                        .getOrNull() ?: return@withContext null
+                runCatching { api.warningSignsDetail(summary.id) }.getOrNull()
+            }
+
         suspend fun mediaAsset(assetId: String): MediaAssetDto? =
             withContext(Dispatchers.IO) {
                 mediaMemoryCache.get(assetId)?.let { return@withContext it }

@@ -15,6 +15,9 @@ fun PregnancyHubScreen(
     onOpenWeekByWeek: (() -> Unit)? = null,
     onOpenTools: (() -> Unit)? = null,
     onOpenChecklist: (() -> Unit)? = null,
+    onOpenExpenses: (() -> Unit)? = null,
+    onOpenWarningSigns: (() -> Unit)? = null,
+    onOpenWeightChart: (() -> Unit)? = null,
     viewModel: PregnancyHubViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -43,6 +46,9 @@ fun PregnancyHubScreen(
         onOpenWeekByWeek = onOpenWeekByWeek,
         onOpenTools = onOpenTools,
         onOpenChecklist = onOpenChecklist,
+        onOpenExpenses = onOpenExpenses,
+        onOpenWarningSigns = onOpenWarningSigns,
+        onOpenWeightChart = onOpenWeightChart,
         actions =
             PregnancyHubActions(
                 onStartKickSession = viewModel::startKickSession,

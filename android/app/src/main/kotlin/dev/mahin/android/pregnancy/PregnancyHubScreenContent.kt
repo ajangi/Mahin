@@ -74,6 +74,9 @@ fun PregnancyHubScreenContent(
     onOpenWeekByWeek: (() -> Unit)? = null,
     onOpenTools: (() -> Unit)? = null,
     onOpenChecklist: (() -> Unit)? = null,
+    onOpenExpenses: (() -> Unit)? = null,
+    onOpenWarningSigns: (() -> Unit)? = null,
+    onOpenWeightChart: (() -> Unit)? = null,
 ) {
     when {
         state.isLoading -> {
@@ -108,6 +111,9 @@ fun PregnancyHubScreenContent(
                 onOpenWeekByWeek = onOpenWeekByWeek,
                 onOpenTools = onOpenTools,
                 onOpenChecklist = onOpenChecklist,
+                onOpenExpenses = onOpenExpenses,
+                onOpenWarningSigns = onOpenWarningSigns,
+                onOpenWeightChart = onOpenWeightChart,
             )
         }
     }
@@ -124,6 +130,9 @@ private fun ActivePregnancyHub(
     onOpenWeekByWeek: (() -> Unit)? = null,
     onOpenTools: (() -> Unit)? = null,
     onOpenChecklist: (() -> Unit)? = null,
+    onOpenExpenses: (() -> Unit)? = null,
+    onOpenWarningSigns: (() -> Unit)? = null,
+    onOpenWeightChart: (() -> Unit)? = null,
 ) {
     val status = state.status ?: return
     val disclaimer = stringResource(R.string.pregnancy_hub_safety_disclaimer)
@@ -159,6 +168,9 @@ private fun ActivePregnancyHub(
                 onOpenWeekByWeek = onOpenWeekByWeek,
                 onOpenTools = onOpenTools,
                 onOpenChecklist = onOpenChecklist,
+                onOpenExpenses = onOpenExpenses,
+                onOpenWarningSigns = onOpenWarningSigns,
+                onOpenWeightChart = onOpenWeightChart,
             )
         }
         item {
@@ -232,10 +244,14 @@ private fun PregnancyStatusCard(status: PregnancyStatusSnapshot) {
 }
 
 @Composable
+@Suppress("LongParameterList")
 private fun PregnancyCompanionToolsCard(
     onOpenWeekByWeek: (() -> Unit)?,
     onOpenTools: (() -> Unit)?,
     onOpenChecklist: (() -> Unit)?,
+    onOpenExpenses: (() -> Unit)?,
+    onOpenWarningSigns: (() -> Unit)?,
+    onOpenWeightChart: (() -> Unit)?,
 ) {
     Card(modifier = Modifier.fillMaxWidth().testTag("pregnancy_tools_hub_card")) {
         Column(modifier = Modifier.padding(MahinSpacing.md)) {
@@ -260,6 +276,27 @@ private fun PregnancyCompanionToolsCard(
             onOpenChecklist?.let {
                 MahinPrimaryButton(
                     text = stringResource(R.string.pregnancy_checklist_title),
+                    onClick = it,
+                    modifier = Modifier.padding(top = MahinSpacing.xs),
+                )
+            }
+            onOpenExpenses?.let {
+                MahinPrimaryButton(
+                    text = stringResource(R.string.pregnancy_expenses_title),
+                    onClick = it,
+                    modifier = Modifier.padding(top = MahinSpacing.xs),
+                )
+            }
+            onOpenWarningSigns?.let {
+                MahinPrimaryButton(
+                    text = stringResource(R.string.pregnancy_warning_signs_title),
+                    onClick = it,
+                    modifier = Modifier.padding(top = MahinSpacing.xs),
+                )
+            }
+            onOpenWeightChart?.let {
+                MahinPrimaryButton(
+                    text = stringResource(R.string.pregnancy_weight_chart_title),
                     onClick = it,
                     modifier = Modifier.padding(top = MahinSpacing.xs),
                 )
@@ -320,13 +357,21 @@ private fun KickCounterSection(
     state: PregnancyHubContentState,
     actions: PregnancyHubActions,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth().testTag("pregnancy_kick_counter_card")) {
         Column(modifier = Modifier.padding(MahinSpacing.md)) {
             Text(
                 text = stringResource(R.string.pregnancy_kick_section_title),
                 style = mahinTextStyle(MahinTypographyRole.Label),
             )
             if (state.kickSessionActive) {
+                Text(
+                    text =
+                        stringResource(
+                            R.string.pregnancy_kick_elapsed,
+                            PregnancyFormatters.formatDurationSeconds(state.kickElapsedSeconds),
+                        ),
+                    style = mahinTextStyle(MahinTypographyRole.NumericDisplay),
+                )
                 Text(
                     text =
                         stringResource(
@@ -365,7 +410,7 @@ private fun ContractionTimerSection(
     state: PregnancyHubContentState,
     actions: PregnancyHubActions,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(modifier = Modifier.fillMaxWidth().testTag("pregnancy_contraction_timer_card")) {
         Column(modifier = Modifier.padding(MahinSpacing.md)) {
             Text(
                 text = stringResource(R.string.pregnancy_contraction_section_title),

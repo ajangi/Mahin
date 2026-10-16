@@ -365,6 +365,47 @@ class MahinDatabaseMigrationTest {
         migrated.close()
     }
 
+    @Test
+    fun migrate10To11_addsPregnancyExpenseTable() {
+        helper.createDatabase(TEST_DB, 10).close()
+        val migrated =
+            helper.runMigrationsAndValidate(
+                TEST_DB,
+                11,
+                true,
+                MIGRATION_1_2,
+                MIGRATION_2_3,
+                MIGRATION_3_4,
+                MIGRATION_4_5,
+                MIGRATION_5_6,
+                MIGRATION_6_7,
+                MIGRATION_7_8,
+                MIGRATION_8_9,
+                MIGRATION_9_10,
+                MIGRATION_10_11,
+            )
+        migrated
+            .query(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='pregnancy_expense'",
+            ).use { cursor ->
+                assertThat(cursor.moveToFirst()).isTrue()
+            }
+        migrated.execSQL(
+            """
+            INSERT INTO pregnancy_expense
+            (id, category, amountMinor, currencyUnit, expenseDate, note, updatedAtEpochMs)
+            VALUES ('exp-1', 'tests_imaging', 250000, 'toman', '2025-06-01', NULL, 1)
+            """.trimIndent(),
+        )
+        migrated
+            .query("SELECT amountMinor FROM pregnancy_expense WHERE id = 'exp-1'")
+            .use { cursor ->
+                assertThat(cursor.moveToFirst()).isTrue()
+                assertThat(cursor.getLong(0)).isEqualTo(250_000L)
+            }
+        migrated.close()
+    }
+
     private companion object {
         const val TEST_DB = "migration-test"
     }

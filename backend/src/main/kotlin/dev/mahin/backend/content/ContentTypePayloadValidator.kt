@@ -46,6 +46,8 @@ object ContentTypePayloadValidator {
                 validateCareSchedule(ContentTypePayloadCodec.parseCareSchedule(mapper, typePayloadJson)!!)
             contentType == ContentTypes.CHECKLIST_TEMPLATE ->
                 validateChecklistTemplate(ContentTypePayloadCodec.parseChecklistTemplate(mapper, typePayloadJson)!!)
+            contentType == ContentTypes.WARNING_SIGNS ->
+                validateWarningSigns(ContentTypePayloadCodec.parseWarningSigns(mapper, typePayloadJson)!!)
         }
         validatePayloadSize(typePayloadJson)
     }
@@ -72,6 +74,10 @@ object ContentTypePayloadValidator {
                     ContentTypes.CHECKLIST_TEMPLATE ->
                         validateChecklistTemplate(
                             ContentTypePayloadCodec.parseChecklistTemplate(mapper, typePayloadJson)!!,
+                        )
+                    ContentTypes.WARNING_SIGNS ->
+                        validateWarningSigns(
+                            ContentTypePayloadCodec.parseWarningSigns(mapper, typePayloadJson)!!,
                         )
                     else -> reject("unsupported_content_type")
                 }
@@ -197,6 +203,43 @@ object ContentTypePayloadValidator {
             item.description?.let { validateStringLength(it) }
             item.appointmentTypeHint?.let { validateStringLength(it) }
             validateStringLength(item.title)
+        }
+    }
+
+    private fun validateWarningSigns(payload: WarningSignsPayload) {
+        validateStringLength(payload.introTitle)
+        validateStringLength(payload.introBody)
+        validateStringLength(payload.escalationTitle)
+        validateStringLength(payload.escalationBody)
+        validateStringLength(payload.contactClinicianLabel)
+        if (payload.signs.isEmpty()) {
+            reject("warning_signs_required")
+        }
+        payload.signs.forEach { sign ->
+            if (sign.id.isBlank() || sign.title.isBlank() || sign.summary.isBlank()) {
+                reject("warning_sign_fields_required")
+            }
+            validateStringLength(sign.title)
+            validateStringLength(sign.summary)
+        }
+        validateBpThresholds(payload.bpThresholds)
+    }
+
+    private fun validateBpThresholds(thresholds: PregnancyBpThresholdsPayload) {
+        listOf(
+            thresholds.elevatedSystolic,
+            thresholds.elevatedDiastolic,
+            thresholds.urgentSystolic,
+            thresholds.urgentDiastolic,
+        ).forEach { value ->
+            if (value !in 40..250) {
+                reject("invalid_bp_threshold")
+            }
+        }
+        if (thresholds.elevatedSystolic > thresholds.urgentSystolic ||
+            thresholds.elevatedDiastolic > thresholds.urgentDiastolic
+        ) {
+            reject("invalid_bp_threshold_order")
         }
     }
 
