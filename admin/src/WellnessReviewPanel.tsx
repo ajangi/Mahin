@@ -46,6 +46,23 @@ export function WellnessReviewPanel({ version }: { version: ReviewVersion | null
           </pre>
         </div>
       )}
+      {version.contentType === "care_schedule" && (
+        <div>
+          <h4>زمان‌بندی مراقبت</h4>
+          <p>منطقه: {String((payload as { regionContext?: string }).regionContext ?? "—")}</p>
+          <pre>{JSON.stringify((payload as { items?: unknown }).items ?? [], null, 2)}</pre>
+        </div>
+      )}
+      {version.contentType === "checklist_template" && (
+        <div>
+          <h4>چک‌لیست</h4>
+          <p>نوع: {String((payload as { checklistKind?: string }).checklistKind ?? "—")}</p>
+          <h5>بخش‌ها</h5>
+          <pre>{JSON.stringify((payload as { sections?: unknown }).sections ?? [], null, 2)}</pre>
+          <h5>ردیف‌ها</h5>
+          <pre>{JSON.stringify((payload as { items?: unknown }).items ?? [], null, 2)}</pre>
+        </div>
+      )}
     </section>
   );
 }

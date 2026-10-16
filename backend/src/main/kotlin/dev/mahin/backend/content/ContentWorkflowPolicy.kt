@@ -39,7 +39,11 @@ object ContentWorkflowPolicy {
         contentType: String,
         risk: MedicalRiskLevel,
     ): Boolean {
-        if (contentType == ContentTypes.PROGRAM || contentType == ContentTypes.DAILY_TIP) {
+        if (
+            contentType == ContentTypes.PROGRAM ||
+            contentType == ContentTypes.DAILY_TIP ||
+            ContentTypes.isPregnancyCompanionType(contentType)
+        ) {
             return true
         }
         return risk != MedicalRiskLevel.NONE
@@ -49,10 +53,11 @@ object ContentWorkflowPolicy {
         contentType: String,
         risk: MedicalRiskLevel,
     ) {
-        if (
-            (contentType == ContentTypes.PROGRAM || contentType == ContentTypes.DAILY_TIP) &&
-            risk == MedicalRiskLevel.NONE
-        ) {
+        val requiresClinicalRisk =
+            contentType == ContentTypes.PROGRAM ||
+                contentType == ContentTypes.DAILY_TIP ||
+                ContentTypes.isPregnancyCompanionType(contentType)
+        if (requiresClinicalRisk && risk == MedicalRiskLevel.NONE) {
             throw org.springframework.web.server.ResponseStatusException(
                 org.springframework.http.HttpStatus.BAD_REQUEST,
                 "wellness_requires_clinical_review",

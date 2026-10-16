@@ -8,6 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import retrofit2.HttpException
 
 @Singleton
 class ContentRepository
@@ -37,10 +38,33 @@ class ContentRepository
                     .getOrElse { localStore.cachedArticle(documentId) }
             }
 
+        sealed interface PregnancyWeekFetch {
+            data class Loaded(
+                val article: ContentArticleDto?,
+            ) : PregnancyWeekFetch
+
+            data object NetworkError : PregnancyWeekFetch
+        }
+
         suspend fun pregnancyWeek(week: Int): ContentArticleDto? =
+            when (val result = pregnancyWeekFetch(week)) {
+                is PregnancyWeekFetch.Loaded -> result.article
+                is PregnancyWeekFetch.NetworkError -> null
+            }
+
+        suspend fun pregnancyWeekFetch(week: Int): PregnancyWeekFetch =
             withContext(Dispatchers.IO) {
                 awaitCatalogSync()
-                runCatching { api.pregnancyWeek(week) }.getOrNull()
+                runCatching { api.pregnancyWeek(week) }.fold(
+                    onSuccess = { PregnancyWeekFetch.Loaded(it) },
+                    onFailure = { error ->
+                        if (error is HttpException && error.code() == 404) {
+                            PregnancyWeekFetch.Loaded(null)
+                        } else {
+                            PregnancyWeekFetch.NetworkError
+                        }
+                    },
+                )
             }
 
         override suspend fun fetchDailyTips(key: DailyTipTargetingKey): DailyTipFetchResult =
@@ -112,6 +136,28 @@ class ContentRepository
             withContext(Dispatchers.IO) {
                 awaitCatalogSync()
                 runCatching { api.collection(documentId) }.getOrNull()
+            }
+
+        suspend fun careSchedules(gestationalWeek: Int? = null): List<ContentCareScheduleDto> =
+            withContext(Dispatchers.IO) {
+                awaitCatalogSync()
+                val summaries =
+                    runCatching {
+                        api.careSchedules(locale = "fa-IR", gestationalWeek = gestationalWeek).items
+                    }.getOrElse { emptyList() }
+                summaries.mapNotNull { summary ->
+                    runCatching { api.careSchedule(summary.id) }.getOrNull()
+                }
+            }
+
+        suspend fun checklistTemplate(kind: String = "hospital_bag"): ContentChecklistTemplateDto? =
+            withContext(Dispatchers.IO) {
+                awaitCatalogSync()
+                val summary =
+                    runCatching {
+                        api.checklistTemplates(locale = "fa-IR", checklistKind = kind).items.firstOrNull()
+                    }.getOrNull() ?: return@withContext null
+                runCatching { api.checklistTemplate(summary.id) }.getOrNull()
             }
 
         suspend fun mediaAsset(assetId: String): MediaAssetDto? =

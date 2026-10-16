@@ -24,6 +24,7 @@ class DayEditorPainNotePersistenceTest {
         viewModel = harness.createViewModel()
         runBlocking {
             viewModel.openDate(day)
+            awaitDailyLogOnMain { viewModel.uiState.value.date == day }
             viewModel.setPain(PainLocation.HEAD, 5)
             awaitDailyLogOnMain { viewModel.uiState.value.painSeverity == 5 }
         }

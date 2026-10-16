@@ -1,5 +1,6 @@
 package dev.mahin.android.cycle.editor
 
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -136,6 +137,10 @@ class DayEditorViewModel
 
         private var lastUndo: UndoSnapshot? = null
         private val saveMutex = Mutex()
+        private var dayLoadGeneration = 0L
+
+        @VisibleForTesting
+        internal var beforeApplyDayStateHook: (suspend () -> Unit)? = null
 
         init {
             viewModelScope.launch {
@@ -215,8 +220,8 @@ class DayEditorViewModel
         }
 
         fun openDate(date: LocalDate) {
+            _uiState.update { it.copy(date = date, loading = true) }
             viewModelScope.launch {
-                _uiState.update { it.copy(date = date, loading = true) }
                 loadDay(date)
             }
         }
@@ -706,6 +711,7 @@ class DayEditorViewModel
         }
 
         private suspend fun loadDay(date: LocalDate) {
+            val generation = ++dayLoadGeneration
             val periodDay = cycleRepository.getPeriodDayForDate(date)
             val daily = cycleRepository.getDailyLogForDate(date)
             val ttc = ttcRepository.getTtcLogForDate(date)
@@ -726,7 +732,11 @@ class DayEditorViewModel
             val bpDia = pregnancyDay?.bpDiastolic?.toString() ?: ""
             val usageCounts = computeCategoryUsageCounts(date)
             val bbtInput = ttc?.bbtCelsius?.toString() ?: ""
+            beforeApplyDayStateHook?.invoke()
             _uiState.update { state ->
+                if (state.date != date || generation != dayLoadGeneration) {
+                    return@update state
+                }
                 val withFields =
                     state.copy(
                         loading = false,

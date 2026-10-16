@@ -63,3 +63,4 @@ Thumbs.db
 **/test-results/
 **/reports/
 !docs/**/reports/
+android-sdk/

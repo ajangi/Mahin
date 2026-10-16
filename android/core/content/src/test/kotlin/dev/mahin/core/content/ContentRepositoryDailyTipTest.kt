@@ -123,5 +123,19 @@ class ContentRepositoryDailyTipTest {
         override suspend fun collection(documentId: String): ContentCollectionDto = error("unused")
 
         override suspend fun mediaAsset(assetId: String): MediaAssetDto = error("unused")
+
+        override suspend fun careSchedules(
+            locale: String,
+            gestationalWeek: Int?,
+        ): ContentCareScheduleListResponseDto = ContentCareScheduleListResponseDto(emptyList())
+
+        override suspend fun careSchedule(documentId: String): ContentCareScheduleDto = error("unused")
+
+        override suspend fun checklistTemplates(
+            locale: String,
+            checklistKind: String?,
+        ): ContentChecklistTemplateListResponseDto = ContentChecklistTemplateListResponseDto(emptyList())
+
+        override suspend fun checklistTemplate(documentId: String): ContentChecklistTemplateDto = error("unused")
     }
 }

@@ -215,7 +215,15 @@ export function ContentPanel({
             انتشار نمونهٔ مقاله (غیرپزشکی)
           </button>
           <div className="token-row">
-            {(["daily_tip", "program", "collection"] as WellnessContentKind[]).map((kind) => (
+            {(
+              [
+                "daily_tip",
+                "program",
+                "collection",
+                "care_schedule",
+                "checklist_template",
+              ] as WellnessContentKind[]
+            ).map((kind) => (
               <button
                 key={kind}
                 type="button"

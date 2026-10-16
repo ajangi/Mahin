@@ -61,6 +61,28 @@ interface ContentApi {
     suspend fun mediaAsset(
         @Path("assetId") assetId: String,
     ): MediaAssetDto
+
+    @GET("v1/content/care-schedules")
+    suspend fun careSchedules(
+        @Query("locale") locale: String = "fa-IR",
+        @Query("gestationalWeek") gestationalWeek: Int? = null,
+    ): ContentCareScheduleListResponseDto
+
+    @GET("v1/content/care-schedules/{documentId}")
+    suspend fun careSchedule(
+        @Path("documentId") documentId: String,
+    ): ContentCareScheduleDto
+
+    @GET("v1/content/checklist-templates")
+    suspend fun checklistTemplates(
+        @Query("locale") locale: String = "fa-IR",
+        @Query("checklistKind") checklistKind: String? = "hospital_bag",
+    ): ContentChecklistTemplateListResponseDto
+
+    @GET("v1/content/checklist-templates/{documentId}")
+    suspend fun checklistTemplate(
+        @Path("documentId") documentId: String,
+    ): ContentChecklistTemplateDto
 }
 
 @Serializable
@@ -102,4 +124,10 @@ data class ContentArticleDto(
     val sourceReferences: List<String> = emptyList(),
     val clinicalReviewer: String? = null,
     val clinicalReviewedAt: String? = null,
+    val gestationalWeek: Int? = null,
+    val placeholder: Boolean = false,
+    val fetalSummary: String? = null,
+    val maternalSummary: String? = null,
+    val sizeComparisonLabel: String? = null,
+    val illustrationMediaAssetId: String? = null,
 )

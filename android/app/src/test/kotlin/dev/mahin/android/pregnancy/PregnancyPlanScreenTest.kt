@@ -37,6 +37,8 @@ class PregnancyPlanScreenTest {
                 PregnancyPlanScreenContent(
                     hasActivePregnancy = true,
                     isLoading = false,
+                    timeline = emptyList(),
+                    onAddCarePlanAsAppointment = {},
                     formState =
                         PregnancyAppointmentsFormState(
                             appointments = appointments,
@@ -75,6 +77,8 @@ class PregnancyPlanScreenTest {
                 PregnancyPlanScreenContent(
                     hasActivePregnancy = false,
                     isLoading = false,
+                    timeline = emptyList(),
+                    onAddCarePlanAsAppointment = {},
                     formState =
                         PregnancyAppointmentsFormState(
                             appointments = emptyList(),

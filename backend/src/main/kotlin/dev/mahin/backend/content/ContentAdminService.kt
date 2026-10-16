@@ -295,10 +295,12 @@ class ContentAdminService(
         effectiveTo: Instant?,
     ): ContentVersionEntity {
         val payloadJson =
-            if (ContentTypes.isWellnessType(request.contentType)) {
-                ContentTypePayloadCodec.encodeValidated(objectMapper, request.contentType, request.typePayload)
-            } else {
-                null
+            when {
+                ContentTypes.requiresStructuredPayload(request.contentType) ||
+                    request.contentType == ContentTypes.PREGNANCY_WEEK &&
+                    request.typePayload != null ->
+                    ContentTypePayloadCodec.encodeValidated(objectMapper, request.contentType, request.typePayload)
+                else -> null
             }
         val version =
             versionRepository.save(
@@ -325,22 +327,22 @@ class ContentAdminService(
     }
 
     private fun assertPlaceholderPublishAllowed(version: ContentVersionEntity) {
-        if (!ContentTypes.isWellnessType(version.contentType)) {
+        val gatedType =
+            ContentTypes.isWellnessType(version.contentType) ||
+                ContentTypes.isPregnancyCompanionType(version.contentType) ||
+                version.contentType == ContentTypes.PREGNANCY_WEEK
+        if (!gatedType) {
             return
         }
         if (environment == "local" || environment == "test") {
             return
         }
         val placeholder =
-            when (version.contentType) {
-                ContentTypes.DAILY_TIP ->
-                    ContentTypePayloadCodec.parseDailyTip(objectMapper, version.typePayloadJson)?.placeholder
-                ContentTypes.PROGRAM ->
-                    ContentTypePayloadCodec.parseProgram(objectMapper, version.typePayloadJson)?.placeholder
-                ContentTypes.COLLECTION ->
-                    ContentTypePayloadCodec.parseCollection(objectMapper, version.typePayloadJson)?.placeholder
-                else -> false
-            } ?: false
+            ContentTypePayloadCodec.placeholderFlag(
+                objectMapper,
+                version.contentType,
+                version.typePayloadJson,
+            )
         if (placeholder) {
             throw ResponseStatusException(HttpStatus.CONFLICT, "placeholder_publish_not_allowed")
         }

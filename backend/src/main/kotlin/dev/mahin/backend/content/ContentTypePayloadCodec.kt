@@ -30,6 +30,12 @@ object ContentTypePayloadCodec {
                     strict.writeValueAsString(parseProgram(strict, nodeToJson(strict, node)))
                 ContentTypes.COLLECTION ->
                     strict.writeValueAsString(parseCollection(strict, nodeToJson(strict, node)))
+                ContentTypes.PREGNANCY_WEEK ->
+                    strict.writeValueAsString(parsePregnancyWeek(strict, nodeToJson(strict, node)))
+                ContentTypes.CARE_SCHEDULE ->
+                    strict.writeValueAsString(parseCareSchedule(strict, nodeToJson(strict, node)))
+                ContentTypes.CHECKLIST_TEMPLATE ->
+                    strict.writeValueAsString(parseChecklistTemplate(strict, nodeToJson(strict, node)))
                 else -> badRequest("type_payload_not_allowed")
             }
         ContentTypePayloadValidator.validatePayloadSize(canonical)
@@ -50,6 +56,36 @@ object ContentTypePayloadCodec {
         mapper: ObjectMapper,
         raw: String?,
     ): CollectionPayload? = parse(mapper, raw, CollectionPayload::class.java)
+
+    fun parsePregnancyWeek(
+        mapper: ObjectMapper,
+        raw: String?,
+    ): PregnancyWeekPayload? = parse(mapper, raw, PregnancyWeekPayload::class.java)
+
+    fun parseCareSchedule(
+        mapper: ObjectMapper,
+        raw: String?,
+    ): CareSchedulePayload? = parse(mapper, raw, CareSchedulePayload::class.java)
+
+    fun parseChecklistTemplate(
+        mapper: ObjectMapper,
+        raw: String?,
+    ): ChecklistTemplatePayload? = parse(mapper, raw, ChecklistTemplatePayload::class.java)
+
+    fun placeholderFlag(
+        mapper: ObjectMapper,
+        contentType: String,
+        typePayloadJson: String?,
+    ): Boolean =
+        when (contentType) {
+            ContentTypes.DAILY_TIP -> parseDailyTip(mapper, typePayloadJson)?.placeholder
+            ContentTypes.PROGRAM -> parseProgram(mapper, typePayloadJson)?.placeholder
+            ContentTypes.COLLECTION -> parseCollection(mapper, typePayloadJson)?.placeholder
+            ContentTypes.CARE_SCHEDULE -> parseCareSchedule(mapper, typePayloadJson)?.placeholder
+            ContentTypes.CHECKLIST_TEMPLATE -> parseChecklistTemplate(mapper, typePayloadJson)?.placeholder
+            ContentTypes.PREGNANCY_WEEK -> parsePregnancyWeek(mapper, typePayloadJson)?.placeholder
+            else -> false
+        } ?: false
 
     private fun nodeToJson(
         mapper: ObjectMapper,

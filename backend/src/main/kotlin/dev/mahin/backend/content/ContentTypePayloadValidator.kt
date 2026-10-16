@@ -19,6 +19,9 @@ object ContentTypePayloadValidator {
         )
     private val targetingModes = setOf("cycle", "ttc", "pregnancy")
     private val cyclePhases = setOf("menstrual", "follicular", "ovulation", "luteal")
+    private val careScheduleCategories = setOf("test", "ultrasound", "visit", "screening", "vaccine", "other")
+    private val checklistKinds = setOf("hospital_bag")
+    private val regionContexts = setOf("iran")
 
     fun validateForSave(
         contentType: String,
@@ -26,9 +29,12 @@ object ContentTypePayloadValidator {
         mapper: ObjectMapper,
     ) {
         when {
-            !ContentTypes.isWellnessType(contentType) && !typePayloadJson.isNullOrBlank() ->
+            contentType == ContentTypes.PREGNANCY_WEEK && !typePayloadJson.isNullOrBlank() ->
+                validatePregnancyWeek(ContentTypePayloadCodec.parsePregnancyWeek(mapper, typePayloadJson)!!)
+            contentType == ContentTypes.PREGNANCY_WEEK -> Unit
+            !ContentTypes.requiresStructuredPayload(contentType) && !typePayloadJson.isNullOrBlank() ->
                 reject("type_payload_not_allowed")
-            ContentTypes.isWellnessType(contentType) && typePayloadJson.isNullOrBlank() ->
+            ContentTypes.requiresStructuredPayload(contentType) && typePayloadJson.isNullOrBlank() ->
                 reject("type_payload_required")
             contentType == ContentTypes.DAILY_TIP ->
                 validateDailyTip(ContentTypePayloadCodec.parseDailyTip(mapper, typePayloadJson)!!)
@@ -36,6 +42,10 @@ object ContentTypePayloadValidator {
                 validateProgram(ContentTypePayloadCodec.parseProgram(mapper, typePayloadJson)!!, publishing = false)
             contentType == ContentTypes.COLLECTION ->
                 validateCollection(ContentTypePayloadCodec.parseCollection(mapper, typePayloadJson)!!)
+            contentType == ContentTypes.CARE_SCHEDULE ->
+                validateCareSchedule(ContentTypePayloadCodec.parseCareSchedule(mapper, typePayloadJson)!!)
+            contentType == ContentTypes.CHECKLIST_TEMPLATE ->
+                validateChecklistTemplate(ContentTypePayloadCodec.parseChecklistTemplate(mapper, typePayloadJson)!!)
         }
         validatePayloadSize(typePayloadJson)
     }
@@ -45,19 +55,34 @@ object ContentTypePayloadValidator {
         typePayloadJson: String?,
         mapper: ObjectMapper,
     ) {
-        if (!ContentTypes.isWellnessType(contentType)) {
-            return
+        when {
+            ContentTypes.isWellnessType(contentType) || ContentTypes.isPregnancyCompanionType(contentType) -> {
+                when (contentType) {
+                    ContentTypes.DAILY_TIP ->
+                        validateDailyTip(ContentTypePayloadCodec.parseDailyTip(mapper, typePayloadJson)!!)
+                    ContentTypes.PROGRAM ->
+                        validateProgram(
+                            ContentTypePayloadCodec.parseProgram(mapper, typePayloadJson)!!,
+                            publishing = true,
+                        )
+                    ContentTypes.COLLECTION ->
+                        validateCollection(ContentTypePayloadCodec.parseCollection(mapper, typePayloadJson)!!)
+                    ContentTypes.CARE_SCHEDULE ->
+                        validateCareSchedule(ContentTypePayloadCodec.parseCareSchedule(mapper, typePayloadJson)!!)
+                    ContentTypes.CHECKLIST_TEMPLATE ->
+                        validateChecklistTemplate(
+                            ContentTypePayloadCodec.parseChecklistTemplate(mapper, typePayloadJson)!!,
+                        )
+                    else -> reject("unsupported_content_type")
+                }
+                validatePayloadSize(typePayloadJson)
+            }
+            contentType == ContentTypes.PREGNANCY_WEEK && !typePayloadJson.isNullOrBlank() -> {
+                validatePregnancyWeek(ContentTypePayloadCodec.parsePregnancyWeek(mapper, typePayloadJson)!!)
+                validatePayloadSize(typePayloadJson)
+            }
+            else -> Unit
         }
-        when (contentType) {
-            ContentTypes.DAILY_TIP ->
-                validateDailyTip(ContentTypePayloadCodec.parseDailyTip(mapper, typePayloadJson)!!)
-            ContentTypes.PROGRAM ->
-                validateProgram(ContentTypePayloadCodec.parseProgram(mapper, typePayloadJson)!!, publishing = true)
-            ContentTypes.COLLECTION ->
-                validateCollection(ContentTypePayloadCodec.parseCollection(mapper, typePayloadJson)!!)
-            else -> reject("unsupported_content_type")
-        }
-        validatePayloadSize(typePayloadJson)
     }
 
     fun validatePayloadSize(typePayloadJson: String?) {
@@ -141,6 +166,58 @@ object ContentTypePayloadValidator {
             reject("invalid_collection_category")
         }
         validateArticleDocumentIds(payload.articleDocumentIds)
+    }
+
+    private fun validatePregnancyWeek(payload: PregnancyWeekPayload) {
+        listOfNotNull(payload.fetalSummary, payload.maternalSummary, payload.sizeComparisonLabel).forEach {
+            validateStringLength(it)
+        }
+    }
+
+    private fun validateCareSchedule(payload: CareSchedulePayload) {
+        if (payload.regionContext !in regionContexts) {
+            reject("invalid_care_schedule_region")
+        }
+        if (payload.items.size > ContentTypePayloadLimits.MAX_CARE_SCHEDULE_ITEMS) {
+            reject("care_schedule_items_too_many")
+        }
+        if (payload.items.isEmpty()) {
+            reject("care_schedule_items_required")
+        }
+        payload.items.forEach { item ->
+            if (item.id.isBlank() || item.title.isBlank()) {
+                reject("care_schedule_item_fields_required")
+            }
+            if (item.category !in careScheduleCategories) {
+                reject("invalid_care_schedule_category")
+            }
+            if (item.weekStart !in 1..42 || item.weekEnd !in 1..42 || item.weekStart > item.weekEnd) {
+                reject("invalid_care_schedule_week_window")
+            }
+            item.description?.let { validateStringLength(it) }
+            item.appointmentTypeHint?.let { validateStringLength(it) }
+            validateStringLength(item.title)
+        }
+    }
+
+    private fun validateChecklistTemplate(payload: ChecklistTemplatePayload) {
+        if (payload.checklistKind !in checklistKinds) {
+            reject("invalid_checklist_kind")
+        }
+        if (payload.items.size > ContentTypePayloadLimits.MAX_CHECKLIST_ITEMS) {
+            reject("checklist_items_too_many")
+        }
+        if (payload.items.isEmpty()) {
+            reject("checklist_items_required")
+        }
+        payload.sections.forEach { validateStringLength(it) }
+        payload.items.forEach { item ->
+            if (item.id.isBlank() || item.label.isBlank() || item.section.isBlank()) {
+                reject("checklist_item_fields_required")
+            }
+            validateStringLength(item.label)
+            validateStringLength(item.section)
+        }
     }
 
     private fun validateStringLength(value: String) {

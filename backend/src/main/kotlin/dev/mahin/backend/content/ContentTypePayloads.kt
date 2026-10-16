@@ -70,3 +70,46 @@ data class CollectionPayload(
     val articleDocumentIds: List<String> = emptyList(),
     val featured: Boolean = false,
 )
+
+@JsonIgnoreProperties(ignoreUnknown = false)
+data class PregnancyWeekPayload(
+    val placeholder: Boolean = false,
+    val fetalSummary: String? = null,
+    val maternalSummary: String? = null,
+    val sizeComparisonLabel: String? = null,
+    val illustrationMediaAssetId: String? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = false)
+data class CareScheduleItemPayload(
+    val id: String,
+    val title: String,
+    val category: String,
+    val weekStart: Int,
+    val weekEnd: Int,
+    val description: String? = null,
+    val appointmentTypeHint: String? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = false)
+data class CareSchedulePayload(
+    val placeholder: Boolean = false,
+    val regionContext: String = "iran",
+    val items: List<CareScheduleItemPayload> = emptyList(),
+)
+
+@JsonIgnoreProperties(ignoreUnknown = false)
+data class ChecklistItemTemplatePayload(
+    val id: String,
+    val label: String,
+    val section: String,
+    val order: Int,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = false)
+data class ChecklistTemplatePayload(
+    val placeholder: Boolean = false,
+    val checklistKind: String = "hospital_bag",
+    val sections: List<String> = emptyList(),
+    val items: List<ChecklistItemTemplatePayload> = emptyList(),
+)

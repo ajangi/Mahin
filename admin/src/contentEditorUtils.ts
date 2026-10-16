@@ -1,4 +1,9 @@
-export type WellnessContentKind = "daily_tip" | "program" | "collection";
+export type WellnessContentKind =
+  | "daily_tip"
+  | "program"
+  | "collection"
+  | "care_schedule"
+  | "checklist_template";
 
 export const COLLECTION_CATEGORIES = [
   "cycle",
@@ -11,6 +16,19 @@ export const COLLECTION_CATEGORIES = [
 ] as const;
 
 export const PROGRAM_TYPES = ["pelvic_floor", "movement", "breathing"] as const;
+
+export const CARE_SCHEDULE_CATEGORIES = [
+  "test",
+  "ultrasound",
+  "visit",
+  "screening",
+  "vaccine",
+  "other",
+] as const;
+
+export const CARE_SCHEDULE_REGIONS = ["iran"] as const;
+
+export const CHECKLIST_KINDS = ["hospital_bag"] as const;
 
 export function buildDailyTipPayload(targetingModes: string, cyclePhase: string) {
   return {
@@ -49,12 +67,48 @@ export function buildCollectionPayload(category: string, articleDocumentIds: str
   };
 }
 
+export function buildCareSchedulePayload(regionContext: string = "iran") {
+  return {
+    placeholder: true,
+    regionContext,
+    items: [
+      {
+        id: "item-1",
+        title: "آزمایش نمونه",
+        category: "test",
+        weekStart: 8,
+        weekEnd: 10,
+        description: "نمونه — غیرپزشکی",
+      },
+    ],
+  };
+}
+
+export function buildChecklistTemplatePayload(checklistKind: string = "hospital_bag") {
+  return {
+    placeholder: true,
+    checklistKind,
+    sections: ["مدارک"],
+    items: [
+      {
+        id: "c1",
+        label: "لیست نمونه",
+        section: "مدارک",
+        order: 1,
+      },
+    ],
+  };
+}
+
 export function validateWellnessDraft(kind: WellnessContentKind, title: string): string | null {
   if (!title.trim()) {
     return "عنوان الزامی است.";
   }
   if (kind === "collection" && title.length < 2) {
     return "عنوان مجموعه خیلی کوتاه است.";
+  }
+  if ((kind === "care_schedule" || kind === "checklist_template") && title.length < 2) {
+    return "عنوان خیلی کوتاه است.";
   }
   return null;
 }

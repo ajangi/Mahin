@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildCareSchedulePayload,
+  buildChecklistTemplatePayload,
   buildCollectionPayload,
   buildDailyTipPayload,
   buildProgramPayload,
@@ -32,6 +34,26 @@ describe("content editor utils", () => {
     const payload = buildCollectionPayload("pregnancy", []);
     expect(payload.category).toBe("pregnancy");
     expect(payload.placeholder).toBe(true);
+  });
+
+  it("builds care schedule placeholder with week window", () => {
+    const payload = buildCareSchedulePayload();
+    expect(payload.regionContext).toBe("iran");
+    expect(payload.items[0].weekStart).toBe(8);
+    expect(payload.items[0].category).toBe("test");
+  });
+
+  it("builds checklist template placeholder with sections and items", () => {
+    const payload = buildChecklistTemplatePayload();
+    expect(payload.checklistKind).toBe("hospital_bag");
+    expect(payload.sections).toEqual(["مدارک"]);
+    expect(payload.items[0].order).toBe(1);
+  });
+
+  it("validates care_schedule and checklist_template titles", () => {
+    expect(validateWellnessDraft("care_schedule", "زمان‌بندی")).toBeNull();
+    expect(validateWellnessDraft("checklist_template", " ")).toMatch(/عنوان/);
+    expect(validateWellnessDraft("checklist_template", "ا")).toMatch(/کوتاه/);
   });
 
   it("lists governed workflow actions for review screens", () => {

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController
 class ContentController(
     private val publicService: ContentPublicService,
     private val wellnessPublicService: ContentWellnessPublicService,
+    private val pregnancyCompanionPublicService: ContentPregnancyCompanionPublicService,
 ) {
     @GetMapping("/catalog-status")
     fun catalogStatus(): ContentCatalogStatusResponse = publicService.catalogStatus()
@@ -125,4 +126,39 @@ class ContentController(
         @PathVariable slug: String,
         @RequestParam(defaultValue = "fa-IR") locale: String,
     ): ContentCollectionResponse = wellnessPublicService.getCollectionBySlug(slug, locale)
+
+    @GetMapping("/care-schedules")
+    fun listCareSchedules(
+        @RequestParam(defaultValue = "fa-IR") locale: String,
+        @RequestParam(required = false) gestationalWeek: Int?,
+    ): ContentCareScheduleListResponse = pregnancyCompanionPublicService.listCareSchedules(locale, gestationalWeek)
+
+    @GetMapping("/care-schedules/{documentId}")
+    fun getCareSchedule(
+        @PathVariable documentId: java.util.UUID,
+    ): ContentCareScheduleResponse = pregnancyCompanionPublicService.getCareSchedule(documentId)
+
+    @GetMapping("/care-schedules/by-slug/{slug}")
+    fun getCareScheduleBySlug(
+        @PathVariable slug: String,
+        @RequestParam(defaultValue = "fa-IR") locale: String,
+    ): ContentCareScheduleResponse = pregnancyCompanionPublicService.getCareScheduleBySlug(slug, locale)
+
+    @GetMapping("/checklist-templates")
+    fun listChecklistTemplates(
+        @RequestParam(defaultValue = "fa-IR") locale: String,
+        @RequestParam(required = false) checklistKind: String?,
+    ): ContentChecklistTemplateListResponse =
+        pregnancyCompanionPublicService.listChecklistTemplates(locale, checklistKind)
+
+    @GetMapping("/checklist-templates/{documentId}")
+    fun getChecklistTemplate(
+        @PathVariable documentId: java.util.UUID,
+    ): ContentChecklistTemplateResponse = pregnancyCompanionPublicService.getChecklistTemplate(documentId)
+
+    @GetMapping("/checklist-templates/by-slug/{slug}")
+    fun getChecklistTemplateBySlug(
+        @PathVariable slug: String,
+        @RequestParam(defaultValue = "fa-IR") locale: String,
+    ): ContentChecklistTemplateResponse = pregnancyCompanionPublicService.getChecklistTemplateBySlug(slug, locale)
 }

@@ -6,7 +6,6 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
@@ -49,8 +48,6 @@ class PregnancyHubScreenScrollTest {
                 daysUntilEdd = 193,
                 displayWeekNumber = 13,
             )
-        val disclaimer =
-            "اطلاعات این بخش جایگزین مراقبت پزشکی نیست. در صورت نگرانی با متخصص مشورت کنید."
         composeRule.setContent {
             CompositionLocalProvider(
                 LocalLayoutDirection provides LayoutDirection.Rtl,
@@ -91,7 +88,7 @@ class PregnancyHubScreenScrollTest {
             }
         }
         composeRule.waitForIdle()
-        composeRule.onNodeWithTag("pregnancy_hub_list").performScrollToIndex(7)
-        composeRule.onNodeWithText(disclaimer, substring = true).assertIsDisplayed()
+        composeRule.onNodeWithTag("pregnancy_hub_list").performScrollToIndex(8)
+        composeRule.onNodeWithTag("pregnancy_hub_safety_disclaimer").assertIsDisplayed()
     }
 }

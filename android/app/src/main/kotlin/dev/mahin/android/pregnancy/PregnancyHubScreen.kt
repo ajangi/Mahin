@@ -7,10 +7,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
+@Suppress("LongParameterList")
 fun PregnancyHubScreen(
     modifier: Modifier = Modifier,
     onOpenHistory: (() -> Unit)? = null,
     onOpenCycleCalendar: (() -> Unit)? = null,
+    onOpenWeekByWeek: (() -> Unit)? = null,
+    onOpenTools: (() -> Unit)? = null,
+    onOpenChecklist: (() -> Unit)? = null,
     viewModel: PregnancyHubViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -36,6 +40,9 @@ fun PregnancyHubScreen(
             ),
         onOpenHistory = onOpenHistory,
         onOpenCycleCalendar = onOpenCycleCalendar,
+        onOpenWeekByWeek = onOpenWeekByWeek,
+        onOpenTools = onOpenTools,
+        onOpenChecklist = onOpenChecklist,
         actions =
             PregnancyHubActions(
                 onStartKickSession = viewModel::startKickSession,

@@ -27,7 +27,10 @@ object ContentEffectiveDates {
         effectiveTo: Instant?,
     ) {
         val hasWindow = effectiveFrom != null || effectiveTo != null
-        if (hasWindow && !ContentTypes.isWellnessType(contentType)) {
+        if (hasWindow &&
+            !ContentTypes.isWellnessType(contentType) &&
+            !ContentTypes.isPregnancyCompanionType(contentType)
+        ) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "effective_window_not_allowed")
         }
         if (effectiveFrom != null && effectiveTo != null && !effectiveTo.isAfter(effectiveFrom)) {

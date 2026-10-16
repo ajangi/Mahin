@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
 
 @Service
+@Suppress("LongParameterList")
 class ContentPublicService(
     private val documentRepository: ContentDocumentRepository,
     private val versionRepository: ContentVersionRepository,
@@ -23,6 +24,8 @@ class ContentPublicService(
     private val sourceRepository: ContentSourceRepository,
     private val bookmarkRepository: UserContentBookmarkRepository,
     private val catalogService: ContentCatalogService,
+    private val objectMapper: com.fasterxml.jackson.databind.ObjectMapper,
+    @org.springframework.beans.factory.annotation.Value("\${mahin.environment}") private val environment: String,
 ) {
     fun catalogStatus(): ContentCatalogStatusResponse = catalogService.currentStatus()
 
@@ -95,32 +98,52 @@ class ContentPublicService(
         if (week !in 1..42) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid_gestational_week")
         }
+        val loaded = loadPublishedPregnancyWeek(week, locale)
+        return mapArticle(loaded.document, loaded.version, includeBody = true)
+    }
+
+    private fun loadPublishedPregnancyWeek(
+        week: Int,
+        locale: String,
+    ): PregnancyWeekPublication {
         val version =
-            versionRepository.findPublishedPregnancyWeek(week, locale).orElseThrow {
-                ResponseStatusException(HttpStatus.NOT_FOUND, "pregnancy_week_not_found")
-            }
+            versionRepository.findPublishedPregnancyWeek(week, locale).orElse(null)
         val document =
-            documentRepository.findById(version.documentId).orElseThrow {
-                ResponseStatusException(HttpStatus.NOT_FOUND, "pregnancy_week_not_found")
-            }
-        if (!ContentPublicationRules.isPublishedOnCatalog(document, version)) {
+            version?.let { documentRepository.findById(it.documentId).orElse(null) }
+        val visible =
+            version != null &&
+                document != null &&
+                ContentPublicationRules.isPublishedOnCatalog(document, version) &&
+                !isHiddenPregnancyWeekPlaceholder(version)
+        if (!visible || version == null || document == null) {
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "pregnancy_week_not_found")
         }
-        return mapArticle(document, version, includeBody = true)
+        return PregnancyWeekPublication(document, version)
     }
+
+    private fun isHiddenPregnancyWeekPlaceholder(
+        version: dev.mahin.backend.content.persistence.ContentVersionEntity,
+    ): Boolean {
+        val payload = ContentTypePayloadCodec.parsePregnancyWeek(objectMapper, version.typePayloadJson)
+        return payload != null &&
+            ContentPublicVisibility.isPlaceholderHiddenInProduction(payload.placeholder, environment)
+    }
+
+    private data class PregnancyWeekPublication(
+        val document: dev.mahin.backend.content.persistence.ContentDocumentEntity,
+        val version: dev.mahin.backend.content.persistence.ContentVersionEntity,
+    )
 
     fun listPregnancyWeeks(locale: String): PregnancyWeekListResponse {
         val now = Instant.now()
         val weeks =
             versionRepository
-                .searchPublished(
-                    null,
-                    locale,
-                    "pregnancy",
-                ).mapNotNull { version ->
+                .findPublishedPregnancyWeeks(locale)
+                .mapNotNull { version ->
                     val document = documentRepository.findById(version.documentId).orElse(null)
                     if (document == null ||
-                        !ContentPublicVisibility.isArticleEndpointEligible(document, version, now)
+                        !ContentPublicationRules.isPublishedOnCatalog(document, version, now) ||
+                        isHiddenPregnancyWeekPlaceholder(version)
                     ) {
                         return@mapNotNull null
                     }
@@ -196,6 +219,6 @@ class ContentPublicService(
             versionSourceRepository.findByVersionId(version.id).mapNotNull { link ->
                 sourceRepository.findById(link.sourceId).orElse(null)?.citationKey
             }
-        return ContentMapper.toArticleResponse(document, version, citationKeys, includeBody)
+        return ContentMapper.toArticleResponse(document, version, citationKeys, includeBody, objectMapper)
     }
 }

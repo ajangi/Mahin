@@ -26,6 +26,7 @@ class DayEditorFlowLevelTest {
         viewModel = harness.createViewModel()
         runBlocking {
             viewModel.openDate(day)
+            awaitDailyLogOnMain { viewModel.uiState.value.date == day }
             viewModel.togglePeriodLogged()
             awaitUntil { viewModel.uiState.value.periodLogged }
         }
