@@ -14,7 +14,7 @@ python3 scripts/check_design_tokens.py && python3 scripts/security_checklist.py
 cd android && ./gradlew lintDebug ktlintCheck detekt test :app:verifyRoborazziDebug
 ```
 
-**Git head:** `81b4adc` (on `master` @ `7aee907`)
+**Git head:** `7361d6e` (feature `81b4adc` on `master` @ `7aee907`)
 
 **Local (agent VM, 2026-10-16):** backend/admin/openapi/design-tokens scripts pass; Android `ktlintCheck`, `detekt`, `test`, `verifyRoborazziDebug` pass with `ANDROID_HOME=/tmp/android-sdk`.
 
