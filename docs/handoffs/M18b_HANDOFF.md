@@ -15,7 +15,7 @@ cd android && ./gradlew lintDebug ktlintCheck detekt test :app:verifyRoborazziDe
 ```
 
 **Branch:** `cursor/m18b-pregnancy-depth-8467`  
-**Tip:** see latest push on PR #49 (all five CI jobs must be green on that SHA)
+**Tip:** `43c26a867357fea1b951cf58849c66a162517e81` (CI run 39005080651 — all 5 checks green)
 
 ## Gatekeeper remediation (PR #49)
 
