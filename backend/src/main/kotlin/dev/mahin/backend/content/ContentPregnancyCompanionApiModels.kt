@@ -85,6 +85,9 @@ data class ContentWarningSignsResponse(
     val escalationTitle: String,
     val escalationBody: String,
     val contactClinicianLabel: String,
+    val urgentEscalationTitle: String,
+    val urgentEscalationBody: String,
+    val urgentContactClinicianLabel: String,
     val bpThresholds: PregnancyBpThresholdsPayload,
 )
 

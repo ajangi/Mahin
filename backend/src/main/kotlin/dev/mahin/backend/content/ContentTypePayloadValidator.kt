@@ -212,6 +212,9 @@ object ContentTypePayloadValidator {
         validateStringLength(payload.escalationTitle)
         validateStringLength(payload.escalationBody)
         validateStringLength(payload.contactClinicianLabel)
+        validateStringLength(payload.urgentEscalationTitle)
+        validateStringLength(payload.urgentEscalationBody)
+        validateStringLength(payload.urgentContactClinicianLabel)
         if (payload.signs.isEmpty()) {
             reject("warning_signs_required")
         }

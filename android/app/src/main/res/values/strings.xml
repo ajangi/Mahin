@@ -361,8 +361,10 @@
     <string name="pregnancy_expense_category_other">سایر</string>
     <string name="pregnancy_warning_signs_title">هشدارها و فشار خون</string>
     <string name="pregnancy_warning_signs_subtitle">محتوای آموزشی؛ تشخیص پزشکی نیست</string>
-    <string name="pregnancy_warning_signs_offline_title">محتوا در دسترس نیست</string>
-    <string name="pregnancy_warning_signs_offline_body">برای مشاهدهٔ هشدارهای بررسی‌شده به اینترنت نیاز است.</string>
+    <string name="pregnancy_warning_signs_cached_notice">آخرین نسخهٔ بررسی‌شدهٔ آفلاین نمایش داده می‌شود.</string>
+    <string name="pregnancy_warning_signs_fail_safe_title">اگر نگران هستید</string>
+    <string name="pregnancy_warning_signs_fail_safe_body">در صورت نگرانی یا بروز علائم نگران‌کننده با مراقب خود یا اورژانس تماس بگیرید. این صفحه تشخیص پزشکی نیست.</string>
+    <string name="pregnancy_warning_signs_logged_bp">فشار خون ثبت‌شدهٔ امروز: %1$s</string>
     <string name="pregnancy_bp_flag_elevated_title">فشار خون امروز بالاتر از حد مراقبتی است</string>
     <string name="pregnancy_bp_flag_urgent_title">فشار خون امروز نیازمند توجه فوری است</string>
     <string name="pregnancy_bp_flag_disclaimer">این برنامه تشخیص نمی‌دهد. در صورت نگرانی با مراقب خود تماس بگیرید.</string>

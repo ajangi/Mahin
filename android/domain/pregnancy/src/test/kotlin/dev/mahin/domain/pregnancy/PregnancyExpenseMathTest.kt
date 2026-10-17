@@ -38,4 +38,17 @@ class PregnancyExpenseMathTest {
         assertThat(error).isNull()
         assertThat(value).isEqualTo(12345L)
     }
+
+    @Test
+    fun parseAmount_rejectsZero() {
+        assertThat(PregnancyExpenseMath.parseAmountInput("0").second)
+            .isEqualTo(PregnancyExpenseAmountError.ZERO)
+    }
+
+    @Test
+    fun parseAmount_stripsPersianGroupingSeparators() {
+        val (value, error) = PregnancyExpenseMath.parseAmountInput("۱٬۲۳۴٬۵۶۷")
+        assertThat(error).isNull()
+        assertThat(value).isEqualTo(1_234_567L)
+    }
 }

@@ -1,7 +1,7 @@
 # M18b Handoff — Pregnancy expenses, warning signs/BP, weight chart, timer polish
 
 **Milestone:** M18b  
-**Status:** Draft PR (pending CI on push)  
+**Status:** Gatekeeper fixes on PR #49 (awaiting CI)  
 **Next milestone:** none mandated (M19 gated)
 
 ## Commands and results
@@ -14,52 +14,45 @@ python3 scripts/check_design_tokens.py && python3 scripts/security_checklist.py
 cd android && ./gradlew lintDebug ktlintCheck detekt test :app:verifyRoborazziDebug
 ```
 
-**Git head:** `7361d6e` (feature `81b4adc` on `master` @ `7aee907`)
+**Branch:** `cursor/m18b-pregnancy-depth-8467`  
+**Tip:** see latest push on PR #49 (gatekeeper remediation).
 
-**Local (agent VM, 2026-10-16):** backend/admin/openapi/design-tokens scripts pass; Android `ktlintCheck`, `detekt`, `test`, `verifyRoborazziDebug` pass with `ANDROID_HOME=/tmp/android-sdk`.
+## Gatekeeper remediation (PR #49)
 
-**GitHub Actions (PR #49, head `81b4adc`):** admin, android, backend, design-tokens, openapi — all pass ([run 38978786470](https://github.com/ajangi/Mahin/actions/runs/38978786470)).
+| Item | Change |
+|------|--------|
+| BP fail-safe | Cache last `warning_signs` card in DataStore; offline uses cache; no card → static non-diagnostic guidance + logged BP, no flag level |
+| Warning-signs VM tests | Flag levels, no reading, no pregnancy, cache/offline, message mapping (URGENT uses `urgentContactClinicianLabel`) |
+| Backend gatekeeper | M18a-style matrix for `warning_signs` + production placeholder test + validator unit tests |
+| OpenAPI | Documented `warning_signs_not_found`, BP/warning-sign validation codes |
+| Admin | RTL `warning_signs` editor + review panel + payload test |
+| Hub timers | `PregnancyHubViewModelTimerTest` with `StandardTestDispatcher` + `FixedInstantClock`; process-death via VM recreate |
+| Migration 10→11 | Seeds daily log, pregnancy day log, checklist row; asserts survive migration |
+| Telemetry guards | `M18bPregnancyDepthTelemetryGuardTest` — `foundation_opened` routes only, no BP/weight/amount in analytics |
+| Expenses / weight VM tests | Edge cases per gatekeeper list |
+| Expense parsing | Reject zero; strip `٬` and `،` |
+| Hardcoded BP test | Asserts scan roots exist and ≥1 file scanned |
 
-## Implemented scope
+## Implemented scope (unchanged)
 
 | Area | Notes |
 |------|--------|
 | Expenses | Room `pregnancy_expense` (v11); hub + screen; category summary; Toman/Rial + Persian digits |
-| Privacy | `PregnancyExpenseLocalPrivacyTest` — export JSON unchanged; outbox empty |
-| Warning signs | CMS `warning_signs` + `/v1/content/warning-signs`; BP flag from CMS `bpThresholds` only |
-| Weight chart | `PregnancyWeightChart` from day-log weights by gestational week |
-| Timers | Hub elapsed kick time; `PregnancyHubTimerMath` + `InstantClock` injection |
-| Goldens | `M18bFullScreenGoldenTest` (expenses, warning signs, weight chart) × light/dark × 1.0/1.3 RTL |
+| Warning signs | CMS `warning_signs` + urgent escalation fields; BP flag from CMS thresholds only |
+| Weight chart | Gestational week series from day-log weights |
+| Timers | Hub elapsed display; preferences + DB survive config/process recreate |
 
 ## Migrations
 
-- Room `MIGRATION_10_11` + schema `11.json`; migration test seeds expense row
-- Flyway `V11__m18b_warning_signs_content.sql`
+- Room `MIGRATION_10_11` + schema `11.json`; migration test seeds v10 rows + expense post-migrate
+- Flyway `V11__m18b_warning_signs_content.sql` (comment-only; payload in `type_payload_json`)
 
 ## ADRs
 
 - `docs/adr/0024-m18b-pregnancy-vitals-and-local-expenses.md`
 
-## Acceptance criteria (M18b-relevant)
-
-| Criterion | Status |
-|-----------|--------|
-| Expense totals + Persian currency formatting unit-tested | pass (`PregnancyExpenseMathTest`) |
-| Migration tests for expense table | pass (`migrate10To11_addsPregnancyExpenseTable`) |
-| Sync outbox / export unchanged for expenses | pass (`PregnancyExpenseLocalPrivacyTest`) |
-| BP thresholds from CMS; not in Android production code | pass (`M18bNoHardcodedBpThresholdsTest`, gatekeeper) |
-| Backend unapproved warning_signs not served | pass (`M18bGatekeeperIntegrationTest`) |
-| Goldens expenses + warning signs (+ weight chart) | pass (`verifyRoborazziDebug`) |
-| Kick/contraction virtual-time safe timer math | pass (`PregnancyHubTimerMathTest`) |
-
-## Clinical content required before launch
-
-- Replace placeholder `warning_signs` copy and thresholds after clinical review.
-- Expense categories are product strings only (not medical advice).
-
 ## Deferred / limitations
 
-- Admin editor for `warning_signs` not extended (API + tests only); content authored via existing CMS document API.
 - Weight reference bands from CMS not wired (no reviewed band payload yet).
 - Expense/checklist sync and export — still owner decision; local-only by design.
 

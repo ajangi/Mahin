@@ -15,11 +15,13 @@ class M18bNoHardcodedBpThresholdsTest {
                 androidRoot.resolve("../domain/pregnancy/src/main/kotlin"),
                 androidRoot.resolve("src/main/kotlin/dev/mahin/android/pregnancy"),
             )
+        roots.forEach { root -> assertThat(Files.exists(root)).isTrue() }
         val forbidden = Regex("""\b(140|90|160|110)\b""")
+        var filesScanned = 0
         val offenders = mutableListOf<String>()
         roots.forEach { root ->
-            if (!Files.exists(root)) return@forEach
             Files.walk(root).filter { it.isRegularFile() && it.toString().endsWith(".kt") }.forEach { file ->
+                filesScanned++
                 val text = file.toFile().readText()
                 if (file.fileName.toString() == "PregnancyBpFlagEvaluator.kt") return@forEach
                 if (forbidden.containsMatchIn(text)) {
@@ -27,6 +29,7 @@ class M18bNoHardcodedBpThresholdsTest {
                 }
             }
         }
+        assertThat(filesScanned).isGreaterThan(0)
         assertThat(offenders).isEmpty()
     }
 }

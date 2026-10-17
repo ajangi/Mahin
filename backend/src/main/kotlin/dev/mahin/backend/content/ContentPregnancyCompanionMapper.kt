@@ -109,6 +109,9 @@ object ContentPregnancyCompanionMapper {
             escalationTitle = payload.escalationTitle,
             escalationBody = payload.escalationBody,
             contactClinicianLabel = payload.contactClinicianLabel,
+            urgentEscalationTitle = payload.urgentEscalationTitle,
+            urgentEscalationBody = payload.urgentEscalationBody,
+            urgentContactClinicianLabel = payload.urgentContactClinicianLabel,
             bpThresholds = payload.bpThresholds,
         )
 

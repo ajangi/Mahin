@@ -3,6 +3,9 @@ package dev.mahin.android.pregnancy
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.mahin.android.navigation.MahinTopLevelDestination
+import dev.mahin.core.analytics.AnalyticsEvent
+import dev.mahin.core.analytics.AnalyticsGateway
 import dev.mahin.core.common.LocalDateClock
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
 import dev.mahin.domain.pregnancy.PregnancyDatingEngineV1
@@ -29,11 +32,18 @@ class PregnancyWeightChartViewModel
     constructor(
         private val trackingRepository: PregnancyTrackingRepository,
         private val localDateClock: LocalDateClock,
+        private val analytics: AnalyticsGateway,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(PregnancyWeightChartUiState())
         val uiState: StateFlow<PregnancyWeightChartUiState> = _uiState.asStateFlow()
 
         init {
+            analytics.track(
+                AnalyticsEvent(
+                    "foundation_opened",
+                    mapOf("surface" to MahinTopLevelDestination.PREGNANCY_WEIGHT_CHART_ROUTE),
+                ),
+            )
             viewModelScope.launch {
                 combine(
                     trackingRepository.observeActivePregnancy(),

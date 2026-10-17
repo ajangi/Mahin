@@ -3,6 +3,9 @@ package dev.mahin.android.pregnancy
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.mahin.android.navigation.MahinTopLevelDestination
+import dev.mahin.core.analytics.AnalyticsEvent
+import dev.mahin.core.analytics.AnalyticsGateway
 import dev.mahin.core.common.LocalDateClock
 import dev.mahin.core.content.ContentRepository
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
@@ -25,7 +28,8 @@ data class PregnancyWarningSignItemUi(
 
 data class PregnancyWarningSignsUiState(
     val isLoading: Boolean = true,
-    val offline: Boolean = false,
+    val usingCachedCard: Boolean = false,
+    val failSafeNoCard: Boolean = false,
     val introTitle: String? = null,
     val introBody: String? = null,
     val signs: List<PregnancyWarningSignItemUi> = emptyList(),
@@ -34,6 +38,7 @@ data class PregnancyWarningSignsUiState(
     val contactClinicianLabel: String? = null,
     val bpFlagLevel: PregnancyBpFlagLevel = PregnancyBpFlagLevel.NONE,
     val bpFlagMessage: String? = null,
+    val loggedBpLabel: String? = null,
 )
 
 @HiltViewModel
@@ -43,58 +48,85 @@ class PregnancyWarningSignsViewModel
         private val contentRepository: ContentRepository,
         private val trackingRepository: PregnancyTrackingRepository,
         private val localDateClock: LocalDateClock,
+        private val analytics: AnalyticsGateway,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(PregnancyWarningSignsUiState())
         val uiState: StateFlow<PregnancyWarningSignsUiState> = _uiState.asStateFlow()
 
         init {
-            viewModelScope.launch {
-                val card = contentRepository.warningSignsCard()
-                if (card == null) {
-                    _uiState.update { it.copy(isLoading = false, offline = true) }
-                    return@launch
+            analytics.track(
+                AnalyticsEvent(
+                    "foundation_opened",
+                    mapOf("surface" to MahinTopLevelDestination.PREGNANCY_WARNING_SIGNS_ROUTE),
+                ),
+            )
+            viewModelScope.launch { load() }
+        }
+
+        private suspend fun load() {
+            val fetch = contentRepository.warningSignsCardFetch()
+            val pregnancy = trackingRepository.observeActivePregnancy().first()
+            val today = localDateClock.today()
+            val log = pregnancy?.let { trackingRepository.getPregnancyDayLogForDate(today) }
+            val reading =
+                log?.bpSystolic?.let { sys ->
+                    log.bpDiastolic?.let { dia -> PregnancyBpReading(sys, dia) }
                 }
-                val thresholds =
-                    PregnancyBpThresholds(
-                        elevatedSystolic = card.bpThresholds.elevatedSystolic,
-                        elevatedDiastolic = card.bpThresholds.elevatedDiastolic,
-                        urgentSystolic = card.bpThresholds.urgentSystolic,
-                        urgentDiastolic = card.bpThresholds.urgentDiastolic,
-                    )
-                val pregnancy = trackingRepository.observeActivePregnancy().first()
-                val flagLevel =
-                    pregnancy?.let {
-                        val today = localDateClock.today()
-                        val log = trackingRepository.getPregnancyDayLogForDate(today)
-                        val reading =
-                            log?.bpSystolic?.let { sys ->
-                                log.bpDiastolic?.let { dia ->
-                                    PregnancyBpReading(sys, dia)
-                                }
-                            }
-                        PregnancyBpFlagEvaluator.evaluate(reading, thresholds)
-                    } ?: PregnancyBpFlagLevel.NONE
+            val loggedBpLabel =
+                reading?.let { bp ->
+                    PregnancyFormatters.formatInteger(bp.systolic) +
+                        "/" +
+                        PregnancyFormatters.formatInteger(bp.diastolic)
+                }
+            if (fetch == null) {
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        offline = false,
-                        introTitle = card.introTitle,
-                        introBody = card.introBody,
-                        signs = card.signs.map { sign -> PregnancyWarningSignItemUi(sign.title, sign.summary) },
-                        escalationTitle = card.escalationTitle,
-                        escalationBody = card.escalationBody,
-                        contactClinicianLabel = card.contactClinicianLabel,
-                        bpFlagLevel = flagLevel,
-                        bpFlagMessage =
-                            when (flagLevel) {
-                                PregnancyBpFlagLevel.NONE -> null
-                                PregnancyBpFlagLevel.ELEVATED ->
-                                    card.contactClinicianLabel
-                                PregnancyBpFlagLevel.URGENT ->
-                                    card.contactClinicianLabel
-                            },
+                        failSafeNoCard = true,
+                        usingCachedCard = false,
+                        bpFlagLevel = PregnancyBpFlagLevel.NONE,
+                        bpFlagMessage = null,
+                        loggedBpLabel = loggedBpLabel,
                     )
                 }
+                return
+            }
+            val card =
+                when (fetch) {
+                    is ContentRepository.WarningSignsCardFetch.Network -> fetch.card
+                    is ContentRepository.WarningSignsCardFetch.Cache -> fetch.card
+                }
+            val thresholds =
+                PregnancyBpThresholds(
+                    elevatedSystolic = card.bpThresholds.elevatedSystolic,
+                    elevatedDiastolic = card.bpThresholds.elevatedDiastolic,
+                    urgentSystolic = card.bpThresholds.urgentSystolic,
+                    urgentDiastolic = card.bpThresholds.urgentDiastolic,
+                )
+            val flagLevel =
+                pregnancy?.let {
+                    PregnancyBpFlagEvaluator.evaluate(reading, thresholds)
+                } ?: PregnancyBpFlagLevel.NONE
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    failSafeNoCard = false,
+                    usingCachedCard = fetch is ContentRepository.WarningSignsCardFetch.Cache,
+                    introTitle = card.introTitle,
+                    introBody = card.introBody,
+                    signs = card.signs.map { sign -> PregnancyWarningSignItemUi(sign.title, sign.summary) },
+                    escalationTitle = card.escalationTitle,
+                    escalationBody = card.escalationBody,
+                    contactClinicianLabel = card.contactClinicianLabel,
+                    bpFlagLevel = flagLevel,
+                    bpFlagMessage =
+                        when (flagLevel) {
+                            PregnancyBpFlagLevel.NONE -> null
+                            PregnancyBpFlagLevel.ELEVATED -> card.contactClinicianLabel
+                            PregnancyBpFlagLevel.URGENT -> card.urgentContactClinicianLabel
+                        },
+                    loggedBpLabel = loggedBpLabel,
+                )
             }
         }
     }

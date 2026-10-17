@@ -129,4 +129,78 @@ class ContentTypePayloadValidatorTest {
             }
         assertEquals("invalid_care_schedule_week_window", ex.reason)
     }
+
+    @Test
+    fun rejectsWarningSignsWithoutSignItems() {
+        val json = warningSignsJson(signs = "[]")
+        val ex =
+            assertThrows(ResponseStatusException::class.java) {
+                ContentTypePayloadValidator.validateForSave(ContentTypes.WARNING_SIGNS, json, mapper)
+            }
+        assertEquals("warning_signs_required", ex.reason)
+    }
+
+    @Test
+    fun rejectsWarningSignWithBlankFields() {
+        val json =
+            warningSignsJson(
+                signs =
+                    """[{"id":"","title":"t","summary":"s"}]""",
+            )
+        val ex =
+            assertThrows(ResponseStatusException::class.java) {
+                ContentTypePayloadValidator.validateForSave(ContentTypes.WARNING_SIGNS, json, mapper)
+            }
+        assertEquals("warning_sign_fields_required", ex.reason)
+    }
+
+    @Test
+    fun rejectsInvalidBpThreshold() {
+        val json =
+            warningSignsJson(
+                bpThresholds =
+                    """{"elevatedSystolic":300,"elevatedDiastolic":90,"urgentSystolic":160,"urgentDiastolic":110}""",
+            )
+        val ex =
+            assertThrows(ResponseStatusException::class.java) {
+                ContentTypePayloadValidator.validateForSave(ContentTypes.WARNING_SIGNS, json, mapper)
+            }
+        assertEquals("invalid_bp_threshold", ex.reason)
+    }
+
+    @Test
+    fun rejectsInvalidBpThresholdOrder() {
+        val json =
+            warningSignsJson(
+                bpThresholds =
+                    """{"elevatedSystolic":170,"elevatedDiastolic":90,"urgentSystolic":160,"urgentDiastolic":110}""",
+            )
+        val ex =
+            assertThrows(ResponseStatusException::class.java) {
+                ContentTypePayloadValidator.validateForSave(ContentTypes.WARNING_SIGNS, json, mapper)
+            }
+        assertEquals("invalid_bp_threshold_order", ex.reason)
+    }
+
+    private fun warningSignsJson(
+        signs: String =
+            """[{"id":"s1","title":"t","summary":"s"}]""",
+        bpThresholds: String =
+            """{"elevatedSystolic":140,"elevatedDiastolic":90,"urgentSystolic":160,"urgentDiastolic":110}""",
+    ): String =
+        """
+        {
+          "placeholder": true,
+          "introTitle": "i",
+          "introBody": "b",
+          "signs": $signs,
+          "escalationTitle": "e",
+          "escalationBody": "e",
+          "contactClinicianLabel": "c",
+          "urgentEscalationTitle": "u",
+          "urgentEscalationBody": "u",
+          "urgentContactClinicianLabel": "u",
+          "bpThresholds": $bpThresholds
+        }
+        """.trimIndent()
 }

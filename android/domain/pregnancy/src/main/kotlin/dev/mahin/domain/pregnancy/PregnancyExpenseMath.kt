@@ -33,13 +33,22 @@ object PregnancyExpenseMath {
 
     @Suppress("ReturnCount")
     fun parseAmountInput(raw: String): Pair<Long?, PregnancyExpenseAmountError?> {
-        val normalized = PersianDigits.toAscii(raw).trim().replace(",", "")
+        val normalized =
+            PersianDigits
+                .toAscii(raw)
+                .trim()
+                .replace(",", "")
+                .replace("٬", "")
+                .replace("،", "")
         if (normalized.isEmpty()) {
             return null to PregnancyExpenseAmountError.EMPTY
         }
         val value =
             normalized.toLongOrNull()
                 ?: return null to PregnancyExpenseAmountError.UNPARSEABLE
+        if (value == 0L) {
+            return null to PregnancyExpenseAmountError.ZERO
+        }
         if (value < 0) {
             return null to PregnancyExpenseAmountError.NEGATIVE
         }
@@ -68,6 +77,7 @@ object PregnancyExpenseMath {
 enum class PregnancyExpenseAmountError {
     EMPTY,
     UNPARSEABLE,
+    ZERO,
     NEGATIVE,
     TOO_LARGE,
 }

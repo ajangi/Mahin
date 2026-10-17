@@ -65,6 +65,21 @@ class ContentCachePreferencesRepository
             }
         }
 
+        suspend fun setCachedWarningSignsCardJson(payload: String) {
+            dataStore.edit { prefs ->
+                prefs[CACHED_WARNING_SIGNS_JSON] = payload
+            }
+        }
+
+        suspend fun cachedWarningSignsCardJson(): String? =
+            dataStore.data.map { it[CACHED_WARNING_SIGNS_JSON] }.first()
+
+        suspend fun clearCachedWarningSignsCard() {
+            dataStore.edit { prefs ->
+                prefs.remove(CACHED_WARNING_SIGNS_JSON)
+            }
+        }
+
         suspend fun dismissDailyTip(
             tipId: String,
             localDateIso: String,
@@ -89,6 +104,7 @@ class ContentCachePreferencesRepository
             private val BOOKMARK_IDS = stringSetPreferencesKey("local_bookmark_ids")
             private val CACHED_ARTICLES_JSON = stringPreferencesKey("cached_articles_json")
             private val CACHED_DAILY_TIP_JSON = stringPreferencesKey("cached_daily_tip_json")
+            private val CACHED_WARNING_SIGNS_JSON = stringPreferencesKey("cached_warning_signs_json")
             private val DISMISSED_DAILY_TIP_ID = stringPreferencesKey("dismissed_daily_tip_id")
             private val DISMISSED_DAILY_TIP_DATE = stringPreferencesKey("dismissed_daily_tip_date")
         }

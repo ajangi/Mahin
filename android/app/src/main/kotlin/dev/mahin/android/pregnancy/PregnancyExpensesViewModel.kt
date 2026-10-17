@@ -3,6 +3,9 @@ package dev.mahin.android.pregnancy
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.mahin.android.navigation.MahinTopLevelDestination
+import dev.mahin.core.analytics.AnalyticsEvent
+import dev.mahin.core.analytics.AnalyticsGateway
 import dev.mahin.core.common.LocalDateClock
 import dev.mahin.core.database.entity.PregnancyExpenseEntity
 import dev.mahin.core.database.pregnancy.PregnancyExpenseRepository
@@ -47,11 +50,18 @@ class PregnancyExpensesViewModel
     constructor(
         private val expenseRepository: PregnancyExpenseRepository,
         private val localDateClock: LocalDateClock,
+        private val analytics: AnalyticsGateway,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(PregnancyExpensesUiState())
         val uiState: StateFlow<PregnancyExpensesUiState> = _uiState.asStateFlow()
 
         init {
+            analytics.track(
+                AnalyticsEvent(
+                    "foundation_opened",
+                    mapOf("surface" to MahinTopLevelDestination.PREGNANCY_EXPENSES_ROUTE),
+                ),
+            )
             viewModelScope.launch {
                 expenseRepository.observeAll().collect { rows ->
                     val lines = rows.map { it.toLine() }

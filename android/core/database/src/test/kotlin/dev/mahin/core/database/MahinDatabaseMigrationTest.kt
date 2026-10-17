@@ -367,7 +367,33 @@ class MahinDatabaseMigrationTest {
 
     @Test
     fun migrate10To11_addsPregnancyExpenseTable() {
-        helper.createDatabase(TEST_DB, 10).close()
+        val v10 = helper.createDatabase(TEST_DB, 10)
+        v10.execSQL(
+            """
+            INSERT INTO daily_log (
+                id, logDate, moodTags, symptomTags, medicationTags, localCustomSymptomTags,
+                painSeverity, painLocation, painNote, note, sleepLogged, exerciseLogged,
+                waterGlasses, stressLevel, updatedAtEpochMs
+            ) VALUES (
+                'daily-seed', '2025-05-01', '', '[]', '', '', NULL, NULL, NULL, NULL, 0, 0, 0, NULL, 1
+            )
+            """.trimIndent(),
+        )
+        v10.execSQL(
+            """
+            INSERT INTO pregnancy_day_log
+            (id, logDate, symptomTags, weightKg, bpSystolic, bpDiastolic, note, updatedAtEpochMs)
+            VALUES ('preg-log-seed', '2025-05-01', '[]', 72.5, 120, 80, NULL, 1)
+            """.trimIndent(),
+        )
+        v10.execSQL(
+            """
+            INSERT INTO pregnancy_checklist_item
+            (id, checklistKind, section, label, sortOrder, checked, templateItemId, updatedAtEpochMs)
+            VALUES ('chk-seed', 'hospital_bag', 'مدارک', 'کارت ملی', 1, 0, 't-seed', 1)
+            """.trimIndent(),
+        )
+        v10.close()
         val migrated =
             helper.runMigrationsAndValidate(
                 TEST_DB,
@@ -402,6 +428,23 @@ class MahinDatabaseMigrationTest {
             .use { cursor ->
                 assertThat(cursor.moveToFirst()).isTrue()
                 assertThat(cursor.getLong(0)).isEqualTo(250_000L)
+            }
+        migrated
+            .query("SELECT symptomTags FROM daily_log WHERE id = 'daily-seed'")
+            .use { cursor ->
+                assertThat(cursor.moveToFirst()).isTrue()
+            }
+        migrated
+            .query("SELECT bpSystolic FROM pregnancy_day_log WHERE id = 'preg-log-seed'")
+            .use { cursor ->
+                assertThat(cursor.moveToFirst()).isTrue()
+                assertThat(cursor.getInt(0)).isEqualTo(120)
+            }
+        migrated
+            .query("SELECT label FROM pregnancy_checklist_item WHERE id = 'chk-seed'")
+            .use { cursor ->
+                assertThat(cursor.moveToFirst()).isTrue()
+                assertThat(cursor.getString(0)).isEqualTo("کارت ملی")
             }
         migrated.close()
     }
