@@ -71,8 +71,7 @@ class ContentCachePreferencesRepository
             }
         }
 
-        suspend fun cachedWarningSignsCardJson(): String? =
-            dataStore.data.map { it[CACHED_WARNING_SIGNS_JSON] }.first()
+        suspend fun cachedWarningSignsCardJson(): String? = dataStore.data.map { it[CACHED_WARNING_SIGNS_JSON] }.first()
 
         suspend fun clearCachedWarningSignsCard() {
             dataStore.edit { prefs ->
