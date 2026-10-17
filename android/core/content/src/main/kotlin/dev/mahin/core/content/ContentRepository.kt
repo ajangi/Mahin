@@ -181,9 +181,11 @@ class ContentRepository
         suspend fun warningSignsCardFetch(): WarningSignsCardFetch? =
             withContext(Dispatchers.IO) {
                 awaitCatalogSync()
-                val summary =
-                    runCatching { api.warningSigns(locale = "fa-IR").items.firstOrNull() }
-                        .getOrNull()
+                val listResponse =
+                    runCatching { api.warningSigns(locale = "fa-IR") }.getOrElse {
+                        return@withContext cachedWarningSignsCard()?.let(WarningSignsCardFetch::Cache)
+                    }
+                val summary = listResponse.items.firstOrNull()
                 if (summary == null) {
                     cachePreferences.clearCachedWarningSignsCard()
                     return@withContext null
