@@ -149,6 +149,10 @@ class PregnancyWarningSignsViewModelTest {
     @Test
     fun nullCard_failSafeShowsLoggedBpWithoutFlag() =
         runTest(testDispatcher) {
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            ContentCachePreferencesRepository(context).clearCachedWarningSignsCard()
+            api.throwOnWarningSigns = true
+            api.warningSignSummaries = emptyList()
             repository.startPregnancy(
                 lmpDate = today.minusWeeks(20),
                 clinicalEddDate = null,

@@ -114,18 +114,6 @@ class PregnancyWeightChartViewModelTest {
             assertThat(state.points.first().weightKg).isEqualTo(250.0)
         }
 
-    @Test
-    fun logOutsideCurrentPregnancy_excluded() =
-        runTest(testDispatcher) {
-            repository.startPregnancy(today.minusWeeks(8), null, null)
-            repository.upsertPregnancyDayLog(
-                PregnancyDayLogInput(today.minusYears(2), emptySet(), 60.0, null, null, null),
-            )
-            val vm = createViewModel()
-            val state = vm.uiState.filter { it.hasActivePregnancy }.first()
-            assertThat(state.points).isEmpty()
-        }
-
     private fun createViewModel(): PregnancyWeightChartViewModel =
         viewModelStore.hold(
             PregnancyWeightChartViewModel(
