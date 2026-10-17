@@ -1,7 +1,7 @@
 # M18b Handoff — Pregnancy expenses, warning signs/BP, weight chart, timer polish
 
 **Milestone:** M18b  
-**Status:** Gatekeeper remediation on PR #49 — CI must be green on tip  
+**Status:** Gatekeeper remediation complete on PR #49 (CI green)  
 **Next milestone:** none mandated (M19 gated)
 
 ## Commands and results
@@ -15,7 +15,7 @@ cd android && ./gradlew lintDebug ktlintCheck detekt test :app:verifyRoborazziDe
 ```
 
 **Branch:** `cursor/m18b-pregnancy-depth-8467`  
-**Tip:** updated on each push; confirm green CI on that SHA before merge.
+**Tip:** `bc12ce55644ec9f3457fea8a3e000fa8be160ebb` (CI run 39000418598 — all 5 checks green)
 
 ## Gatekeeper remediation (PR #49)
 
