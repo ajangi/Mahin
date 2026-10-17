@@ -51,4 +51,11 @@ class PregnancyExpenseMathTest {
         assertThat(error).isNull()
         assertThat(value).isEqualTo(1_234_567L)
     }
+
+    @Test
+    fun parseAmount_stripsArabicCommaSeparator() {
+        val (value, error) = PregnancyExpenseMath.parseAmountInput("۱،۲۳۴،۵۶۷")
+        assertThat(error).isNull()
+        assertThat(value).isEqualTo(1_234_567L)
+    }
 }

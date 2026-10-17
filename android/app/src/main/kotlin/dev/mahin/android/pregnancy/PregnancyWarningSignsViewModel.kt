@@ -115,8 +115,18 @@ class PregnancyWarningSignsViewModel
                     introTitle = card.introTitle,
                     introBody = card.introBody,
                     signs = card.signs.map { sign -> PregnancyWarningSignItemUi(sign.title, sign.summary) },
-                    escalationTitle = card.escalationTitle,
-                    escalationBody = card.escalationBody,
+                    escalationTitle =
+                        if (flagLevel == PregnancyBpFlagLevel.URGENT) {
+                            card.urgentEscalationTitle
+                        } else {
+                            card.escalationTitle
+                        },
+                    escalationBody =
+                        if (flagLevel == PregnancyBpFlagLevel.URGENT) {
+                            card.urgentEscalationBody
+                        } else {
+                            card.escalationBody
+                        },
                     contactClinicianLabel = card.contactClinicianLabel,
                     bpFlagLevel = flagLevel,
                     bpFlagMessage =

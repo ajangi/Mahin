@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -63,6 +64,9 @@ class PregnancyHubViewModel
         val uiState: StateFlow<PregnancyHubUiState> = _uiState.asStateFlow()
 
         private var tickerJob: Job? = null
+        private var tickerKickSnapshot: KickTimerSnapshot = KickTimerSnapshot(null, null)
+        private var tickerContractionSnapshot: ContractionTimerSnapshot =
+            ContractionTimerSnapshot(null, null, null)
         private val hubTickerEnabled: Boolean = savedStateHandle.get<Boolean>(HUB_TICKER_ENABLED_KEY) ?: true
 
         init {
@@ -126,8 +130,10 @@ class PregnancyHubViewModel
                             }
                         }
                     }
+                    tickerKickSnapshot = kickTimer
+                    tickerContractionSnapshot = contractionTimer
                     viewModelScope.launch { refreshKickCount(kickSessionId) }
-                    restartTicker(kickTimer, contractionTimer)
+                    restartTicker()
                 }
             }
         }
@@ -137,6 +143,7 @@ class PregnancyHubViewModel
                 val pregnancy = _uiState.value.activePregnancy ?: return@launch
                 val session = repository.startKickSession(pregnancy.id)
                 timerPreferences.setActiveKickSession(session.id, session.startedAtEpochMs)
+                tickerKickSnapshot = KickTimerSnapshot(session.id, session.startedAtEpochMs)
                 _uiState.update { it.copy(kickSessionId = session.id, kickCount = 0) }
             }
         }
@@ -185,6 +192,8 @@ class PregnancyHubViewModel
                         event.id,
                         event.startedAtEpochMs,
                     )
+                    tickerContractionSnapshot =
+                        ContractionTimerSnapshot(sessionId, event.id, event.startedAtEpochMs)
                 } else {
                     repository.stopContraction(openEventId)
                     timerPreferences.setActiveContractionTimer(sessionId, null, null)
@@ -229,16 +238,13 @@ class PregnancyHubViewModel
             applyTimerElapsed(kickTimer, contractionTimer)
         }
 
-        private fun restartTicker(
-            kickTimer: KickTimerSnapshot,
-            contractionTimer: ContractionTimerSnapshot,
-        ) {
+        private fun restartTicker() {
             if (!hubTickerEnabled) return
             tickerJob?.cancel()
             tickerJob =
                 viewModelScope.launch {
                     while (isActive) {
-                        applyTimerElapsed(kickTimer, contractionTimer)
+                        applyTimerElapsed(tickerKickSnapshot, tickerContractionSnapshot)
                         delay(1_000L)
                     }
                 }

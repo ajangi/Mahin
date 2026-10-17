@@ -10,6 +10,8 @@ import dev.mahin.core.database.entity.PregnancyAppointmentEntity
 import dev.mahin.core.database.entity.PregnancyDatingRevisionEntity
 import dev.mahin.core.database.entity.PregnancyDayLogEntity
 import dev.mahin.core.database.entity.PregnancyRecordEntity
+import dev.mahin.core.common.InstantClock
+import dev.mahin.core.common.SystemInstantClock
 import dev.mahin.core.datastore.PregnancyTimerPreferencesRepository
 import dev.mahin.core.model.PregnancyAppointmentType
 import dev.mahin.core.model.PregnancyOutcome
@@ -48,6 +50,7 @@ class PregnancyTrackingRepository
     constructor(
         database: MahinDatabase,
         private val timerPreferences: PregnancyTimerPreferencesRepository,
+        private val instantClock: InstantClock = SystemInstantClock(),
     ) {
         private val profileDao = database.cycleProfileDao()
         private val pregnancyDao = database.pregnancyRecordDao()
@@ -260,8 +263,10 @@ class PregnancyTrackingRepository
             appointmentDao.deleteById(id)
         }
 
+        private fun timerNowEpochMs(): Long = instantClock.now().toEpochMilli()
+
         suspend fun startKickSession(pregnancyId: String): KickSessionEntity {
-            val now = System.currentTimeMillis()
+            val now = timerNowEpochMs()
             val session =
                 KickSessionEntity(
                     id = UUID.randomUUID().toString(),
@@ -276,7 +281,7 @@ class PregnancyTrackingRepository
 
         suspend fun endKickSession(sessionId: String) {
             val session = kickSessionDao.getById(sessionId) ?: return
-            val now = System.currentTimeMillis()
+            val now = timerNowEpochMs()
             kickSessionDao.upsert(session.copy(endedAtEpochMs = now, updatedAtEpochMs = now))
         }
 
@@ -285,7 +290,7 @@ class PregnancyTrackingRepository
                 KickEventEntity(
                     id = UUID.randomUUID().toString(),
                     sessionId = sessionId,
-                    recordedAtEpochMs = System.currentTimeMillis(),
+                    recordedAtEpochMs = timerNowEpochMs(),
                 ),
             )
         }
@@ -329,7 +334,7 @@ class PregnancyTrackingRepository
         }
 
         suspend fun startContractionSession(pregnancyId: String): ContractionSessionEntity {
-            val now = System.currentTimeMillis()
+            val now = timerNowEpochMs()
             val session =
                 ContractionSessionEntity(
                     id = UUID.randomUUID().toString(),
@@ -344,7 +349,7 @@ class PregnancyTrackingRepository
 
         suspend fun endContractionSession(sessionId: String) {
             val session = contractionSessionDao.getById(sessionId) ?: return
-            val now = System.currentTimeMillis()
+            val now = timerNowEpochMs()
             contractionSessionDao.upsert(session.copy(endedAtEpochMs = now, updatedAtEpochMs = now))
         }
 
@@ -353,7 +358,7 @@ class PregnancyTrackingRepository
                 ContractionEventEntity(
                     id = UUID.randomUUID().toString(),
                     sessionId = sessionId,
-                    startedAtEpochMs = System.currentTimeMillis(),
+                    startedAtEpochMs = timerNowEpochMs(),
                     endedAtEpochMs = null,
                 )
             contractionEventDao.insert(event)
@@ -364,7 +369,7 @@ class PregnancyTrackingRepository
             val event = contractionEventDao.getById(eventId) ?: return
             if (event.endedAtEpochMs != null) return
             contractionEventDao.upsert(
-                event.copy(endedAtEpochMs = System.currentTimeMillis()),
+                event.copy(endedAtEpochMs = timerNowEpochMs()),
             )
         }
 

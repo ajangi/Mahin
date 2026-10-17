@@ -112,6 +112,8 @@ class PregnancyWarningSignsViewModelTest {
             val state = vm.uiState.filter { !it.isLoading }.first()
             assertThat(state.bpFlagLevel).isEqualTo(PregnancyBpFlagLevel.URGENT)
             assertThat(state.bpFlagMessage).isEqualTo("تماس فوری")
+            assertThat(state.escalationTitle).isEqualTo("فوری")
+            assertThat(state.escalationBody).isEqualTo("متن فوری")
         }
 
     @Test

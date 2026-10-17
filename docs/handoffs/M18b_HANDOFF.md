@@ -15,7 +15,7 @@ cd android && ./gradlew lintDebug ktlintCheck detekt test :app:verifyRoborazziDe
 ```
 
 **Branch:** `cursor/m18b-pregnancy-depth-8467`  
-**Tip:** `43c26a867357fea1b951cf58849c66a162517e81` (CI run 39005080651 — all 5 checks green)
+**Tip:** updated on push after gatekeeper re-review (all five CI jobs green on that SHA)
 
 ## Gatekeeper remediation (PR #49)
 
@@ -26,11 +26,12 @@ cd android && ./gradlew lintDebug ktlintCheck detekt test :app:verifyRoborazziDe
 | Backend gatekeeper | M18a-style matrix for `warning_signs` + production placeholder test + validator unit tests |
 | OpenAPI | Documented `warning_signs_not_found`, BP/warning-sign validation codes |
 | Admin | RTL `warning_signs` editor + review panel + payload test |
-| Hub timers | `PregnancyHubViewModelTimerTest` with `StandardTestDispatcher` + `FixedInstantClock`; process-death via VM recreate |
+| Hub timers | `PregnancyHubViewModelTimerTest` — production 1s ticker on; `StandardTestDispatcher` + `FixedInstantClock` shared with repository; `advanceTimeBy(1_000)` + `runCurrent()` for exact elapsed; `viewModelStore.clear()` in `finally`; process-death via VM recreate |
 | Migration 10→11 | Seeds daily log, pregnancy day log, checklist row; asserts survive migration |
 | Telemetry guards | `M18bPregnancyDepthTelemetryGuardTest` — `foundation_opened` routes only, no BP/weight/amount in analytics |
 | Expenses / weight VM tests | Edge cases per gatekeeper list |
-| Expense parsing | Reject zero; strip `٬` and `،` |
+| Expense parsing | Reject zero; strip `٬` and `،` (unit test for `،`) |
+| Warning-signs cache | Empty network list clears stale cached card; URGENT escalation copy on screen |
 | Hardcoded BP test | Asserts scan roots exist and ≥1 file scanned |
 
 ## Implemented scope (unchanged)

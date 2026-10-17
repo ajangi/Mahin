@@ -185,7 +185,8 @@ class ContentRepository
                     runCatching { api.warningSigns(locale = "fa-IR").items.firstOrNull() }
                         .getOrNull()
                 if (summary == null) {
-                    return@withContext cachedWarningSignsCard()?.let(WarningSignsCardFetch::Cache)
+                    cachePreferences.clearCachedWarningSignsCard()
+                    return@withContext null
                 }
                 val fetched =
                     runCatching { api.warningSignsDetail(summary.id) }

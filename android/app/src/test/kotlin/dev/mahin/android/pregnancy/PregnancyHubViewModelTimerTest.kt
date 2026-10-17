@@ -26,6 +26,8 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import org.junit.After
@@ -42,7 +44,11 @@ class PregnancyHubViewModelTimerTest {
     private val testDispatcher = StandardTestDispatcher()
 
     @get:Rule
-    val mainDispatcherRule = MainDispatcherRule(testDispatcher)
+    val mainDispatcherRule =
+        MainDispatcherRule(
+            testDispatcher,
+            beforeResetMain = { viewModelStore.clear() },
+        )
 
     private lateinit var database: MahinDatabase
     private lateinit var repository: PregnancyTrackingRepository
@@ -61,7 +67,8 @@ class PregnancyHubViewModelTimerTest {
                 .allowMainThreadQueries()
                 .build()
         timerPreferences = PregnancyTimerPreferencesRepository(context)
-        repository = PregnancyTrackingRepository(database, timerPreferences)
+        instantClock = FixedInstantClock(Instant.ofEpochMilli(1_000_000L))
+        repository = PregnancyTrackingRepository(database, timerPreferences, instantClock)
         contentRepository =
             ContentRepository(
                 FakeContentApi(),
@@ -70,7 +77,6 @@ class PregnancyHubViewModelTimerTest {
                 Json { ignoreUnknownKeys = true },
                 MediaAssetMemoryCache(),
             )
-        instantClock = FixedInstantClock(Instant.ofEpochMilli(1_000_000L))
         runBlocking {
             database.cycleProfileDao().upsert(
                 CycleProfileEntity(
@@ -96,77 +102,121 @@ class PregnancyHubViewModelTimerTest {
     fun kickTimer_advancesElapsedWithFakeClock() =
         runTest(testDispatcher) {
             val vm = createViewModel()
-            vm.uiState.filter { !it.isLoading }.first()
-            vm.startKickSession()
-            vm.uiState.filter { it.kickSessionId != null }.first()
-            val kickStart =
-                timerPreferences.observeKickTimer().first().startedAtEpochMs ?: error("missing kick start")
-            instantClock.set(Instant.ofEpochMilli(kickStart + 4_500))
-            vm.refreshTimerDisplayForTests()
-            assertThat(vm.uiState.value.kickElapsedSeconds).isAtLeast(4L)
-            assertThat(vm.uiState.value.kickSessionId).isNotNull()
-            viewModelStore.clear()
+            try {
+                runCurrent()
+                vm.uiState.filter { !it.isLoading }.first()
+                vm.startKickSession()
+                runCurrent()
+                vm.uiState.filter { it.kickSessionId != null }.first()
+                val kickStart =
+                    timerPreferences.observeKickTimer().first().startedAtEpochMs ?: error("missing kick start")
+                instantClock.set(Instant.ofEpochMilli(kickStart + 1_000))
+                advanceTimeBy(1_000)
+                runCurrent()
+                assertThat(vm.uiState.value.kickElapsedSeconds).isEqualTo(1L)
+                instantClock.set(Instant.ofEpochMilli(kickStart + 2_000))
+                advanceTimeBy(1_000)
+                runCurrent()
+                assertThat(vm.uiState.value.kickElapsedSeconds).isEqualTo(2L)
+            } finally {
+                viewModelStore.clear()
+            }
         }
 
     @Test
     fun kickTimer_survivesViewModelRecreate() =
         runTest(testDispatcher) {
+            var sessionId: String? = null
             val vm1 = createViewModel()
-            vm1.uiState.filter { !it.isLoading }.first()
-            vm1.startKickSession()
-            vm1.uiState.filter { it.kickSessionId != null }.first()
-            val kickStart =
-                timerPreferences.observeKickTimer().first().startedAtEpochMs ?: error("missing kick start")
-            val sessionId = vm1.uiState.value.kickSessionId
-            instantClock.set(Instant.ofEpochMilli(kickStart + 6_000))
-            viewModelStore.clear()
+            try {
+                runCurrent()
+                vm1.uiState.filter { !it.isLoading }.first()
+                vm1.startKickSession()
+                runCurrent()
+                vm1.uiState.filter { it.kickSessionId != null }.first()
+                val kickStart =
+                    timerPreferences.observeKickTimer().first().startedAtEpochMs ?: error("missing kick start")
+                sessionId = vm1.uiState.value.kickSessionId
+                instantClock.set(Instant.ofEpochMilli(kickStart + 6_000))
+            } finally {
+                viewModelStore.clear()
+            }
             val vm2 = createViewModel()
-            vm2.uiState.filter { it.kickSessionId == sessionId }.first()
-            vm2.refreshTimerDisplayForTests()
-            assertThat(vm2.uiState.value.kickElapsedSeconds).isAtLeast(6L)
-            viewModelStore.clear()
+            try {
+                runCurrent()
+                vm2.uiState.filter { it.kickSessionId == sessionId }.first()
+                advanceTimeBy(1_000)
+                runCurrent()
+                assertThat(vm2.uiState.value.kickElapsedSeconds).isEqualTo(6L)
+            } finally {
+                viewModelStore.clear()
+            }
         }
 
     @Test
     fun contractionTimer_advancesWhileEventOpen() =
         runTest(testDispatcher) {
             val vm = createViewModel()
-            vm.uiState.filter { !it.isLoading }.first()
-            vm.startContractionSession()
-            vm.uiState.filter { it.contractionSessionId != null }.first()
-            vm.toggleContraction()
-            vm.uiState.filter { it.openContractionEventId != null }.first()
-            val openStart =
-                timerPreferences.observeContractionTimer().first().openEventStartedEpochMs
-                    ?: error("missing contraction start")
-            instantClock.set(Instant.ofEpochMilli(openStart + 3_500))
-            vm.refreshTimerDisplayForTests()
-            assertThat(vm.uiState.value.contractionElapsedSeconds).isAtLeast(3L)
-            viewModelStore.clear()
+            try {
+                runCurrent()
+                vm.uiState.filter { !it.isLoading }.first()
+                vm.startContractionSession()
+                runCurrent()
+                vm.uiState.filter { it.contractionSessionId != null }.first()
+                vm.toggleContraction()
+                runCurrent()
+                vm.uiState.filter { it.openContractionEventId != null }.first()
+                val openStart =
+                    timerPreferences.observeContractionTimer().first().openEventStartedEpochMs
+                        ?: error("missing contraction start")
+                instantClock.set(Instant.ofEpochMilli(openStart + 1_000))
+                advanceTimeBy(1_000)
+                runCurrent()
+                assertThat(vm.uiState.value.contractionElapsedSeconds).isEqualTo(1L)
+                instantClock.set(Instant.ofEpochMilli(openStart + 2_000))
+                advanceTimeBy(1_000)
+                runCurrent()
+                assertThat(vm.uiState.value.contractionElapsedSeconds).isEqualTo(2L)
+            } finally {
+                viewModelStore.clear()
+            }
         }
 
     @Test
     fun contractionTimer_survivesViewModelRecreate() =
         runTest(testDispatcher) {
             val vm1 = createViewModel()
-            vm1.uiState.filter { !it.isLoading }.first()
-            vm1.startContractionSession()
-            vm1.uiState.filter { it.contractionSessionId != null }.first()
-            vm1.toggleContraction()
-            vm1.uiState.filter { it.openContractionEventId != null }.first()
-            val openStart =
-                timerPreferences.observeContractionTimer().first().openEventStartedEpochMs
-                    ?: error("missing contraction start")
-            val sessionId = vm1.uiState.value.contractionSessionId
-            val openEventId = vm1.uiState.value.openContractionEventId
-            instantClock.set(Instant.ofEpochMilli(openStart + 5_000))
-            viewModelStore.clear()
+            val sessionId: String?
+            val openEventId: String?
+            try {
+                runCurrent()
+                vm1.uiState.filter { !it.isLoading }.first()
+                vm1.startContractionSession()
+                runCurrent()
+                vm1.uiState.filter { it.contractionSessionId != null }.first()
+                vm1.toggleContraction()
+                runCurrent()
+                vm1.uiState.filter { it.openContractionEventId != null }.first()
+                val openStart =
+                    timerPreferences.observeContractionTimer().first().openEventStartedEpochMs
+                        ?: error("missing contraction start")
+                sessionId = vm1.uiState.value.contractionSessionId
+                openEventId = vm1.uiState.value.openContractionEventId
+                instantClock.set(Instant.ofEpochMilli(openStart + 5_000))
+            } finally {
+                viewModelStore.clear()
+            }
             val vm2 = createViewModel()
-            vm2.uiState.filter { it.contractionSessionId == sessionId }.first()
-            vm2.refreshTimerDisplayForTests()
-            assertThat(vm2.uiState.value.openContractionEventId).isEqualTo(openEventId)
-            assertThat(vm2.uiState.value.contractionElapsedSeconds).isAtLeast(5L)
-            viewModelStore.clear()
+            try {
+                runCurrent()
+                vm2.uiState.filter { it.contractionSessionId == sessionId }.first()
+                advanceTimeBy(1_000)
+                runCurrent()
+                assertThat(vm2.uiState.value.openContractionEventId).isEqualTo(openEventId)
+                assertThat(vm2.uiState.value.contractionElapsedSeconds).isEqualTo(5L)
+            } finally {
+                viewModelStore.clear()
+            }
         }
 
     private fun createViewModel(): PregnancyHubViewModel =
@@ -177,10 +227,7 @@ class PregnancyHubViewModelTimerTest {
                 contentRepository = contentRepository,
                 localDateClock = FixedLocalDateClock(today),
                 instantClock = instantClock,
-                savedStateHandle =
-                    SavedStateHandle(
-                        mapOf(PregnancyHubViewModel.HUB_TICKER_ENABLED_KEY to false),
-                    ),
+                savedStateHandle = SavedStateHandle(),
             ),
         )
 }
