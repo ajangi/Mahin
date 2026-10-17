@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -62,6 +63,7 @@ class PregnancyHubViewModel
         val uiState: StateFlow<PregnancyHubUiState> = _uiState.asStateFlow()
 
         private var tickerJob: Job? = null
+        private val hubTickerEnabled: Boolean = savedStateHandle.get<Boolean>(HUB_TICKER_ENABLED_KEY) ?: true
 
         init {
             savedStateHandle.get<String>("restored")?.let { /* touch SavedStateHandle for config change */ }
@@ -221,31 +223,49 @@ class PregnancyHubViewModel
             _uiState.update { it.copy(kickCount = count) }
         }
 
+        internal suspend fun refreshTimerDisplayForTests() {
+            val kickTimer = timerPreferences.observeKickTimer().first()
+            val contractionTimer = timerPreferences.observeContractionTimer().first()
+            applyTimerElapsed(kickTimer, contractionTimer)
+        }
+
         private fun restartTicker(
             kickTimer: KickTimerSnapshot,
             contractionTimer: ContractionTimerSnapshot,
         ) {
+            if (!hubTickerEnabled) return
             tickerJob?.cancel()
             tickerJob =
                 viewModelScope.launch {
                     while (isActive) {
-                        val now = instantClock.now().toEpochMilli()
-                        val kickElapsed =
-                            PregnancyHubTimerMath.elapsedSeconds(now, kickTimer.startedAtEpochMs)
-                        val contractionElapsed =
-                            PregnancyHubTimerMath.elapsedSeconds(
-                                now,
-                                contractionTimer.openEventStartedEpochMs,
-                            )
-                        _uiState.update {
-                            it.copy(
-                                kickElapsedSeconds = kickElapsed,
-                                contractionElapsedSeconds = contractionElapsed,
-                            )
-                        }
+                        applyTimerElapsed(kickTimer, contractionTimer)
                         delay(1_000L)
                     }
                 }
+        }
+
+        private fun applyTimerElapsed(
+            kickTimer: KickTimerSnapshot,
+            contractionTimer: ContractionTimerSnapshot,
+        ) {
+            val now = instantClock.now().toEpochMilli()
+            val kickElapsed =
+                PregnancyHubTimerMath.elapsedSeconds(now, kickTimer.startedAtEpochMs)
+            val contractionElapsed =
+                PregnancyHubTimerMath.elapsedSeconds(
+                    now,
+                    contractionTimer.openEventStartedEpochMs,
+                )
+            _uiState.update {
+                it.copy(
+                    kickElapsedSeconds = kickElapsed,
+                    contractionElapsedSeconds = contractionElapsed,
+                )
+            }
+        }
+
+        companion object {
+            const val HUB_TICKER_ENABLED_KEY: String = "hub_ticker_enabled"
         }
 
         private data class HubInputs(

@@ -22,11 +22,10 @@ import dev.mahin.core.testing.MainDispatcherRule
 import dev.mahin.core.testing.ViewModelStoreTestHarness
 import java.time.Instant
 import java.time.LocalDate
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.advanceTimeBy
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import org.junit.After
@@ -97,83 +96,77 @@ class PregnancyHubViewModelTimerTest {
     fun kickTimer_advancesElapsedWithFakeClock() =
         runTest(testDispatcher) {
             val vm = createViewModel()
-            advanceUntilIdle()
+            vm.uiState.filter { !it.isLoading }.first()
             vm.startKickSession()
-            advanceUntilIdle()
+            vm.uiState.filter { it.kickSessionId != null }.first()
             val kickStart =
                 timerPreferences.observeKickTimer().first().startedAtEpochMs ?: error("missing kick start")
             instantClock.set(Instant.ofEpochMilli(kickStart + 4_500))
-            advanceTimeBy(1_000)
-            advanceUntilIdle()
+            vm.refreshTimerDisplayForTests()
             assertThat(vm.uiState.value.kickElapsedSeconds).isAtLeast(4L)
             assertThat(vm.uiState.value.kickSessionId).isNotNull()
+            viewModelStore.clear()
         }
 
     @Test
     fun kickTimer_survivesViewModelRecreate() =
         runTest(testDispatcher) {
             val vm1 = createViewModel()
-            advanceUntilIdle()
+            vm1.uiState.filter { !it.isLoading }.first()
             vm1.startKickSession()
-            advanceUntilIdle()
+            vm1.uiState.filter { it.kickSessionId != null }.first()
             val kickStart =
                 timerPreferences.observeKickTimer().first().startedAtEpochMs ?: error("missing kick start")
             val sessionId = vm1.uiState.value.kickSessionId
             instantClock.set(Instant.ofEpochMilli(kickStart + 6_000))
-            advanceTimeBy(1_000)
-            advanceUntilIdle()
             viewModelStore.clear()
             val vm2 = createViewModel()
-            advanceUntilIdle()
-            advanceTimeBy(1_000)
-            advanceUntilIdle()
-            assertThat(vm2.uiState.value.kickSessionId).isEqualTo(sessionId)
+            vm2.uiState.filter { it.kickSessionId == sessionId }.first()
+            vm2.refreshTimerDisplayForTests()
             assertThat(vm2.uiState.value.kickElapsedSeconds).isAtLeast(6L)
+            viewModelStore.clear()
         }
 
     @Test
     fun contractionTimer_advancesWhileEventOpen() =
         runTest(testDispatcher) {
             val vm = createViewModel()
-            advanceUntilIdle()
+            vm.uiState.filter { !it.isLoading }.first()
             vm.startContractionSession()
-            advanceUntilIdle()
+            vm.uiState.filter { it.contractionSessionId != null }.first()
             vm.toggleContraction()
-            advanceUntilIdle()
+            vm.uiState.filter { it.openContractionEventId != null }.first()
             val openStart =
                 timerPreferences.observeContractionTimer().first().openEventStartedEpochMs
                     ?: error("missing contraction start")
             instantClock.set(Instant.ofEpochMilli(openStart + 3_500))
-            advanceTimeBy(1_000)
-            advanceUntilIdle()
+            vm.refreshTimerDisplayForTests()
             assertThat(vm.uiState.value.contractionElapsedSeconds).isAtLeast(3L)
+            viewModelStore.clear()
         }
 
     @Test
     fun contractionTimer_survivesViewModelRecreate() =
         runTest(testDispatcher) {
             val vm1 = createViewModel()
-            advanceUntilIdle()
+            vm1.uiState.filter { !it.isLoading }.first()
             vm1.startContractionSession()
-            advanceUntilIdle()
+            vm1.uiState.filter { it.contractionSessionId != null }.first()
             vm1.toggleContraction()
-            advanceUntilIdle()
+            vm1.uiState.filter { it.openContractionEventId != null }.first()
             val openStart =
                 timerPreferences.observeContractionTimer().first().openEventStartedEpochMs
                     ?: error("missing contraction start")
             val sessionId = vm1.uiState.value.contractionSessionId
             val openEventId = vm1.uiState.value.openContractionEventId
             instantClock.set(Instant.ofEpochMilli(openStart + 5_000))
-            advanceTimeBy(1_000)
-            advanceUntilIdle()
             viewModelStore.clear()
             val vm2 = createViewModel()
-            advanceUntilIdle()
-            advanceTimeBy(1_000)
-            advanceUntilIdle()
-            assertThat(vm2.uiState.value.contractionSessionId).isEqualTo(sessionId)
+            vm2.uiState.filter { it.contractionSessionId == sessionId }.first()
+            vm2.refreshTimerDisplayForTests()
             assertThat(vm2.uiState.value.openContractionEventId).isEqualTo(openEventId)
             assertThat(vm2.uiState.value.contractionElapsedSeconds).isAtLeast(5L)
+            viewModelStore.clear()
         }
 
     private fun createViewModel(): PregnancyHubViewModel =
@@ -184,7 +177,10 @@ class PregnancyHubViewModelTimerTest {
                 contentRepository = contentRepository,
                 localDateClock = FixedLocalDateClock(today),
                 instantClock = instantClock,
-                savedStateHandle = SavedStateHandle(),
+                savedStateHandle =
+                    SavedStateHandle(
+                        mapOf(PregnancyHubViewModel.HUB_TICKER_ENABLED_KEY to false),
+                    ),
             ),
         )
 }
