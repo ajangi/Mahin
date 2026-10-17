@@ -70,7 +70,9 @@ class ContentRepositoryWarningSignsCacheTest {
                     contactClinicianLabel = "c",
                     urgentContactClinicianLabel = "u",
                 )
-            cachePreferences.setCachedWarningSignsCardJson(Json.encodeToString(ContentWarningSignsDto.serializer(), staleCard))
+            cachePreferences.setCachedWarningSignsCardJson(
+                Json.encodeToString(ContentWarningSignsDto.serializer(), staleCard),
+            )
             api.warningSignsItems = emptyList()
             assertThat(repository.warningSignsCardFetch()).isNull()
             assertThat(cachePreferences.cachedWarningSignsCardJson()).isNull()

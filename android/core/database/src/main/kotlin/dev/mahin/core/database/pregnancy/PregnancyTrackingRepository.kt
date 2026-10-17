@@ -1,5 +1,7 @@
 package dev.mahin.core.database.pregnancy
 
+import dev.mahin.core.common.InstantClock
+import dev.mahin.core.common.SystemInstantClock
 import dev.mahin.core.database.MahinDatabase
 import dev.mahin.core.database.entity.ContractionEventEntity
 import dev.mahin.core.database.entity.ContractionSessionEntity
@@ -10,8 +12,6 @@ import dev.mahin.core.database.entity.PregnancyAppointmentEntity
 import dev.mahin.core.database.entity.PregnancyDatingRevisionEntity
 import dev.mahin.core.database.entity.PregnancyDayLogEntity
 import dev.mahin.core.database.entity.PregnancyRecordEntity
-import dev.mahin.core.common.InstantClock
-import dev.mahin.core.common.SystemInstantClock
 import dev.mahin.core.datastore.PregnancyTimerPreferencesRepository
 import dev.mahin.core.model.PregnancyAppointmentType
 import dev.mahin.core.model.PregnancyOutcome
