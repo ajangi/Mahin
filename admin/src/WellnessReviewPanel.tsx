@@ -63,6 +63,27 @@ export function WellnessReviewPanel({ version }: { version: ReviewVersion | null
           <pre>{JSON.stringify((payload as { items?: unknown }).items ?? [], null, 2)}</pre>
         </div>
       )}
+      {version.contentType === "warning_signs" && (
+        <div>
+          <h4>هشدارها</h4>
+          <p>{String((payload as { introTitle?: string }).introTitle ?? "")}</p>
+          <p>{String((payload as { introBody?: string }).introBody ?? "")}</p>
+          <h5>ارتقا</h5>
+          <p>{String((payload as { escalationTitle?: string }).escalationTitle ?? "")}</p>
+          <p>{String((payload as { escalationBody?: string }).escalationBody ?? "")}</p>
+          <p>{String((payload as { contactClinicianLabel?: string }).contactClinicianLabel ?? "")}</p>
+          <h5>ارتقا فوری</h5>
+          <p>{String((payload as { urgentEscalationTitle?: string }).urgentEscalationTitle ?? "")}</p>
+          <p>{String((payload as { urgentEscalationBody?: string }).urgentEscalationBody ?? "")}</p>
+          <p>
+            {String((payload as { urgentContactClinicianLabel?: string }).urgentContactClinicianLabel ?? "")}
+          </p>
+          <h5>آستانه‌های فشار خون</h5>
+          <pre>{JSON.stringify((payload as { bpThresholds?: unknown }).bpThresholds ?? {}, null, 2)}</pre>
+          <h5>علائم</h5>
+          <pre>{JSON.stringify((payload as { signs?: unknown }).signs ?? [], null, 2)}</pre>
+        </div>
+      )}
     </section>
   );
 }

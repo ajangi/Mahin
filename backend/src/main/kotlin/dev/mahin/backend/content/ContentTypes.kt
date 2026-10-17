@@ -9,10 +9,11 @@ object ContentTypes {
     const val COLLECTION = "collection"
     const val CARE_SCHEDULE = "care_schedule"
     const val CHECKLIST_TEMPLATE = "checklist_template"
+    const val WARNING_SIGNS = "warning_signs"
 
     val WELLNESS_TYPES = setOf(DAILY_TIP, PROGRAM, COLLECTION)
 
-    val PREGNANCY_COMPANION_TYPES = setOf(CARE_SCHEDULE, CHECKLIST_TEMPLATE)
+    val PREGNANCY_COMPANION_TYPES = setOf(CARE_SCHEDULE, CHECKLIST_TEMPLATE, WARNING_SIGNS)
 
     fun isWellnessType(contentType: String): Boolean = contentType in WELLNESS_TYPES
 

@@ -62,6 +62,7 @@ class TodayDayEditorIntegrationTest {
     }
 
     @Test
+    @Suppress("LongMethod")
     fun quickLog_opensEditor_autosavesWithoutSaveOrDialog() {
         androidComposeRule.setContent {
             MahinTheme {
@@ -83,10 +84,13 @@ class TodayDayEditorIntegrationTest {
                             log = { Box(Modifier.fillMaxSize()) },
                             cycleInsights = { Box(Modifier.fillMaxSize()) },
                             ttcInsights = { Box(Modifier.fillMaxSize()) },
-                            pregnancyHub = { _, _, _, _, _ -> Box(Modifier.fillMaxSize()) },
+                            pregnancyHub = { _, _, _, _, _, _, _, _ -> Box(Modifier.fillMaxSize()) },
                             pregnancyWeekByWeek = { Box(Modifier.fillMaxSize()) },
                             pregnancyTools = { Box(Modifier.fillMaxSize()) },
                             pregnancyChecklist = { Box(Modifier.fillMaxSize()) },
+                            pregnancyExpenses = { Box(Modifier.fillMaxSize()) },
+                            pregnancyWarningSigns = { Box(Modifier.fillMaxSize()) },
+                            pregnancyWeightChart = { Box(Modifier.fillMaxSize()) },
                             plan = { Box(Modifier.fillMaxSize()) },
                             learn = { Box(Modifier.fillMaxSize()) },
                             history = { Box(Modifier.fillMaxSize()) },

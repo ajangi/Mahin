@@ -365,6 +365,92 @@ class MahinDatabaseMigrationTest {
         migrated.close()
     }
 
+    @Test
+    fun migrate10To11_addsPregnancyExpenseTable() {
+        val v10 = helper.createDatabase(TEST_DB, 10)
+        seedV10DepthRows(v10)
+        v10.close()
+        val migrated =
+            helper.runMigrationsAndValidate(
+                TEST_DB,
+                11,
+                true,
+                MIGRATION_1_2,
+                MIGRATION_2_3,
+                MIGRATION_3_4,
+                MIGRATION_4_5,
+                MIGRATION_5_6,
+                MIGRATION_6_7,
+                MIGRATION_7_8,
+                MIGRATION_8_9,
+                MIGRATION_9_10,
+                MIGRATION_10_11,
+            )
+        migrated
+            .query(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='pregnancy_expense'",
+            ).use { cursor ->
+                assertThat(cursor.moveToFirst()).isTrue()
+            }
+        migrated.execSQL(
+            """
+            INSERT INTO pregnancy_expense
+            (id, category, amountMinor, currencyUnit, expenseDate, note, updatedAtEpochMs)
+            VALUES ('exp-1', 'tests_imaging', 250000, 'toman', '2025-06-01', NULL, 1)
+            """.trimIndent(),
+        )
+        migrated
+            .query("SELECT amountMinor FROM pregnancy_expense WHERE id = 'exp-1'")
+            .use { cursor ->
+                assertThat(cursor.moveToFirst()).isTrue()
+                assertThat(cursor.getLong(0)).isEqualTo(250_000L)
+            }
+        assertV10DepthRowsSurvivedMigration(migrated)
+        migrated.close()
+    }
+
+    private fun seedV10DepthRows(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            INSERT INTO daily_log (
+                id, logDate, moodTags, symptomTags, medicationTags, localCustomSymptomTags,
+                painSeverity, painLocation, painNote, note, sleepLogged, exerciseLogged,
+                waterGlasses, stressLevel, updatedAtEpochMs
+            ) VALUES (
+                'daily-seed', '2025-05-01', '', '[]', '', '', NULL, NULL, NULL, NULL, 0, 0, 0, NULL, 1
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            """
+            INSERT INTO pregnancy_day_log
+            (id, logDate, symptomTags, weightKg, bpSystolic, bpDiastolic, note, updatedAtEpochMs)
+            VALUES ('preg-log-seed', '2025-05-01', '[]', 72.5, 120, 80, NULL, 1)
+            """.trimIndent(),
+        )
+        db.execSQL(
+            """
+            INSERT INTO pregnancy_checklist_item
+            (id, checklistKind, section, label, sortOrder, checked, templateItemId, updatedAtEpochMs)
+            VALUES ('chk-seed', 'hospital_bag', 'مدارک', 'کارت ملی', 1, 0, 't-seed', 1)
+            """.trimIndent(),
+        )
+    }
+
+    private fun assertV10DepthRowsSurvivedMigration(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+        db.query("SELECT symptomTags FROM daily_log WHERE id = 'daily-seed'").use { cursor ->
+            assertThat(cursor.moveToFirst()).isTrue()
+        }
+        db.query("SELECT bpSystolic FROM pregnancy_day_log WHERE id = 'preg-log-seed'").use { cursor ->
+            assertThat(cursor.moveToFirst()).isTrue()
+            assertThat(cursor.getInt(0)).isEqualTo(120)
+        }
+        db.query("SELECT label FROM pregnancy_checklist_item WHERE id = 'chk-seed'").use { cursor ->
+            assertThat(cursor.moveToFirst()).isTrue()
+            assertThat(cursor.getString(0)).isEqualTo("کارت ملی")
+        }
+    }
+
     private companion object {
         const val TEST_DB = "migration-test"
     }

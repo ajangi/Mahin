@@ -34,6 +34,9 @@ enum class MahinTopLevelDestination(
         const val PREGNANCY_WEEK_BY_WEEK_ROUTE: String = "pregnancy_week_by_week"
         const val PREGNANCY_TOOLS_ROUTE: String = "pregnancy_tools"
         const val PREGNANCY_CHECKLIST_ROUTE: String = "pregnancy_checklist"
+        const val PREGNANCY_EXPENSES_ROUTE: String = "pregnancy_expenses"
+        const val PREGNANCY_WARNING_SIGNS_ROUTE: String = "pregnancy_warning_signs"
+        const val PREGNANCY_WEIGHT_CHART_ROUTE: String = "pregnancy_weight_chart"
 
         fun forMode(mode: ReproductiveMode): List<MahinTopLevelDestination> =
             when (mode) {

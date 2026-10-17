@@ -128,12 +128,49 @@ export type ChecklistTemplateEditorState = {
   placeholder: boolean;
 };
 
+export type WarningSignItemDraft = {
+  id: string;
+  title: string;
+  summary: string;
+};
+
+export function updateWarningSignItem(
+  items: WarningSignItemDraft[],
+  itemIndex: number,
+  patch: Partial<WarningSignItemDraft>,
+): WarningSignItemDraft[] {
+  return items.map((item, i) => (i !== itemIndex ? item : { ...item, ...patch }));
+}
+
+export type WarningSignsEditorState = {
+  title: string;
+  summary: string;
+  locale: string;
+  introTitle: string;
+  introBody: string;
+  escalationTitle: string;
+  escalationBody: string;
+  contactClinicianLabel: string;
+  urgentEscalationTitle: string;
+  urgentEscalationBody: string;
+  urgentContactClinicianLabel: string;
+  elevatedSystolic: string;
+  elevatedDiastolic: string;
+  urgentSystolic: string;
+  urgentDiastolic: string;
+  signs: WarningSignItemDraft[];
+  effectiveFrom: string;
+  effectiveTo: string;
+  placeholder: boolean;
+};
+
 export type WellnessEditorState =
   | DailyTipEditorState
   | ProgramEditorState
   | CollectionEditorState
   | CareScheduleEditorState
-  | ChecklistTemplateEditorState;
+  | ChecklistTemplateEditorState
+  | WarningSignsEditorState;
 
 export function buildCreateDocumentBody(
   kind: WellnessContentKind,
@@ -226,6 +263,34 @@ export function buildCreateDocumentBody(
           weekEnd: parseRequiredInt(item.weekEnd, 1),
           description: item.description || undefined,
           appointmentTypeHint: item.appointmentTypeHint || undefined,
+        })),
+      },
+    };
+  }
+  if (kind === "warning_signs") {
+    const s = state as WarningSignsEditorState;
+    return {
+      ...base,
+      typePayload: {
+        placeholder: s.placeholder,
+        introTitle: s.introTitle,
+        introBody: s.introBody,
+        escalationTitle: s.escalationTitle,
+        escalationBody: s.escalationBody,
+        contactClinicianLabel: s.contactClinicianLabel,
+        urgentEscalationTitle: s.urgentEscalationTitle,
+        urgentEscalationBody: s.urgentEscalationBody,
+        urgentContactClinicianLabel: s.urgentContactClinicianLabel,
+        bpThresholds: {
+          elevatedSystolic: parseRequiredInt(s.elevatedSystolic, 140),
+          elevatedDiastolic: parseRequiredInt(s.elevatedDiastolic, 90),
+          urgentSystolic: parseRequiredInt(s.urgentSystolic, 160),
+          urgentDiastolic: parseRequiredInt(s.urgentDiastolic, 110),
+        },
+        signs: s.signs.map((sign) => ({
+          id: sign.id,
+          title: sign.title,
+          summary: sign.summary,
         })),
       },
     };

@@ -21,4 +21,17 @@ object PersianDigits {
                 )
             }
         }
+
+    fun toAscii(text: String): String =
+        buildString(text.length) {
+            for (ch in text) {
+                append(
+                    when (ch) {
+                        in PERSIAN_ZERO..'\u06F9' -> '0' + (ch.code - PERSIAN_ZERO.code)
+                        in '\u0660'..'\u0669' -> '0' + (ch.code - '\u0660'.code)
+                        else -> ch
+                    },
+                )
+            }
+        }
 }

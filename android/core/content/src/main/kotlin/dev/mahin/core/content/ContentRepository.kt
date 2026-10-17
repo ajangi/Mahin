@@ -160,6 +160,54 @@ class ContentRepository
                 runCatching { api.checklistTemplate(summary.id) }.getOrNull()
             }
 
+        sealed interface WarningSignsCardFetch {
+            data class Network(
+                val card: ContentWarningSignsDto,
+            ) : WarningSignsCardFetch
+
+            data class Cache(
+                val card: ContentWarningSignsDto,
+            ) : WarningSignsCardFetch
+        }
+
+        suspend fun warningSignsCard(): ContentWarningSignsDto? =
+            warningSignsCardFetch()?.let { fetch ->
+                when (fetch) {
+                    is WarningSignsCardFetch.Network -> fetch.card
+                    is WarningSignsCardFetch.Cache -> fetch.card
+                }
+            }
+
+        suspend fun warningSignsCardFetch(): WarningSignsCardFetch? =
+            withContext(Dispatchers.IO) {
+                awaitCatalogSync()
+                val listResponse =
+                    runCatching { api.warningSigns(locale = "fa-IR") }.getOrElse {
+                        return@withContext cachedWarningSignsCard()?.let(WarningSignsCardFetch::Cache)
+                    }
+                val summary = listResponse.items.firstOrNull()
+                if (summary == null) {
+                    cachePreferences.clearCachedWarningSignsCard()
+                    return@withContext null
+                }
+                val fetched =
+                    runCatching { api.warningSignsDetail(summary.id) }
+                        .onSuccess { card ->
+                            cachePreferences.setCachedWarningSignsCardJson(json.encodeToString(card))
+                        }.getOrNull()
+                when {
+                    fetched != null -> WarningSignsCardFetch.Network(fetched)
+                    else -> cachedWarningSignsCard()?.let(WarningSignsCardFetch::Cache)
+                }
+            }
+
+        suspend fun cachedWarningSignsCard(): ContentWarningSignsDto? =
+            withContext(Dispatchers.IO) {
+                cachePreferences.cachedWarningSignsCardJson()?.let { payload ->
+                    runCatching { json.decodeFromString<ContentWarningSignsDto>(payload) }.getOrNull()
+                }
+            }
+
         suspend fun mediaAsset(assetId: String): MediaAssetDto? =
             withContext(Dispatchers.IO) {
                 mediaMemoryCache.get(assetId)?.let { return@withContext it }

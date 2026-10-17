@@ -139,5 +139,10 @@ class ContentRepositoryPregnancyWeekFetchTest {
         ): ContentChecklistTemplateListResponseDto = ContentChecklistTemplateListResponseDto(emptyList())
 
         override suspend fun checklistTemplate(documentId: String): ContentChecklistTemplateDto = error("unused")
+
+        override suspend fun warningSigns(locale: String): ContentWarningSignsListResponseDto =
+            ContentWarningSignsListResponseDto(emptyList())
+
+        override suspend fun warningSignsDetail(documentId: String): ContentWarningSignsDto = error("unused")
     }
 }

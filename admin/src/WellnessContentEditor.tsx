@@ -12,6 +12,7 @@ import {
   updateCareScheduleItem,
   updateChecklistItem,
   updateProgramStep,
+  updateWarningSignItem,
   type CareScheduleEditorState,
   type CareScheduleItemDraft,
   type ChecklistItemTemplateDraft,
@@ -20,6 +21,8 @@ import {
   type DailyTipEditorState,
   type ProgramEditorState,
   type ProgramSessionDraft,
+  type WarningSignItemDraft,
+  type WarningSignsEditorState,
 } from "./wellnessEditorModels";
 
 export type WellnessContentEditorProps = {
@@ -42,6 +45,12 @@ const defaultChecklistItem = (): ChecklistItemTemplateDraft => ({
   label: "لیست نمونه",
   section: "مدارک",
   order: "1",
+});
+
+const defaultWarningSignItem = (): WarningSignItemDraft => ({
+  id: `sign-${Date.now()}`,
+  title: "علامت نمونه",
+  summary: "توضیح نمونه — غیرپزشکی",
 });
 
 const defaultSession = (): ProgramSessionDraft => ({
@@ -117,6 +126,27 @@ export function WellnessContentEditor({ kind, onSubmit }: WellnessContentEditorP
     effectiveTo: "",
     placeholder: true,
   });
+  const [warningSigns, setWarningSigns] = useState<WarningSignsEditorState>({
+    title: "هشدارهای بارداری نمونه",
+    summary: "خلاصه",
+    locale: "fa-IR",
+    introTitle: "مقدمه نمونه",
+    introBody: "متن آموزشی نمونه",
+    escalationTitle: "ارتقا",
+    escalationBody: "در صورت نگرانی با مراقب تماس بگیرید",
+    contactClinicianLabel: "با پزشک یا ماما تماس بگیرید",
+    urgentEscalationTitle: "مراقبت فوری",
+    urgentEscalationBody: "در صورت علائم شدید فوراً اقدام کنید",
+    urgentContactClinicianLabel: "فوراً با مراقب تماس بگیرید",
+    elevatedSystolic: "140",
+    elevatedDiastolic: "90",
+    urgentSystolic: "160",
+    urgentDiastolic: "110",
+    signs: [defaultWarningSignItem()],
+    effectiveFrom: "",
+    effectiveTo: "",
+    placeholder: true,
+  });
   const [error, setError] = useState<string | null>(null);
 
   const patchShared = <K extends "title" | "locale" | "effectiveFrom" | "effectiveTo" | "placeholder">(
@@ -127,6 +157,7 @@ export function WellnessContentEditor({ kind, onSubmit }: WellnessContentEditorP
     else if (kind === "program") setProgram((s) => ({ ...s, [key]: value }));
     else if (kind === "collection") setCollection((s) => ({ ...s, [key]: value }));
     else if (kind === "care_schedule") setCareSchedule((s) => ({ ...s, [key]: value }));
+    else if (kind === "warning_signs") setWarningSigns((s) => ({ ...s, [key]: value }));
     else setChecklistTemplate((s) => ({ ...s, [key]: value }));
   };
 
@@ -135,8 +166,9 @@ export function WellnessContentEditor({ kind, onSubmit }: WellnessContentEditorP
     if (kind === "program") return program;
     if (kind === "collection") return collection;
     if (kind === "care_schedule") return careSchedule;
+    if (kind === "warning_signs") return warningSigns;
     return checklistTemplate;
-  }, [kind, daily, program, collection, careSchedule, checklistTemplate]);
+  }, [kind, daily, program, collection, careSchedule, checklistTemplate, warningSigns]);
 
   return (
     <section dir="rtl" aria-label={`ویرایشگر ${kind}`}>
@@ -479,6 +511,167 @@ export function WellnessContentEditor({ kind, onSubmit }: WellnessContentEditorP
                       items: updateCareScheduleItem(s.items, itemIndex, {
                         appointmentTypeHint: e.target.value,
                       }),
+                    }))
+                  }
+                />
+              </label>
+            </fieldset>
+          ))}
+        </>
+      )}
+      {kind === "warning_signs" && (
+        <>
+          <label>
+            عنوان مقدمه
+            <input
+              aria-label="warningIntroTitle"
+              value={warningSigns.introTitle}
+              onChange={(e) => setWarningSigns((s) => ({ ...s, introTitle: e.target.value }))}
+            />
+          </label>
+          <label>
+            متن مقدمه
+            <textarea
+              aria-label="warningIntroBody"
+              value={warningSigns.introBody}
+              onChange={(e) => setWarningSigns((s) => ({ ...s, introBody: e.target.value }))}
+            />
+          </label>
+          <fieldset>
+            <legend>ارتقا (معمولی)</legend>
+            <label>
+              عنوان
+              <input
+                aria-label="warningEscalationTitle"
+                value={warningSigns.escalationTitle}
+                onChange={(e) => setWarningSigns((s) => ({ ...s, escalationTitle: e.target.value }))}
+              />
+            </label>
+            <label>
+              متن
+              <textarea
+                aria-label="warningEscalationBody"
+                value={warningSigns.escalationBody}
+                onChange={(e) => setWarningSigns((s) => ({ ...s, escalationBody: e.target.value }))}
+              />
+            </label>
+            <label>
+              برچسب تماس
+              <input
+                aria-label="warningContactClinicianLabel"
+                value={warningSigns.contactClinicianLabel}
+                onChange={(e) =>
+                  setWarningSigns((s) => ({ ...s, contactClinicianLabel: e.target.value }))
+                }
+              />
+            </label>
+          </fieldset>
+          <fieldset>
+            <legend>ارتقا (فوری)</legend>
+            <label>
+              عنوان
+              <input
+                aria-label="warningUrgentEscalationTitle"
+                value={warningSigns.urgentEscalationTitle}
+                onChange={(e) =>
+                  setWarningSigns((s) => ({ ...s, urgentEscalationTitle: e.target.value }))
+                }
+              />
+            </label>
+            <label>
+              متن
+              <textarea
+                aria-label="warningUrgentEscalationBody"
+                value={warningSigns.urgentEscalationBody}
+                onChange={(e) =>
+                  setWarningSigns((s) => ({ ...s, urgentEscalationBody: e.target.value }))
+                }
+              />
+            </label>
+            <label>
+              برچسب تماس فوری
+              <input
+                aria-label="warningUrgentContactClinicianLabel"
+                value={warningSigns.urgentContactClinicianLabel}
+                onChange={(e) =>
+                  setWarningSigns((s) => ({ ...s, urgentContactClinicianLabel: e.target.value }))
+                }
+              />
+            </label>
+          </fieldset>
+          <fieldset>
+            <legend>آستانه‌های فشار خون (CMS)</legend>
+            <label>
+              سیستولیک بالا
+              <input
+                aria-label="bpElevatedSystolic"
+                value={warningSigns.elevatedSystolic}
+                onChange={(e) => setWarningSigns((s) => ({ ...s, elevatedSystolic: e.target.value }))}
+              />
+            </label>
+            <label>
+              دیاستولیک بالا
+              <input
+                aria-label="bpElevatedDiastolic"
+                value={warningSigns.elevatedDiastolic}
+                onChange={(e) => setWarningSigns((s) => ({ ...s, elevatedDiastolic: e.target.value }))}
+              />
+            </label>
+            <label>
+              سیستولیک فوری
+              <input
+                aria-label="bpUrgentSystolic"
+                value={warningSigns.urgentSystolic}
+                onChange={(e) => setWarningSigns((s) => ({ ...s, urgentSystolic: e.target.value }))}
+              />
+            </label>
+            <label>
+              دیاستولیک فوری
+              <input
+                aria-label="bpUrgentDiastolic"
+                value={warningSigns.urgentDiastolic}
+                onChange={(e) => setWarningSigns((s) => ({ ...s, urgentDiastolic: e.target.value }))}
+              />
+            </label>
+          </fieldset>
+          {warningSigns.signs.map((sign, signIndex) => (
+            <fieldset key={sign.id}>
+              <legend>علامت {signIndex + 1}</legend>
+              <label>
+                شناسه
+                <input
+                  aria-label="warningSignId"
+                  value={sign.id}
+                  onChange={(e) =>
+                    setWarningSigns((s) => ({
+                      ...s,
+                      signs: updateWarningSignItem(s.signs, signIndex, { id: e.target.value }),
+                    }))
+                  }
+                />
+              </label>
+              <label>
+                عنوان
+                <input
+                  aria-label="warningSignTitle"
+                  value={sign.title}
+                  onChange={(e) =>
+                    setWarningSigns((s) => ({
+                      ...s,
+                      signs: updateWarningSignItem(s.signs, signIndex, { title: e.target.value }),
+                    }))
+                  }
+                />
+              </label>
+              <label>
+                خلاصه
+                <textarea
+                  aria-label="warningSignSummary"
+                  value={sign.summary}
+                  onChange={(e) =>
+                    setWarningSigns((s) => ({
+                      ...s,
+                      signs: updateWarningSignItem(s.signs, signIndex, { summary: e.target.value }),
                     }))
                   }
                 />

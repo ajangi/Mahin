@@ -10,7 +10,8 @@ export type WellnessContentKind =
   | "program"
   | "collection"
   | "care_schedule"
-  | "checklist_template";
+  | "checklist_template"
+  | "warning_signs";
 
 export async function adminLogin(email: string, password: string): Promise<AdminAuth> {
   const response = await fetch(`${apiBase}/v1/admin/auth/login`, {

@@ -74,6 +74,25 @@ class ContentPregnancyCompanionPublicService(
     ): ContentChecklistTemplateResponse =
         getChecklistTemplate(loadDocumentBySlug(slug, locale, ContentTypes.CHECKLIST_TEMPLATE).id)
 
+    fun listWarningSigns(locale: String): ContentWarningSignsListResponse {
+        val now = Instant.now()
+        val items =
+            versionRepository
+                .findPublishedByContentType(ContentTypes.WARNING_SIGNS, locale)
+                .mapNotNull { version -> mapWarningSignsIfVisible(version, now) }
+        return ContentWarningSignsListResponse(items.map { it.summary })
+    }
+
+    fun getWarningSigns(documentId: UUID): ContentWarningSignsResponse {
+        val mapped = loadWarningSigns(documentId)
+        return mapped.detail
+    }
+
+    fun getWarningSignsBySlug(
+        slug: String,
+        locale: String,
+    ): ContentWarningSignsResponse = getWarningSigns(loadDocumentBySlug(slug, locale, ContentTypes.WARNING_SIGNS).id)
+
     private data class CareScheduleMapped(
         val summary: ContentCareScheduleSummary,
         val detail: ContentCareScheduleResponse,
@@ -82,6 +101,11 @@ class ContentPregnancyCompanionPublicService(
     private data class ChecklistMapped(
         val summary: ContentChecklistTemplateSummary,
         val detail: ContentChecklistTemplateResponse,
+    )
+
+    private data class WarningSignsMapped(
+        val summary: ContentWarningSignsSummary,
+        val detail: ContentWarningSignsResponse,
     )
 
     private fun mapCareScheduleIfVisible(
@@ -147,6 +171,43 @@ class ContentPregnancyCompanionPublicService(
         return CareScheduleMapped(
             summary = ContentPregnancyCompanionMapper.toCareScheduleSummary(document, version, payload),
             detail = ContentPregnancyCompanionMapper.toCareScheduleResponse(document, version, payload, citations),
+        )
+    }
+
+    private fun mapWarningSignsIfVisible(
+        version: ContentVersionEntity,
+        now: Instant,
+    ): WarningSignsMapped? {
+        val document = documentRepository.findById(version.documentId).orElse(null)
+        val payload = ContentTypePayloadCodec.parseWarningSigns(objectMapper, version.typePayloadJson)
+        val visible =
+            document != null &&
+                payload != null &&
+                ContentPublicationRules.isPublishedOnCatalog(document, version, now) &&
+                isPayloadPublic(payload.placeholder)
+        if (!visible || document == null || payload == null) {
+            return null
+        }
+        val citations = citationKeys(version)
+        return WarningSignsMapped(
+            summary = ContentPregnancyCompanionMapper.toWarningSignsSummary(document, version, payload),
+            detail = ContentPregnancyCompanionMapper.toWarningSignsResponse(document, version, payload, citations),
+        )
+    }
+
+    private fun loadWarningSigns(documentId: UUID): WarningSignsMapped {
+        val document = loadPublishedDocument(documentId, ContentTypes.WARNING_SIGNS)
+        val version = loadPublishedVersion(document)
+        val payload =
+            ContentTypePayloadCodec.parseWarningSigns(objectMapper, version.typePayloadJson)
+                ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "warning_signs_not_found")
+        if (!isPayloadPublic(payload.placeholder)) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "warning_signs_not_found")
+        }
+        val citations = citationKeys(version)
+        return WarningSignsMapped(
+            summary = ContentPregnancyCompanionMapper.toWarningSignsSummary(document, version, payload),
+            detail = ContentPregnancyCompanionMapper.toWarningSignsResponse(document, version, payload, citations),
         )
     }
 

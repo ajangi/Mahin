@@ -161,4 +161,20 @@ class ContentController(
         @PathVariable slug: String,
         @RequestParam(defaultValue = "fa-IR") locale: String,
     ): ContentChecklistTemplateResponse = pregnancyCompanionPublicService.getChecklistTemplateBySlug(slug, locale)
+
+    @GetMapping("/warning-signs")
+    fun listWarningSigns(
+        @RequestParam(defaultValue = "fa-IR") locale: String,
+    ): ContentWarningSignsListResponse = pregnancyCompanionPublicService.listWarningSigns(locale)
+
+    @GetMapping("/warning-signs/{documentId}")
+    fun getWarningSigns(
+        @PathVariable documentId: java.util.UUID,
+    ): ContentWarningSignsResponse = pregnancyCompanionPublicService.getWarningSigns(documentId)
+
+    @GetMapping("/warning-signs/by-slug/{slug}")
+    fun getWarningSignsBySlug(
+        @PathVariable slug: String,
+        @RequestParam(defaultValue = "fa-IR") locale: String,
+    ): ContentWarningSignsResponse = pregnancyCompanionPublicService.getWarningSignsBySlug(slug, locale)
 }

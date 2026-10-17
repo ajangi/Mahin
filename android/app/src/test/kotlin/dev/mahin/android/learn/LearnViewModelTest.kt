@@ -36,7 +36,11 @@ class LearnViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
 
     @get:Rule
-    val mainDispatcherRule = MainDispatcherRule(testDispatcher)
+    val mainDispatcherRule =
+        MainDispatcherRule(
+            testDispatcher,
+            beforeResetMain = { viewModelStore.clear() },
+        )
 
     private lateinit var harness: LearnContentTestHarness
     private val viewModelStore = ViewModelStoreTestHarness()
@@ -47,6 +51,7 @@ class LearnViewModelTest {
 
     @Before
     fun setUp() {
+        viewModelStore.clear()
         harness = LearnContentTestHarness()
         harness.api.searchResults = emptyList()
         harness.api.collections = emptyList()

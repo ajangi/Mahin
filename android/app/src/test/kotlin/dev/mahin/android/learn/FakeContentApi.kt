@@ -30,6 +30,9 @@ class FakeContentApi : ContentApi {
     var lastSearchLifeStage: String? = null
     var careScheduleSummaries: List<dev.mahin.core.content.ContentCareScheduleSummaryDto> = emptyList()
     var careSchedulesById: MutableMap<String, dev.mahin.core.content.ContentCareScheduleDto> = mutableMapOf()
+    var throwOnWarningSigns: Boolean = false
+    var warningSignSummaries: List<dev.mahin.core.content.ContentWarningSignsSummaryDto> = emptyList()
+    var warningSignsById: MutableMap<String, dev.mahin.core.content.ContentWarningSignsDto> = mutableMapOf()
 
     override suspend fun catalogStatus(): ContentCatalogStatusDto =
         ContentCatalogStatusDto(publicationRevision = 0L, updatedAt = "2025-01-01T00:00:00Z")
@@ -106,6 +109,17 @@ class FakeContentApi : ContentApi {
 
     override suspend fun checklistTemplate(documentId: String): dev.mahin.core.content.ContentChecklistTemplateDto =
         error("unused")
+
+    override suspend fun warningSigns(locale: String): dev.mahin.core.content.ContentWarningSignsListResponseDto {
+        if (throwOnWarningSigns) error("offline")
+        return dev.mahin.core.content
+            .ContentWarningSignsListResponseDto(warningSignSummaries)
+    }
+
+    override suspend fun warningSignsDetail(documentId: String): dev.mahin.core.content.ContentWarningSignsDto {
+        if (throwOnWarningSigns) error("offline")
+        return warningSignsById[documentId] ?: error("missing warning signs $documentId")
+    }
 
     private fun ContentProgramDto.toSummary() =
         dev.mahin.core.content.ContentProgramSummaryDto(

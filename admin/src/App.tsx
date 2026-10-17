@@ -222,6 +222,7 @@ export function ContentPanel({
                 "collection",
                 "care_schedule",
                 "checklist_template",
+                "warning_signs",
               ] as WellnessContentKind[]
             ).map((kind) => (
               <button

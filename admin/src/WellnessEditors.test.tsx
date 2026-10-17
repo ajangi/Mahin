@@ -133,6 +133,30 @@ describe("Wellness editors", () => {
     });
   });
 
+  it("warning_signs editor submits intro, escalation copy, signs and bp thresholds", async () => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    render(<WellnessContentEditor kind="warning_signs" onSubmit={onSubmit} />);
+    const section = screen.getByLabelText("ویرایشگر warning_signs");
+    expect(section).toHaveAttribute("dir", "rtl");
+
+    await userEvent.clear(screen.getByLabelText("warningUrgentContactClinicianLabel"));
+    await userEvent.type(screen.getByLabelText("warningUrgentContactClinicianLabel"), "فوراً تماس");
+    await userEvent.clear(screen.getByLabelText("bpUrgentSystolic"));
+    await userEvent.type(screen.getByLabelText("bpUrgentSystolic"), "165");
+
+    await userEvent.click(screen.getByRole("button", { name: "ذخیرهٔ پیش‌نویس" }));
+    const body = onSubmit.mock.calls[0][0] as Record<string, unknown>;
+    expect(body.contentType).toBe("warning_signs");
+    const payload = body.typePayload as {
+      urgentContactClinicianLabel: string;
+      bpThresholds: { urgentSystolic: number };
+      signs: { title: string }[];
+    };
+    expect(payload.urgentContactClinicianLabel).toBe("فوراً تماس");
+    expect(payload.bpThresholds.urgentSystolic).toBe(165);
+    expect(payload.signs[0].title).toBeTruthy();
+  });
+
   it("checklist_template editor submits sections, items and effective window", async () => {
     const onSubmit = vi.fn().mockResolvedValue(undefined);
     render(<WellnessContentEditor kind="checklist_template" onSubmit={onSubmit} />);

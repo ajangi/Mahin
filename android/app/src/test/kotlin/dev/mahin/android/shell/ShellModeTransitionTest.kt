@@ -32,10 +32,15 @@ class ShellModeTransitionTest {
             log = { Box(Modifier.testTag("screen_log").fillMaxSize()) },
             cycleInsights = { Box(Modifier.testTag("screen_cycle_insights").fillMaxSize()) },
             ttcInsights = { Box(Modifier.testTag("screen_ttc_insights").fillMaxSize()) },
-            pregnancyHub = { _, _, _, _, _ -> Box(Modifier.testTag("screen_pregnancy_hub").fillMaxSize()) },
+            pregnancyHub = { _, _, _, _, _, _, _, _ ->
+                Box(Modifier.testTag("screen_pregnancy_hub").fillMaxSize())
+            },
             pregnancyWeekByWeek = { Box(Modifier.testTag("screen_pregnancy_week_by_week").fillMaxSize()) },
             pregnancyTools = { Box(Modifier.testTag("screen_pregnancy_tools").fillMaxSize()) },
             pregnancyChecklist = { Box(Modifier.testTag("screen_pregnancy_checklist").fillMaxSize()) },
+            pregnancyExpenses = { Box(Modifier.testTag("screen_pregnancy_expenses").fillMaxSize()) },
+            pregnancyWarningSigns = { Box(Modifier.testTag("screen_pregnancy_warning_signs").fillMaxSize()) },
+            pregnancyWeightChart = { Box(Modifier.testTag("screen_pregnancy_weight_chart").fillMaxSize()) },
             plan = { Box(Modifier.testTag("screen_plan").fillMaxSize()) },
             learn = { Box(Modifier.testTag("screen_learn").fillMaxSize()) },
             history = { Box(Modifier.testTag("screen_history").fillMaxSize()) },

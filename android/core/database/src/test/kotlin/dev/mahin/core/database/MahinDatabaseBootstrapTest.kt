@@ -6,7 +6,7 @@ import org.junit.Test
 class MahinDatabaseBootstrapTest {
     @Test
     fun schemaVersionStartsAtOneAndExports() {
-        assertThat(MahinDatabase.VERSION).isEqualTo(10)
+        assertThat(MahinDatabase.VERSION).isEqualTo(11)
         assertThat(MahinDatabase.EXPORTS_SCHEMA).isTrue()
         assertThat(DatabaseEncryptionMode.UNENCRYPTED_BOOTSTRAP).isNotNull()
     }

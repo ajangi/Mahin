@@ -113,3 +113,33 @@ data class ChecklistTemplatePayload(
     val sections: List<String> = emptyList(),
     val items: List<ChecklistItemTemplatePayload> = emptyList(),
 )
+
+@JsonIgnoreProperties(ignoreUnknown = false)
+data class WarningSignItemPayload(
+    val id: String,
+    val title: String,
+    val summary: String,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = false)
+data class PregnancyBpThresholdsPayload(
+    val elevatedSystolic: Int,
+    val elevatedDiastolic: Int,
+    val urgentSystolic: Int,
+    val urgentDiastolic: Int,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = false)
+data class WarningSignsPayload(
+    val placeholder: Boolean = false,
+    val introTitle: String,
+    val introBody: String,
+    val signs: List<WarningSignItemPayload> = emptyList(),
+    val escalationTitle: String,
+    val escalationBody: String,
+    val contactClinicianLabel: String,
+    val urgentEscalationTitle: String,
+    val urgentEscalationBody: String,
+    val urgentContactClinicianLabel: String,
+    val bpThresholds: PregnancyBpThresholdsPayload,
+)
