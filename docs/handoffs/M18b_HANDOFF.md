@@ -15,7 +15,7 @@ cd android && ./gradlew lintDebug ktlintCheck detekt test :app:verifyRoborazziDe
 ```
 
 **Branch:** `cursor/m18b-pregnancy-depth-8467`  
-**Tip:** `a7c6a015760952a5f186a3f74f9d82624484481f` (CI run 39012290891 — all 5 checks green)
+**Tip:** `21de5756f10d4f4aaef1a8faa89b7a65d2c4aff3` (CI run 39015335465 — all 5 checks green)
 
 ## Gatekeeper remediation (PR #49)
 
