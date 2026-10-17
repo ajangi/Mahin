@@ -28,7 +28,6 @@ import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.core.testing.MainDispatcherRule
 import dev.mahin.core.testing.ViewModelStoreTestHarness
-import dev.mahin.domain.pregnancy.PregnancyExpenseCurrencyUnit
 import java.time.LocalDate
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
@@ -139,14 +138,17 @@ class M18bPregnancyDepthTelemetryGuardTest {
                 )
             val expenseRepository = PregnancyExpenseRepository(database)
 
-            viewModelStore.hold(
-                PregnancyWarningSignsViewModel(
-                    contentRepository,
-                    trackingRepository,
-                    FixedLocalDateClock(today),
-                    analytics,
-                ),
-            ).uiState.filter { !it.isLoading }.first()
+            viewModelStore
+                .hold(
+                    PregnancyWarningSignsViewModel(
+                        contentRepository,
+                        trackingRepository,
+                        FixedLocalDateClock(today),
+                        analytics,
+                    ),
+                ).uiState
+                .filter { !it.isLoading }
+                .first()
 
             val expensesVm =
                 viewModelStore.hold(
@@ -161,13 +163,16 @@ class M18bPregnancyDepthTelemetryGuardTest {
             expensesVm.saveExpense()
             expensesVm.uiState.filter { it.expenses.isNotEmpty() }.first()
 
-            viewModelStore.hold(
-                PregnancyWeightChartViewModel(
-                    trackingRepository,
-                    FixedLocalDateClock(today),
-                    analytics,
-                ),
-            ).uiState.filter { !it.isLoading }.first()
+            viewModelStore
+                .hold(
+                    PregnancyWeightChartViewModel(
+                        trackingRepository,
+                        FixedLocalDateClock(today),
+                        analytics,
+                    ),
+                ).uiState
+                .filter { !it.isLoading }
+                .first()
 
             val surfaces = recording.events.map { it.properties["surface"] }
             assertThat(surfaces).containsExactly(

@@ -112,7 +112,8 @@ class FakeContentApi : ContentApi {
 
     override suspend fun warningSigns(locale: String): dev.mahin.core.content.ContentWarningSignsListResponseDto {
         if (throwOnWarningSigns) error("offline")
-        return dev.mahin.core.content.ContentWarningSignsListResponseDto(warningSignSummaries)
+        return dev.mahin.core.content
+            .ContentWarningSignsListResponseDto(warningSignSummaries)
     }
 
     override suspend fun warningSignsDetail(documentId: String): dev.mahin.core.content.ContentWarningSignsDto {

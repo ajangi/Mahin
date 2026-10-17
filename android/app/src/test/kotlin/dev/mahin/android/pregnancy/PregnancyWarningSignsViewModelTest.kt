@@ -7,7 +7,6 @@ import com.google.common.truth.Truth.assertThat
 import dev.mahin.android.learn.FakeContentApi
 import dev.mahin.android.learn.RecordingAnalyticsGateway
 import dev.mahin.core.analytics.GuardedAnalyticsGateway
-import dev.mahin.core.analytics.NoOpAnalyticsGateway
 import dev.mahin.core.common.FixedLocalDateClock
 import dev.mahin.core.content.ContentPregnancyBpThresholdsDto
 import dev.mahin.core.content.ContentRepository
@@ -96,76 +95,82 @@ class PregnancyWarningSignsViewModelTest {
     }
 
     @Test
-    fun elevatedFlag_mapsElevatedContactCopy() = runTest(testDispatcher) {
-        seedCardAndPregnancy(bpSystolic = 145, bpDiastolic = 92)
-        val vm = createViewModel()
-        val state = vm.uiState.filter { !it.isLoading }.first()
-        assertThat(state.bpFlagLevel).isEqualTo(PregnancyBpFlagLevel.ELEVATED)
-        assertThat(state.bpFlagMessage).isEqualTo("تماس معمولی")
-    }
+    fun elevatedFlag_mapsElevatedContactCopy() =
+        runTest(testDispatcher) {
+            seedCardAndPregnancy(bpSystolic = 145, bpDiastolic = 92)
+            val vm = createViewModel()
+            val state = vm.uiState.filter { !it.isLoading }.first()
+            assertThat(state.bpFlagLevel).isEqualTo(PregnancyBpFlagLevel.ELEVATED)
+            assertThat(state.bpFlagMessage).isEqualTo("تماس معمولی")
+        }
 
     @Test
-    fun urgentFlag_mapsUrgentContactCopy() = runTest(testDispatcher) {
-        seedCardAndPregnancy(bpSystolic = 165, bpDiastolic = 112)
-        val vm = createViewModel()
-        val state = vm.uiState.filter { !it.isLoading }.first()
-        assertThat(state.bpFlagLevel).isEqualTo(PregnancyBpFlagLevel.URGENT)
-        assertThat(state.bpFlagMessage).isEqualTo("تماس فوری")
-    }
+    fun urgentFlag_mapsUrgentContactCopy() =
+        runTest(testDispatcher) {
+            seedCardAndPregnancy(bpSystolic = 165, bpDiastolic = 112)
+            val vm = createViewModel()
+            val state = vm.uiState.filter { !it.isLoading }.first()
+            assertThat(state.bpFlagLevel).isEqualTo(PregnancyBpFlagLevel.URGENT)
+            assertThat(state.bpFlagMessage).isEqualTo("تماس فوری")
+        }
 
     @Test
-    fun noBpReading_keepsNoneFlag() = runTest(testDispatcher) {
-        seedCardAndPregnancy(bpSystolic = null, bpDiastolic = null)
-        val vm = createViewModel()
-        val state = vm.uiState.filter { !it.isLoading }.first()
-        assertThat(state.bpFlagLevel).isEqualTo(PregnancyBpFlagLevel.NONE)
-        assertThat(state.bpFlagMessage).isNull()
-    }
+    fun noBpReading_keepsNoneFlag() =
+        runTest(testDispatcher) {
+            seedCardAndPregnancy(bpSystolic = null, bpDiastolic = null)
+            val vm = createViewModel()
+            val state = vm.uiState.filter { !it.isLoading }.first()
+            assertThat(state.bpFlagLevel).isEqualTo(PregnancyBpFlagLevel.NONE)
+            assertThat(state.bpFlagMessage).isNull()
+        }
 
     @Test
-    fun noActivePregnancy_keepsNoneFlag() = runTest(testDispatcher) {
-        wireWarningSignsApi()
-        val vm = createViewModel()
-        val state = vm.uiState.filter { !it.isLoading }.first()
-        assertThat(state.bpFlagLevel).isEqualTo(PregnancyBpFlagLevel.NONE)
-    }
+    fun noActivePregnancy_keepsNoneFlag() =
+        runTest(testDispatcher) {
+            wireWarningSignsApi()
+            val vm = createViewModel()
+            val state = vm.uiState.filter { !it.isLoading }.first()
+            assertThat(state.bpFlagLevel).isEqualTo(PregnancyBpFlagLevel.NONE)
+        }
 
     @Test
-    fun offlineWithCachedCard_showsContentAndCachedNotice() = runTest(testDispatcher) {
-        seedCardAndPregnancy(bpSystolic = 120, bpDiastolic = 80)
-        createViewModel().uiState.filter { !it.isLoading }.first()
-        api.throwOnWarningSigns = true
-        val vm = createViewModel()
-        val state = vm.uiState.filter { !it.isLoading }.first()
-        assertThat(state.failSafeNoCard).isFalse()
-        assertThat(state.usingCachedCard).isTrue()
-        assertThat(state.signs).isNotEmpty()
-    }
+    fun offlineWithCachedCard_showsContentAndCachedNotice() =
+        runTest(testDispatcher) {
+            seedCardAndPregnancy(bpSystolic = 120, bpDiastolic = 80)
+            createViewModel().uiState.filter { !it.isLoading }.first()
+            api.throwOnWarningSigns = true
+            val vm = createViewModel()
+            val state = vm.uiState.filter { !it.isLoading }.first()
+            assertThat(state.failSafeNoCard).isFalse()
+            assertThat(state.usingCachedCard).isTrue()
+            assertThat(state.signs).isNotEmpty()
+        }
 
     @Test
-    fun nullCard_failSafeShowsLoggedBpWithoutFlag() = runTest(testDispatcher) {
-        repository.startPregnancy(
-            lmpDate = today.minusWeeks(20),
-            clinicalEddDate = null,
-            datingReason = null,
-        )
-        repository.upsertPregnancyDayLog(
-            PregnancyDayLogInput(
-                logDate = today,
-                symptomTags = emptySet(),
-                weightKg = null,
-                bpSystolic = 138,
-                bpDiastolic = 88,
-                note = null,
-            ),
-        )
-        val vm = createViewModel()
-        val state = vm.uiState.filter { !it.isLoading }.first()
-        assertThat(state.failSafeNoCard).isTrue()
-        assertThat(state.bpFlagLevel).isEqualTo(PregnancyBpFlagLevel.NONE)
-        assertThat(state.loggedBpLabel).isNotNull()
-        assertThat(state.loggedBpLabel).contains("/")
-    }
+    fun nullCard_failSafeShowsLoggedBpWithoutFlag() =
+        runTest(testDispatcher) {
+            repository.startPregnancy(
+                lmpDate = today.minusWeeks(20),
+                clinicalEddDate = null,
+                datingReason = null,
+            )
+            repository.upsertPregnancyDayLog(
+                PregnancyDayLogInput(
+                    logDate = today,
+                    symptomTags = emptySet(),
+                    weightKg = null,
+                    bpSystolic = 138,
+                    bpDiastolic = 88,
+                    note = null,
+                ),
+            )
+            val vm = createViewModel()
+            val state = vm.uiState.filter { !it.isLoading }.first()
+            assertThat(state.failSafeNoCard).isTrue()
+            assertThat(state.bpFlagLevel).isEqualTo(PregnancyBpFlagLevel.NONE)
+            assertThat(state.loggedBpLabel).isNotNull()
+            assertThat(state.loggedBpLabel).contains("/")
+        }
 
     private suspend fun seedCardAndPregnancy(
         bpSystolic: Int?,
