@@ -29,7 +29,8 @@ Merging the V2 plan approves the M14a–M18 scope. Execute in order: M14a → M1
 - M17a — Wellness CMS content types (backend/admin/OpenAPI) — **accepted** ([PR #42](https://github.com/ajangi/Mahin/pull/42), squash-merge `8660536df86fc74e04841abc5dccb31c093dc652`, **2026-10-13**)
 - M17b — Learn magazine, daily tip card, session player, Coil — **accepted** ([PR #44](https://github.com/ajangi/Mahin/pull/44), squash-merge `fc2cb34`, **2026-10-14**)
 - M18a — Pregnancy companion CMS + timeline/tools/checklist — **accepted** ([PR #47](https://github.com/ajangi/Mahin/pull/47), squash-merge `cf6bc27`, **2026-10-17**; final CI head `f157d83`)
-- M18 — Pregnancy companion depth (M18b remaining) — **in progress** (M18a accepted; execute **M18b** next)
+- M18b — Pregnancy expenses, warning signs/BP, weight chart, timer polish — **accepted** ([PR #49](https://github.com/ajangi/Mahin/pull/49), squash-merge `4741bac`, **2026-10-17**; final CI head `9c59071`)
+- M18 — Pregnancy companion depth (M18a + M18b) — **accepted** on `master` (M18a [PR #47](https://github.com/ajangi/Mahin/pull/47); M18b [PR #49](https://github.com/ajangi/Mahin/pull/49))
 - M19 — Postpartum, breastfeeding & baby growth — **gated (owner approval + PRD amendment)**
 - M20 — Iran distribution: Bazaar/Myket billing & phone OTP — **gated (owner decisions + vendor secrets)**
 - M21 — Expert consultation (async Q&A) — **gated (PRD §38 non-goal today; owner + legal approval)**
