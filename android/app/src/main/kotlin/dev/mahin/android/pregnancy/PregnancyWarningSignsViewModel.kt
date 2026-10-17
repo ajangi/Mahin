@@ -8,6 +8,7 @@ import dev.mahin.core.analytics.AnalyticsEvent
 import dev.mahin.core.analytics.AnalyticsGateway
 import dev.mahin.core.common.LocalDateClock
 import dev.mahin.core.content.ContentRepository
+import dev.mahin.core.content.ContentWarningSignsDto
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
 import dev.mahin.domain.pregnancy.PregnancyBpFlagEvaluator
 import dev.mahin.domain.pregnancy.PregnancyBpFlagLevel
@@ -115,18 +116,8 @@ class PregnancyWarningSignsViewModel
                     introTitle = card.introTitle,
                     introBody = card.introBody,
                     signs = card.signs.map { sign -> PregnancyWarningSignItemUi(sign.title, sign.summary) },
-                    escalationTitle =
-                        if (flagLevel == PregnancyBpFlagLevel.URGENT) {
-                            card.urgentEscalationTitle
-                        } else {
-                            card.escalationTitle
-                        },
-                    escalationBody =
-                        if (flagLevel == PregnancyBpFlagLevel.URGENT) {
-                            card.urgentEscalationBody
-                        } else {
-                            card.escalationBody
-                        },
+                    escalationTitle = card.escalationTitleFor(flagLevel),
+                    escalationBody = card.escalationBodyFor(flagLevel),
                     contactClinicianLabel = card.contactClinicianLabel,
                     bpFlagLevel = flagLevel,
                     bpFlagMessage =
@@ -140,3 +131,9 @@ class PregnancyWarningSignsViewModel
             }
         }
     }
+
+private fun ContentWarningSignsDto.escalationTitleFor(flagLevel: PregnancyBpFlagLevel): String =
+    if (flagLevel == PregnancyBpFlagLevel.URGENT) urgentEscalationTitle else escalationTitle
+
+private fun ContentWarningSignsDto.escalationBodyFor(flagLevel: PregnancyBpFlagLevel): String =
+    if (flagLevel == PregnancyBpFlagLevel.URGENT) urgentEscalationBody else escalationBody
