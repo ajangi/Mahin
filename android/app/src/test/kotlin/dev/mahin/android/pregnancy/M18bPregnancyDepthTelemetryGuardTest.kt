@@ -92,101 +92,121 @@ class M18bPregnancyDepthTelemetryGuardTest {
             val context = ApplicationProvider.getApplicationContext<Context>()
             val trackingRepository =
                 PregnancyTrackingRepository(database, PregnancyTimerPreferencesRepository(context))
-            trackingRepository.startPregnancy(today.minusWeeks(20), null, null)
-            trackingRepository.upsertPregnancyDayLog(
-                PregnancyDayLogInput(
-                    logDate = today,
-                    symptomTags = emptySet(),
-                    weightKg = 88.4,
-                    bpSystolic = 155,
-                    bpDiastolic = 99,
-                    note = "secret",
+            seedSensitiveDayLog(trackingRepository)
+            val contentRepository = contentRepository(context, wireWarningApi())
+            val expenseRepository = PregnancyExpenseRepository(database)
+            driveDepthScreens(contentRepository, trackingRepository, expenseRepository)
+            assertTelemetryClean()
+        }
+
+    private suspend fun seedSensitiveDayLog(trackingRepository: PregnancyTrackingRepository) {
+        trackingRepository.startPregnancy(today.minusWeeks(20), null, null)
+        trackingRepository.upsertPregnancyDayLog(
+            PregnancyDayLogInput(
+                logDate = today,
+                symptomTags = emptySet(),
+                weightKg = 88.4,
+                bpSystolic = 155,
+                bpDiastolic = 99,
+                note = "secret",
+            ),
+        )
+    }
+
+    private fun wireWarningApi(): FakeContentApi {
+        val api = FakeContentApi()
+        val warnId = "w1"
+        api.warningSignSummaries =
+            listOf(
+                ContentWarningSignsSummaryDto(warnId, "w", "fa-IR", "t", placeholder = true),
+            )
+        api.warningSignsById[warnId] =
+            ContentWarningSignsDto(
+                id = warnId,
+                slug = "w",
+                locale = "fa-IR",
+                title = "t",
+                placeholder = true,
+                introTitle = "i",
+                introBody = "b",
+                signs = listOf(ContentWarningSignItemDto("s", "t", "s")),
+                escalationTitle = "e",
+                escalationBody = "e",
+                contactClinicianLabel = "c",
+                urgentEscalationTitle = "u",
+                urgentEscalationBody = "u",
+                urgentContactClinicianLabel = "u",
+                bpThresholds = ContentPregnancyBpThresholdsDto(140, 90, 160, 110),
+            )
+        return api
+    }
+
+    private fun contentRepository(
+        context: Context,
+        api: FakeContentApi,
+    ): ContentRepository =
+        ContentRepository(
+            api,
+            ContentCachePreferencesRepository(context),
+            WellnessContentLocalStore(database.wellnessContentDao(), Json { ignoreUnknownKeys = true }),
+            Json { ignoreUnknownKeys = true },
+            MediaAssetMemoryCache(),
+        )
+
+    private suspend fun driveDepthScreens(
+        contentRepository: ContentRepository,
+        trackingRepository: PregnancyTrackingRepository,
+        expenseRepository: PregnancyExpenseRepository,
+    ) {
+        viewModelStore
+            .hold(
+                PregnancyWarningSignsViewModel(
+                    contentRepository,
+                    trackingRepository,
+                    FixedLocalDateClock(today),
+                    analytics,
+                ),
+            ).uiState
+            .filter { !it.isLoading }
+            .first()
+        val expensesVm =
+            viewModelStore.hold(
+                PregnancyExpensesViewModel(
+                    expenseRepository,
+                    FixedLocalDateClock(today),
+                    analytics,
                 ),
             )
-            val api = FakeContentApi()
-            val warnId = "w1"
-            api.warningSignSummaries =
-                listOf(
-                    ContentWarningSignsSummaryDto(warnId, "w", "fa-IR", "t", placeholder = true),
-                )
-            api.warningSignsById[warnId] =
-                ContentWarningSignsDto(
-                    id = warnId,
-                    slug = "w",
-                    locale = "fa-IR",
-                    title = "t",
-                    placeholder = true,
-                    introTitle = "i",
-                    introBody = "b",
-                    signs = listOf(ContentWarningSignItemDto("s", "t", "s")),
-                    escalationTitle = "e",
-                    escalationBody = "e",
-                    contactClinicianLabel = "c",
-                    urgentEscalationTitle = "u",
-                    urgentEscalationBody = "u",
-                    urgentContactClinicianLabel = "u",
-                    bpThresholds =
-                        ContentPregnancyBpThresholdsDto(140, 90, 160, 110),
-                )
-            val contentRepository =
-                ContentRepository(
-                    api,
-                    ContentCachePreferencesRepository(context),
-                    WellnessContentLocalStore(database.wellnessContentDao(), Json { ignoreUnknownKeys = true }),
-                    Json { ignoreUnknownKeys = true },
-                    MediaAssetMemoryCache(),
-                )
-            val expenseRepository = PregnancyExpenseRepository(database)
+        expensesVm.uiState.filter { !it.isLoading }.first()
+        expensesVm.onDraftAmountChange("7500000")
+        expensesVm.saveExpense()
+        expensesVm.uiState.filter { it.expenses.isNotEmpty() }.first()
+        viewModelStore
+            .hold(
+                PregnancyWeightChartViewModel(
+                    trackingRepository,
+                    FixedLocalDateClock(today),
+                    analytics,
+                ),
+            ).uiState
+            .filter { !it.isLoading }
+            .first()
+    }
 
-            viewModelStore
-                .hold(
-                    PregnancyWarningSignsViewModel(
-                        contentRepository,
-                        trackingRepository,
-                        FixedLocalDateClock(today),
-                        analytics,
-                    ),
-                ).uiState
-                .filter { !it.isLoading }
-                .first()
-
-            val expensesVm =
-                viewModelStore.hold(
-                    PregnancyExpensesViewModel(
-                        expenseRepository,
-                        FixedLocalDateClock(today),
-                        analytics,
-                    ),
-                )
-            expensesVm.uiState.filter { !it.isLoading }.first()
-            expensesVm.onDraftAmountChange("7500000")
-            expensesVm.saveExpense()
-            expensesVm.uiState.filter { it.expenses.isNotEmpty() }.first()
-
-            viewModelStore
-                .hold(
-                    PregnancyWeightChartViewModel(
-                        trackingRepository,
-                        FixedLocalDateClock(today),
-                        analytics,
-                    ),
-                ).uiState
-                .filter { !it.isLoading }
-                .first()
-
-            val surfaces = recording.events.map { it.properties["surface"] }
-            assertThat(surfaces).containsExactly(
-                MahinTopLevelDestination.PREGNANCY_WARNING_SIGNS_ROUTE,
-                MahinTopLevelDestination.PREGNANCY_EXPENSES_ROUTE,
-                MahinTopLevelDestination.PREGNANCY_WEIGHT_CHART_ROUTE,
-            )
-            val blob = recording.events.joinToString { formatEvent(it) }
-            assertThat(blob).doesNotContain("155")
-            assertThat(blob).doesNotContain("99")
-            assertThat(blob).doesNotContain("88.4")
-            assertThat(blob).doesNotContain("7500000")
-            assertThat(blob).doesNotContain("secret")
-        }
+    private fun assertTelemetryClean() {
+        val surfaces = recording.events.map { it.properties["surface"] }
+        assertThat(surfaces).containsExactly(
+            MahinTopLevelDestination.PREGNANCY_WARNING_SIGNS_ROUTE,
+            MahinTopLevelDestination.PREGNANCY_EXPENSES_ROUTE,
+            MahinTopLevelDestination.PREGNANCY_WEIGHT_CHART_ROUTE,
+        )
+        val blob = recording.events.joinToString { formatEvent(it) }
+        assertThat(blob).doesNotContain("155")
+        assertThat(blob).doesNotContain("99")
+        assertThat(blob).doesNotContain("88.4")
+        assertThat(blob).doesNotContain("7500000")
+        assertThat(blob).doesNotContain("secret")
+    }
 
     private fun formatEvent(event: AnalyticsEvent): String = "${event.name}:${event.properties}"
 }
