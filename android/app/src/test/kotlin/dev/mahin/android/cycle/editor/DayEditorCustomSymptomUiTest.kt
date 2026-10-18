@@ -48,6 +48,7 @@ class DayEditorCustomSymptomUiTest {
 
     @After
     fun tearDown() {
+        repeat(5) { ShadowLooper.idleMainLooper() }
         harness.close()
     }
 
