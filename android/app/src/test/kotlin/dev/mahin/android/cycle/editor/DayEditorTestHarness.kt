@@ -82,6 +82,7 @@ internal class DayEditorTestHarness private constructor(
 
     fun close() {
         viewModelStore.clear()
+        DayEditorTestVmRegistry.unregister(viewModelStore)
         ShadowLooper.idleMainLooper()
         runBlocking {
             loggingPreferencesRepository.clear()
@@ -103,6 +104,8 @@ internal class DayEditorTestHarness private constructor(
                 tombstoneRepository.clearAll()
             }
             ShadowLooper.idleMainLooper()
+            val viewModelStore = ViewModelStoreTestHarness()
+            DayEditorTestVmRegistry.register(viewModelStore)
             return DayEditorTestHarness(
                 cycleRepository = cycleRepository,
                 ttcRepository = ttcRepository,
@@ -112,7 +115,7 @@ internal class DayEditorTestHarness private constructor(
                 customSymptomTagRepository = CustomSymptomTagRepository(database),
                 tombstoneRepository = tombstoneRepository,
                 localDateClock = FixedLocalDateClock(today),
-                viewModelStore = ViewModelStoreTestHarness(),
+                viewModelStore = viewModelStore,
                 database = database,
             )
         }

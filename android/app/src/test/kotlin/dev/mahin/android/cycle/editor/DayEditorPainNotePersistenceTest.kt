@@ -27,6 +27,7 @@ class DayEditorPainNotePersistenceTest {
             testDispatcher,
             beforeResetMain = {
                 testDispatcher.scheduler.advanceUntilIdle()
+                DayEditorTestVmRegistry.clearAll()
                 ShadowLooper.idleMainLooper()
             },
         )

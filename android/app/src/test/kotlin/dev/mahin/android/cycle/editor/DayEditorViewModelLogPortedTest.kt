@@ -29,6 +29,7 @@ class DayEditorViewModelLogPortedTest {
             testDispatcher,
             beforeResetMain = {
                 testDispatcher.scheduler.advanceUntilIdle()
+                DayEditorTestVmRegistry.clearAll()
                 ShadowLooper.idleMainLooper()
             },
         )
