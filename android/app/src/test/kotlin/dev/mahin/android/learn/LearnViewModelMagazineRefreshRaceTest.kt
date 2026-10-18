@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import dev.mahin.core.common.FixedLocalDateClock
+import dev.mahin.core.content.ContentArticleSummaryDto
 import dev.mahin.core.content.ContentCollectionSummaryDto
 import dev.mahin.core.database.MahinDatabase
 import dev.mahin.core.database.cycle.CycleTrackingRepository
@@ -16,8 +17,8 @@ import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.core.testing.MainDispatcherRule
 import dev.mahin.core.testing.ViewModelStoreTestHarness
 import java.time.LocalDate
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -30,6 +31,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowLooper
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -41,7 +43,11 @@ class LearnViewModelMagazineRefreshRaceTest {
     val mainDispatcherRule =
         MainDispatcherRule(
             testDispatcher,
-            beforeResetMain = { viewModelStore.clear() },
+            beforeResetMain = {
+                testDispatcher.scheduler.advanceUntilIdle()
+                viewModelStore.clear()
+                ShadowLooper.idleMainLooper()
+            },
         )
 
     private lateinit var harness: LearnContentTestHarness
@@ -51,11 +57,27 @@ class LearnViewModelMagazineRefreshRaceTest {
     private lateinit var pregnancyRepository: PregnancyTrackingRepository
     private val localDateClock = FixedLocalDateClock(LocalDate.of(2025, 6, 15))
 
+    private val staleCycleArticle =
+        ContentArticleSummaryDto(
+            id = "cycle-stale",
+            slug = "cycle-stale",
+            locale = "fa-IR",
+            title = "چرخه",
+            contentType = "article",
+        )
+    private val ttcArticle =
+        ContentArticleSummaryDto(
+            id = "ttc-current",
+            slug = "ttc-current",
+            locale = "fa-IR",
+            title = "باردار شدن",
+            contentType = "article",
+        )
+
     @Before
     fun setUp() {
         viewModelStore.clear()
         harness = LearnContentTestHarness()
-        harness.api.searchResults = emptyList()
         harness.api.collections =
             listOf(
                 ContentCollectionSummaryDto(
@@ -67,11 +89,6 @@ class LearnViewModelMagazineRefreshRaceTest {
                     featured = true,
                 ),
             )
-        harness.api.beforeSearch = { lifeStage ->
-            if (lifeStage == "cycle") {
-                delay(1)
-            }
-        }
         val context = ApplicationProvider.getApplicationContext<Context>()
         database =
             Room
@@ -93,16 +110,16 @@ class LearnViewModelMagazineRefreshRaceTest {
     @Test
     fun staleMagazineRefresh_doesNotOverwriteLatestLifeStageSearch() =
         runTest(testDispatcher) {
-            database.cycleProfileDao().upsert(
-                CycleProfileEntity(
-                    reproductiveMode = ReproductiveMode.TRYING_TO_CONCEIVE,
-                    typicalCycleLengthDays = 28,
-                    typicalPeriodLengthDays = 5,
-                    regularity = CycleRegularity.REGULAR,
-                    onboardingCompleted = true,
-                    updatedAtEpochMs = 0L,
-                ),
-            )
+            val cycleSearchGate = CompletableDeferred<Unit>()
+            harness.api.beforeSearch = { lifeStage ->
+                when (lifeStage) {
+                    "cycle" -> {
+                        harness.api.searchResults = listOf(staleCycleArticle)
+                        cycleSearchGate.await()
+                    }
+                    "ttc" -> harness.api.searchResults = listOf(ttcArticle)
+                }
+            }
             val viewModel =
                 viewModelStore.hold(
                     LearnViewModel(
@@ -113,8 +130,36 @@ class LearnViewModelMagazineRefreshRaceTest {
                         localDateClock = localDateClock,
                     ),
                 )
-            viewModel.uiState.filter { it.featuredCollections.isNotEmpty() }.first()
+            advanceUntilIdle()
+            ShadowLooper.idleMainLooper()
+            database.cycleProfileDao().upsert(
+                CycleProfileEntity(
+                    reproductiveMode = ReproductiveMode.TRYING_TO_CONCEIVE,
+                    typicalCycleLengthDays = 28,
+                    typicalPeriodLengthDays = 5,
+                    regularity = CycleRegularity.REGULAR,
+                    onboardingCompleted = true,
+                    updatedAtEpochMs = 0L,
+                ),
+            )
+            advanceUntilIdle()
+            ShadowLooper.idleMainLooper()
+            viewModel.uiState
+                .filter { state ->
+                    !state.loading &&
+                        state.contextualArticles.any { it.id == ttcArticle.id }
+                }.first()
+            cycleSearchGate.complete(Unit)
             advanceUntilIdle()
             assertThat(harness.api.lastSearchLifeStage).isEqualTo("ttc")
+            assertThat(viewModel.uiState.value.loading).isFalse()
+            assertThat(
+                viewModel.uiState.value.contextualArticles
+                    .map { it.id },
+            ).containsExactly(ttcArticle.id)
+            assertThat(
+                viewModel.uiState.value.contextualArticles
+                    .map { it.id },
+            ).doesNotContain(staleCycleArticle.id)
         }
 }

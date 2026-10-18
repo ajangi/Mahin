@@ -1,49 +1,50 @@
 package dev.mahin.android.cycle.editor
 
 import dev.mahin.core.model.LogEditorCategory
+import dev.mahin.core.testing.MainDispatcherRule
 import java.time.LocalDate
-import kotlinx.coroutines.runBlocking
-import org.junit.After
-import org.junit.Before
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowLooper
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class DayEditorLifestylePersistenceTest {
-    private lateinit var harness: DayEditorTestHarness
-    private lateinit var viewModel: DayEditorViewModel
+    private val testDispatcher = StandardTestDispatcher()
     private val day = LocalDate.of(2025, 8, 2)
 
-    @Before
-    fun setUp() {
-        harness = DayEditorTestHarness.create(day)
-        runBlocking { harness.seedCycleProfile() }
-        viewModel = harness.createViewModel()
-        runBlocking {
-            harness.loggingPreferencesRepository.setLifestyleModuleEnabled(LogEditorCategory.SLEEP, true)
-            viewModel.openDate(day)
-            awaitDailyLogOnMain { viewModel.uiState.value.date == day }
-        }
-    }
-
-    @After
-    fun tearDown() {
-        harness.close()
-    }
+    @get:Rule
+    val mainDispatcherRule =
+        MainDispatcherRule(
+            testDispatcher,
+            beforeResetMain = {
+                testDispatcher.scheduler.advanceUntilIdle()
+                ShadowLooper.idleMainLooper()
+            },
+        )
 
     @Test
-    fun toggleSleep_persistsToDailyLog() {
-        runBlocking {
-            viewModel.toggleLifestyleLogged(LogEditorCategory.SLEEP)
-            awaitDailyLogOnMain { harness.dailyLogFor(day)?.sleepLogged == true }
-            viewModel.toggleLifestyleLogged(LogEditorCategory.SLEEP)
-            awaitDailyLogOnMain {
-                val log = harness.dailyLogFor(day)
-                log != null && !log.sleepLogged
+    fun toggleSleep_persistsToDailyLog() =
+        runTest(testDispatcher) {
+            val harness = DayEditorTestHarness.create(day)
+            try {
+                harness.seedCycleProfile()
+                val viewModel = harness.createViewModel()
+                harness.loggingPreferencesRepository.setLifestyleModuleEnabled(LogEditorCategory.SLEEP, true)
+                viewModel.openDateAndAwait(day)
+                viewModel.toggleLifestyleLogged(LogEditorCategory.SLEEP)
+                harness.awaitDailyLog(day) { it.sleepLogged }
+                viewModel.toggleLifestyleLogged(LogEditorCategory.SLEEP)
+                harness.awaitDailyLog(day) { !it.sleepLogged }
+            } finally {
+                testDispatcher.scheduler.advanceUntilIdle()
+                ShadowLooper.idleMainLooper()
+                harness.close()
             }
         }
-    }
 }

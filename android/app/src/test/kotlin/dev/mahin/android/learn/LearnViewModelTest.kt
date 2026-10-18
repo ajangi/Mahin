@@ -39,7 +39,12 @@ class LearnViewModelTest {
     val mainDispatcherRule =
         MainDispatcherRule(
             testDispatcher,
-            beforeResetMain = { viewModelStore.clear() },
+            beforeResetMain = {
+                testDispatcher.scheduler.advanceUntilIdle()
+                viewModelStore.clear()
+                org.robolectric.shadows.ShadowLooper
+                    .idleMainLooper()
+            },
         )
 
     private lateinit var harness: LearnContentTestHarness
@@ -63,14 +68,16 @@ class LearnViewModelTest {
                 .inMemoryDatabaseBuilder(context, MahinDatabase::class.java)
                 .allowMainThreadQueries()
                 .build()
-        database.openHelper.writableDatabase
         cycleRepository = CycleTrackingRepository(database)
         pregnancyRepository = PregnancyTrackingRepository(database, PregnancyTimerPreferencesRepository(context))
     }
 
     @After
     fun tearDown() {
+        testDispatcher.scheduler.advanceUntilIdle()
         viewModelStore.clear()
+        org.robolectric.shadows.ShadowLooper
+            .idleMainLooper()
         harness.close()
         database.close()
     }

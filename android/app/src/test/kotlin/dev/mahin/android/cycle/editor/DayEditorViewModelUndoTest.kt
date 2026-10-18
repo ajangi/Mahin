@@ -6,10 +6,13 @@ import dev.mahin.core.model.LogEditorCategory
 import dev.mahin.core.model.OvulationTestResult
 import dev.mahin.core.model.PregnancyTestResult
 import dev.mahin.core.model.ReproductiveMode
+import dev.mahin.core.testing.MainDispatcherRule
 import java.time.LocalDate
-import kotlinx.coroutines.runBlocking
-import org.junit.After
-import org.junit.Before
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -19,145 +22,127 @@ import org.robolectric.shadows.ShadowLooper
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class DayEditorViewModelUndoTest {
-    private lateinit var harness: DayEditorTestHarness
-    private lateinit var viewModel: DayEditorViewModel
+    private val testDispatcher = StandardTestDispatcher()
     private val day = LocalDate.of(2025, 6, 15)
 
-    @Before
-    fun setUp() {
-        harness = DayEditorTestHarness.create(day)
-        runBlocking { harness.seedCycleProfile(ReproductiveMode.TRYING_TO_CONCEIVE) }
-        viewModel = harness.createViewModel()
-        runBlocking {
+    @get:Rule
+    val mainDispatcherRule =
+        MainDispatcherRule(
+            testDispatcher,
+            beforeResetMain = {
+                testDispatcher.scheduler.advanceUntilIdle()
+                ShadowLooper.idleMainLooper()
+            },
+        )
+
+    private suspend fun withTtcEditor(block: suspend (DayEditorTestHarness, DayEditorViewModel) -> Unit) {
+        val harness = DayEditorTestHarness.create(day)
+        try {
+            harness.seedCycleProfile(ReproductiveMode.TRYING_TO_CONCEIVE)
+            val viewModel = harness.createViewModel()
             harness.loggingPreferencesRepository.setSexualActivityEnabled(true)
-            viewModel.openDate(day)
-            awaitDailyLogOnMain { viewModel.uiState.value.date == day }
-        }
-    }
-
-    @After
-    fun tearDown() {
-        harness.close()
-    }
-
-    @Test
-    fun undo_restoresCervicalMucusAfterSingleChange() {
-        runBlocking {
-            viewModel.setCervicalMucus(CervicalMucusType.EGG_WHITE)
-            awaitUntilDb { harness.ttcRepository.getTtcLogForDate(day)?.cervicalMucus == CervicalMucusType.EGG_WHITE }
-            viewModel.undoLastChange()
-            awaitUntilDb { harness.ttcRepository.getTtcLogForDate(day)?.cervicalMucus == null }
-        }
-    }
-
-    @Test
-    fun undo_restoresOvulationTestInDatabase() {
-        runBlocking {
-            viewModel.setOvulationTest(OvulationTestResult.POSITIVE)
-            awaitUntilDb {
-                harness.ttcRepository.getTtcLogForDate(day)?.ovulationTestResult ==
-                    OvulationTestResult.POSITIVE
-            }
-            viewModel.undoLastChange()
-            awaitUntilDb { harness.ttcRepository.getTtcLogForDate(day)?.ovulationTestResult == null }
-        }
-    }
-
-    @Test
-    fun undo_restoresBbtInDatabase() {
-        runBlocking {
-            viewModel.onBbtChange("36.55")
-            awaitUntilDb { harness.ttcRepository.getTtcLogForDate(day)?.bbtCelsius == 36.55 }
-            viewModel.onBbtChange("36.56")
-            awaitUntilDb { harness.ttcRepository.getTtcLogForDate(day)?.bbtCelsius == 36.56 }
-            viewModel.undoLastChange()
-            awaitUntilDb { harness.ttcRepository.getTtcLogForDate(day)?.bbtCelsius == 36.55 }
-        }
-    }
-
-    @Test
-    fun undo_restoresBbtAfterRapidChangesWithoutWaitingBetweenCalls() {
-        runBlocking {
-            viewModel.onBbtChange("36.55")
-            viewModel.onBbtChange("36.56")
-            awaitUntilDb { harness.ttcRepository.getTtcLogForDate(day)?.bbtCelsius == 36.56 }
-            viewModel.undoLastChange()
-            awaitUntilDb { harness.ttcRepository.getTtcLogForDate(day)?.bbtCelsius == 36.55 }
-        }
-    }
-
-    @Test
-    fun undo_restoresDailyLogMedicationThenMood_withSecondUndoNoOp() {
-        runBlocking {
-            viewModel.toggleMood("آرام")
-            awaitDailyLogOnMain {
-                val log = harness.dailyLogFor(day)
-                log != null && log.moodTags.contains("آرام")
-            }
-            awaitDailyLogOnMain {
-                viewModel.uiState.value.moodTags
-                    .contains("آرام")
-            }
-            viewModel.toggleMedication("ویتامین")
-            awaitDailyLogOnMain {
-                val log = harness.dailyLogFor(day)
-                log != null && log.medicationTags.contains("ویتامین")
-            }
-            awaitDailyLogOnMain {
-                viewModel.uiState.value.medicationTags
-                    .contains("ویتامین")
-            }
-            viewModel.undoLastChange()
-            awaitDailyLogOnMain {
-                val log = harness.dailyLogFor(day)
-                log != null && !log.medicationTags.contains("ویتامین") && log.moodTags.contains("آرام")
-            }
-            awaitDailyLogOnMain { viewModel.uiState.value.undoMessage == null }
-            val moodAfterFirstUndo = harness.dailyLogFor(day)?.moodTags
-            assertThat(viewModel.uiState.value.undoMessage).isNull()
-            viewModel.undoLastChange()
-            awaitDailyLogOnMain {
-                harness.dailyLogFor(day)?.moodTags == moodAfterFirstUndo &&
-                    harness.dailyLogFor(day)?.medicationTags?.contains("ویتامین") != true
-            }
-            assertThat(harness.dailyLogFor(day)?.moodTags).isEqualTo(moodAfterFirstUndo)
-            assertThat(harness.dailyLogFor(day)?.medicationTags).doesNotContain("ویتامین")
-        }
-    }
-
-    @Test
-    fun undo_restoresPregnancyTestInDatabase() {
-        runBlocking {
-            viewModel.setPregnancyTest(PregnancyTestResult.POSITIVE)
-            awaitUntilDb {
-                harness.ttcRepository.getTtcLogForDate(day)?.pregnancyTestResult ==
-                    PregnancyTestResult.POSITIVE
-            }
-            viewModel.undoLastChange()
-            awaitUntilDb { harness.ttcRepository.getTtcLogForDate(day)?.pregnancyTestResult == null }
-        }
-    }
-
-    @Test
-    fun undo_lifestyleSleepToggle_revertsInDatabase() {
-        runBlocking {
-            harness.loggingPreferencesRepository.setLifestyleModuleEnabled(LogEditorCategory.SLEEP, true)
-            viewModel.toggleLifestyleLogged(LogEditorCategory.SLEEP)
-            awaitDailyLogOnMain { harness.dailyLogFor(day)?.sleepLogged == true }
-            viewModel.undoLastChange()
-            awaitDailyLogOnMain {
-                val log = harness.dailyLogFor(day)
-                log != null && !log.sleepLogged
-            }
-        }
-    }
-
-    private suspend fun awaitUntilDb(condition: suspend () -> Boolean) {
-        val deadline = System.currentTimeMillis() + 10_000
-        while (System.currentTimeMillis() < deadline) {
+            viewModel.openDateAndAwait(day)
+            block(harness, viewModel)
+        } finally {
+            testDispatcher.scheduler.advanceUntilIdle()
             ShadowLooper.idleMainLooper()
-            if (condition()) return
+            harness.close()
         }
-        throw AssertionError("DB condition not met within 10000ms")
     }
+
+    @Test
+    fun undo_restoresCervicalMucusAfterSingleChange() =
+        runTest(testDispatcher) {
+            withTtcEditor { harness, viewModel ->
+                viewModel.setCervicalMucus(CervicalMucusType.EGG_WHITE)
+                harness.awaitTtcCervicalMucus(day, CervicalMucusType.EGG_WHITE)
+                viewModel.undoLastChange()
+                harness.awaitTtcCervicalMucus(day, null)
+            }
+        }
+
+    @Test
+    fun undo_restoresOvulationTestInDatabase() =
+        runTest(testDispatcher) {
+            withTtcEditor { harness, viewModel ->
+                viewModel.setOvulationTest(OvulationTestResult.POSITIVE)
+                harness.awaitTtcOvulationTest(day, OvulationTestResult.POSITIVE)
+                viewModel.undoLastChange()
+                harness.awaitTtcOvulationTest(day, null)
+            }
+        }
+
+    @Test
+    fun undo_restoresBbtInDatabase() =
+        runTest(testDispatcher) {
+            withTtcEditor { harness, viewModel ->
+                viewModel.onBbtChange("36.55")
+                harness.awaitTtcBbt(day, 36.55)
+                viewModel.onBbtChange("36.56")
+                harness.awaitTtcBbt(day, 36.56)
+                viewModel.undoLastChange()
+                harness.awaitTtcBbt(day, 36.55)
+            }
+        }
+
+    @Test
+    fun undo_restoresBbtAfterRapidChangesWithoutWaitingBetweenCalls() =
+        runTest(testDispatcher) {
+            withTtcEditor { harness, viewModel ->
+                viewModel.onBbtChange("36.55")
+                viewModel.onBbtChange("36.56")
+                harness.awaitTtcBbt(day, 36.56)
+                viewModel.undoLastChange()
+                harness.awaitTtcBbt(day, 36.55)
+            }
+        }
+
+    @Test
+    fun undo_restoresDailyLogMedicationThenMood_withSecondUndoNoOp() =
+        runTest(testDispatcher) {
+            withTtcEditor { harness, viewModel ->
+                viewModel.toggleMood("آرام")
+                harness.awaitDailyLog(day) { it.moodTags.contains("آرام") }
+                viewModel.uiState.filter { it.moodTags.contains("آرام") }.first()
+                viewModel.toggleMedication("ویتامین")
+                harness.awaitDailyLog(day) { it.medicationTags.contains("ویتامین") }
+                viewModel.uiState.filter { it.medicationTags.contains("ویتامین") }.first()
+                viewModel.undoLastChange()
+                harness.awaitDailyLog(day) {
+                    !it.medicationTags.contains("ویتامین") && it.moodTags.contains("آرام")
+                }
+                viewModel.uiState.filter { it.undoMessage == null }.first()
+                val moodAfterFirstUndo = harness.dailyLogFor(day)?.moodTags
+                assertThat(viewModel.uiState.value.undoMessage).isNull()
+                viewModel.undoLastChange()
+                harness.awaitDailyLog(day) {
+                    it.moodTags == moodAfterFirstUndo && !it.medicationTags.contains("ویتامین")
+                }
+                assertThat(harness.dailyLogFor(day)?.moodTags).isEqualTo(moodAfterFirstUndo)
+                assertThat(harness.dailyLogFor(day)?.medicationTags).doesNotContain("ویتامین")
+            }
+        }
+
+    @Test
+    fun undo_restoresPregnancyTestInDatabase() =
+        runTest(testDispatcher) {
+            withTtcEditor { harness, viewModel ->
+                viewModel.setPregnancyTest(PregnancyTestResult.POSITIVE)
+                harness.awaitTtcPregnancyTest(day, PregnancyTestResult.POSITIVE)
+                viewModel.undoLastChange()
+                harness.awaitTtcPregnancyTest(day, null)
+            }
+        }
+
+    @Test
+    fun undo_lifestyleSleepToggle_revertsInDatabase() =
+        runTest(testDispatcher) {
+            withTtcEditor { harness, viewModel ->
+                harness.loggingPreferencesRepository.setLifestyleModuleEnabled(LogEditorCategory.SLEEP, true)
+                viewModel.toggleLifestyleLogged(LogEditorCategory.SLEEP)
+                harness.awaitDailyLog(day) { it.sleepLogged }
+                viewModel.undoLastChange()
+                harness.awaitDailyLog(day) { !it.sleepLogged }
+            }
+        }
 }

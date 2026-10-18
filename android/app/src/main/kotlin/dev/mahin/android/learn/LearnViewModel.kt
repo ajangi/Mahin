@@ -19,9 +19,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 @HiltViewModel
 class LearnViewModel
@@ -36,7 +35,7 @@ class LearnViewModel
         private val _uiState = MutableStateFlow(LearnUiState())
         val uiState: StateFlow<LearnUiState> = _uiState.asStateFlow()
 
-        private val magazineRefreshMutex = Mutex()
+        private var magazineRefreshJob: Job? = null
         private var magazineRefreshGeneration = 0
 
         init {
@@ -112,26 +111,29 @@ class LearnViewModel
             pregnancyWeek: Int?,
         ) {
             val generation = ++magazineRefreshGeneration
-            viewModelScope.launch {
-                magazineRefreshMutex.withLock {
-                    if (generation != magazineRefreshGeneration) return@withLock
+            magazineRefreshJob?.cancel()
+            magazineRefreshJob =
+                viewModelScope.launch {
                     performMagazineRefresh(
+                        generation = generation,
                         reproductiveMode = reproductiveMode,
                         pregnancyWeek = pregnancyWeek,
                     )
                 }
-            }
         }
 
         private suspend fun performMagazineRefresh(
+            generation: Int,
             reproductiveMode: ReproductiveMode,
             pregnancyWeek: Int?,
         ) {
+            if (generation != magazineRefreshGeneration) return
             _uiState.update { it.copy(loading = true, errorMessage = null) }
             val featured =
                 runCatching { contentRepository.collections() }
                     .getOrElse { emptyList() }
                     .filter { it.featured }
+            if (generation != magazineRefreshGeneration) return
             val programs = runCatching { contentRepository.programs() }.getOrElse { emptyList() }
             val contextualLifeStage =
                 when (reproductiveMode) {
@@ -153,6 +155,7 @@ class LearnViewModel
                             items
                         }
                     }
+            if (generation != magazineRefreshGeneration) return
             val recentIds = contentRepository.recentArticleIds()
             val recentArticles = recentIds.mapNotNull { id -> resolveSummary(id, contextual) }
             _uiState.update {

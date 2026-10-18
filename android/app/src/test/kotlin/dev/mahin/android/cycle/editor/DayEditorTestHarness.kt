@@ -82,6 +82,7 @@ internal class DayEditorTestHarness private constructor(
 
     fun close() {
         viewModelStore.clear()
+        ShadowLooper.idleMainLooper()
         database.close()
     }
 
