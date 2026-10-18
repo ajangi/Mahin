@@ -43,7 +43,9 @@ class DayEditorFlowLevelTest {
                 viewModel.uiState.filter { it.periodLogged }.first()
                 viewModel.setFlowLevel(PeriodFlowLevel.HEAVY)
                 viewModel.uiState.filter { it.flowLevel == PeriodFlowLevel.HEAVY }.first()
+                harness.awaitPeriodDayFlowLevel(day, PeriodFlowLevel.HEAVY)
                 assertThat(viewModel.uiState.value.flowLevel).isEqualTo(PeriodFlowLevel.HEAVY)
+                assertThat(harness.periodDayFor(day)?.flowLevel).isEqualTo(PeriodFlowLevel.HEAVY)
             } finally {
                 testDispatcher.scheduler.advanceUntilIdle()
                 ShadowLooper.idleMainLooper()

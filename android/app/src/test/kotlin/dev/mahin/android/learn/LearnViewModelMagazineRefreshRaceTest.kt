@@ -102,7 +102,9 @@ class LearnViewModelMagazineRefreshRaceTest {
 
     @After
     fun tearDown() {
+        testDispatcher.scheduler.advanceUntilIdle()
         viewModelStore.clear()
+        ShadowLooper.idleMainLooper()
         harness.close()
         database.close()
     }
@@ -150,16 +152,15 @@ class LearnViewModelMagazineRefreshRaceTest {
                         state.contextualArticles.any { it.id == ttcArticle.id }
                 }.first()
             cycleSearchGate.complete(Unit)
-            advanceUntilIdle()
+            val finalState =
+                viewModel.uiState
+                    .filter { state ->
+                        !state.loading &&
+                            state.contextualArticles.any { it.id == ttcArticle.id } &&
+                            state.contextualArticles.none { it.id == staleCycleArticle.id }
+                    }.first()
             assertThat(harness.api.lastSearchLifeStage).isEqualTo("ttc")
-            assertThat(viewModel.uiState.value.loading).isFalse()
-            assertThat(
-                viewModel.uiState.value.contextualArticles
-                    .map { it.id },
-            ).containsExactly(ttcArticle.id)
-            assertThat(
-                viewModel.uiState.value.contextualArticles
-                    .map { it.id },
-            ).doesNotContain(staleCycleArticle.id)
+            assertThat(finalState.loading).isFalse()
+            assertThat(finalState.contextualArticles.map { it.id }).containsExactly(ttcArticle.id)
         }
 }

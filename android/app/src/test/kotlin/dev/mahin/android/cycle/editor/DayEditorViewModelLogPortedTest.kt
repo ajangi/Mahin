@@ -74,7 +74,9 @@ class DayEditorViewModelLogPortedTest {
                 viewModel.uiState.filter { it.periodLogged }.first()
                 viewModel.togglePeriodLogged()
                 viewModel.uiState.filter { !it.periodLogged }.first()
-                awaitUserDeleted(testHarness, day)
+                testHarness.awaitNoPeriodDay(day)
+                testHarness.tombstoneRepository.awaitUserDeleted(day, deleted = true)
+                assertThat(testHarness.tombstoneRepository.isUserDeleted(day)).isTrue()
             } finally {
                 testDispatcher.scheduler.advanceUntilIdle()
                 ShadowLooper.idleMainLooper()
@@ -96,6 +98,9 @@ class DayEditorViewModelLogPortedTest {
                 viewModel.uiState.filter { it.periodLogged }.first()
                 viewModel.setFlowLevel(PeriodFlowLevel.LIGHT)
                 viewModel.uiState.filter { it.flowLevel == PeriodFlowLevel.LIGHT }.first()
+                testHarness.awaitPeriodDayFlowLevel(day, PeriodFlowLevel.LIGHT)
+                assertThat(testHarness.periodDayFor(day)).isNotNull()
+                testHarness.tombstoneRepository.awaitUserDeleted(day, deleted = false)
                 assertThat(testHarness.tombstoneRepository.isUserDeleted(day)).isFalse()
             } finally {
                 testDispatcher.scheduler.advanceUntilIdle()
@@ -118,6 +123,9 @@ class DayEditorViewModelLogPortedTest {
                 viewModel.uiState.filter { it.periodLogged }.first()
                 viewModel.setFlowLevel(PeriodFlowLevel.HEAVY)
                 viewModel.uiState.filter { it.flowLevel == PeriodFlowLevel.HEAVY }.first()
+                testHarness.awaitPeriodDayFlowLevel(day, PeriodFlowLevel.HEAVY)
+                assertThat(testHarness.periodDayFor(day)?.flowLevel).isEqualTo(PeriodFlowLevel.HEAVY)
+                testHarness.tombstoneRepository.awaitUserDeleted(day, deleted = false)
                 assertThat(testHarness.tombstoneRepository.isUserDeleted(day)).isFalse()
             } finally {
                 testDispatcher.scheduler.advanceUntilIdle()
@@ -184,6 +192,7 @@ class DayEditorViewModelLogPortedTest {
                 assertThat(viewModel.uiState.value.sexualActivityEnabled).isFalse()
                 viewModel.setNote("یادداشت")
                 viewModel.uiState.filter { it.note == "یادداشت" }.first()
+                testHarness.awaitDailyLog(day) { it.note == "یادداشت" }
                 val stored = testHarness.ttcRepository.getTtcLogForDate(day)
                 assertThat(stored?.intercourseLogged).isTrue()
                 assertThat(stored?.intercourseProtected).isTrue()

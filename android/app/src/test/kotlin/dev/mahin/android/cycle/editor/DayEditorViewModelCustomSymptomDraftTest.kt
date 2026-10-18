@@ -70,6 +70,7 @@ class DayEditorViewModelCustomSymptomDraftTest {
                 viewModel.setCustomSymptomDraft(label)
                 viewModel.addCustomSymptomFromDraft()
                 viewModel.uiState.filter { it.localCustomSymptomTags.contains(label) }.first()
+                harness.awaitDailyLog(day) { it.localCustomSymptomTags.contains(label) }
                 assertThat(viewModel.uiState.value.customSymptomDraft).isEmpty()
                 viewModel.setCustomSymptomDraft(label)
                 viewModel.addCustomSymptomFromDraft()

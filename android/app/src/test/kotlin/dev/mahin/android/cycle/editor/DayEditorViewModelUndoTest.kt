@@ -11,8 +11,6 @@ import java.time.LocalDate
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
@@ -44,19 +42,6 @@ class DayEditorViewModelUndoTest {
         ShadowLooper.idleMainLooper()
     }
 
-    private suspend fun TestScope.awaitTtcBbtPersisted(
-        harness: DayEditorTestHarness,
-        day: LocalDate,
-        bbt: Double,
-    ) {
-        repeat(30) {
-            advanceUntilIdle()
-            ShadowLooper.idleMainLooper()
-            if (harness.ttcRepository.getTtcLogForDate(day)?.bbtCelsius == bbt) return
-        }
-        throw AssertionError("Expected BBT $bbt for $day")
-    }
-
     private suspend fun withTtcEditor(block: suspend (DayEditorTestHarness, DayEditorViewModel) -> Unit) {
         val harness = DayEditorTestHarness.create(day)
         try {
@@ -78,9 +63,10 @@ class DayEditorViewModelUndoTest {
             withTtcEditor { harness, viewModel ->
                 viewModel.setCervicalMucus(CervicalMucusType.EGG_WHITE)
                 viewModel.uiState.filter { it.cervicalMucus == CervicalMucusType.EGG_WHITE }.first()
+                harness.awaitTtcCervicalMucus(day, CervicalMucusType.EGG_WHITE)
                 viewModel.undoLastChange()
                 viewModel.uiState.filter { it.cervicalMucus == null }.first()
-                assertThat(harness.ttcRepository.getTtcLogForDate(day)?.cervicalMucus).isNull()
+                harness.awaitTtcCervicalMucus(day, null)
             }
         }
 
@@ -90,9 +76,10 @@ class DayEditorViewModelUndoTest {
             withTtcEditor { harness, viewModel ->
                 viewModel.setOvulationTest(OvulationTestResult.POSITIVE)
                 viewModel.uiState.filter { it.ovulationTest == OvulationTestResult.POSITIVE }.first()
+                harness.awaitTtcOvulationTest(day, OvulationTestResult.POSITIVE)
                 viewModel.undoLastChange()
                 viewModel.uiState.filter { it.ovulationTest == null }.first()
-                assertThat(harness.ttcRepository.getTtcLogForDate(day)?.ovulationTestResult).isNull()
+                harness.awaitTtcOvulationTest(day, null)
             }
         }
 
@@ -102,11 +89,13 @@ class DayEditorViewModelUndoTest {
             withTtcEditor { harness, viewModel ->
                 viewModel.onBbtChange("36.55")
                 viewModel.uiState.filter { it.bbtInput == "36.55" }.first()
+                harness.awaitTtcBbt(day, 36.55)
                 viewModel.onBbtChange("36.56")
                 viewModel.uiState.filter { it.bbtInput == "36.56" }.first()
+                harness.awaitTtcBbt(day, 36.56)
                 viewModel.undoLastChange()
                 viewModel.uiState.filter { it.bbtInput == "36.55" }.first()
-                awaitTtcBbtPersisted(harness, day, 36.55)
+                harness.awaitTtcBbt(day, 36.55)
             }
         }
 
@@ -117,9 +106,10 @@ class DayEditorViewModelUndoTest {
                 viewModel.onBbtChange("36.55")
                 viewModel.onBbtChange("36.56")
                 viewModel.uiState.filter { it.bbtInput == "36.56" }.first()
+                harness.awaitTtcBbt(day, 36.56)
                 viewModel.undoLastChange()
                 viewModel.uiState.filter { it.bbtInput == "36.55" }.first()
-                awaitTtcBbtPersisted(harness, day, 36.55)
+                harness.awaitTtcBbt(day, 36.55)
             }
         }
 
@@ -129,18 +119,25 @@ class DayEditorViewModelUndoTest {
             withTtcEditor { harness, viewModel ->
                 viewModel.toggleMood("آرام")
                 viewModel.uiState.filter { it.moodTags.contains("آرام") }.first()
+                harness.awaitDailyLog(day) { it.moodTags.contains("آرام") }
                 viewModel.toggleMedication("ویتامین")
                 viewModel.uiState.filter { it.medicationTags.contains("ویتامین") }.first()
+                harness.awaitDailyLog(day) { it.medicationTags.contains("ویتامین") }
                 viewModel.undoLastChange()
                 viewModel.uiState
                     .filter {
                         !it.medicationTags.contains("ویتامین") && it.moodTags.contains("آرام")
                     }.first()
+                harness.awaitDailyLog(day) {
+                    !it.medicationTags.contains("ویتامین") && it.moodTags.contains("آرام")
+                }
                 viewModel.uiState.filter { it.undoMessage == null }.first()
                 val moodAfterFirstUndo = harness.dailyLogFor(day)?.moodTags
                 assertThat(viewModel.uiState.value.undoMessage).isNull()
                 viewModel.undoLastChange()
-                viewModel.uiState.filter { !it.medicationTags.contains("ویتامین") }.first()
+                harness.awaitDailyLog(day) {
+                    it.moodTags == moodAfterFirstUndo && !it.medicationTags.contains("ویتامین")
+                }
                 assertThat(harness.dailyLogFor(day)?.moodTags).isEqualTo(moodAfterFirstUndo)
                 assertThat(harness.dailyLogFor(day)?.medicationTags).doesNotContain("ویتامین")
             }
@@ -152,9 +149,10 @@ class DayEditorViewModelUndoTest {
             withTtcEditor { harness, viewModel ->
                 viewModel.setPregnancyTest(PregnancyTestResult.POSITIVE)
                 viewModel.uiState.filter { it.pregnancyTest == PregnancyTestResult.POSITIVE }.first()
+                harness.awaitTtcPregnancyTest(day, PregnancyTestResult.POSITIVE)
                 viewModel.undoLastChange()
                 viewModel.uiState.filter { it.pregnancyTest == null }.first()
-                assertThat(harness.ttcRepository.getTtcLogForDate(day)?.pregnancyTestResult).isNull()
+                harness.awaitTtcPregnancyTest(day, null)
             }
         }
 
@@ -165,9 +163,10 @@ class DayEditorViewModelUndoTest {
                 harness.loggingPreferencesRepository.setLifestyleModuleEnabled(LogEditorCategory.SLEEP, true)
                 viewModel.toggleLifestyleLogged(LogEditorCategory.SLEEP)
                 viewModel.uiState.filter { it.sleepLogged }.first()
+                harness.awaitDailyLog(day) { it.sleepLogged }
                 viewModel.undoLastChange()
                 viewModel.uiState.filter { !it.sleepLogged }.first()
-                assertThat(harness.dailyLogFor(day)?.sleepLogged).isFalse()
+                harness.awaitDailyLog(day) { !it.sleepLogged }
             }
         }
 }

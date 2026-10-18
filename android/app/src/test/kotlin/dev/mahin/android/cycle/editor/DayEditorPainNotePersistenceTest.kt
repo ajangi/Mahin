@@ -1,5 +1,6 @@
 package dev.mahin.android.cycle.editor
 
+import com.google.common.truth.Truth.assertThat
 import dev.mahin.core.model.PainLocation
 import dev.mahin.core.testing.MainDispatcherRule
 import java.time.LocalDate
@@ -42,6 +43,8 @@ class DayEditorPainNotePersistenceTest {
                 viewModel.uiState.filter { it.painSeverity == 5 }.first()
                 viewModel.setPainNote("درد شدید")
                 viewModel.uiState.filter { it.painNote == "درد شدید" }.first()
+                harness.awaitDailyLog(day) { it.painNote == "درد شدید" }
+                assertThat(harness.dailyLogFor(day)?.painNote).isEqualTo("درد شدید")
             } finally {
                 testDispatcher.scheduler.advanceUntilIdle()
                 ShadowLooper.idleMainLooper()

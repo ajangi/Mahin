@@ -9,6 +9,7 @@ import dev.mahin.core.database.MahinDatabase
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.entity.CycleProfileEntity
 import dev.mahin.core.datastore.CalendarUiPreferencesRepository
+import dev.mahin.core.datastore.HealthConnectPeriodDayTombstoneRepository
 import dev.mahin.core.datetime.JalaliDate
 import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
@@ -17,6 +18,7 @@ import dev.mahin.core.testing.ViewModelStoreTestHarness
 import java.time.LocalDate
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
@@ -132,7 +134,10 @@ class CalendarViewModelLegendTest {
         ) -> T,
     ): T {
         val calendarPrefs = CalendarUiPreferencesRepository(context)
-        calendarPrefs.clear()
+        runBlocking {
+            calendarPrefs.clear()
+            HealthConnectPeriodDayTombstoneRepository(context).clearAll()
+        }
         val database =
             Room
                 .inMemoryDatabaseBuilder(context, MahinDatabase::class.java)
@@ -156,7 +161,10 @@ class CalendarViewModelLegendTest {
             testDispatcher.scheduler.advanceUntilIdle()
             ShadowLooper.idleMainLooper()
             viewModelStore.clear()
-            calendarPrefs.clear()
+            runBlocking {
+                calendarPrefs.clear()
+                HealthConnectPeriodDayTombstoneRepository(context).clearAll()
+            }
             database.close()
         }
     }

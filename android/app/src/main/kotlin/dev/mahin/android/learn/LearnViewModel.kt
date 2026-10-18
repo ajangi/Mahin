@@ -168,6 +168,7 @@ class LearnViewModel
                     offline = featured.isEmpty() && programs.isEmpty() && contextual.isEmpty(),
                 )
             }
+            if (generation != magazineRefreshGeneration) return
             loadCategoryCollections(_uiState.value.selectedCategory)
         }
 

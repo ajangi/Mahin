@@ -10,7 +10,10 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
 private val Context.periodDayTombstoneStore: DataStore<Preferences> by preferencesDataStore(
     name = "health_connect_period_day_tombstones",
@@ -29,6 +32,11 @@ class HealthConnectPeriodDayTombstoneRepository
         private val key = stringSetPreferencesKey("deleted_iso_dates")
 
         suspend fun isUserDeleted(date: LocalDate): Boolean = userDeletedDatesInRange(date, date).contains(date)
+
+        fun observeUserDeleted(date: LocalDate): Flow<Boolean> =
+            dataStore.data
+                .map { prefs -> prefs[key].orEmpty().contains(date.toString()) }
+                .distinctUntilChanged()
 
         suspend fun userDeletedDatesInRange(
             start: LocalDate,

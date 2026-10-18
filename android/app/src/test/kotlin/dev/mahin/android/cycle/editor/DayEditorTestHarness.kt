@@ -83,6 +83,11 @@ internal class DayEditorTestHarness private constructor(
     fun close() {
         viewModelStore.clear()
         ShadowLooper.idleMainLooper()
+        runBlocking {
+            loggingPreferencesRepository.clear()
+            tombstoneRepository.clearAll()
+        }
+        ShadowLooper.idleMainLooper()
         database.close()
     }
 
@@ -99,7 +104,10 @@ internal class DayEditorTestHarness private constructor(
             val ttcRepository = TtcTrackingRepository(database)
             val tombstoneRepository = HealthConnectPeriodDayTombstoneRepository(context)
             val loggingPreferencesRepository = LoggingPreferencesRepository(context)
-            runBlocking { loggingPreferencesRepository.clear() }
+            runBlocking {
+                loggingPreferencesRepository.clear()
+                tombstoneRepository.clearAll()
+            }
             ShadowLooper.idleMainLooper()
             return DayEditorTestHarness(
                 cycleRepository = cycleRepository,

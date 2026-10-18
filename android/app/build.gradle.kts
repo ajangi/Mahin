@@ -140,10 +140,6 @@ dependencies {
 tasks.withType<Test>().configureEach {
     // Robolectric + Compose screenshot tests deadlock when forked in parallel on CI.
     maxParallelForks = 1
-    // Reset the JVM periodically so Room/DataStore observers from one test cannot
-    // touch databases closed by a later test in the same fork. CI runs the full
-    // Robolectric matrix in one process; fork more aggressively there.
-    forkEvery = 8
     timeout.set(Duration.ofMinutes(30))
     val verboseTestStreams =
         providers

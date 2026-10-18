@@ -41,8 +41,10 @@ class DayEditorLifestylePersistenceTest {
                 viewModel.openDateAndAwait(day)
                 viewModel.toggleLifestyleLogged(LogEditorCategory.SLEEP)
                 viewModel.uiState.filter { it.sleepLogged }.first()
+                harness.awaitDailyLog(day) { it.sleepLogged }
                 viewModel.toggleLifestyleLogged(LogEditorCategory.SLEEP)
                 viewModel.uiState.filter { !it.sleepLogged }.first()
+                harness.awaitDailyLog(day) { !it.sleepLogged }
             } finally {
                 testDispatcher.scheduler.advanceUntilIdle()
                 ShadowLooper.idleMainLooper()
