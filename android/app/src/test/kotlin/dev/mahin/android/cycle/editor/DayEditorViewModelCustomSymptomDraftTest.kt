@@ -5,6 +5,7 @@ import dev.mahin.core.testing.MainDispatcherRule
 import java.time.LocalDate
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -29,6 +30,12 @@ class DayEditorViewModelCustomSymptomDraftTest {
             },
         )
 
+    @Before
+    fun drainMainFromPriorTests() {
+        testDispatcher.scheduler.advanceUntilIdle()
+        ShadowLooper.idleMainLooper()
+    }
+
     @Test
     fun addCustomSymptomFromDraft_rejectsCommaInLabel() =
         runTest(testDispatcher) {
@@ -39,6 +46,9 @@ class DayEditorViewModelCustomSymptomDraftTest {
                 viewModel.openDateAndAwait(day)
                 viewModel.setCustomSymptomDraft("سردرد,شخصی")
                 viewModel.addCustomSymptomFromDraft()
+                testDispatcher.scheduler.advanceUntilIdle()
+                org.robolectric.shadows.ShadowLooper
+                    .idleMainLooper()
                 assertThat(harness.dailyLogFor(day)).isNull()
             } finally {
                 testDispatcher.scheduler.advanceUntilIdle()

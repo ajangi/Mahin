@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,8 +28,17 @@ class DayEditorViewModelLogPortedTest {
     val mainDispatcherRule =
         MainDispatcherRule(
             testDispatcher,
-            beforeResetMain = { testDispatcher.scheduler.advanceUntilIdle() },
+            beforeResetMain = {
+                testDispatcher.scheduler.advanceUntilIdle()
+                ShadowLooper.idleMainLooper()
+            },
         )
+
+    @Before
+    fun drainMainFromPriorTests() {
+        testDispatcher.scheduler.advanceUntilIdle()
+        ShadowLooper.idleMainLooper()
+    }
 
     @Test
     fun healthConnectOff_untickPeriod_doesNotDeletePeriodDay() =
@@ -65,7 +75,7 @@ class DayEditorViewModelLogPortedTest {
                 viewModel.uiState.filter { it.periodLogged }.first()
                 viewModel.togglePeriodLogged()
                 testHarness.awaitNoPeriodDay(day)
-                assertThat(testHarness.tombstoneRepository.isUserDeleted(day)).isTrue()
+                awaitUserDeleted(testHarness, day)
             } finally {
                 testDispatcher.scheduler.advanceUntilIdle()
                 ShadowLooper.idleMainLooper()

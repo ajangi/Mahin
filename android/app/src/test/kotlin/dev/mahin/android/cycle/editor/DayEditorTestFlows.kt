@@ -10,6 +10,9 @@ import java.time.LocalDate
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
+import org.robolectric.shadows.ShadowLooper
 
 internal suspend fun DayEditorViewModel.openDateAndAwait(day: LocalDate) {
     openDate(day)
@@ -80,4 +83,16 @@ internal suspend fun DayEditorTestHarness.awaitTtcPregnancyTest(
     result: PregnancyTestResult?,
 ) {
     awaitTtcLog(day) { it?.pregnancyTestResult == result }
+}
+
+internal suspend fun TestScope.awaitUserDeleted(
+    harness: DayEditorTestHarness,
+    day: LocalDate,
+) {
+    repeat(50) {
+        advanceUntilIdle()
+        ShadowLooper.idleMainLooper()
+        if (harness.tombstoneRepository.isUserDeleted(day)) return
+    }
+    throw AssertionError("Expected tombstone for $day")
 }
