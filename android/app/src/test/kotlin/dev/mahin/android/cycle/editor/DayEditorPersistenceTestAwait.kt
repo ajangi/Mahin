@@ -3,6 +3,7 @@ package dev.mahin.android.cycle.editor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.yield
 import org.robolectric.shadows.ShadowLooper
 
 internal suspend fun awaitDailyLogOnMain(
@@ -17,6 +18,7 @@ internal suspend fun awaitDailyLogOnMain(
                 main.scheduler.advanceUntilIdle()
             }
             ShadowLooper.idleMainLooper()
+            yield()
         }
     }
 }

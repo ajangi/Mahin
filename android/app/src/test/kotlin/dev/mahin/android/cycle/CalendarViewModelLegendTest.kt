@@ -15,11 +15,11 @@ import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.core.testing.MainDispatcherRule
 import dev.mahin.core.testing.ViewModelStoreTestHarness
 import java.time.LocalDate
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -71,12 +71,9 @@ class CalendarViewModelLegendTest {
     fun firstDateTap_autoCollapsesLegendAndSetsAutoCollapsedOnce() =
         runTest(testDispatcher) {
             val viewModel = createViewModel()
-            awaitUntil { viewModel.uiState.value.legendExpanded }
+            viewModel.uiState.filter { it.legendExpanded }.first()
             viewModel.selectJalaliDate(JalaliDate(1403, 12, 15))
-            awaitUntil {
-                val state = viewModel.uiState.value
-                !state.legendExpanded && state.legendAutoCollapsedOnce
-            }
+            viewModel.uiState.filter { !it.legendExpanded && it.legendAutoCollapsedOnce }.first()
         }
 
     @Test
@@ -84,9 +81,9 @@ class CalendarViewModelLegendTest {
         runTest(testDispatcher) {
             val viewModel = createViewModel()
             viewModel.selectJalaliDate(JalaliDate(1403, 12, 10))
-            awaitUntil { !viewModel.uiState.value.legendExpanded }
+            viewModel.uiState.filter { !it.legendExpanded }.first()
             viewModel.toggleLegendExpanded()
-            awaitUntil { viewModel.uiState.value.legendExpanded }
+            viewModel.uiState.filter { it.legendExpanded }.first()
         }
 
     @Test
@@ -94,12 +91,12 @@ class CalendarViewModelLegendTest {
         runTest(testDispatcher) {
             val viewModel = createViewModel()
             viewModel.selectJalaliDate(JalaliDate(1403, 12, 10))
-            awaitUntil { !viewModel.uiState.value.legendExpanded }
+            viewModel.uiState.filter { !it.legendExpanded }.first()
             idle()
             assertThat(calendarPrefs.observeLegendAutoCollapsedOnce().first()).isTrue()
             assertThat(calendarPrefs.observeLegendCollapsed().first()).isTrue()
             viewModel.toggleLegendExpanded()
-            awaitUntil { viewModel.uiState.value.legendExpanded }
+            viewModel.uiState.filter { it.legendExpanded }.first()
             assertThat(calendarPrefs.observeLegendCollapsed().first()).isFalse()
             viewModel.selectJalaliDate(JalaliDate(1403, 12, 11))
             idle()
@@ -113,19 +110,13 @@ class CalendarViewModelLegendTest {
         runTest(testDispatcher) {
             val first = createViewModel()
             first.selectJalaliDate(JalaliDate(1403, 12, 10))
-            awaitUntil {
-                val state = first.uiState.value
-                !state.legendExpanded && state.legendAutoCollapsedOnce
-            }
+            first.uiState.filter { !it.legendExpanded && it.legendAutoCollapsedOnce }.first()
             first.toggleLegendExpanded()
-            awaitUntil { first.uiState.value.legendExpanded }
+            first.uiState.filter { it.legendExpanded }.first()
             viewModelStore.clear()
             idle()
             val second = createViewModel()
-            awaitUntil {
-                val state = second.uiState.value
-                state.legendExpanded && state.legendAutoCollapsedOnce
-            }
+            second.uiState.filter { it.legendExpanded && it.legendAutoCollapsedOnce }.first()
         }
 
     private fun createViewModel(): CalendarViewModel =
@@ -153,18 +144,5 @@ class CalendarViewModelLegendTest {
     private fun idle() {
         testDispatcher.scheduler.advanceUntilIdle()
         ShadowLooper.idleMainLooper()
-    }
-
-    private suspend fun awaitUntil(
-        timeoutMs: Long = 3_000,
-        condition: () -> Boolean,
-    ) {
-        withTimeout(timeoutMs) {
-            while (true) {
-                if (condition()) return@withTimeout
-                testDispatcher.scheduler.advanceUntilIdle()
-                ShadowLooper.idleMainLooper()
-            }
-        }
     }
 }

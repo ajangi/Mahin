@@ -16,6 +16,7 @@ import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.core.testing.MainDispatcherRule
 import dev.mahin.core.testing.ViewModelStoreTestHarness
 import java.time.LocalDate
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
@@ -30,6 +31,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class LearnViewModelMagazineRefreshRaceTest {
@@ -67,7 +69,7 @@ class LearnViewModelMagazineRefreshRaceTest {
             )
         harness.api.beforeSearch = { lifeStage ->
             if (lifeStage == "cycle") {
-                delay(5_000)
+                delay(1)
             }
         }
         val context = ApplicationProvider.getApplicationContext<Context>()
