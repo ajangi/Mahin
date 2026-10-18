@@ -104,6 +104,10 @@ class DayEditorViewModelUndoTest {
                 viewModel.uiState.filter { it.bbtInput == "36.56" }.first()
                 viewModel.undoLastChange()
                 viewModel.uiState.filter { it.bbtInput == "36.55" }.first()
+                repeat(20) {
+                    testDispatcher.scheduler.advanceUntilIdle()
+                    ShadowLooper.idleMainLooper()
+                }
                 assertThat(harness.ttcRepository.getTtcLogForDate(day)?.bbtCelsius).isEqualTo(36.55)
             }
         }
