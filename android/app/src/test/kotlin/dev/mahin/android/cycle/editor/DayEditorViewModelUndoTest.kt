@@ -11,6 +11,8 @@ import java.time.LocalDate
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
@@ -40,6 +42,19 @@ class DayEditorViewModelUndoTest {
     fun drainMainFromPriorTests() {
         testDispatcher.scheduler.advanceUntilIdle()
         ShadowLooper.idleMainLooper()
+    }
+
+    private suspend fun TestScope.awaitTtcBbtPersisted(
+        harness: DayEditorTestHarness,
+        day: LocalDate,
+        bbt: Double,
+    ) {
+        repeat(30) {
+            advanceUntilIdle()
+            ShadowLooper.idleMainLooper()
+            if (harness.ttcRepository.getTtcLogForDate(day)?.bbtCelsius == bbt) return
+        }
+        throw AssertionError("Expected BBT $bbt for $day")
     }
 
     private suspend fun withTtcEditor(block: suspend (DayEditorTestHarness, DayEditorViewModel) -> Unit) {
@@ -91,7 +106,7 @@ class DayEditorViewModelUndoTest {
                 viewModel.uiState.filter { it.bbtInput == "36.56" }.first()
                 viewModel.undoLastChange()
                 viewModel.uiState.filter { it.bbtInput == "36.55" }.first()
-                assertThat(harness.ttcRepository.getTtcLogForDate(day)?.bbtCelsius).isEqualTo(36.55)
+                awaitTtcBbtPersisted(harness, day, 36.55)
             }
         }
 
@@ -104,11 +119,7 @@ class DayEditorViewModelUndoTest {
                 viewModel.uiState.filter { it.bbtInput == "36.56" }.first()
                 viewModel.undoLastChange()
                 viewModel.uiState.filter { it.bbtInput == "36.55" }.first()
-                repeat(20) {
-                    testDispatcher.scheduler.advanceUntilIdle()
-                    ShadowLooper.idleMainLooper()
-                }
-                assertThat(harness.ttcRepository.getTtcLogForDate(day)?.bbtCelsius).isEqualTo(36.55)
+                awaitTtcBbtPersisted(harness, day, 36.55)
             }
         }
 
