@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -43,6 +44,12 @@ class CalendarViewModelLegendTest {
                 ShadowLooper.idleMainLooper()
             },
         )
+
+    @Before
+    fun drainMainFromPriorTests() {
+        testDispatcher.scheduler.advanceUntilIdle()
+        ShadowLooper.idleMainLooper()
+    }
 
     @Test
     fun firstDateTap_autoCollapsesLegendAndSetsAutoCollapsedOnce() =
@@ -158,13 +165,14 @@ class CalendarViewModelLegendTest {
         try {
             return block(viewModel, calendarPrefs, cycleRepository, viewModelStore)
         } finally {
-            testDispatcher.scheduler.advanceUntilIdle()
-            ShadowLooper.idleMainLooper()
+            idle()
             viewModelStore.clear()
+            idle()
             runBlocking {
                 calendarPrefs.clear()
                 HealthConnectPeriodDayTombstoneRepository(context).clearAll()
             }
+            idle()
             database.close()
         }
     }
