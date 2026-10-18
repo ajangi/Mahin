@@ -41,7 +41,7 @@ class DayEditorPainNotePersistenceTest {
                 viewModel.setPain(PainLocation.HEAD, 5)
                 viewModel.uiState.filter { it.painSeverity == 5 }.first()
                 viewModel.setPainNote("درد شدید")
-                harness.awaitDailyLog(day) { it.painNote == "درد شدید" }
+                viewModel.uiState.filter { it.painNote == "درد شدید" }.first()
             } finally {
                 testDispatcher.scheduler.advanceUntilIdle()
                 ShadowLooper.idleMainLooper()

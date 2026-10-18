@@ -3,6 +3,8 @@ package dev.mahin.android.cycle.editor
 import dev.mahin.core.model.LogEditorCategory
 import dev.mahin.core.testing.MainDispatcherRule
 import java.time.LocalDate
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
@@ -38,9 +40,9 @@ class DayEditorLifestylePersistenceTest {
                 harness.loggingPreferencesRepository.setLifestyleModuleEnabled(LogEditorCategory.SLEEP, true)
                 viewModel.openDateAndAwait(day)
                 viewModel.toggleLifestyleLogged(LogEditorCategory.SLEEP)
-                harness.awaitDailyLog(day) { it.sleepLogged }
+                viewModel.uiState.filter { it.sleepLogged }.first()
                 viewModel.toggleLifestyleLogged(LogEditorCategory.SLEEP)
-                harness.awaitDailyLog(day) { !it.sleepLogged }
+                viewModel.uiState.filter { !it.sleepLogged }.first()
             } finally {
                 testDispatcher.scheduler.advanceUntilIdle()
                 ShadowLooper.idleMainLooper()

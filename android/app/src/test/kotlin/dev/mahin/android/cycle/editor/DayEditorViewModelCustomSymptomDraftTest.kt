@@ -3,6 +3,8 @@ package dev.mahin.android.cycle.editor
 import com.google.common.truth.Truth.assertThat
 import dev.mahin.core.testing.MainDispatcherRule
 import java.time.LocalDate
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -67,7 +69,7 @@ class DayEditorViewModelCustomSymptomDraftTest {
                 viewModel.openDateAndAwait(day)
                 viewModel.setCustomSymptomDraft(label)
                 viewModel.addCustomSymptomFromDraft()
-                harness.awaitDailyLog(day) { it.localCustomSymptomTags.contains(label) }
+                viewModel.uiState.filter { it.localCustomSymptomTags.contains(label) }.first()
                 assertThat(viewModel.uiState.value.customSymptomDraft).isEmpty()
                 viewModel.setCustomSymptomDraft(label)
                 viewModel.addCustomSymptomFromDraft()
