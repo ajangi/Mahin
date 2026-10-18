@@ -1,7 +1,7 @@
 # M18b Handoff — Pregnancy expenses, warning signs/BP, weight chart, timer polish
 
 **Milestone:** M18b  
-**Status:** Gatekeeper remediation complete on PR #49 (CI green)  
+**Status:** **accepted** on `master` (squash-merge `4741bac`, [PR #49](https://github.com/ajangi/Mahin/pull/49), **2026-10-17**)  
 **Next milestone:** none mandated (M19 gated)
 
 ## Commands and results
@@ -14,8 +14,8 @@ python3 scripts/check_design_tokens.py && python3 scripts/security_checklist.py
 cd android && ./gradlew lintDebug ktlintCheck detekt test :app:verifyRoborazziDebug
 ```
 
-**Branch:** `cursor/m18b-pregnancy-depth-8467`  
-**Tip:** `89aed668b67e90a97161a73e881a2c197d043ba3` (CI run 39016466912 — all 5 checks green)
+**Merge on `master`:** `4741bacace1b22fb93625702ad17d435fffc989f` (squash of PR #49)  
+**Final CI head (pre-merge):** `9c5907160417d6d47c8878bc8217eaf69a757738` (CI run 39017623134 — all 5 checks green)
 
 ## Gatekeeper remediation (PR #49)
 
@@ -31,10 +31,10 @@ cd android && ./gradlew lintDebug ktlintCheck detekt test :app:verifyRoborazziDe
 | Telemetry guards | `M18bPregnancyDepthTelemetryGuardTest` — `foundation_opened` routes only, no BP/weight/amount in analytics |
 | Expenses / weight VM tests | Edge cases per gatekeeper list |
 | Expense parsing | Reject zero; strip `٬` and `،` (unit test for `،`) |
-| Warning-signs cache | Empty network list clears stale cached card; URGENT escalation copy on screen |
+| Warning-signs cache | Empty successful network list clears stale cached card; URGENT escalation copy on screen |
 | Hardcoded BP test | Asserts scan roots exist and ≥1 file scanned |
 
-## Implemented scope (unchanged)
+## Implemented scope
 
 | Area | Notes |
 |------|--------|
@@ -54,8 +54,10 @@ cd android && ./gradlew lintDebug ktlintCheck detekt test :app:verifyRoborazziDe
 
 ## Deferred / limitations
 
+- Remove unused `HUB_TICKER_ENABLED_KEY` and `refreshTimerDisplayForTests()` from `PregnancyHubViewModel` (test-only hooks no longer needed).
+- Stabilise `LearnViewModelTest` and `CalendarViewModelLegendTest` intermittent CI failures.
 - Weight reference bands from CMS not wired (no reviewed band payload yet).
-- Expense/checklist sync and export — still owner decision; local-only by design.
+- Expense sync and export — owner decision; local-only by design until decided.
 
 ## Unresolved questions
 
