@@ -207,6 +207,7 @@ class PregnancyAppointmentsViewModelTest {
             WellnessContentLocalStore(database.wellnessContentDao(), Json { ignoreUnknownKeys = true }),
             Json { ignoreUnknownKeys = true },
             MediaAssetMemoryCache(),
+            kotlinx.coroutines.Dispatchers.IO,
         )
     }
 

@@ -57,7 +57,7 @@ class LearnViewModelTest {
     @Before
     fun setUp() {
         viewModelStore.clear()
-        harness = LearnContentTestHarness()
+        harness = LearnContentTestHarness(ioDispatcher = testDispatcher, viewModelStore = viewModelStore)
         harness.api.searchResults = emptyList()
         harness.api.collections = emptyList()
         harness.api.lastSearchQuery = null
@@ -71,7 +71,6 @@ class LearnViewModelTest {
     @After
     fun tearDown() {
         testDispatcher.scheduler.advanceUntilIdle()
-        viewModelStore.clear()
         org.robolectric.shadows.ShadowLooper
             .idleMainLooper()
         harness.close()

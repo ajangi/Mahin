@@ -1,10 +1,11 @@
 package dev.mahin.core.content
 
+import dev.mahin.core.content.di.IoDispatcher
 import dev.mahin.core.datastore.ContentCachePreferencesRepository
 import dev.mahin.domain.content.PersianSearchNormalizer
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -19,19 +20,20 @@ class ContentRepository
         private val localStore: WellnessContentLocalStore,
         private val json: Json,
         private val mediaMemoryCache: MediaAssetMemoryCache,
+        @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : DailyTipDataSource {
         suspend fun search(
             query: String,
             lifeStage: String? = null,
         ): List<ContentArticleSummaryDto> =
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 awaitCatalogSync()
                 val normalized = PersianSearchNormalizer.normalize(query)
                 api.search(normalized.ifBlank { null }, locale = "fa-IR", lifeStage = lifeStage).items
             }
 
         suspend fun article(documentId: String): ContentArticleDto? =
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 awaitCatalogSync()
                 runCatching { api.article(documentId) }
                     .onSuccess { localStore.cacheArticle(it) }
@@ -53,7 +55,7 @@ class ContentRepository
             }
 
         suspend fun pregnancyWeekFetch(week: Int): PregnancyWeekFetch =
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 awaitCatalogSync()
                 runCatching { api.pregnancyWeek(week) }.fold(
                     onSuccess = { PregnancyWeekFetch.Loaded(it) },
@@ -68,7 +70,7 @@ class ContentRepository
             }
 
         override suspend fun fetchDailyTips(key: DailyTipTargetingKey): DailyTipFetchResult =
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 awaitCatalogSync()
                 runCatching {
                     api
@@ -85,7 +87,7 @@ class ContentRepository
             }
 
         override suspend fun cachedDailyTipFor(key: DailyTipTargetingKey): ContentDailyTipDto? =
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 cachePreferences
                     .cachedDailyTipEnvelopeJson()
                     ?.let { payload ->
@@ -98,27 +100,27 @@ class ContentRepository
             tip: ContentDailyTipDto,
             key: DailyTipTargetingKey,
         ) {
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 val envelope = CachedDailyTipEnvelope(tip = tip, key = key)
                 cachePreferences.setCachedDailyTipEnvelopeJson(json.encodeToString(envelope))
             }
         }
 
         override suspend fun clearCachedDailyTip() {
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 cachePreferences.clearCachedDailyTip()
             }
         }
 
         suspend fun programs(programType: String? = null): List<ContentProgramSummaryDto> =
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 awaitCatalogSync()
                 runCatching { api.programs(locale = "fa-IR", programType = programType).items }
                     .getOrElse { emptyList() }
             }
 
         suspend fun program(documentId: String): ContentProgramDto? =
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 awaitCatalogSync()
                 runCatching { api.program(documentId) }
                     .onSuccess { localStore.cacheProgram(it) }
@@ -126,20 +128,20 @@ class ContentRepository
             }
 
         suspend fun collections(category: String? = null): List<ContentCollectionSummaryDto> =
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 awaitCatalogSync()
                 runCatching { api.collections(locale = "fa-IR", category = category).items }
                     .getOrElse { emptyList() }
             }
 
         suspend fun collection(documentId: String): ContentCollectionDto? =
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 awaitCatalogSync()
                 runCatching { api.collection(documentId) }.getOrNull()
             }
 
         suspend fun careSchedules(gestationalWeek: Int? = null): List<ContentCareScheduleDto> =
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 awaitCatalogSync()
                 val summaries =
                     runCatching {
@@ -151,7 +153,7 @@ class ContentRepository
             }
 
         suspend fun checklistTemplate(kind: String = "hospital_bag"): ContentChecklistTemplateDto? =
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 awaitCatalogSync()
                 val summary =
                     runCatching {
@@ -179,7 +181,7 @@ class ContentRepository
             }
 
         suspend fun warningSignsCardFetch(): WarningSignsCardFetch? =
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 awaitCatalogSync()
                 val listResponse =
                     runCatching { api.warningSigns(locale = "fa-IR") }.getOrElse {
@@ -202,14 +204,14 @@ class ContentRepository
             }
 
         suspend fun cachedWarningSignsCard(): ContentWarningSignsDto? =
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 cachePreferences.cachedWarningSignsCardJson()?.let { payload ->
                     runCatching { json.decodeFromString<ContentWarningSignsDto>(payload) }.getOrNull()
                 }
             }
 
         suspend fun mediaAsset(assetId: String): MediaAssetDto? =
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 mediaMemoryCache.get(assetId)?.let { return@withContext it }
                 val resolved =
                     runCatching { api.mediaAsset(assetId) }
@@ -224,13 +226,13 @@ class ContentRepository
         fun cachedMediaAssetInMemory(assetId: String): MediaAssetDto? = mediaMemoryCache.get(assetId)
 
         suspend fun recordArticleView(documentId: String) {
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 localStore.recordRecentView(documentId)
             }
         }
 
         suspend fun recentArticleIds(): List<String> =
-            withContext(Dispatchers.IO) {
+            withContext(ioDispatcher) {
                 localStore.recentArticleIds()
             }
 

@@ -77,7 +77,11 @@ class LearnViewModelMagazineRefreshRaceTest {
     @Before
     fun setUp() {
         viewModelStore.clear()
-        harness = LearnContentTestHarness()
+        harness =
+            LearnContentTestHarness(
+                ioDispatcher = testDispatcher,
+                viewModelStore = viewModelStore,
+            )
         harness.api.collections =
             listOf(
                 ContentCollectionSummaryDto(
@@ -98,7 +102,6 @@ class LearnViewModelMagazineRefreshRaceTest {
     @After
     fun tearDown() {
         testDispatcher.scheduler.advanceUntilIdle()
-        viewModelStore.clear()
         ShadowLooper.idleMainLooper()
         harness.close()
         database.close()
@@ -108,11 +111,18 @@ class LearnViewModelMagazineRefreshRaceTest {
     fun staleMagazineRefresh_doesNotOverwriteLatestLifeStageSearch() =
         runTest(testDispatcher) {
             val cycleSearchGate = CompletableDeferred<Unit>()
+            val cycleSearchEntered = CompletableDeferred<Unit>()
+            val cycleSearchFinished = CompletableDeferred<Unit>()
             harness.api.beforeSearch = { lifeStage ->
                 when (lifeStage) {
                     "cycle" -> {
+                        cycleSearchEntered.complete(Unit)
                         harness.api.searchResults = listOf(staleCycleArticle)
-                        cycleSearchGate.await()
+                        try {
+                            cycleSearchGate.await()
+                        } finally {
+                            cycleSearchFinished.complete(Unit)
+                        }
                     }
                     "ttc" -> harness.api.searchResults = listOf(ttcArticle)
                 }
@@ -129,6 +139,8 @@ class LearnViewModelMagazineRefreshRaceTest {
                 )
             advanceUntilIdle()
             ShadowLooper.idleMainLooper()
+            advanceUntilIdle()
+            cycleSearchEntered.await()
             database.cycleProfileDao().upsert(
                 CycleProfileEntity(
                     reproductiveMode = ReproductiveMode.TRYING_TO_CONCEIVE,
@@ -141,6 +153,7 @@ class LearnViewModelMagazineRefreshRaceTest {
             )
             advanceUntilIdle()
             ShadowLooper.idleMainLooper()
+            advanceUntilIdle()
             viewModel.uiState
                 .filter { state ->
                     !state.loading &&
@@ -148,15 +161,9 @@ class LearnViewModelMagazineRefreshRaceTest {
                 }.first()
             cycleSearchGate.complete(Unit)
             advanceUntilIdle()
-            ShadowLooper.idleMainLooper()
+            cycleSearchFinished.await()
             advanceUntilIdle()
-            val finalState =
-                viewModel.uiState
-                    .filter { state ->
-                        !state.loading &&
-                            state.contextualArticles.any { it.id == ttcArticle.id } &&
-                            state.contextualArticles.none { it.id == staleCycleArticle.id }
-                    }.first()
+            val finalState = viewModel.uiState.value
             assertThat(harness.api.lastSearchLifeStage).isEqualTo("ttc")
             assertThat(finalState.loading).isFalse()
             assertThat(finalState.contextualArticles.map { it.id }).containsExactly(ttcArticle.id)

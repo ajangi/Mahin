@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import dev.mahin.core.database.MahinDatabase
 import dev.mahin.core.datastore.ContentCachePreferencesRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import org.junit.After
@@ -41,6 +42,7 @@ class ContentRepositoryDailyTipTest {
                 localStore = WellnessContentLocalStore(database.wellnessContentDao(), json),
                 json = json,
                 mediaMemoryCache = MediaAssetMemoryCache(),
+                ioDispatcher = Dispatchers.IO,
             )
     }
 
