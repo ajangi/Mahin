@@ -1,7 +1,6 @@
 package dev.mahin.android.learn
 
 import android.content.Context
-import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import dev.mahin.core.common.FixedLocalDateClock
@@ -16,6 +15,7 @@ import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.core.testing.MainDispatcherRule
 import dev.mahin.core.testing.ViewModelStoreTestHarness
+import dev.mahin.core.testing.buildMahinInMemoryDatabase
 import java.time.LocalDate
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -90,12 +90,7 @@ class LearnViewModelMagazineRefreshRaceTest {
                 ),
             )
         val context = ApplicationProvider.getApplicationContext<Context>()
-        database =
-            Room
-                .inMemoryDatabaseBuilder(context, MahinDatabase::class.java)
-                .allowMainThreadQueries()
-                .build()
-        database.openHelper.writableDatabase
+        database = buildMahinInMemoryDatabase(context)
         cycleRepository = CycleTrackingRepository(database)
         pregnancyRepository = PregnancyTrackingRepository(database, PregnancyTimerPreferencesRepository(context))
     }
@@ -152,6 +147,9 @@ class LearnViewModelMagazineRefreshRaceTest {
                         state.contextualArticles.any { it.id == ttcArticle.id }
                 }.first()
             cycleSearchGate.complete(Unit)
+            advanceUntilIdle()
+            ShadowLooper.idleMainLooper()
+            advanceUntilIdle()
             val finalState =
                 viewModel.uiState
                     .filter { state ->
@@ -162,5 +160,6 @@ class LearnViewModelMagazineRefreshRaceTest {
             assertThat(harness.api.lastSearchLifeStage).isEqualTo("ttc")
             assertThat(finalState.loading).isFalse()
             assertThat(finalState.contextualArticles.map { it.id }).containsExactly(ttcArticle.id)
+            assertThat(finalState.contextualArticles.map { it.id }).doesNotContain(staleCycleArticle.id)
         }
 }

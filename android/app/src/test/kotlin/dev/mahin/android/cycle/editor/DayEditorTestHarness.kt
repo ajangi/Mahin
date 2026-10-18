@@ -1,7 +1,6 @@
 package dev.mahin.android.cycle.editor
 
 import android.content.Context
-import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import dev.mahin.core.common.FixedLocalDateClock
 import dev.mahin.core.database.MahinDatabase
@@ -20,6 +19,7 @@ import dev.mahin.core.healthconnect.PeriodDayTrackingService
 import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.core.testing.ViewModelStoreTestHarness
+import dev.mahin.core.testing.buildMahinInMemoryDatabase
 import java.time.LocalDate
 import kotlinx.coroutines.runBlocking
 import org.robolectric.shadows.ShadowLooper
@@ -87,19 +87,13 @@ internal class DayEditorTestHarness private constructor(
             loggingPreferencesRepository.clear()
             tombstoneRepository.clearAll()
         }
-        ShadowLooper.idleMainLooper()
         database.close()
     }
 
     companion object {
         fun create(today: LocalDate): DayEditorTestHarness {
             val context = ApplicationProvider.getApplicationContext<Context>()
-            val database =
-                Room
-                    .inMemoryDatabaseBuilder(context, MahinDatabase::class.java)
-                    .allowMainThreadQueries()
-                    .build()
-            database.openHelper.writableDatabase
+            val database = buildMahinInMemoryDatabase(context)
             val cycleRepository = CycleTrackingRepository(database)
             val ttcRepository = TtcTrackingRepository(database)
             val tombstoneRepository = HealthConnectPeriodDayTombstoneRepository(context)

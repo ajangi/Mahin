@@ -9,7 +9,9 @@ android {
 
 dependencies {
     api(project(":core:common"))
+    api(project(":core:database"))
     api(project(":core:model"))
+    api(libs.androidx.room.runtime)
     api(project(":core:designsystem"))
     api(libs.junit)
     api(libs.truth)

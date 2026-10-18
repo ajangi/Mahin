@@ -1,7 +1,6 @@
 package dev.mahin.android.cycle
 
 import android.content.Context
-import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import dev.mahin.core.common.FixedLocalDateClock
@@ -15,13 +14,13 @@ import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.core.testing.MainDispatcherRule
 import dev.mahin.core.testing.ViewModelStoreTestHarness
+import dev.mahin.core.testing.buildMahinInMemoryDatabase
 import java.time.LocalDate
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -44,12 +43,6 @@ class CalendarViewModelLegendTest {
                 ShadowLooper.idleMainLooper()
             },
         )
-
-    @Before
-    fun drainMainFromPriorTests() {
-        testDispatcher.scheduler.advanceUntilIdle()
-        ShadowLooper.idleMainLooper()
-    }
 
     @Test
     fun firstDateTap_autoCollapsesLegendAndSetsAutoCollapsedOnce() =
@@ -145,12 +138,7 @@ class CalendarViewModelLegendTest {
             calendarPrefs.clear()
             HealthConnectPeriodDayTombstoneRepository(context).clearAll()
         }
-        val database =
-            Room
-                .inMemoryDatabaseBuilder(context, MahinDatabase::class.java)
-                .allowMainThreadQueries()
-                .build()
-        database.openHelper.writableDatabase
+        val database = buildMahinInMemoryDatabase(context)
         val cycleRepository = CycleTrackingRepository(database)
         seedProfile(database)
         val viewModelStore = ViewModelStoreTestHarness()

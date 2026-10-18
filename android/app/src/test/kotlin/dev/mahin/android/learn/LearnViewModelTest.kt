@@ -1,7 +1,6 @@
 package dev.mahin.android.learn
 
 import android.content.Context
-import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import dev.mahin.core.common.FixedLocalDateClock
@@ -16,6 +15,7 @@ import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.core.testing.MainDispatcherRule
 import dev.mahin.core.testing.ViewModelStoreTestHarness
+import dev.mahin.core.testing.buildMahinInMemoryDatabase
 import dev.mahin.domain.pregnancy.PregnancyDatingEngineV1
 import java.time.LocalDate
 import kotlinx.coroutines.flow.filter
@@ -63,11 +63,7 @@ class LearnViewModelTest {
         harness.api.lastSearchQuery = null
         harness.api.lastSearchLifeStage = null
         val context = ApplicationProvider.getApplicationContext<Context>()
-        database =
-            Room
-                .inMemoryDatabaseBuilder(context, MahinDatabase::class.java)
-                .allowMainThreadQueries()
-                .build()
+        database = buildMahinInMemoryDatabase(context)
         cycleRepository = CycleTrackingRepository(database)
         pregnancyRepository = PregnancyTrackingRepository(database, PregnancyTimerPreferencesRepository(context))
     }
