@@ -12,13 +12,17 @@ import dev.mahin.core.datastore.CalendarUiPreferencesRepository
 import dev.mahin.core.datetime.JalaliDate
 import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
+import dev.mahin.core.testing.MainDispatcherRule
 import dev.mahin.core.testing.ViewModelStoreTestHarness
 import java.time.LocalDate
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -28,6 +32,15 @@ import org.robolectric.shadows.ShadowLooper
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class CalendarViewModelLegendTest {
+    private val testDispatcher = StandardTestDispatcher()
+
+    @get:Rule
+    val mainDispatcherRule =
+        MainDispatcherRule(
+            testDispatcher,
+            beforeResetMain = { viewModelStore.clear() },
+        )
+
     private lateinit var database: MahinDatabase
     private lateinit var cycleRepository: CycleTrackingRepository
     private lateinit var calendarPrefs: CalendarUiPreferencesRepository
@@ -55,8 +68,8 @@ class CalendarViewModelLegendTest {
     }
 
     @Test
-    fun firstDateTap_autoCollapsesLegendAndSetsAutoCollapsedOnce() {
-        runBlocking {
+    fun firstDateTap_autoCollapsesLegendAndSetsAutoCollapsedOnce() =
+        runTest(testDispatcher) {
             val viewModel = createViewModel()
             awaitUntil { viewModel.uiState.value.legendExpanded }
             viewModel.selectJalaliDate(JalaliDate(1403, 12, 15))
@@ -65,42 +78,39 @@ class CalendarViewModelLegendTest {
                 !state.legendExpanded && state.legendAutoCollapsedOnce
             }
         }
-    }
 
     @Test
-    fun toggleLegend_expandsAfterAutoCollapse() {
-        runBlocking {
+    fun toggleLegend_expandsAfterAutoCollapse() =
+        runTest(testDispatcher) {
             val viewModel = createViewModel()
             viewModel.selectJalaliDate(JalaliDate(1403, 12, 10))
             awaitUntil { !viewModel.uiState.value.legendExpanded }
             viewModel.toggleLegendExpanded()
             awaitUntil { viewModel.uiState.value.legendExpanded }
         }
-    }
 
     @Test
-    fun secondDateTap_leavesLegendExpanded() {
-        runBlocking {
+    fun secondDateTap_leavesLegendExpanded() =
+        runTest(testDispatcher) {
             val viewModel = createViewModel()
             viewModel.selectJalaliDate(JalaliDate(1403, 12, 10))
             awaitUntil { !viewModel.uiState.value.legendExpanded }
-            ShadowLooper.idleMainLooper()
+            idle()
             assertThat(calendarPrefs.observeLegendAutoCollapsedOnce().first()).isTrue()
             assertThat(calendarPrefs.observeLegendCollapsed().first()).isTrue()
             viewModel.toggleLegendExpanded()
             awaitUntil { viewModel.uiState.value.legendExpanded }
             assertThat(calendarPrefs.observeLegendCollapsed().first()).isFalse()
             viewModel.selectJalaliDate(JalaliDate(1403, 12, 11))
-            ShadowLooper.idleMainLooper()
+            idle()
             assertThat(viewModel.uiState.value.legendExpanded).isTrue()
             assertThat(calendarPrefs.observeLegendAutoCollapsedOnce().first()).isTrue()
             assertThat(calendarPrefs.observeLegendCollapsed().first()).isFalse()
         }
-    }
 
     @Test
-    fun newViewModelInstance_keepsLegendExpandedAfterUserReExpand() {
-        runBlocking {
+    fun newViewModelInstance_keepsLegendExpandedAfterUserReExpand() =
+        runTest(testDispatcher) {
             val first = createViewModel()
             first.selectJalaliDate(JalaliDate(1403, 12, 10))
             awaitUntil {
@@ -110,14 +120,13 @@ class CalendarViewModelLegendTest {
             first.toggleLegendExpanded()
             awaitUntil { first.uiState.value.legendExpanded }
             viewModelStore.clear()
-            ShadowLooper.idleMainLooper()
+            idle()
             val second = createViewModel()
-            awaitUntil(timeoutMs = 5_000) {
+            awaitUntil {
                 val state = second.uiState.value
                 state.legendExpanded && state.legendAutoCollapsedOnce
             }
         }
-    }
 
     private fun createViewModel(): CalendarViewModel =
         viewModelStore.hold(
@@ -141,16 +150,21 @@ class CalendarViewModelLegendTest {
         )
     }
 
+    private fun idle() {
+        testDispatcher.scheduler.advanceUntilIdle()
+        ShadowLooper.idleMainLooper()
+    }
+
     private suspend fun awaitUntil(
         timeoutMs: Long = 3_000,
         condition: () -> Boolean,
     ) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            if (condition()) return
-            ShadowLooper.idleMainLooper()
-            delay(25)
+        withTimeout(timeoutMs) {
+            while (true) {
+                if (condition()) return@withTimeout
+                testDispatcher.scheduler.advanceUntilIdle()
+                ShadowLooper.idleMainLooper()
+            }
         }
-        throw AssertionError("Condition not met within ${timeoutMs}ms")
     }
 }

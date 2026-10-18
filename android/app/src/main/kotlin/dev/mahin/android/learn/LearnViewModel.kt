@@ -20,6 +20,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 @HiltViewModel
 class LearnViewModel
@@ -33,6 +35,9 @@ class LearnViewModel
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(LearnUiState())
         val uiState: StateFlow<LearnUiState> = _uiState.asStateFlow()
+
+        private val magazineRefreshMutex = Mutex()
+        private var magazineRefreshGeneration = 0
 
         init {
             viewModelScope.launch {
@@ -60,7 +65,7 @@ class LearnViewModel
                     mode to pregnancyWeek
                 }.distinctUntilChanged()
                     .collect { (mode, pregnancyWeek) ->
-                        refreshMagazine(reproductiveMode = mode, pregnancyWeek = pregnancyWeek)
+                        enqueueMagazineRefresh(reproductiveMode = mode, pregnancyWeek = pregnancyWeek)
                     }
             }
         }
@@ -99,47 +104,68 @@ class LearnViewModel
             reproductiveMode: ReproductiveMode = ReproductiveMode.CYCLE_TRACKING,
             pregnancyWeek: Int? = null,
         ) {
+            enqueueMagazineRefresh(reproductiveMode = reproductiveMode, pregnancyWeek = pregnancyWeek)
+        }
+
+        private fun enqueueMagazineRefresh(
+            reproductiveMode: ReproductiveMode,
+            pregnancyWeek: Int?,
+        ) {
+            val generation = ++magazineRefreshGeneration
             viewModelScope.launch {
-                _uiState.update { it.copy(loading = true, errorMessage = null) }
-                val featured =
-                    runCatching { contentRepository.collections() }
-                        .getOrElse { emptyList() }
-                        .filter { it.featured }
-                val programs = runCatching { contentRepository.programs() }.getOrElse { emptyList() }
-                val contextualLifeStage =
-                    when (reproductiveMode) {
-                        ReproductiveMode.PREGNANT -> "pregnancy"
-                        ReproductiveMode.TRYING_TO_CONCEIVE -> "ttc"
-                        else -> "cycle"
-                    }
-                val contextual =
-                    runCatching {
-                        contentRepository.search(
-                            query = "",
-                            lifeStage = contextualLifeStage,
-                        )
-                    }.getOrElse { emptyList() }
-                        .let { items ->
-                            if (pregnancyWeek != null) {
-                                items.filter { it.gestationalWeek == pregnancyWeek }.ifEmpty { items }
-                            } else {
-                                items
-                            }
-                        }
-                val recentIds = contentRepository.recentArticleIds()
-                val recentArticles = recentIds.mapNotNull { id -> resolveSummary(id, contextual) }
-                _uiState.update {
-                    it.copy(
-                        loading = false,
-                        featuredCollections = featured,
-                        programs = programs,
-                        contextualArticles = contextual.take(6),
-                        recentArticles = recentArticles,
-                        offline = featured.isEmpty() && programs.isEmpty() && contextual.isEmpty(),
+                magazineRefreshMutex.withLock {
+                    if (generation != magazineRefreshGeneration) return@withLock
+                    performMagazineRefresh(
+                        reproductiveMode = reproductiveMode,
+                        pregnancyWeek = pregnancyWeek,
                     )
                 }
-                loadCategoryCollections(_uiState.value.selectedCategory)
             }
+        }
+
+        private suspend fun performMagazineRefresh(
+            reproductiveMode: ReproductiveMode,
+            pregnancyWeek: Int?,
+        ) {
+            _uiState.update { it.copy(loading = true, errorMessage = null) }
+            val featured =
+                runCatching { contentRepository.collections() }
+                    .getOrElse { emptyList() }
+                    .filter { it.featured }
+            val programs = runCatching { contentRepository.programs() }.getOrElse { emptyList() }
+            val contextualLifeStage =
+                when (reproductiveMode) {
+                    ReproductiveMode.PREGNANT -> "pregnancy"
+                    ReproductiveMode.TRYING_TO_CONCEIVE -> "ttc"
+                    else -> "cycle"
+                }
+            val contextual =
+                runCatching {
+                    contentRepository.search(
+                        query = "",
+                        lifeStage = contextualLifeStage,
+                    )
+                }.getOrElse { emptyList() }
+                    .let { items ->
+                        if (pregnancyWeek != null) {
+                            items.filter { it.gestationalWeek == pregnancyWeek }.ifEmpty { items }
+                        } else {
+                            items
+                        }
+                    }
+            val recentIds = contentRepository.recentArticleIds()
+            val recentArticles = recentIds.mapNotNull { id -> resolveSummary(id, contextual) }
+            _uiState.update {
+                it.copy(
+                    loading = false,
+                    featuredCollections = featured,
+                    programs = programs,
+                    contextualArticles = contextual.take(6),
+                    recentArticles = recentArticles,
+                    offline = featured.isEmpty() && programs.isEmpty() && contextual.isEmpty(),
+                )
+            }
+            loadCategoryCollections(_uiState.value.selectedCategory)
         }
 
         private suspend fun loadCategoryCollections(category: LearnCategory?) {

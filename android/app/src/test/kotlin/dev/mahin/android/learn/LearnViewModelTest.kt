@@ -63,6 +63,7 @@ class LearnViewModelTest {
                 .inMemoryDatabaseBuilder(context, MahinDatabase::class.java)
                 .allowMainThreadQueries()
                 .build()
+        database.openHelper.writableDatabase
         cycleRepository = CycleTrackingRepository(database)
         pregnancyRepository = PregnancyTrackingRepository(database, PregnancyTimerPreferencesRepository(context))
     }
