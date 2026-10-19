@@ -1,6 +1,8 @@
 package dev.mahin.android.cycle.editor
 
 import android.content.Context
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import dev.mahin.android.testing.datastore.LoggingPreferencesTestHandle
@@ -129,23 +131,27 @@ class DayEditorMedicationVitalsTest {
             object : HealthConnectPeriodDayIntegrationGate {
                 override suspend fun isIntegrationActive(): Boolean = false
             }
-        return viewModelStore.hold(
-            DayEditorViewModel(
-                cycleRepository = cycleRepository,
-                ttcRepository = TtcTrackingRepository(database),
-                pregnancyRepository = pregnancyRepository,
-                loggingPreferencesRepository = loggingPreferencesHandle.repository,
-                ttcPrivacyRepository = TtcPrivacyPreferencesRepository(context),
-                periodDayTrackingService =
-                    PeriodDayTrackingService(
-                        cycleRepository,
-                        HealthConnectPeriodDayTombstoneRepository(context),
-                    ),
-                healthConnectPeriodDayIntegrationGate = gate,
-                customSymptomTagRepository = CustomSymptomTagRepository(database),
-                localDateClock = FixedLocalDateClock(logDate),
-            ),
-        )
+        val factory =
+            object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T =
+                    DayEditorViewModel(
+                        cycleRepository = cycleRepository,
+                        ttcRepository = TtcTrackingRepository(database),
+                        pregnancyRepository = pregnancyRepository,
+                        loggingPreferencesRepository = loggingPreferencesHandle.repository,
+                        ttcPrivacyRepository = TtcPrivacyPreferencesRepository(context),
+                        periodDayTrackingService =
+                            PeriodDayTrackingService(
+                                cycleRepository,
+                                HealthConnectPeriodDayTombstoneRepository(context),
+                            ),
+                        healthConnectPeriodDayIntegrationGate = gate,
+                        customSymptomTagRepository = CustomSymptomTagRepository(database),
+                        localDateClock = FixedLocalDateClock(logDate),
+                    ) as T
+            }
+        return viewModelStore.hold(DayEditorViewModel::class.java, factory)
     }
 
     private suspend fun awaitUntil(

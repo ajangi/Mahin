@@ -122,6 +122,7 @@ dependencies {
     ksp(libs.androidx.hilt.compiler)
     implementation(libs.androidx.biometric)
 
+    testImplementation("androidx.arch.core:core-testing:2.2.0")
     testImplementation(libs.junit)
     testImplementation(libs.truth)
     testImplementation(project(":core:testing"))

@@ -48,7 +48,11 @@ class LoggingPreferencesTestHandle private constructor(
         fun open(
             temporaryFolder: TemporaryFolder,
             scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
-        ): LoggingPreferencesTestHandle = openInDirectory(temporaryFolder.newFolder("logging-prefs"), scope)
+        ): LoggingPreferencesTestHandle =
+            openInDirectory(
+                temporaryFolder.newFolder("logging-prefs-${System.nanoTime()}"),
+                scope,
+            )
 
         fun openInDirectory(
             root: File,

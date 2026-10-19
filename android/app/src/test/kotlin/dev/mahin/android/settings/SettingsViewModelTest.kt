@@ -1,6 +1,9 @@
 package dev.mahin.android.settings
 
 import android.content.Context
+import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
@@ -74,6 +77,7 @@ class SettingsViewModelTest {
     val ruleChain: RuleChain =
         RuleChain
             .outerRule(TestHangWatchdogRule())
+            .around(InstantTaskExecutorRule())
             .around(temporaryFolder)
             .around(mainDispatcherRule)
 
@@ -365,19 +369,24 @@ class SettingsViewModelTest {
         val repository = FeatureFlagRepository(FakeMetaApi(flags))
         val gateway = RemoteFeatureFlagGateway(repository)
         val premiumCoordinator = PremiumBillingCoordinator(billingAdapter, entitlementRepository)
+        val factory =
+            object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T =
+                    SettingsViewModel(
+                        pregnancyRepository = pregnancyRepository,
+                        featureFlagGateway = gateway,
+                        featureFlagRepository = repository,
+                        billingAdapter = billingAdapter,
+                        premiumBillingCoordinator = premiumCoordinator,
+                        entitlementRepository = entitlementRepository,
+                        loggingPreferencesRepository = loggingPreferencesHandle.repository,
+                        localDateClock = FixedLocalDateClock(LocalDate.of(2025, 3, 1)),
+                    ) as T
+            }
         return viewModelStore
-            .hold(
-                SettingsViewModel(
-                    pregnancyRepository = pregnancyRepository,
-                    featureFlagGateway = gateway,
-                    featureFlagRepository = repository,
-                    billingAdapter = billingAdapter,
-                    premiumBillingCoordinator = premiumCoordinator,
-                    entitlementRepository = entitlementRepository,
-                    loggingPreferencesRepository = loggingPreferencesHandle.repository,
-                    localDateClock = FixedLocalDateClock(LocalDate.of(2025, 3, 1)),
-                ),
-            ).also { heldViewModel = it }
+            .hold(SettingsViewModel::class.java, factory)
+            .also { heldViewModel = it }
     }
 
     private class FakeMetaApi(

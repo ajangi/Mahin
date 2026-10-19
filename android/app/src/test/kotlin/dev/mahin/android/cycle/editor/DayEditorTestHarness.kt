@@ -1,6 +1,8 @@
 package dev.mahin.android.cycle.editor
 
 import android.content.Context
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.test.core.app.ApplicationProvider
 import dev.mahin.android.testing.datastore.LoggingPreferencesTestHandle
 import dev.mahin.core.common.FixedLocalDateClock
@@ -49,19 +51,23 @@ internal class DayEditorTestHarness private constructor(
             object : HealthConnectPeriodDayIntegrationGate {
                 override suspend fun isIntegrationActive(): Boolean = healthConnectActive
             }
-        return viewModelStore.hold(
-            DayEditorViewModel(
-                cycleRepository = cycleRepository,
-                ttcRepository = ttcRepository,
-                pregnancyRepository = pregnancyRepository(),
-                loggingPreferencesRepository = loggingPreferencesRepository,
-                ttcPrivacyRepository = ttcPrivacyRepository,
-                periodDayTrackingService = periodDayTrackingService,
-                healthConnectPeriodDayIntegrationGate = gate,
-                customSymptomTagRepository = customSymptomTagRepository,
-                localDateClock = localDateClock,
-            ),
-        )
+        val factory =
+            object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T =
+                    DayEditorViewModel(
+                        cycleRepository = cycleRepository,
+                        ttcRepository = ttcRepository,
+                        pregnancyRepository = pregnancyRepository(),
+                        loggingPreferencesRepository = loggingPreferencesRepository,
+                        ttcPrivacyRepository = ttcPrivacyRepository,
+                        periodDayTrackingService = periodDayTrackingService,
+                        healthConnectPeriodDayIntegrationGate = gate,
+                        customSymptomTagRepository = customSymptomTagRepository,
+                        localDateClock = localDateClock,
+                    ) as T
+            }
+        return viewModelStore.hold(DayEditorViewModel::class.java, factory)
     }
 
     private fun pregnancyRepository(): PregnancyTrackingRepository =
@@ -85,14 +91,12 @@ internal class DayEditorTestHarness private constructor(
 
     fun close() {
         viewModelStore.clear()
-        drainCoroutineWork()
-        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
-        drainCoroutineWork()
-        DayEditorTestVmRegistry.unregister(viewModelStore)
-        runBlocking {
-            loggingPreferencesRepository.clear()
-            tombstoneRepository.clearAll()
+        repeat(5) {
+            drainCoroutineWork()
+            ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
         }
+        DayEditorTestVmRegistry.unregister(viewModelStore)
+        runBlocking { tombstoneRepository.clearAll() }
         database.close()
         loggingPreferencesHandle.closeAndCancelScope(drainCoroutineWork)
     }
