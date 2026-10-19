@@ -1,6 +1,7 @@
 package dev.mahin.android.settings
 
 import android.content.Context
+import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.room.Room
@@ -29,7 +30,6 @@ import dev.mahin.core.datastore.PregnancyTimerPreferencesRepository
 import dev.mahin.core.datastore.SubscriptionPreferencesRepository
 import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
-import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import dev.mahin.core.testing.MainDispatcherRule
 import dev.mahin.core.testing.TestHangWatchdogRule
 import dev.mahin.core.testing.ViewModelStoreTestHarness
