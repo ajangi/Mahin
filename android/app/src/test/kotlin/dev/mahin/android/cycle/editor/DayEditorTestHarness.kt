@@ -85,10 +85,8 @@ internal class DayEditorTestHarness private constructor(
     fun close() {
         viewModelStore.clear()
         DayEditorTestVmRegistry.unregister(viewModelStore)
-        runBlocking {
-            loggingPreferencesRepository.clear()
-            tombstoneRepository.clearAll()
-        }
+        ShadowLooper.idleMainLooper()
+        runBlocking { tombstoneRepository.clearAll() }
         database.close()
         loggingPreferencesHandle.close()
     }

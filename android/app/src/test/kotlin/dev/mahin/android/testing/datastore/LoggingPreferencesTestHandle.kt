@@ -9,6 +9,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.job
+import kotlinx.coroutines.runBlocking
 import org.junit.rules.TemporaryFolder
 
 /**
@@ -22,7 +24,12 @@ class LoggingPreferencesTestHandle private constructor(
 ) : AutoCloseable {
     override fun close() {
         scope.cancel()
-        dataStoreRoot.deleteRecursively()
+        runBlocking {
+            scope.coroutineContext.job.join()
+        }
+        // Do not delete [dataStoreRoot] here: a prior test's ViewModel may still be unwinding a
+        // DataStore read on another dispatcher after [viewModelStore.clear()]. TemporaryFolder
+        // tests delete via JUnit; DayEditor harness dirs are per-class unique under /tmp.
     }
 
     companion object {
