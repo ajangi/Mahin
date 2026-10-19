@@ -2,13 +2,13 @@ package dev.mahin.core.datastore
 
 import android.content.Context
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.mahin.core.model.LogEditorCategory
@@ -23,11 +23,9 @@ private val Context.loggingPreferencesDataStore: DataStore<Preferences> by prefe
 )
 
 @Singleton
-class LoggingPreferencesRepository
-    private
-    constructor(
-        private val dataStore: DataStore<Preferences>,
-    ) {
+class LoggingPreferencesRepository private constructor(
+    private val dataStore: DataStore<Preferences>,
+) {
         @Inject
         constructor(
             @ApplicationContext context: Context,
