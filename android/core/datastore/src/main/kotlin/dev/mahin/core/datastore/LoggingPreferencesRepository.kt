@@ -6,9 +6,13 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dev.mahin.core.model.LogEditorCategory
+import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -20,11 +24,25 @@ private val Context.loggingPreferencesDataStore: DataStore<Preferences> by prefe
 
 @Singleton
 class LoggingPreferencesRepository
-    @Inject
+    private
     constructor(
-        @ApplicationContext private val context: Context,
+        private val dataStore: DataStore<Preferences>,
     ) {
-        private val dataStore = context.loggingPreferencesDataStore
+        @Inject
+        constructor(
+            @ApplicationContext context: Context,
+        ) : this(context.loggingPreferencesDataStore)
+
+        companion object {
+            fun forTesting(preferencesFile: File): LoggingPreferencesRepository {
+                val dataStore =
+                    PreferenceDataStoreFactory.create(
+                        corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
+                        produceFile = { preferencesFile },
+                    )
+                return LoggingPreferencesRepository(dataStore)
+            }
+        }
 
         fun observeSexualActivityEnabled(): Flow<Boolean> =
             dataStore.data.map { prefs ->

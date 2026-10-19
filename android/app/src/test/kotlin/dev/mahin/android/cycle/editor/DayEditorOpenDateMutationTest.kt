@@ -24,10 +24,9 @@ class DayEditorOpenDateMutationTest {
         MainDispatcherRule(
             testDispatcher,
             beforeResetMain = {
+                DayEditorTestVmRegistry.scheduler = testDispatcher.scheduler
                 testDispatcher.scheduler.advanceUntilIdle()
                 DayEditorTestVmRegistry.clearAll()
-                org.robolectric.shadows.ShadowLooper
-                    .idleMainLooper()
             },
         )
 

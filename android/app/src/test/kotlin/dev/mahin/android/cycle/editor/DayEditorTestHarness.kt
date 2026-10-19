@@ -2,6 +2,7 @@ package dev.mahin.android.cycle.editor
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import java.io.File
 import dev.mahin.core.common.FixedLocalDateClock
 import dev.mahin.core.database.MahinDatabase
 import dev.mahin.core.database.cycle.CycleTrackingRepository
@@ -83,7 +84,7 @@ internal class DayEditorTestHarness private constructor(
     fun close() {
         viewModelStore.clear()
         DayEditorTestVmRegistry.unregister(viewModelStore)
-        ShadowLooper.idleMainLooper()
+        DayEditorTestVmRegistry.clearAll()
         runBlocking {
             loggingPreferencesRepository.clear()
             tombstoneRepository.clearAll()
@@ -92,18 +93,25 @@ internal class DayEditorTestHarness private constructor(
     }
 
     companion object {
+        private val loggingPreferencesRepository: LoggingPreferencesRepository by lazy {
+            val dir = File(System.getProperty("java.io.tmpdir"), "mahin-day-editor-tests")
+            dir.mkdirs()
+            LoggingPreferencesRepository.forTesting(File(dir, "logging_preferences.preferences_pb"))
+        }
+
         fun create(today: LocalDate): DayEditorTestHarness {
             val context = ApplicationProvider.getApplicationContext<Context>()
             val database = buildMahinInMemoryDatabase(context)
             val cycleRepository = CycleTrackingRepository(database)
             val ttcRepository = TtcTrackingRepository(database)
             val tombstoneRepository = HealthConnectPeriodDayTombstoneRepository(context)
-            val loggingPreferencesRepository = LoggingPreferencesRepository(context)
+            val loggingPreferencesRepository = loggingPreferencesRepository
             runBlocking {
                 loggingPreferencesRepository.clear()
                 tombstoneRepository.clearAll()
             }
             ShadowLooper.idleMainLooper()
+            DayEditorTestVmRegistry.clearAll()
             val viewModelStore = ViewModelStoreTestHarness()
             DayEditorTestVmRegistry.register(viewModelStore)
             return DayEditorTestHarness(
