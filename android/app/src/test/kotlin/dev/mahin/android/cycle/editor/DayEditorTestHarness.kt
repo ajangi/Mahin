@@ -21,6 +21,7 @@ import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.core.testing.ViewModelStoreTestHarness
 import dev.mahin.core.testing.buildMahinInMemoryDatabase
+import java.io.File
 import java.time.LocalDate
 import kotlinx.coroutines.runBlocking
 import org.robolectric.shadows.ShadowLooper
@@ -37,7 +38,6 @@ internal class DayEditorTestHarness private constructor(
     private val localDateClock: FixedLocalDateClock,
     private val viewModelStore: ViewModelStoreTestHarness,
     val database: MahinDatabase,
-    private val loggingPreferencesHandle: LoggingPreferencesTestHandle,
 ) {
     fun dailyLogFor(date: LocalDate): DailyLogEntity? = runBlocking { database.dailyLogDao().getForDate(date) }
 
@@ -85,13 +85,26 @@ internal class DayEditorTestHarness private constructor(
     fun close() {
         viewModelStore.clear()
         DayEditorTestVmRegistry.unregister(viewModelStore)
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
         ShadowLooper.idleMainLooper()
-        runBlocking { tombstoneRepository.clearAll() }
+        runBlocking {
+            loggingPreferencesRepository.clear()
+            tombstoneRepository.clearAll()
+        }
         database.close()
-        loggingPreferencesHandle.close()
     }
 
     companion object {
+        /**
+         * One on-disk store for all Day Editor harnesses in this JVM (not [preferencesDataStore] on
+         * [Context]). Per-harness temp dirs raced leaked [DayEditorViewModel] preference collectors.
+         */
+        private val sharedLoggingPreferencesHandle: LoggingPreferencesTestHandle by lazy {
+            val root =
+                File(System.getProperty("java.io.tmpdir"), "mahin-day-editor-tests").apply { mkdirs() }
+            LoggingPreferencesTestHandle.openInDirectory(root)
+        }
+
         fun create(today: LocalDate): DayEditorTestHarness {
             DayEditorTestVmRegistry.assertAllStoresClosed()
             val context = ApplicationProvider.getApplicationContext<Context>()
@@ -99,13 +112,7 @@ internal class DayEditorTestHarness private constructor(
             val cycleRepository = CycleTrackingRepository(database)
             val ttcRepository = TtcTrackingRepository(database)
             val tombstoneRepository = HealthConnectPeriodDayTombstoneRepository(context)
-            val loggingPreferencesHandle =
-                LoggingPreferencesTestHandle.openInDirectory(
-                    java.nio.file.Files
-                        .createTempDirectory("mahin-day-editor-logging-prefs")
-                        .toFile(),
-                )
-            val loggingPreferencesRepository = loggingPreferencesHandle.repository
+            val loggingPreferencesRepository = sharedLoggingPreferencesHandle.repository
             runBlocking {
                 loggingPreferencesRepository.clear()
                 tombstoneRepository.clearAll()
@@ -124,7 +131,6 @@ internal class DayEditorTestHarness private constructor(
                 localDateClock = FixedLocalDateClock(today),
                 viewModelStore = viewModelStore,
                 database = database,
-                loggingPreferencesHandle = loggingPreferencesHandle,
             )
         }
     }

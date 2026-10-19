@@ -23,13 +23,16 @@ class LoggingPreferencesTestHandle private constructor(
     private val dataStoreRoot: File,
 ) : AutoCloseable {
     override fun close() {
+        // DayEditor harnesses call this after [ViewModelStoreTestHarness.clear()]; do not cancel
+        // [scope] here — see [closeAndCancelScope] for tests that fully release ViewModels first.
+    }
+
+    /** Call only after every ViewModel using [repository] has been cleared. */
+    fun closeAndCancelScope() {
         scope.cancel()
         runBlocking {
             scope.coroutineContext.job.join()
         }
-        // Do not delete [dataStoreRoot] here: a prior test's ViewModel may still be unwinding a
-        // DataStore read on another dispatcher after [viewModelStore.clear()]. TemporaryFolder
-        // tests delete via JUnit; DayEditor harness dirs are per-class unique under /tmp.
     }
 
     companion object {

@@ -55,9 +55,8 @@ class LoggingLocalPrivacyTest {
 
     @After
     fun tearDown() {
-        runBlocking { loggingPreferencesRepository.clear() }
         database.close()
-        loggingPreferencesHandle.close()
+        loggingPreferencesHandle.closeAndCancelScope()
     }
 
     @Test

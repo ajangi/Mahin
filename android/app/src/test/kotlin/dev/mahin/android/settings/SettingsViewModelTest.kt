@@ -103,15 +103,18 @@ class SettingsViewModelTest {
     @After
     fun tearDown() {
         releaseViewModels()
-        testDispatcher.scheduler.advanceUntilIdle()
-        ShadowLooper.idleMainLooper()
+        idle()
+        runBlocking(Dispatchers.IO) {
+            delay(50)
+        }
+        idle()
         runBlocking(Dispatchers.IO) {
             withTimeout(5_000) {
                 SubscriptionPreferencesRepository(context).clear()
             }
         }
         database.close()
-        loggingPreferencesHandle.close()
+        loggingPreferencesHandle.closeAndCancelScope()
     }
 
     private fun idle() {

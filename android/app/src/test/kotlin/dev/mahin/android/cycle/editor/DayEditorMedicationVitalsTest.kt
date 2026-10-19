@@ -63,8 +63,10 @@ class DayEditorMedicationVitalsTest {
     @After
     fun tearDown() {
         viewModelStore.clear()
+        ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
+        ShadowLooper.idleMainLooper()
         database.close()
-        loggingPreferencesHandle.close()
+        loggingPreferencesHandle.closeAndCancelScope()
     }
 
     @Test
