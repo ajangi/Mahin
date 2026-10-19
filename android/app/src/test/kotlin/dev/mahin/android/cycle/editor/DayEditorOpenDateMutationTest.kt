@@ -10,6 +10,8 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.rules.TestName
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -33,10 +35,16 @@ class DayEditorOpenDateMutationTest {
 
     private val day = LocalDate.of(2025, 8, 15)
 
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
+
+    @get:Rule
+    val testName = TestName()
+
     @Test
     fun setPain_immediatelyAfterOpenDate_doesNotNoOp() =
         runTest(testDispatcher) {
-            val harness = DayEditorTestHarness.create(day)
+            val harness = dayEditorHarness(day, javaClass, testName, temporaryFolder, testDispatcher)
             try {
                 harness.seedCycleProfile()
                 val viewModel = harness.createViewModel()

@@ -17,6 +17,7 @@ import dev.mahin.android.cycle.editor.DayEditorCoordinator
 import dev.mahin.android.cycle.editor.DayEditorHost
 import dev.mahin.android.cycle.editor.DayEditorTestHarness
 import dev.mahin.android.cycle.editor.DayEditorViewModel
+import dev.mahin.android.cycle.editor.dayEditorHarnessOnMain
 import dev.mahin.android.golden.M15GoldenFixtures
 import dev.mahin.android.shell.MahinAppShellWithNavigationOverride
 import dev.mahin.android.shell.MahinShellScreenOverrides
@@ -30,6 +31,8 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.rules.TestName
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -41,6 +44,12 @@ class TodayDayEditorIntegrationTest {
     private val androidComposeRule = createAndroidComposeRule<ComponentActivity>()
 
     @get:Rule
+    val temporaryFolder = TemporaryFolder()
+
+    @get:Rule
+    val testName = TestName()
+
+    @get:Rule
     val composeRule = ViewModelStoreClearingRule.withCompose(androidComposeRule)
 
     private lateinit var harness: DayEditorTestHarness
@@ -50,7 +59,7 @@ class TodayDayEditorIntegrationTest {
 
     @Before
     fun setUp() {
-        harness = DayEditorTestHarness.create(today)
+        harness = dayEditorHarnessOnMain(today, javaClass, testName, temporaryFolder)
         runBlocking { harness.seedCycleProfile() }
         coordinator = DayEditorCoordinator()
         viewModel = harness.createViewModel()

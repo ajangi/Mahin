@@ -15,6 +15,8 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.rules.TestName
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -25,6 +27,12 @@ import org.robolectric.shadows.ShadowLooper
 class DayEditorViewModelUndoTest {
     private val testDispatcher = StandardTestDispatcher()
     private val day = LocalDate.of(2025, 6, 15)
+
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
+
+    @get:Rule
+    val testName = TestName()
 
     @get:Rule
     val mainDispatcherRule =
@@ -44,7 +52,7 @@ class DayEditorViewModelUndoTest {
     }
 
     private suspend fun withTtcEditor(block: suspend (DayEditorTestHarness, DayEditorViewModel) -> Unit) {
-        val harness = DayEditorTestHarness.create(day)
+        val harness = dayEditorHarness(day, javaClass, testName, temporaryFolder, testDispatcher)
         try {
             harness.seedCycleProfile(ReproductiveMode.TRYING_TO_CONCEIVE)
             val viewModel = harness.createViewModel()

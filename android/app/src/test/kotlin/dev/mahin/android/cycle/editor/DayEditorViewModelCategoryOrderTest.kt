@@ -2,10 +2,15 @@ package dev.mahin.android.cycle.editor
 
 import com.google.common.truth.Truth.assertThat
 import dev.mahin.core.model.LogEditorCategory
+import dev.mahin.core.testing.MainDispatcherRule
 import dev.mahin.domain.cycle.LogCategoryUsageOrder
 import java.time.LocalDate
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.rules.TestName
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -14,6 +19,25 @@ import org.robolectric.shadows.ShadowLooper
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class DayEditorViewModelCategoryOrderTest {
+    private val testDispatcher = StandardTestDispatcher()
+
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
+
+    @get:Rule
+    val testName = TestName()
+
+    @get:Rule
+    val mainDispatcherRule =
+        MainDispatcherRule(
+            testDispatcher,
+            beforeResetMain = {
+                testDispatcher.scheduler.advanceUntilIdle()
+                DayEditorTestVmRegistry.assertAllStoresClosed()
+                ShadowLooper.idleMainLooper()
+            },
+        )
+
     @Test
     fun pinnedCategories_stayAheadOfMostUsed() {
         val ordered =
@@ -39,7 +63,7 @@ class DayEditorViewModelCategoryOrderTest {
     @Test
     fun loadDay_derivesSymptomUsageAbovePeriodFromRoomHistory() {
         val day = LocalDate.of(2025, 6, 1)
-        val harness = DayEditorTestHarness.create(day)
+        val harness = dayEditorHarness(day, javaClass, testName, temporaryFolder, testDispatcher)
         runBlocking {
             harness.seedCycleProfile()
             repeat(5) { offset ->
@@ -67,7 +91,7 @@ class DayEditorViewModelCategoryOrderTest {
     @Test
     fun moveCategoryEarlier_promotesPinnedCategory() {
         val day = LocalDate.of(2025, 6, 2)
-        val harness = DayEditorTestHarness.create(day)
+        val harness = dayEditorHarness(day, javaClass, testName, temporaryFolder, testDispatcher)
         runBlocking {
             harness.seedCycleProfile()
             val vm = harness.createViewModel()
@@ -94,6 +118,7 @@ class DayEditorViewModelCategoryOrderTest {
         val deadline = System.currentTimeMillis() + timeoutMs
         while (System.currentTimeMillis() < deadline) {
             if (condition()) return
+            testDispatcher.scheduler.advanceUntilIdle()
             ShadowLooper.idleMainLooper()
         }
         throw AssertionError("Condition not met within ${timeoutMs}ms")

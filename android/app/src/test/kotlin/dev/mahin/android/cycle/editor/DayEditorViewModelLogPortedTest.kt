@@ -13,6 +13,8 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.rules.TestName
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -22,6 +24,12 @@ import org.robolectric.shadows.ShadowLooper
 @Config(sdk = [33])
 class DayEditorViewModelLogPortedTest {
     private val testDispatcher = StandardTestDispatcher()
+
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
+
+    @get:Rule
+    val testName = TestName()
 
     @get:Rule
     val mainDispatcherRule =
@@ -44,7 +52,7 @@ class DayEditorViewModelLogPortedTest {
     fun healthConnectOff_untickPeriod_doesNotDeletePeriodDay() =
         runTest(testDispatcher) {
             val day = LocalDate.of(2025, 5, 1)
-            val testHarness = DayEditorTestHarness.create(day)
+            val testHarness = dayEditorHarness(day, javaClass, testName, temporaryFolder, testDispatcher)
             try {
                 testHarness.seedCycleProfile()
                 testHarness.cycleRepository.upsertPeriodDay(day, PeriodFlowLevel.LIGHT, hasClots = false)
@@ -66,7 +74,7 @@ class DayEditorViewModelLogPortedTest {
     fun healthConnectOn_untickPeriod_deletesRowAndWritesTombstone() =
         runTest(testDispatcher) {
             val day = LocalDate.of(2025, 5, 2)
-            val testHarness = DayEditorTestHarness.create(day)
+            val testHarness = dayEditorHarness(day, javaClass, testName, temporaryFolder, testDispatcher)
             try {
                 testHarness.seedCycleProfile()
                 testHarness.cycleRepository.upsertPeriodDay(day, PeriodFlowLevel.MEDIUM, hasClots = false)
@@ -89,7 +97,7 @@ class DayEditorViewModelLogPortedTest {
     fun healthConnectOff_relogPeriod_clearsExistingTombstone() =
         runTest(testDispatcher) {
             val day = LocalDate.of(2025, 5, 4)
-            val testHarness = DayEditorTestHarness.create(day)
+            val testHarness = dayEditorHarness(day, javaClass, testName, temporaryFolder, testDispatcher)
             try {
                 testHarness.seedCycleProfile()
                 testHarness.tombstoneRepository.markUserDeleted(day)
@@ -114,7 +122,7 @@ class DayEditorViewModelLogPortedTest {
     fun healthConnectOn_relogPeriod_clearsTombstone() =
         runTest(testDispatcher) {
             val day = LocalDate.of(2025, 5, 3)
-            val testHarness = DayEditorTestHarness.create(day)
+            val testHarness = dayEditorHarness(day, javaClass, testName, temporaryFolder, testDispatcher)
             try {
                 testHarness.seedCycleProfile()
                 testHarness.tombstoneRepository.markUserDeleted(day)
@@ -139,7 +147,7 @@ class DayEditorViewModelLogPortedTest {
     fun onBbtChange_withInvalidPersianBbt_preservesStoredValue() =
         runTest(testDispatcher) {
             val day = LocalDate.of(2025, 3, 5)
-            val testHarness = DayEditorTestHarness.create(day)
+            val testHarness = dayEditorHarness(day, javaClass, testName, temporaryFolder, testDispatcher)
             try {
                 testHarness.seedCycleProfile(ReproductiveMode.TRYING_TO_CONCEIVE)
                 testHarness.database.ttcDayLogDao().upsert(
@@ -171,7 +179,7 @@ class DayEditorViewModelLogPortedTest {
     fun setNote_withIntercourseOptInOff_preservesStoredIntercourse() =
         runTest(testDispatcher) {
             val day = LocalDate.of(2025, 3, 8)
-            val testHarness = DayEditorTestHarness.create(day)
+            val testHarness = dayEditorHarness(day, javaClass, testName, temporaryFolder, testDispatcher)
             try {
                 testHarness.seedCycleProfile(ReproductiveMode.TRYING_TO_CONCEIVE)
                 testHarness.database.ttcDayLogDao().upsert(
@@ -208,7 +216,7 @@ class DayEditorViewModelLogPortedTest {
     fun toggleSymptom_beforeDateLoaded_isIgnored() =
         runTest(testDispatcher) {
             val day = LocalDate.of(2025, 6, 1)
-            val testHarness = DayEditorTestHarness.create(day)
+            val testHarness = dayEditorHarness(day, javaClass, testName, temporaryFolder, testDispatcher)
             try {
                 testHarness.seedCycleProfile()
                 val viewModel = testHarness.createViewModel()

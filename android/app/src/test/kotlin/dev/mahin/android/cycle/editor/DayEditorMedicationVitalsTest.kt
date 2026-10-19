@@ -18,9 +18,11 @@ import dev.mahin.core.healthconnect.HealthConnectPeriodDayIntegrationGate
 import dev.mahin.core.healthconnect.PeriodDayTrackingService
 import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
+import dev.mahin.core.testing.MainDispatcherRule
 import dev.mahin.core.testing.ViewModelStoreTestHarness
 import java.time.LocalDate
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -34,8 +36,13 @@ import org.robolectric.shadows.ShadowLooper
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class DayEditorMedicationVitalsTest {
+    private val testDispatcher = StandardTestDispatcher()
+
     @get:Rule
     val temporaryFolder = TemporaryFolder()
+
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule(testDispatcher)
 
     private lateinit var loggingPreferencesHandle: LoggingPreferencesTestHandle
     private lateinit var database: MahinDatabase
@@ -63,10 +70,14 @@ class DayEditorMedicationVitalsTest {
     @After
     fun tearDown() {
         viewModelStore.clear()
+        testDispatcher.scheduler.advanceUntilIdle()
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
         ShadowLooper.idleMainLooper()
         database.close()
-        loggingPreferencesHandle.closeAndCancelScope()
+        loggingPreferencesHandle.closeAndCancelScope {
+            testDispatcher.scheduler.advanceUntilIdle()
+            ShadowLooper.idleMainLooper()
+        }
     }
 
     @Test
@@ -144,6 +155,7 @@ class DayEditorMedicationVitalsTest {
         val deadline = System.currentTimeMillis() + timeoutMs
         while (System.currentTimeMillis() < deadline) {
             if (condition()) return
+            testDispatcher.scheduler.advanceUntilIdle()
             ShadowLooper.idleMainLooper()
         }
         throw AssertionError("Condition not met within ${timeoutMs}ms")

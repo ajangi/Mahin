@@ -16,6 +16,10 @@ import org.junit.rules.TemporaryFolder
 /**
  * Per-test [LoggingPreferencesRepository] backed by an isolated on-disk DataStore (not
  * [androidx.datastore.preferences.preferencesDataStore] on [android.content.Context]).
+ *
+ * Cancel [scope] only from [closeAndCancelScope] after [androidx.lifecycle.ViewModelStore.clear]
+ * and draining [Dispatchers.Main] (see Day Editor harness [drainCoroutineWork]); the factory
+ * [scope] uses [Dispatchers.IO] so DataStore I/O does not deadlock [kotlinx.coroutines.test.runTest].
  */
 class LoggingPreferencesTestHandle private constructor(
     val repository: LoggingPreferencesRepository,
@@ -28,19 +32,28 @@ class LoggingPreferencesTestHandle private constructor(
     }
 
     /** Call only after every ViewModel using [repository] has been cleared. */
-    fun closeAndCancelScope() {
+    fun closeAndCancelScope(drain: () -> Unit = {}) {
         scope.cancel()
+        var spins = 0
+        while (scope.coroutineContext.job.isActive && spins < 256) {
+            drain()
+            spins++
+        }
         runBlocking {
             scope.coroutineContext.job.join()
         }
     }
 
     companion object {
-        fun open(temporaryFolder: TemporaryFolder): LoggingPreferencesTestHandle =
-            openInDirectory(temporaryFolder.newFolder("logging-prefs"))
+        fun open(
+            temporaryFolder: TemporaryFolder,
+            scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
+        ): LoggingPreferencesTestHandle = openInDirectory(temporaryFolder.newFolder("logging-prefs"), scope)
 
-        fun openInDirectory(root: File): LoggingPreferencesTestHandle {
-            val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        fun openInDirectory(
+            root: File,
+            scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
+        ): LoggingPreferencesTestHandle {
             val dataStore =
                 PreferenceDataStoreFactory.create(
                     corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },

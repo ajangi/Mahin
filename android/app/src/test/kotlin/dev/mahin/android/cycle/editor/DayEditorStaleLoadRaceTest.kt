@@ -12,6 +12,8 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.rules.TestName
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -24,7 +26,21 @@ class DayEditorStaleLoadRaceTest {
     private val day = LocalDate.of(2025, 8, 20)
 
     @get:Rule
-    val mainDispatcherRule = MainDispatcherRule(testDispatcher)
+    val temporaryFolder = TemporaryFolder()
+
+    @get:Rule
+    val testName = TestName()
+
+    @get:Rule
+    val mainDispatcherRule =
+        MainDispatcherRule(
+            testDispatcher,
+            beforeResetMain = {
+                testDispatcher.scheduler.advanceUntilIdle()
+                DayEditorTestVmRegistry.assertAllStoresClosed()
+                ShadowLooper.idleMainLooper()
+            },
+        )
 
     private var harness: DayEditorTestHarness? = null
 
@@ -37,7 +53,7 @@ class DayEditorStaleLoadRaceTest {
     @Test
     fun staleOpenDateLoad_doesNotOverwriteLaterMutation() =
         runTest(testDispatcher) {
-            harness = DayEditorTestHarness.create(day)
+            harness = dayEditorHarness(day, javaClass, testName, temporaryFolder, testDispatcher)
             harness!!.seedCycleProfile()
             val viewModel = harness!!.createViewModel()
             var loadsBeforeApply = 0

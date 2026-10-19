@@ -105,16 +105,12 @@ class SettingsViewModelTest {
         releaseViewModels()
         idle()
         runBlocking(Dispatchers.IO) {
-            delay(50)
-        }
-        idle()
-        runBlocking(Dispatchers.IO) {
             withTimeout(5_000) {
                 SubscriptionPreferencesRepository(context).clear()
             }
         }
         database.close()
-        loggingPreferencesHandle.closeAndCancelScope()
+        loggingPreferencesHandle.closeAndCancelScope { idle() }
     }
 
     private fun idle() {

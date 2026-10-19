@@ -10,6 +10,8 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.rules.TestName
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -20,6 +22,12 @@ import org.robolectric.shadows.ShadowLooper
 class DayEditorViewModelCustomSymptomDraftTest {
     private val testDispatcher = StandardTestDispatcher()
     private val day = LocalDate.of(2025, 5, 6)
+
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
+
+    @get:Rule
+    val testName = TestName()
     private val label = "سردرد شخصی"
 
     @get:Rule
@@ -42,7 +50,7 @@ class DayEditorViewModelCustomSymptomDraftTest {
     @Test
     fun addCustomSymptomFromDraft_rejectsCommaInLabel() =
         runTest(testDispatcher) {
-            val harness = DayEditorTestHarness.create(day)
+            val harness = dayEditorHarness(day, javaClass, testName, temporaryFolder, testDispatcher)
             try {
                 harness.seedCycleProfile()
                 val viewModel = harness.createViewModel()
@@ -63,7 +71,7 @@ class DayEditorViewModelCustomSymptomDraftTest {
     @Test
     fun addCustomSymptomFromDraft_persistsAndClearsDraft() =
         runTest(testDispatcher) {
-            val harness = DayEditorTestHarness.create(day)
+            val harness = dayEditorHarness(day, javaClass, testName, temporaryFolder, testDispatcher)
             try {
                 harness.seedCycleProfile()
                 val viewModel = harness.createViewModel()
