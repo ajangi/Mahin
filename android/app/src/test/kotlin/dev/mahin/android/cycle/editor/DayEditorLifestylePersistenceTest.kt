@@ -25,9 +25,9 @@ class DayEditorLifestylePersistenceTest {
         MainDispatcherRule(
             testDispatcher,
             beforeResetMain = {
-                DayEditorTestVmRegistry.scheduler = testDispatcher.scheduler
                 testDispatcher.scheduler.advanceUntilIdle()
-                DayEditorTestVmRegistry.clearAll()
+                DayEditorTestVmRegistry.assertAllStoresClosed()
+                ShadowLooper.idleMainLooper()
             },
         )
 

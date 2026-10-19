@@ -3,6 +3,7 @@ package dev.mahin.android.cycle.editor
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import dev.mahin.android.testing.datastore.LoggingPreferencesTestHandle
 import dev.mahin.core.common.FixedLocalDateClock
 import dev.mahin.core.database.MahinDatabase
 import dev.mahin.core.database.cycle.CycleTrackingRepository
@@ -11,7 +12,6 @@ import dev.mahin.core.database.logging.CustomSymptomTagRepository
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
 import dev.mahin.core.database.ttc.TtcTrackingRepository
 import dev.mahin.core.datastore.HealthConnectPeriodDayTombstoneRepository
-import dev.mahin.core.datastore.LoggingPreferencesRepository
 import dev.mahin.core.datastore.PregnancyTimerPreferencesRepository
 import dev.mahin.core.datastore.TtcPrivacyPreferencesRepository
 import dev.mahin.core.healthconnect.HealthConnectPeriodDayIntegrationGate
@@ -23,7 +23,9 @@ import java.time.LocalDate
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -32,6 +34,10 @@ import org.robolectric.shadows.ShadowLooper
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class DayEditorMedicationVitalsTest {
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
+
+    private lateinit var loggingPreferencesHandle: LoggingPreferencesTestHandle
     private lateinit var database: MahinDatabase
     private lateinit var cycleRepository: CycleTrackingRepository
     private lateinit var pregnancyRepository: PregnancyTrackingRepository
@@ -50,6 +56,7 @@ class DayEditorMedicationVitalsTest {
         database.openHelper.writableDatabase
         cycleRepository = CycleTrackingRepository(database)
         pregnancyRepository = PregnancyTrackingRepository(database, PregnancyTimerPreferencesRepository(context))
+        loggingPreferencesHandle = LoggingPreferencesTestHandle.open(temporaryFolder)
         viewModel = createViewModel(context)
     }
 
@@ -57,6 +64,7 @@ class DayEditorMedicationVitalsTest {
     fun tearDown() {
         viewModelStore.clear()
         database.close()
+        loggingPreferencesHandle.close()
     }
 
     @Test
@@ -113,7 +121,7 @@ class DayEditorMedicationVitalsTest {
                 cycleRepository = cycleRepository,
                 ttcRepository = TtcTrackingRepository(database),
                 pregnancyRepository = pregnancyRepository,
-                loggingPreferencesRepository = LoggingPreferencesRepository(context),
+                loggingPreferencesRepository = loggingPreferencesHandle.repository,
                 ttcPrivacyRepository = TtcPrivacyPreferencesRepository(context),
                 periodDayTrackingService =
                     PeriodDayTrackingService(

@@ -1,26 +1,26 @@
 package dev.mahin.android.cycle.editor
 
+import com.google.common.truth.Truth.assertWithMessage
 import dev.mahin.core.testing.ViewModelStoreTestHarness
-import kotlinx.coroutines.test.TestCoroutineScheduler
-import org.robolectric.shadows.ShadowLooper
 
-/** Clears every Day Editor harness ViewModelStore so DataStore collectors do not leak across tests. */
+/** Tracks Day Editor harness [ViewModelStoreTestHarness] instances; fails if any are left open. */
 internal object DayEditorTestVmRegistry {
-    private val stores = mutableSetOf<ViewModelStoreTestHarness>()
-    var scheduler: TestCoroutineScheduler? = null
+    private val openStores = linkedMapOf<String, ViewModelStoreTestHarness>()
 
-    fun register(store: ViewModelStoreTestHarness) {
-        stores.add(store)
+    fun register(
+        owner: String,
+        store: ViewModelStoreTestHarness,
+    ) {
+        openStores[owner] = store
     }
 
     fun unregister(store: ViewModelStoreTestHarness) {
-        stores.remove(store)
+        openStores.entries.removeIf { it.value === store }
     }
 
-    fun clearAll() {
-        stores.forEach { it.clear() }
-        scheduler?.advanceUntilIdle()
-        ShadowLooper.idleMainLooper()
-        scheduler?.advanceUntilIdle()
+    fun assertAllStoresClosed() {
+        assertWithMessage(
+            "DayEditor ViewModelStore not closed before test teardown: ${openStores.keys.joinToString()}",
+        ).that(openStores).isEmpty()
     }
 }

@@ -128,6 +128,7 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.room.runtime)
+    testImplementation(libs.androidx.datastore.preferences)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.kotlinx.serialization.json)
     testImplementation(libs.androidx.compose.ui.test.junit4)

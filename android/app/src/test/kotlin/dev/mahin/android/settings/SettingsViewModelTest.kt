@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import dev.mahin.android.premium.PremiumBillingCoordinator
+import dev.mahin.android.testing.datastore.LoggingPreferencesTestHandle
 import dev.mahin.core.billing.BillingAdapter
 import dev.mahin.core.billing.BillingAdapterState
 import dev.mahin.core.billing.BillingPurchaseReceipt
@@ -22,7 +23,6 @@ import dev.mahin.core.database.entity.CycleProfileEntity
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
 import dev.mahin.core.datastore.AccountSessionRepository
 import dev.mahin.core.datastore.CachedEntitlement
-import dev.mahin.core.datastore.LoggingPreferencesRepository
 import dev.mahin.core.datastore.PregnancyTimerPreferencesRepository
 import dev.mahin.core.datastore.SubscriptionPreferencesRepository
 import dev.mahin.core.model.CycleRegularity
@@ -48,6 +48,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -67,10 +68,13 @@ class SettingsViewModelTest {
             },
         )
 
+    private val temporaryFolder = TemporaryFolder()
+
     @get:Rule
     val ruleChain: RuleChain =
         RuleChain
             .outerRule(TestHangWatchdogRule())
+            .around(temporaryFolder)
             .around(mainDispatcherRule)
 
     private lateinit var database: MahinDatabase
@@ -78,10 +82,12 @@ class SettingsViewModelTest {
     private lateinit var context: Context
     private val viewModelStore = ViewModelStoreTestHarness()
     private var heldViewModel: SettingsViewModel? = null
+    private lateinit var loggingPreferencesHandle: LoggingPreferencesTestHandle
 
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
+        loggingPreferencesHandle = LoggingPreferencesTestHandle.open(temporaryFolder)
         database =
             Room
                 .inMemoryDatabaseBuilder(context, MahinDatabase::class.java)
@@ -105,6 +111,7 @@ class SettingsViewModelTest {
             }
         }
         database.close()
+        loggingPreferencesHandle.close()
     }
 
     private fun idle() {
@@ -368,7 +375,7 @@ class SettingsViewModelTest {
                     billingAdapter = billingAdapter,
                     premiumBillingCoordinator = premiumCoordinator,
                     entitlementRepository = entitlementRepository,
-                    loggingPreferencesRepository = LoggingPreferencesRepository(context),
+                    loggingPreferencesRepository = loggingPreferencesHandle.repository,
                     localDateClock = FixedLocalDateClock(LocalDate.of(2025, 3, 1)),
                 ),
             ).also { heldViewModel = it }
