@@ -24,9 +24,9 @@ import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.core.testing.MainDispatcherRule
 import dev.mahin.core.testing.ViewModelStoreTestHarness
 import java.time.LocalDate
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -87,20 +87,16 @@ class DayEditorMedicationVitalsTest {
     }
 
     @Test
-    fun medicationToggle_persistsToDailyLog() {
-        runBlocking {
-            viewModel.openDate(logDate)
-            awaitUntil { viewModel.uiState.value.date == logDate }
+    fun medicationToggle_persistsToDailyLog() =
+        runTest(testDispatcher) {
+            viewModel.openDateAndAwait(logDate)
             viewModel.toggleMedication("ویتامین")
-            awaitUntil {
-                cycleRepository.getDailyLogForDate(logDate)?.medicationTags?.contains("ویتامین") == true
-            }
+            database.awaitDailyLog(logDate) { it.medicationTags.contains("ویتامین") }
         }
-    }
 
     @Test
-    fun pregnancyVitals_persistWeightAndBloodPressure() {
-        runBlocking {
+    fun pregnancyVitals_persistWeightAndBloodPressure() =
+        runTest(testDispatcher) {
             database.cycleProfileDao().upsert(
                 CycleProfileEntity(
                     reproductiveMode = ReproductiveMode.PREGNANT,
@@ -116,17 +112,15 @@ class DayEditorMedicationVitalsTest {
                 clinicalEddDate = null,
                 datingReason = null,
             )
-            viewModel.openDate(logDate)
-            awaitUntil { viewModel.uiState.value.reproductiveMode == ReproductiveMode.PREGNANT }
+            viewModel.openDateAndAwait(logDate)
+            viewModel.awaitUiState { it.reproductiveMode == ReproductiveMode.PREGNANT }
             viewModel.onPregnancyWeightChange("65")
             viewModel.onPregnancyBpSystolicChange("120")
             viewModel.onPregnancyBpDiastolicChange("80")
-            awaitUntil {
-                val log = pregnancyRepository.getPregnancyDayLogForDate(logDate)
-                log?.weightKg == 65.0 && log.bpSystolic == 120 && log.bpDiastolic == 80
+            pregnancyRepository.awaitPregnancyDayLog(logDate) { log ->
+                log.weightKg == 65.0 && log.bpSystolic == 120 && log.bpDiastolic == 80
             }
         }
-    }
 
     private fun createViewModel(context: Context): DayEditorViewModel {
         val gate =
@@ -154,19 +148,5 @@ class DayEditorMedicationVitalsTest {
                     ) as T
             }
         return viewModelStore.hold(DayEditorViewModel::class.java, factory)
-    }
-
-    private suspend fun awaitUntil(
-        timeoutMs: Long = 6_000,
-        condition: suspend () -> Boolean,
-    ) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            if (condition()) return
-            testDispatcher.scheduler.advanceUntilIdle()
-            loggingPreferencesDispatcher.scheduler.advanceUntilIdle()
-            ShadowLooper.idleMainLooper()
-        }
-        throw AssertionError("Condition not met within ${timeoutMs}ms")
     }
 }
