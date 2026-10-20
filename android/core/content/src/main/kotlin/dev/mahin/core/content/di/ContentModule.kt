@@ -13,6 +13,8 @@ import dev.mahin.core.media.illustration.MahinIllustrationSource
 import dev.mahin.core.network.BuildConfig
 import dev.mahin.core.network.MahinHttpClientFactory
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.json.Json
 
 @Module
@@ -28,6 +30,10 @@ object ContentModule {
     @Provides
     @Singleton
     fun provideContentJson(): Json = Json { ignoreUnknownKeys = true }
+
+    @Provides
+    @IoDispatcher
+    fun provideIoDispatcher(): CoroutineDispatcher = Dispatchers.IO
 }
 
 @Module

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import dev.mahin.android.testing.datastore.LoggingPreferencesTestHandle
 import dev.mahin.core.billing.HealthExportResult
 import dev.mahin.core.billing.HealthExportService
 import dev.mahin.core.database.MahinDatabase
@@ -17,9 +18,12 @@ import dev.mahin.core.sync.SyncOutbox
 import dev.mahin.domain.subscription.EntitlementTier
 import java.time.LocalDate
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -27,10 +31,16 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class LoggingLocalPrivacyTest {
+    private val dataStoreDispatcher = UnconfinedTestDispatcher()
+
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
+
     private lateinit var database: MahinDatabase
     private lateinit var cycleRepository: CycleTrackingRepository
     private lateinit var customSymptomTagRepository: CustomSymptomTagRepository
     private lateinit var loggingPreferencesRepository: LoggingPreferencesRepository
+    private lateinit var loggingPreferencesHandle: LoggingPreferencesTestHandle
 
     @Before
     fun setUp() {
@@ -42,13 +52,14 @@ class LoggingLocalPrivacyTest {
                 .build()
         cycleRepository = CycleTrackingRepository(database)
         customSymptomTagRepository = CustomSymptomTagRepository(database)
-        loggingPreferencesRepository = LoggingPreferencesRepository(context)
+        loggingPreferencesHandle = LoggingPreferencesTestHandle.open(temporaryFolder, dataStoreDispatcher)
+        loggingPreferencesRepository = loggingPreferencesHandle.repository
     }
 
     @After
     fun tearDown() {
-        runBlocking { loggingPreferencesRepository.clear() }
         database.close()
+        loggingPreferencesHandle.closeAndCancelScope()
     }
 
     @Test

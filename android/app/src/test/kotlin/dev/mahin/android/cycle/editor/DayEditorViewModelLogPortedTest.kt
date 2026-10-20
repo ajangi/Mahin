@@ -4,10 +4,17 @@ import com.google.common.truth.Truth.assertThat
 import dev.mahin.core.database.entity.TtcDayLogEntity
 import dev.mahin.core.model.PeriodFlowLevel
 import dev.mahin.core.model.ReproductiveMode
+import dev.mahin.core.testing.MainDispatcherRule
 import java.time.LocalDate
-import kotlinx.coroutines.runBlocking
-import org.junit.After
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
+import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.rules.TestName
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -16,170 +23,210 @@ import org.robolectric.shadows.ShadowLooper
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class DayEditorViewModelLogPortedTest {
-    private lateinit var harness: DayEditorTestHarness
-    private lateinit var viewModel: DayEditorViewModel
+    private val testDispatcher = StandardTestDispatcher()
 
-    @After
-    fun tearDown() {
-        harness.close()
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
+
+    @get:Rule
+    val testName = TestName()
+
+    @get:Rule
+    val mainDispatcherRule =
+        MainDispatcherRule(
+            testDispatcher,
+            beforeResetMain = {
+                testDispatcher.scheduler.advanceUntilIdle()
+                DayEditorTestVmRegistry.assertAllStoresClosed()
+                ShadowLooper.idleMainLooper()
+            },
+        )
+
+    @Before
+    fun drainMainFromPriorTests() {
+        testDispatcher.scheduler.advanceUntilIdle()
+        ShadowLooper.idleMainLooper()
     }
 
     @Test
-    fun healthConnectOff_untickPeriod_doesNotDeletePeriodDay() {
-        runBlocking {
+    fun healthConnectOff_untickPeriod_doesNotDeletePeriodDay() =
+        runTest(testDispatcher) {
             val day = LocalDate.of(2025, 5, 1)
-            harness = DayEditorTestHarness.create(day)
-            harness.seedCycleProfile()
-            harness.cycleRepository.upsertPeriodDay(day, PeriodFlowLevel.LIGHT, hasClots = false)
-            viewModel = harness.createViewModel(healthConnectActive = false)
-            viewModel.openDate(day)
-            awaitUntil { viewModel.uiState.value.periodLogged }
-            viewModel.togglePeriodLogged()
-            awaitUntil { viewModel.uiState.value.undoMessage != null }
-            assertThat(harness.periodDayFor(day)).isNotNull()
-            assertThat(harness.tombstoneRepository.isUserDeleted(day)).isFalse()
+            val testHarness = dayEditorHarness(day, javaClass, testName, temporaryFolder, testDispatcher)
+            try {
+                testHarness.seedCycleProfile()
+                testHarness.cycleRepository.upsertPeriodDay(day, PeriodFlowLevel.LIGHT, hasClots = false)
+                val viewModel = testHarness.createViewModel(healthConnectActive = false)
+                viewModel.openDateAndAwait(day)
+                viewModel.uiState.filter { it.periodLogged }.first()
+                viewModel.togglePeriodLogged()
+                viewModel.uiState.filter { it.undoMessage != null }.first()
+                assertThat(testHarness.periodDayFor(day)).isNotNull()
+                assertThat(testHarness.tombstoneRepository.isUserDeleted(day)).isFalse()
+            } finally {
+                testDispatcher.scheduler.advanceUntilIdle()
+                ShadowLooper.idleMainLooper()
+                testHarness.close()
+            }
         }
-    }
 
     @Test
-    fun healthConnectOn_untickPeriod_deletesRowAndWritesTombstone() {
-        runBlocking {
+    fun healthConnectOn_untickPeriod_deletesRowAndWritesTombstone() =
+        runTest(testDispatcher) {
             val day = LocalDate.of(2025, 5, 2)
-            harness = DayEditorTestHarness.create(day)
-            harness.seedCycleProfile()
-            harness.cycleRepository.upsertPeriodDay(day, PeriodFlowLevel.MEDIUM, hasClots = false)
-            viewModel = harness.createViewModel(healthConnectActive = true)
-            viewModel.openDate(day)
-            awaitUntil { viewModel.uiState.value.periodLogged }
-            viewModel.togglePeriodLogged()
-            awaitUntil { harness.periodDayFor(day) == null }
-            awaitUntil { runBlocking { harness.tombstoneRepository.isUserDeleted(day) } }
-            assertThat(harness.tombstoneRepository.isUserDeleted(day)).isTrue()
+            val testHarness = dayEditorHarness(day, javaClass, testName, temporaryFolder, testDispatcher)
+            try {
+                testHarness.seedCycleProfile()
+                testHarness.cycleRepository.upsertPeriodDay(day, PeriodFlowLevel.MEDIUM, hasClots = false)
+                val viewModel = testHarness.createViewModel(healthConnectActive = true)
+                viewModel.openDateAndAwait(day)
+                viewModel.uiState.filter { it.periodLogged }.first()
+                viewModel.togglePeriodLogged()
+                viewModel.uiState.filter { !it.periodLogged }.first()
+                testHarness.awaitNoPeriodDay(day)
+                testHarness.tombstoneRepository.awaitUserDeleted(day, deleted = true)
+                assertThat(testHarness.tombstoneRepository.isUserDeleted(day)).isTrue()
+            } finally {
+                testDispatcher.scheduler.advanceUntilIdle()
+                ShadowLooper.idleMainLooper()
+                testHarness.close()
+            }
         }
-    }
 
     @Test
-    fun healthConnectOff_relogPeriod_clearsExistingTombstone() {
-        runBlocking {
+    fun healthConnectOff_relogPeriod_clearsExistingTombstone() =
+        runTest(testDispatcher) {
             val day = LocalDate.of(2025, 5, 4)
-            harness = DayEditorTestHarness.create(day)
-            harness.seedCycleProfile()
-            harness.tombstoneRepository.markUserDeleted(day)
-            viewModel = harness.createViewModel(healthConnectActive = false)
-            viewModel.openDate(day)
-            awaitUntil { viewModel.uiState.value.date == day }
-            viewModel.togglePeriodLogged()
-            awaitUntil {
-                harness.periodDayFor(day) != null && viewModel.uiState.value.periodLogged
+            val testHarness = dayEditorHarness(day, javaClass, testName, temporaryFolder, testDispatcher)
+            try {
+                testHarness.seedCycleProfile()
+                testHarness.tombstoneRepository.markUserDeleted(day)
+                val viewModel = testHarness.createViewModel(healthConnectActive = false)
+                viewModel.openDateAndAwait(day)
+                viewModel.togglePeriodLogged()
+                viewModel.uiState.filter { it.periodLogged }.first()
+                viewModel.setFlowLevel(PeriodFlowLevel.LIGHT)
+                viewModel.uiState.filter { it.flowLevel == PeriodFlowLevel.LIGHT }.first()
+                testHarness.awaitPeriodDayFlowLevel(day, PeriodFlowLevel.LIGHT)
+                assertThat(testHarness.periodDayFor(day)).isNotNull()
+                testHarness.tombstoneRepository.awaitUserDeleted(day, deleted = false)
+                assertThat(testHarness.tombstoneRepository.isUserDeleted(day)).isFalse()
+            } finally {
+                testDispatcher.scheduler.advanceUntilIdle()
+                ShadowLooper.idleMainLooper()
+                testHarness.close()
             }
-            viewModel.setFlowLevel(PeriodFlowLevel.LIGHT)
-            awaitUntil { harness.periodDayFor(day)?.flowLevel == PeriodFlowLevel.LIGHT }
-            assertThat(harness.tombstoneRepository.isUserDeleted(day)).isFalse()
         }
-    }
 
     @Test
-    fun healthConnectOn_relogPeriod_clearsTombstone() {
-        runBlocking {
+    fun healthConnectOn_relogPeriod_clearsTombstone() =
+        runTest(testDispatcher) {
             val day = LocalDate.of(2025, 5, 3)
-            harness = DayEditorTestHarness.create(day)
-            harness.seedCycleProfile()
-            harness.tombstoneRepository.markUserDeleted(day)
-            viewModel = harness.createViewModel(healthConnectActive = true)
-            viewModel.openDate(day)
-            awaitUntil { viewModel.uiState.value.date == day }
-            viewModel.togglePeriodLogged()
-            awaitUntil {
-                harness.periodDayFor(day) != null && viewModel.uiState.value.periodLogged
+            val testHarness = dayEditorHarness(day, javaClass, testName, temporaryFolder, testDispatcher)
+            try {
+                testHarness.seedCycleProfile()
+                testHarness.tombstoneRepository.markUserDeleted(day)
+                val viewModel = testHarness.createViewModel(healthConnectActive = true)
+                viewModel.openDateAndAwait(day)
+                viewModel.togglePeriodLogged()
+                viewModel.uiState.filter { it.periodLogged }.first()
+                viewModel.setFlowLevel(PeriodFlowLevel.HEAVY)
+                viewModel.uiState.filter { it.flowLevel == PeriodFlowLevel.HEAVY }.first()
+                testHarness.awaitPeriodDayFlowLevel(day, PeriodFlowLevel.HEAVY)
+                assertThat(testHarness.periodDayFor(day)?.flowLevel).isEqualTo(PeriodFlowLevel.HEAVY)
+                testHarness.tombstoneRepository.awaitUserDeleted(day, deleted = false)
+                assertThat(testHarness.tombstoneRepository.isUserDeleted(day)).isFalse()
+            } finally {
+                testDispatcher.scheduler.advanceUntilIdle()
+                ShadowLooper.idleMainLooper()
+                testHarness.close()
             }
-            viewModel.setFlowLevel(PeriodFlowLevel.HEAVY)
-            awaitUntil { harness.periodDayFor(day)?.flowLevel == PeriodFlowLevel.HEAVY }
-            assertThat(harness.tombstoneRepository.isUserDeleted(day)).isFalse()
         }
-    }
 
     @Test
-    fun onBbtChange_withInvalidPersianBbt_preservesStoredValue() {
-        runBlocking {
+    fun onBbtChange_withInvalidPersianBbt_preservesStoredValue() =
+        runTest(testDispatcher) {
             val day = LocalDate.of(2025, 3, 5)
-            harness = DayEditorTestHarness.create(day)
-            harness.seedCycleProfile(ReproductiveMode.TRYING_TO_CONCEIVE)
-            harness.database.ttcDayLogDao().upsert(
-                TtcDayLogEntity(
-                    id = "t1",
-                    logDate = day,
-                    bbtCelsius = 36.6,
-                    ovulationTestResult = null,
-                    cervicalMucus = null,
-                    intercourseLogged = false,
-                    intercourseProtected = null,
-                    pregnancyTestResult = null,
-                    updatedAtEpochMs = 0L,
-                ),
-            )
-            viewModel = harness.createViewModel()
-            viewModel.openDate(day)
-            awaitUntil { viewModel.uiState.value.date == day }
-            viewModel.onBbtChange("۴۵")
-            awaitUntil { viewModel.uiState.value.bbtError != null }
-            assertThat(harness.ttcRepository.getTtcLogForDate(day)?.bbtCelsius).isEqualTo(36.6)
+            val testHarness = dayEditorHarness(day, javaClass, testName, temporaryFolder, testDispatcher)
+            try {
+                testHarness.seedCycleProfile(ReproductiveMode.TRYING_TO_CONCEIVE)
+                testHarness.database.ttcDayLogDao().upsert(
+                    TtcDayLogEntity(
+                        id = "t1",
+                        logDate = day,
+                        bbtCelsius = 36.6,
+                        ovulationTestResult = null,
+                        cervicalMucus = null,
+                        intercourseLogged = false,
+                        intercourseProtected = null,
+                        pregnancyTestResult = null,
+                        updatedAtEpochMs = 0L,
+                    ),
+                )
+                val viewModel = testHarness.createViewModel()
+                viewModel.openDateAndAwait(day)
+                viewModel.onBbtChange("۴۵")
+                viewModel.uiState.filter { it.bbtError != null }.first()
+                assertThat(testHarness.ttcRepository.getTtcLogForDate(day)?.bbtCelsius).isEqualTo(36.6)
+            } finally {
+                testDispatcher.scheduler.advanceUntilIdle()
+                ShadowLooper.idleMainLooper()
+                testHarness.close()
+            }
         }
-    }
 
     @Test
-    fun setNote_withIntercourseOptInOff_preservesStoredIntercourse() {
-        runBlocking {
+    fun setNote_withIntercourseOptInOff_preservesStoredIntercourse() =
+        runTest(testDispatcher) {
             val day = LocalDate.of(2025, 3, 8)
-            harness = DayEditorTestHarness.create(day)
-            harness.seedCycleProfile(ReproductiveMode.TRYING_TO_CONCEIVE)
-            harness.database.ttcDayLogDao().upsert(
-                TtcDayLogEntity(
-                    id = "t2",
-                    logDate = day,
-                    bbtCelsius = null,
-                    ovulationTestResult = null,
-                    cervicalMucus = null,
-                    intercourseLogged = true,
-                    intercourseProtected = true,
-                    pregnancyTestResult = null,
-                    updatedAtEpochMs = 0L,
-                ),
-            )
-            viewModel = harness.createViewModel()
-            viewModel.openDate(day)
-            awaitUntil { viewModel.uiState.value.intercourseLogged }
-            assertThat(viewModel.uiState.value.sexualActivityEnabled).isFalse()
-            viewModel.setNote("یادداشت")
-            awaitDailyLogOnMain { harness.dailyLogFor(day)?.note == "یادداشت" }
-            val stored = harness.ttcRepository.getTtcLogForDate(day)
-            assertThat(stored?.intercourseLogged).isTrue()
-            assertThat(stored?.intercourseProtected).isTrue()
+            val testHarness = dayEditorHarness(day, javaClass, testName, temporaryFolder, testDispatcher)
+            try {
+                testHarness.seedCycleProfile(ReproductiveMode.TRYING_TO_CONCEIVE)
+                testHarness.database.ttcDayLogDao().upsert(
+                    TtcDayLogEntity(
+                        id = "t2",
+                        logDate = day,
+                        bbtCelsius = null,
+                        ovulationTestResult = null,
+                        cervicalMucus = null,
+                        intercourseLogged = true,
+                        intercourseProtected = true,
+                        pregnancyTestResult = null,
+                        updatedAtEpochMs = 0L,
+                    ),
+                )
+                val viewModel = testHarness.createViewModel()
+                viewModel.openDateAndAwait(day)
+                viewModel.uiState.filter { it.intercourseLogged }.first()
+                assertThat(viewModel.uiState.value.sexualActivityEnabled).isFalse()
+                viewModel.setNote("یادداشت")
+                viewModel.uiState.filter { it.note == "یادداشت" }.first()
+                testHarness.awaitDailyLog(day) { it.note == "یادداشت" }
+                val stored = testHarness.ttcRepository.getTtcLogForDate(day)
+                assertThat(stored?.intercourseLogged).isTrue()
+                assertThat(stored?.intercourseProtected).isTrue()
+            } finally {
+                testDispatcher.scheduler.advanceUntilIdle()
+                ShadowLooper.idleMainLooper()
+                testHarness.close()
+            }
         }
-    }
 
     @Test
-    fun toggleSymptom_beforeDateLoaded_isIgnored() {
-        runBlocking {
+    fun toggleSymptom_beforeDateLoaded_isIgnored() =
+        runTest(testDispatcher) {
             val day = LocalDate.of(2025, 6, 1)
-            harness = DayEditorTestHarness.create(day)
-            harness.seedCycleProfile()
-            viewModel = harness.createViewModel()
-            viewModel.toggleSymptom("blocked")
-            assertThat(harness.dailyLogFor(day)).isNull()
-            viewModel.openDate(day)
-            awaitUntil { viewModel.uiState.value.date == day }
+            val testHarness = dayEditorHarness(day, javaClass, testName, temporaryFolder, testDispatcher)
+            try {
+                testHarness.seedCycleProfile()
+                val viewModel = testHarness.createViewModel()
+                viewModel.toggleSymptom("blocked")
+                assertThat(testHarness.dailyLogFor(day)).isNull()
+                viewModel.openDateAndAwait(day)
+            } finally {
+                testDispatcher.scheduler.advanceUntilIdle()
+                ShadowLooper.idleMainLooper()
+                testHarness.close()
+            }
         }
-    }
-
-    private suspend fun awaitUntil(
-        timeoutMs: Long = 10_000,
-        condition: () -> Boolean,
-    ) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            if (condition()) return
-            ShadowLooper.idleMainLooper()
-        }
-        throw AssertionError("Condition not met within ${timeoutMs}ms")
-    }
 }

@@ -1,7 +1,6 @@
 package dev.mahin.android.cycle
 
 import android.content.Context
-import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import dev.mahin.core.common.FixedLocalDateClock
@@ -9,16 +8,20 @@ import dev.mahin.core.database.MahinDatabase
 import dev.mahin.core.database.cycle.CycleTrackingRepository
 import dev.mahin.core.database.entity.CycleProfileEntity
 import dev.mahin.core.datastore.CalendarUiPreferencesRepository
+import dev.mahin.core.datastore.HealthConnectPeriodDayTombstoneRepository
 import dev.mahin.core.datetime.JalaliDate
 import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
+import dev.mahin.core.testing.MainDispatcherRule
 import dev.mahin.core.testing.ViewModelStoreTestHarness
+import dev.mahin.core.testing.buildMahinInMemoryDatabase
 import java.time.LocalDate
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
-import org.junit.After
-import org.junit.Before
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -28,107 +31,141 @@ import org.robolectric.shadows.ShadowLooper
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class CalendarViewModelLegendTest {
-    private lateinit var database: MahinDatabase
-    private lateinit var cycleRepository: CycleTrackingRepository
-    private lateinit var calendarPrefs: CalendarUiPreferencesRepository
-    private val viewModelStore = ViewModelStoreTestHarness()
+    private val testDispatcher = StandardTestDispatcher()
+    private val context: Context = ApplicationProvider.getApplicationContext()
 
-    @Before
-    fun setUp() {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        database =
-            Room
-                .inMemoryDatabaseBuilder(context, MahinDatabase::class.java)
-                .allowMainThreadQueries()
-                .build()
-        database.openHelper.writableDatabase
-        cycleRepository = CycleTrackingRepository(database)
-        calendarPrefs = CalendarUiPreferencesRepository(context)
-        runBlocking { seedProfile() }
-    }
-
-    @After
-    fun tearDown() {
-        viewModelStore.clear()
-        runBlocking { calendarPrefs.clear() }
-        database.close()
-    }
-
-    @Test
-    fun firstDateTap_autoCollapsesLegendAndSetsAutoCollapsedOnce() {
-        runBlocking {
-            val viewModel = createViewModel()
-            awaitUntil { viewModel.uiState.value.legendExpanded }
-            viewModel.selectJalaliDate(JalaliDate(1403, 12, 15))
-            awaitUntil {
-                val state = viewModel.uiState.value
-                !state.legendExpanded && state.legendAutoCollapsedOnce
-            }
-        }
-    }
-
-    @Test
-    fun toggleLegend_expandsAfterAutoCollapse() {
-        runBlocking {
-            val viewModel = createViewModel()
-            viewModel.selectJalaliDate(JalaliDate(1403, 12, 10))
-            awaitUntil { !viewModel.uiState.value.legendExpanded }
-            viewModel.toggleLegendExpanded()
-            awaitUntil { viewModel.uiState.value.legendExpanded }
-        }
-    }
-
-    @Test
-    fun secondDateTap_leavesLegendExpanded() {
-        runBlocking {
-            val viewModel = createViewModel()
-            viewModel.selectJalaliDate(JalaliDate(1403, 12, 10))
-            awaitUntil { !viewModel.uiState.value.legendExpanded }
-            ShadowLooper.idleMainLooper()
-            assertThat(calendarPrefs.observeLegendAutoCollapsedOnce().first()).isTrue()
-            assertThat(calendarPrefs.observeLegendCollapsed().first()).isTrue()
-            viewModel.toggleLegendExpanded()
-            awaitUntil { viewModel.uiState.value.legendExpanded }
-            assertThat(calendarPrefs.observeLegendCollapsed().first()).isFalse()
-            viewModel.selectJalaliDate(JalaliDate(1403, 12, 11))
-            ShadowLooper.idleMainLooper()
-            assertThat(viewModel.uiState.value.legendExpanded).isTrue()
-            assertThat(calendarPrefs.observeLegendAutoCollapsedOnce().first()).isTrue()
-            assertThat(calendarPrefs.observeLegendCollapsed().first()).isFalse()
-        }
-    }
-
-    @Test
-    fun newViewModelInstance_keepsLegendExpandedAfterUserReExpand() {
-        runBlocking {
-            val first = createViewModel()
-            first.selectJalaliDate(JalaliDate(1403, 12, 10))
-            awaitUntil {
-                val state = first.uiState.value
-                !state.legendExpanded && state.legendAutoCollapsedOnce
-            }
-            first.toggleLegendExpanded()
-            awaitUntil { first.uiState.value.legendExpanded }
-            viewModelStore.clear()
-            ShadowLooper.idleMainLooper()
-            val second = createViewModel()
-            awaitUntil(timeoutMs = 5_000) {
-                val state = second.uiState.value
-                state.legendExpanded && state.legendAutoCollapsedOnce
-            }
-        }
-    }
-
-    private fun createViewModel(): CalendarViewModel =
-        viewModelStore.hold(
-            CalendarViewModel(
-                repository = cycleRepository,
-                calendarUiPreferencesRepository = calendarPrefs,
-                localDateClock = FixedLocalDateClock(LocalDate.of(2025, 3, 6)),
-            ),
+    @get:Rule
+    val mainDispatcherRule =
+        MainDispatcherRule(
+            testDispatcher,
+            beforeResetMain = {
+                testDispatcher.scheduler.advanceUntilIdle()
+                ShadowLooper.idleMainLooper()
+            },
         )
 
-    private suspend fun seedProfile() {
+    @Test
+    fun firstDateTap_autoCollapsesLegendAndSetsAutoCollapsedOnce() =
+        runTest(testDispatcher) {
+            withLegendHarness { viewModel, _, _, _ ->
+                idle()
+                viewModel.selectJalaliDate(JalaliDate(1403, 12, 15))
+                idle()
+                viewModel.uiState.filter { !it.legendExpanded && it.legendAutoCollapsedOnce }.first()
+            }
+        }
+
+    @Test
+    fun toggleLegend_expandsAfterAutoCollapse() =
+        runTest(testDispatcher) {
+            withLegendHarness { viewModel, _, _, _ ->
+                idle()
+                viewModel.selectJalaliDate(JalaliDate(1403, 12, 10))
+                idle()
+                viewModel.uiState.filter { !it.legendExpanded }.first()
+                viewModel.toggleLegendExpanded()
+                idle()
+                viewModel.uiState.filter { it.legendExpanded }.first()
+            }
+        }
+
+    @Test
+    fun secondDateTap_leavesLegendExpanded() =
+        runTest(testDispatcher) {
+            withLegendHarness { viewModel, calendarPrefs, _, _ ->
+                idle()
+                viewModel.selectJalaliDate(JalaliDate(1403, 12, 10))
+                idle()
+                viewModel.uiState.filter { !it.legendExpanded }.first()
+                assertThat(calendarPrefs.observeLegendAutoCollapsedOnce().first()).isTrue()
+                assertThat(calendarPrefs.observeLegendCollapsed().first()).isTrue()
+                viewModel.toggleLegendExpanded()
+                idle()
+                viewModel.uiState.filter { it.legendExpanded }.first()
+                assertThat(calendarPrefs.observeLegendCollapsed().first()).isFalse()
+                viewModel.selectJalaliDate(JalaliDate(1403, 12, 11))
+                idle()
+                assertThat(viewModel.uiState.value.legendExpanded).isTrue()
+                assertThat(calendarPrefs.observeLegendAutoCollapsedOnce().first()).isTrue()
+                assertThat(calendarPrefs.observeLegendCollapsed().first()).isFalse()
+            }
+        }
+
+    @Test
+    fun newViewModelInstance_keepsLegendExpandedAfterUserReExpand() =
+        runTest(testDispatcher) {
+            withLegendHarness { _, calendarPrefs, repository, viewModelStore ->
+                val first =
+                    viewModelStore.hold(
+                        CalendarViewModel(
+                            repository = repository,
+                            calendarUiPreferencesRepository = calendarPrefs,
+                            localDateClock = FixedLocalDateClock(LocalDate.of(2025, 3, 6)),
+                        ),
+                    )
+                idle()
+                first.selectJalaliDate(JalaliDate(1403, 12, 10))
+                idle()
+                first.uiState.filter { !it.legendExpanded && it.legendAutoCollapsedOnce }.first()
+                first.toggleLegendExpanded()
+                idle()
+                first.uiState.filter { it.legendExpanded }.first()
+                viewModelStore.clear()
+                idle()
+                val second =
+                    viewModelStore.hold(
+                        CalendarViewModel(
+                            repository = repository,
+                            calendarUiPreferencesRepository = calendarPrefs,
+                            localDateClock = FixedLocalDateClock(LocalDate.of(2025, 3, 6)),
+                        ),
+                    )
+                idle()
+                second.uiState.filter { it.legendExpanded && it.legendAutoCollapsedOnce }.first()
+            }
+        }
+
+    private suspend fun <T> withLegendHarness(
+        block: suspend (
+            CalendarViewModel,
+            CalendarUiPreferencesRepository,
+            CycleTrackingRepository,
+            ViewModelStoreTestHarness,
+        ) -> T,
+    ): T {
+        val calendarPrefs = CalendarUiPreferencesRepository(context)
+        runBlocking {
+            calendarPrefs.clear()
+            HealthConnectPeriodDayTombstoneRepository(context).clearAll()
+        }
+        val database = buildMahinInMemoryDatabase(context)
+        val cycleRepository = CycleTrackingRepository(database)
+        seedProfile(database)
+        val viewModelStore = ViewModelStoreTestHarness()
+        val viewModel =
+            viewModelStore.hold(
+                CalendarViewModel(
+                    repository = cycleRepository,
+                    calendarUiPreferencesRepository = calendarPrefs,
+                    localDateClock = FixedLocalDateClock(LocalDate.of(2025, 3, 6)),
+                ),
+            )
+        try {
+            return block(viewModel, calendarPrefs, cycleRepository, viewModelStore)
+        } finally {
+            idle()
+            viewModelStore.clear()
+            idle()
+            runBlocking {
+                calendarPrefs.clear()
+                HealthConnectPeriodDayTombstoneRepository(context).clearAll()
+            }
+            idle()
+            database.close()
+        }
+    }
+
+    private suspend fun seedProfile(database: MahinDatabase) {
         database.cycleProfileDao().upsert(
             CycleProfileEntity(
                 reproductiveMode = ReproductiveMode.CYCLE_TRACKING,
@@ -141,16 +178,8 @@ class CalendarViewModelLegendTest {
         )
     }
 
-    private suspend fun awaitUntil(
-        timeoutMs: Long = 3_000,
-        condition: () -> Boolean,
-    ) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            if (condition()) return
-            ShadowLooper.idleMainLooper()
-            delay(25)
-        }
-        throw AssertionError("Condition not met within ${timeoutMs}ms")
+    private fun idle() {
+        testDispatcher.scheduler.advanceUntilIdle()
+        ShadowLooper.idleMainLooper()
     }
 }

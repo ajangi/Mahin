@@ -2,11 +2,16 @@ package dev.mahin.android.cycle.editor
 
 import com.google.common.truth.Truth.assertThat
 import dev.mahin.core.model.PeriodFlowLevel
+import dev.mahin.core.testing.MainDispatcherRule
 import java.time.LocalDate
-import kotlinx.coroutines.runBlocking
-import org.junit.After
-import org.junit.Before
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.rules.TestName
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -15,48 +20,45 @@ import org.robolectric.shadows.ShadowLooper
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class DayEditorFlowLevelTest {
-    private lateinit var harness: DayEditorTestHarness
-    private lateinit var viewModel: DayEditorViewModel
+    private val testDispatcher = StandardTestDispatcher()
     private val day = LocalDate.of(2025, 7, 1)
 
-    @Before
-    fun setUp() {
-        harness = DayEditorTestHarness.create(day)
-        runBlocking { harness.seedCycleProfile() }
-        viewModel = harness.createViewModel()
-        runBlocking {
-            viewModel.openDate(day)
-            awaitDailyLogOnMain { viewModel.uiState.value.date == day }
-            viewModel.togglePeriodLogged()
-            awaitUntil { viewModel.uiState.value.periodLogged }
-        }
-    }
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
 
-    @After
-    fun tearDown() {
-        harness.close()
-    }
+    @get:Rule
+    val testName = TestName()
+
+    @get:Rule
+    val mainDispatcherRule =
+        MainDispatcherRule(
+            testDispatcher,
+            beforeResetMain = {
+                testDispatcher.scheduler.advanceUntilIdle()
+                DayEditorTestVmRegistry.assertAllStoresClosed()
+                ShadowLooper.idleMainLooper()
+            },
+        )
 
     @Test
-    fun setFlowLevel_persistsToPeriodDay() {
-        runBlocking {
-            viewModel.setFlowLevel(PeriodFlowLevel.HEAVY)
-            awaitUntil {
-                harness.periodDayFor(day)?.flowLevel == PeriodFlowLevel.HEAVY
+    fun setFlowLevel_persistsToPeriodDay() =
+        runTest(testDispatcher) {
+            val harness = dayEditorHarness(day, javaClass, testName, temporaryFolder, testDispatcher)
+            try {
+                harness.seedCycleProfile()
+                val viewModel = harness.createViewModel()
+                viewModel.openDateAndAwait(day)
+                viewModel.togglePeriodLogged()
+                viewModel.uiState.filter { it.periodLogged }.first()
+                viewModel.setFlowLevel(PeriodFlowLevel.HEAVY)
+                viewModel.uiState.filter { it.flowLevel == PeriodFlowLevel.HEAVY }.first()
+                harness.awaitPeriodDayFlowLevel(day, PeriodFlowLevel.HEAVY)
+                assertThat(viewModel.uiState.value.flowLevel).isEqualTo(PeriodFlowLevel.HEAVY)
+                assertThat(harness.periodDayFor(day)?.flowLevel).isEqualTo(PeriodFlowLevel.HEAVY)
+            } finally {
+                testDispatcher.scheduler.advanceUntilIdle()
+                ShadowLooper.idleMainLooper()
+                harness.close()
             }
-            assertThat(viewModel.uiState.value.flowLevel).isEqualTo(PeriodFlowLevel.HEAVY)
         }
-    }
-
-    private suspend fun awaitUntil(
-        timeoutMs: Long = 5_000,
-        condition: () -> Boolean,
-    ) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (System.currentTimeMillis() < deadline) {
-            if (condition()) return
-            ShadowLooper.idleMainLooper()
-        }
-        throw AssertionError("Condition not met within ${timeoutMs}ms")
-    }
 }

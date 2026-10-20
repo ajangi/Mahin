@@ -1,8 +1,10 @@
 package dev.mahin.android.cycle.editor
 
 import android.content.Context
-import androidx.room.Room
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.test.core.app.ApplicationProvider
+import dev.mahin.android.testing.datastore.LoggingPreferencesTestHandle
 import dev.mahin.core.common.FixedLocalDateClock
 import dev.mahin.core.database.MahinDatabase
 import dev.mahin.core.database.cycle.CycleTrackingRepository
@@ -20,9 +22,10 @@ import dev.mahin.core.healthconnect.PeriodDayTrackingService
 import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.core.testing.ViewModelStoreTestHarness
+import dev.mahin.core.testing.buildMahinInMemoryDatabase
 import java.time.LocalDate
 import kotlinx.coroutines.runBlocking
-import org.robolectric.shadows.ShadowLooper
+import kotlinx.coroutines.test.TestDispatcher
 
 @Suppress("LongParameterList")
 internal class DayEditorTestHarness private constructor(
@@ -36,6 +39,9 @@ internal class DayEditorTestHarness private constructor(
     private val localDateClock: FixedLocalDateClock,
     private val viewModelStore: ViewModelStoreTestHarness,
     val database: MahinDatabase,
+    private val loggingPreferencesHandle: LoggingPreferencesTestHandle,
+    private val drainCoroutineWork: () -> Unit,
+    private val testDispatcher: TestDispatcher,
 ) {
     fun dailyLogFor(date: LocalDate): DailyLogEntity? = runBlocking { database.dailyLogDao().getForDate(date) }
 
@@ -46,19 +52,23 @@ internal class DayEditorTestHarness private constructor(
             object : HealthConnectPeriodDayIntegrationGate {
                 override suspend fun isIntegrationActive(): Boolean = healthConnectActive
             }
-        return viewModelStore.hold(
-            DayEditorViewModel(
-                cycleRepository = cycleRepository,
-                ttcRepository = ttcRepository,
-                pregnancyRepository = pregnancyRepository(),
-                loggingPreferencesRepository = loggingPreferencesRepository,
-                ttcPrivacyRepository = ttcPrivacyRepository,
-                periodDayTrackingService = periodDayTrackingService,
-                healthConnectPeriodDayIntegrationGate = gate,
-                customSymptomTagRepository = customSymptomTagRepository,
-                localDateClock = localDateClock,
-            ),
-        )
+        val factory =
+            object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T =
+                    DayEditorViewModel(
+                        cycleRepository = cycleRepository,
+                        ttcRepository = ttcRepository,
+                        pregnancyRepository = pregnancyRepository(),
+                        loggingPreferencesRepository = loggingPreferencesRepository,
+                        ttcPrivacyRepository = ttcPrivacyRepository,
+                        periodDayTrackingService = periodDayTrackingService,
+                        healthConnectPeriodDayIntegrationGate = gate,
+                        customSymptomTagRepository = customSymptomTagRepository,
+                        localDateClock = localDateClock,
+                    ) as T
+            }
+        return viewModelStore.hold(DayEditorViewModel::class.java, factory)
     }
 
     private fun pregnancyRepository(): PregnancyTrackingRepository =
@@ -82,24 +92,39 @@ internal class DayEditorTestHarness private constructor(
 
     fun close() {
         viewModelStore.clear()
+        drainCoroutineWork()
+        DayEditorTestVmRegistry.unregister(viewModelStore)
+        runBlocking(testDispatcher) {
+            tombstoneRepository.clearAll()
+            testDispatcher.scheduler.advanceUntilIdle()
+        }
+        loggingPreferencesHandle.closeAndCancelScope()
         database.close()
     }
 
     companion object {
-        fun create(today: LocalDate): DayEditorTestHarness {
+        fun create(
+            today: LocalDate,
+            registryOwner: String,
+            loggingPreferencesHandle: LoggingPreferencesTestHandle,
+            drainCoroutineWork: () -> Unit,
+            testDispatcher: TestDispatcher,
+        ): DayEditorTestHarness {
+            DayEditorTestVmRegistry.assertAllStoresClosed()
             val context = ApplicationProvider.getApplicationContext<Context>()
-            val database =
-                Room
-                    .inMemoryDatabaseBuilder(context, MahinDatabase::class.java)
-                    .allowMainThreadQueries()
-                    .build()
-            database.openHelper.writableDatabase
+            val database = buildMahinInMemoryDatabase(context)
             val cycleRepository = CycleTrackingRepository(database)
             val ttcRepository = TtcTrackingRepository(database)
             val tombstoneRepository = HealthConnectPeriodDayTombstoneRepository(context)
-            val loggingPreferencesRepository = LoggingPreferencesRepository(context)
-            runBlocking { loggingPreferencesRepository.clear() }
-            ShadowLooper.idleMainLooper()
+            val loggingPreferencesRepository = loggingPreferencesHandle.repository
+            runBlocking(testDispatcher) {
+                loggingPreferencesRepository.clear()
+                tombstoneRepository.clearAll()
+                testDispatcher.scheduler.advanceUntilIdle()
+            }
+            drainCoroutineWork()
+            val viewModelStore = ViewModelStoreTestHarness()
+            DayEditorTestVmRegistry.register(registryOwner, viewModelStore)
             return DayEditorTestHarness(
                 cycleRepository = cycleRepository,
                 ttcRepository = ttcRepository,
@@ -109,8 +134,11 @@ internal class DayEditorTestHarness private constructor(
                 customSymptomTagRepository = CustomSymptomTagRepository(database),
                 tombstoneRepository = tombstoneRepository,
                 localDateClock = FixedLocalDateClock(today),
-                viewModelStore = ViewModelStoreTestHarness(),
+                viewModelStore = viewModelStore,
                 database = database,
+                loggingPreferencesHandle = loggingPreferencesHandle,
+                drainCoroutineWork = drainCoroutineWork,
+                testDispatcher = testDispatcher,
             )
         }
     }

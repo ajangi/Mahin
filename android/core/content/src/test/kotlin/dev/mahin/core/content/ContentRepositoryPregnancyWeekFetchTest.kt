@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import dev.mahin.core.database.MahinDatabase
 import dev.mahin.core.datastore.ContentCachePreferencesRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import okhttp3.ResponseBody.Companion.toResponseBody
@@ -42,6 +43,7 @@ class ContentRepositoryPregnancyWeekFetchTest {
                     ),
                 json = Json { ignoreUnknownKeys = true },
                 mediaMemoryCache = MediaAssetMemoryCache(),
+                ioDispatcher = Dispatchers.IO,
             )
     }
 

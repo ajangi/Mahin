@@ -151,6 +151,7 @@ class M18bPregnancyDepthTelemetryGuardTest {
             WellnessContentLocalStore(database.wellnessContentDao(), Json { ignoreUnknownKeys = true }),
             Json { ignoreUnknownKeys = true },
             MediaAssetMemoryCache(),
+            kotlinx.coroutines.Dispatchers.IO,
         )
 
     private suspend fun driveDepthScreens(

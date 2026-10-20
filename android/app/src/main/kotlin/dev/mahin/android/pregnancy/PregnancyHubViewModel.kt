@@ -23,7 +23,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -66,7 +65,6 @@ class PregnancyHubViewModel
         private var tickerKickSnapshot: KickTimerSnapshot = KickTimerSnapshot(null, null)
         private var tickerContractionSnapshot: ContractionTimerSnapshot =
             ContractionTimerSnapshot(null, null, null)
-        private val hubTickerEnabled: Boolean = savedStateHandle.get<Boolean>(HUB_TICKER_ENABLED_KEY) ?: true
 
         init {
             savedStateHandle.get<String>("restored")?.let { /* touch SavedStateHandle for config change */ }
@@ -231,14 +229,7 @@ class PregnancyHubViewModel
             _uiState.update { it.copy(kickCount = count) }
         }
 
-        internal suspend fun refreshTimerDisplayForTests() {
-            val kickTimer = timerPreferences.observeKickTimer().first()
-            val contractionTimer = timerPreferences.observeContractionTimer().first()
-            applyTimerElapsed(kickTimer, contractionTimer)
-        }
-
         private fun restartTicker() {
-            if (!hubTickerEnabled) return
             tickerJob?.cancel()
             tickerJob =
                 viewModelScope.launch {
@@ -267,10 +258,6 @@ class PregnancyHubViewModel
                     contractionElapsedSeconds = contractionElapsed,
                 )
             }
-        }
-
-        companion object {
-            const val HUB_TICKER_ENABLED_KEY: String = "hub_ticker_enabled"
         }
 
         private data class HubInputs(

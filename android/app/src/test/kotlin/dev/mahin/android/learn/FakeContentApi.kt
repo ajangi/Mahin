@@ -28,6 +28,7 @@ class FakeContentApi : ContentApi {
     var searchResults: List<ContentArticleSummaryDto> = emptyList()
     var lastSearchQuery: String? = null
     var lastSearchLifeStage: String? = null
+    var beforeSearch: suspend (String?) -> Unit = {}
     var careScheduleSummaries: List<dev.mahin.core.content.ContentCareScheduleSummaryDto> = emptyList()
     var careSchedulesById: MutableMap<String, dev.mahin.core.content.ContentCareScheduleDto> = mutableMapOf()
     var throwOnWarningSigns: Boolean = false
@@ -43,6 +44,7 @@ class FakeContentApi : ContentApi {
         lifeStage: String?,
     ): ContentSearchResponseDto {
         if (throwOnSearch) error("offline")
+        beforeSearch(lifeStage)
         lastSearchQuery = query
         lastSearchLifeStage = lifeStage
         return ContentSearchResponseDto(items = searchResults)

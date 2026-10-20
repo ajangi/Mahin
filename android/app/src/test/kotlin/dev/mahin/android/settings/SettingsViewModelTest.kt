@@ -1,10 +1,14 @@
 package dev.mahin.android.settings
 
 import android.content.Context
+import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import dev.mahin.android.premium.PremiumBillingCoordinator
+import dev.mahin.android.testing.datastore.LoggingPreferencesTestHandle
 import dev.mahin.core.billing.BillingAdapter
 import dev.mahin.core.billing.BillingAdapterState
 import dev.mahin.core.billing.BillingPurchaseReceipt
@@ -22,7 +26,6 @@ import dev.mahin.core.database.entity.CycleProfileEntity
 import dev.mahin.core.database.pregnancy.PregnancyTrackingRepository
 import dev.mahin.core.datastore.AccountSessionRepository
 import dev.mahin.core.datastore.CachedEntitlement
-import dev.mahin.core.datastore.LoggingPreferencesRepository
 import dev.mahin.core.datastore.PregnancyTimerPreferencesRepository
 import dev.mahin.core.datastore.SubscriptionPreferencesRepository
 import dev.mahin.core.model.CycleRegularity
@@ -39,6 +42,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.withTimeout
 import org.junit.After
@@ -48,6 +52,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -57,6 +62,7 @@ import org.robolectric.shadows.ShadowLooper
 @Config(sdk = [33])
 class SettingsViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
+    private val loggingPreferencesDispatcher = UnconfinedTestDispatcher()
     private val mainDispatcherRule =
         MainDispatcherRule(
             dispatcher = testDispatcher,
@@ -67,10 +73,14 @@ class SettingsViewModelTest {
             },
         )
 
+    private val temporaryFolder = TemporaryFolder()
+
     @get:Rule
     val ruleChain: RuleChain =
         RuleChain
             .outerRule(TestHangWatchdogRule())
+            .around(InstantTaskExecutorRule())
+            .around(temporaryFolder)
             .around(mainDispatcherRule)
 
     private lateinit var database: MahinDatabase
@@ -78,10 +88,12 @@ class SettingsViewModelTest {
     private lateinit var context: Context
     private val viewModelStore = ViewModelStoreTestHarness()
     private var heldViewModel: SettingsViewModel? = null
+    private lateinit var loggingPreferencesHandle: LoggingPreferencesTestHandle
 
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
+        loggingPreferencesHandle = LoggingPreferencesTestHandle.open(temporaryFolder, loggingPreferencesDispatcher)
         database =
             Room
                 .inMemoryDatabaseBuilder(context, MahinDatabase::class.java)
@@ -97,8 +109,8 @@ class SettingsViewModelTest {
     @After
     fun tearDown() {
         releaseViewModels()
-        testDispatcher.scheduler.advanceUntilIdle()
-        ShadowLooper.idleMainLooper()
+        idle()
+        loggingPreferencesHandle.closeAndCancelScope()
         runBlocking(Dispatchers.IO) {
             withTimeout(5_000) {
                 SubscriptionPreferencesRepository(context).clear()
@@ -109,6 +121,7 @@ class SettingsViewModelTest {
 
     private fun idle() {
         testDispatcher.scheduler.advanceUntilIdle()
+        loggingPreferencesDispatcher.scheduler.advanceUntilIdle()
         ShadowLooper.idleMainLooper()
     }
 
@@ -359,19 +372,24 @@ class SettingsViewModelTest {
         val repository = FeatureFlagRepository(FakeMetaApi(flags))
         val gateway = RemoteFeatureFlagGateway(repository)
         val premiumCoordinator = PremiumBillingCoordinator(billingAdapter, entitlementRepository)
+        val factory =
+            object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T =
+                    SettingsViewModel(
+                        pregnancyRepository = pregnancyRepository,
+                        featureFlagGateway = gateway,
+                        featureFlagRepository = repository,
+                        billingAdapter = billingAdapter,
+                        premiumBillingCoordinator = premiumCoordinator,
+                        entitlementRepository = entitlementRepository,
+                        loggingPreferencesRepository = loggingPreferencesHandle.repository,
+                        localDateClock = FixedLocalDateClock(LocalDate.of(2025, 3, 1)),
+                    ) as T
+            }
         return viewModelStore
-            .hold(
-                SettingsViewModel(
-                    pregnancyRepository = pregnancyRepository,
-                    featureFlagGateway = gateway,
-                    featureFlagRepository = repository,
-                    billingAdapter = billingAdapter,
-                    premiumBillingCoordinator = premiumCoordinator,
-                    entitlementRepository = entitlementRepository,
-                    loggingPreferencesRepository = LoggingPreferencesRepository(context),
-                    localDateClock = FixedLocalDateClock(LocalDate.of(2025, 3, 1)),
-                ),
-            ).also { heldViewModel = it }
+            .hold(SettingsViewModel::class.java, factory)
+            .also { heldViewModel = it }
     }
 
     private class FakeMetaApi(

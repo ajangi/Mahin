@@ -11,6 +11,7 @@ import androidx.compose.ui.test.performScrollToNode
 import dev.mahin.android.cycle.editor.DayEditorManageCategoriesPanel
 import dev.mahin.android.cycle.editor.DayEditorSheetContent
 import dev.mahin.android.cycle.editor.DayEditorTestHarness
+import dev.mahin.android.cycle.editor.dayEditorHarnessOnMain
 import dev.mahin.android.premium.PremiumBillingCoordinator
 import dev.mahin.android.settings.SettingsScreenCallbacks
 import dev.mahin.android.settings.SettingsScreenContent
@@ -42,6 +43,8 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.rules.TestName
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -55,11 +58,17 @@ class LoggingLifestyleEnableTest {
     private val day = LocalDate.of(2025, 1, 1)
 
     @get:Rule
+    val temporaryFolder = TemporaryFolder()
+
+    @get:Rule
+    val testName = TestName()
+
+    @get:Rule
     val composeRule = ViewModelStoreClearingRule.withCompose(androidComposeRule)
 
     @Before
     fun setUp() {
-        harness = DayEditorTestHarness.create(day)
+        harness = dayEditorHarnessOnMain(day, javaClass, testName, temporaryFolder)
         runBlocking { harness.seedCycleProfile() }
     }
 

@@ -1,7 +1,6 @@
 package dev.mahin.android.learn
 
 import android.content.Context
-import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import dev.mahin.core.common.FixedLocalDateClock
@@ -16,6 +15,7 @@ import dev.mahin.core.model.CycleRegularity
 import dev.mahin.core.model.ReproductiveMode
 import dev.mahin.core.testing.MainDispatcherRule
 import dev.mahin.core.testing.ViewModelStoreTestHarness
+import dev.mahin.core.testing.buildMahinInMemoryDatabase
 import dev.mahin.domain.pregnancy.PregnancyDatingEngineV1
 import java.time.LocalDate
 import kotlinx.coroutines.flow.filter
@@ -39,7 +39,12 @@ class LearnViewModelTest {
     val mainDispatcherRule =
         MainDispatcherRule(
             testDispatcher,
-            beforeResetMain = { viewModelStore.clear() },
+            beforeResetMain = {
+                testDispatcher.scheduler.advanceUntilIdle()
+                viewModelStore.clear()
+                org.robolectric.shadows.ShadowLooper
+                    .idleMainLooper()
+            },
         )
 
     private lateinit var harness: LearnContentTestHarness
@@ -52,24 +57,22 @@ class LearnViewModelTest {
     @Before
     fun setUp() {
         viewModelStore.clear()
-        harness = LearnContentTestHarness()
+        harness = LearnContentTestHarness(ioDispatcher = testDispatcher, viewModelStore = viewModelStore)
         harness.api.searchResults = emptyList()
         harness.api.collections = emptyList()
         harness.api.lastSearchQuery = null
         harness.api.lastSearchLifeStage = null
         val context = ApplicationProvider.getApplicationContext<Context>()
-        database =
-            Room
-                .inMemoryDatabaseBuilder(context, MahinDatabase::class.java)
-                .allowMainThreadQueries()
-                .build()
+        database = buildMahinInMemoryDatabase(context)
         cycleRepository = CycleTrackingRepository(database)
         pregnancyRepository = PregnancyTrackingRepository(database, PregnancyTimerPreferencesRepository(context))
     }
 
     @After
     fun tearDown() {
-        viewModelStore.clear()
+        testDispatcher.scheduler.advanceUntilIdle()
+        org.robolectric.shadows.ShadowLooper
+            .idleMainLooper()
         harness.close()
         database.close()
     }

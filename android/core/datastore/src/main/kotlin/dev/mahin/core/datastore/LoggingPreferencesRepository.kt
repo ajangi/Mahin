@@ -1,6 +1,7 @@
 package dev.mahin.core.datastore
 
 import android.content.Context
+import androidx.annotation.VisibleForTesting
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -19,69 +20,76 @@ private val Context.loggingPreferencesDataStore: DataStore<Preferences> by prefe
 )
 
 @Singleton
-class LoggingPreferencesRepository
+class LoggingPreferencesRepository private constructor(
+    private val dataStore: DataStore<Preferences>,
+) {
     @Inject
     constructor(
-        @ApplicationContext private val context: Context,
+        @ApplicationContext context: Context,
+    ) : this(context.loggingPreferencesDataStore)
+
+    companion object {
+        @VisibleForTesting
+        fun createForTests(dataStore: DataStore<Preferences>): LoggingPreferencesRepository =
+            LoggingPreferencesRepository(dataStore)
+    }
+
+    fun observeSexualActivityEnabled(): Flow<Boolean> =
+        dataStore.data.map { prefs ->
+            prefs[LoggingPreferenceKeys.sexualActivityEnabled] ?: false
+        }
+
+    suspend fun setSexualActivityEnabled(enabled: Boolean) {
+        dataStore.edit { it[LoggingPreferenceKeys.sexualActivityEnabled] = enabled }
+    }
+
+    fun observeLifestyleModuleEnabled(category: LogEditorCategory): Flow<Boolean> =
+        dataStore.data.map { prefs ->
+            when (category) {
+                LogEditorCategory.SLEEP,
+                LogEditorCategory.EXERCISE,
+                LogEditorCategory.WATER,
+                LogEditorCategory.STRESS,
+                ->
+                    prefs[LoggingPreferenceKeys.lifestyleEnabled(category)] ?: false
+                else -> false
+            }
+        }
+
+    suspend fun setLifestyleModuleEnabled(
+        category: LogEditorCategory,
+        enabled: Boolean,
     ) {
-        private val dataStore = context.loggingPreferencesDataStore
+        dataStore.edit { it[LoggingPreferenceKeys.lifestyleEnabled(category)] = enabled }
+    }
 
-        fun observeSexualActivityEnabled(): Flow<Boolean> =
-            dataStore.data.map { prefs ->
-                prefs[LoggingPreferenceKeys.sexualActivityEnabled] ?: false
-            }
-
-        suspend fun setSexualActivityEnabled(enabled: Boolean) {
-            dataStore.edit { it[LoggingPreferenceKeys.sexualActivityEnabled] = enabled }
+    fun observeMostUsedFirst(): Flow<Boolean> =
+        dataStore.data.map { prefs ->
+            prefs[LoggingPreferenceKeys.mostUsedFirst] ?: false
         }
 
-        fun observeLifestyleModuleEnabled(category: LogEditorCategory): Flow<Boolean> =
-            dataStore.data.map { prefs ->
-                when (category) {
-                    LogEditorCategory.SLEEP,
-                    LogEditorCategory.EXERCISE,
-                    LogEditorCategory.WATER,
-                    LogEditorCategory.STRESS,
-                    ->
-                        prefs[LoggingPreferenceKeys.lifestyleEnabled(category)] ?: false
-                    else -> false
-                }
-            }
+    suspend fun setMostUsedFirst(enabled: Boolean) {
+        dataStore.edit { it[LoggingPreferenceKeys.mostUsedFirst] = enabled }
+    }
 
-        suspend fun setLifestyleModuleEnabled(
-            category: LogEditorCategory,
-            enabled: Boolean,
-        ) {
-            dataStore.edit { it[LoggingPreferenceKeys.lifestyleEnabled(category)] = enabled }
-        }
-
-        fun observeMostUsedFirst(): Flow<Boolean> =
-            dataStore.data.map { prefs ->
-                prefs[LoggingPreferenceKeys.mostUsedFirst] ?: false
-            }
-
-        suspend fun setMostUsedFirst(enabled: Boolean) {
-            dataStore.edit { it[LoggingPreferenceKeys.mostUsedFirst] = enabled }
-        }
-
-        fun observePinnedCategoryOrder(): Flow<List<LogEditorCategory>> =
-            dataStore.data.map { prefs ->
-                val raw = prefs[LoggingPreferenceKeys.pinnedOrder] ?: return@map emptyList()
-                raw.split(',').mapNotNull { token ->
-                    runCatching { LogEditorCategory.valueOf(token) }.getOrNull()
-                }
-            }
-
-        suspend fun setPinnedCategoryOrder(order: List<LogEditorCategory>) {
-            dataStore.edit {
-                it[LoggingPreferenceKeys.pinnedOrder] = order.joinToString(",") { cat -> cat.name }
+    fun observePinnedCategoryOrder(): Flow<List<LogEditorCategory>> =
+        dataStore.data.map { prefs ->
+            val raw = prefs[LoggingPreferenceKeys.pinnedOrder] ?: return@map emptyList()
+            raw.split(',').mapNotNull { token ->
+                runCatching { LogEditorCategory.valueOf(token) }.getOrNull()
             }
         }
 
-        suspend fun clear() {
-            dataStore.edit { it.clear() }
+    suspend fun setPinnedCategoryOrder(order: List<LogEditorCategory>) {
+        dataStore.edit {
+            it[LoggingPreferenceKeys.pinnedOrder] = order.joinToString(",") { cat -> cat.name }
         }
     }
+
+    suspend fun clear() {
+        dataStore.edit { it.clear() }
+    }
+}
 
 private object LoggingPreferenceKeys {
     val sexualActivityEnabled = booleanPreferencesKey("sexual_activity_enabled")
