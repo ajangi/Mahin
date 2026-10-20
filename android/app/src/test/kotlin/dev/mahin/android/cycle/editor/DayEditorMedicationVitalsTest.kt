@@ -1,6 +1,7 @@
 package dev.mahin.android.cycle.editor
 
 import android.content.Context
+import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.room.Room
@@ -46,6 +47,9 @@ class DayEditorMedicationVitalsTest {
     val temporaryFolder = TemporaryFolder()
 
     @get:Rule
+    val instantTaskExecutorRule = InstantTaskExecutorRule()
+
+    @get:Rule
     val mainDispatcherRule = MainDispatcherRule(testDispatcher)
 
     private lateinit var loggingPreferencesHandle: LoggingPreferencesTestHandle
@@ -78,8 +82,8 @@ class DayEditorMedicationVitalsTest {
         loggingPreferencesDispatcher.scheduler.advanceUntilIdle()
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
         ShadowLooper.idleMainLooper()
-        database.close()
         loggingPreferencesHandle.closeAndCancelScope()
+        database.close()
     }
 
     @Test
@@ -89,9 +93,7 @@ class DayEditorMedicationVitalsTest {
             awaitUntil { viewModel.uiState.value.date == logDate }
             viewModel.toggleMedication("ویتامین")
             awaitUntil {
-                runBlocking {
-                    cycleRepository.getDailyLogForDate(logDate)?.medicationTags?.contains("ویتامین") == true
-                }
+                cycleRepository.getDailyLogForDate(logDate)?.medicationTags?.contains("ویتامین") == true
             }
         }
     }
@@ -120,7 +122,7 @@ class DayEditorMedicationVitalsTest {
             viewModel.onPregnancyBpSystolicChange("120")
             viewModel.onPregnancyBpDiastolicChange("80")
             awaitUntil {
-                val log = runBlocking { pregnancyRepository.getPregnancyDayLogForDate(logDate) }
+                val log = pregnancyRepository.getPregnancyDayLogForDate(logDate)
                 log?.weightKg == 65.0 && log.bpSystolic == 120 && log.bpDiastolic == 80
             }
         }
@@ -156,12 +158,13 @@ class DayEditorMedicationVitalsTest {
 
     private suspend fun awaitUntil(
         timeoutMs: Long = 6_000,
-        condition: () -> Boolean,
+        condition: suspend () -> Boolean,
     ) {
         val deadline = System.currentTimeMillis() + timeoutMs
         while (System.currentTimeMillis() < deadline) {
             if (condition()) return
             testDispatcher.scheduler.advanceUntilIdle()
+            loggingPreferencesDispatcher.scheduler.advanceUntilIdle()
             ShadowLooper.idleMainLooper()
         }
         throw AssertionError("Condition not met within ${timeoutMs}ms")

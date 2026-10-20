@@ -26,7 +26,6 @@ import dev.mahin.core.testing.buildMahinInMemoryDatabase
 import java.time.LocalDate
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestDispatcher
-import org.robolectric.shadows.ShadowLooper
 
 @Suppress("LongParameterList")
 internal class DayEditorTestHarness private constructor(
