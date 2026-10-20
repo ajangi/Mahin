@@ -25,6 +25,7 @@ import dev.mahin.core.testing.ViewModelStoreTestHarness
 import dev.mahin.core.testing.buildMahinInMemoryDatabase
 import java.time.LocalDate
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.TestDispatcher
 import org.robolectric.shadows.ShadowLooper
 
 @Suppress("LongParameterList")
@@ -41,6 +42,7 @@ internal class DayEditorTestHarness private constructor(
     val database: MahinDatabase,
     private val loggingPreferencesHandle: LoggingPreferencesTestHandle,
     private val drainCoroutineWork: () -> Unit,
+    private val testDispatcher: TestDispatcher,
 ) {
     fun dailyLogFor(date: LocalDate): DailyLogEntity? = runBlocking { database.dailyLogDao().getForDate(date) }
 
@@ -91,14 +93,14 @@ internal class DayEditorTestHarness private constructor(
 
     fun close() {
         viewModelStore.clear()
-        repeat(5) {
-            drainCoroutineWork()
-            ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
-        }
+        drainCoroutineWork()
         DayEditorTestVmRegistry.unregister(viewModelStore)
-        runBlocking { tombstoneRepository.clearAll() }
+        runBlocking(testDispatcher) {
+            tombstoneRepository.clearAll()
+            testDispatcher.scheduler.advanceUntilIdle()
+        }
+        loggingPreferencesHandle.closeAndCancelScope()
         database.close()
-        loggingPreferencesHandle.closeAndCancelScope(drainCoroutineWork)
     }
 
     companion object {
@@ -107,6 +109,7 @@ internal class DayEditorTestHarness private constructor(
             registryOwner: String,
             loggingPreferencesHandle: LoggingPreferencesTestHandle,
             drainCoroutineWork: () -> Unit,
+            testDispatcher: TestDispatcher,
         ): DayEditorTestHarness {
             DayEditorTestVmRegistry.assertAllStoresClosed()
             val context = ApplicationProvider.getApplicationContext<Context>()
@@ -115,9 +118,10 @@ internal class DayEditorTestHarness private constructor(
             val ttcRepository = TtcTrackingRepository(database)
             val tombstoneRepository = HealthConnectPeriodDayTombstoneRepository(context)
             val loggingPreferencesRepository = loggingPreferencesHandle.repository
-            runBlocking {
+            runBlocking(testDispatcher) {
                 loggingPreferencesRepository.clear()
                 tombstoneRepository.clearAll()
+                testDispatcher.scheduler.advanceUntilIdle()
             }
             drainCoroutineWork()
             val viewModelStore = ViewModelStoreTestHarness()
@@ -135,6 +139,7 @@ internal class DayEditorTestHarness private constructor(
                 database = database,
                 loggingPreferencesHandle = loggingPreferencesHandle,
                 drainCoroutineWork = drainCoroutineWork,
+                testDispatcher = testDispatcher,
             )
         }
     }

@@ -25,6 +25,7 @@ import dev.mahin.core.testing.ViewModelStoreTestHarness
 import java.time.LocalDate
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -39,6 +40,7 @@ import org.robolectric.shadows.ShadowLooper
 @Config(sdk = [33])
 class DayEditorMedicationVitalsTest {
     private val testDispatcher = StandardTestDispatcher()
+    private val loggingPreferencesDispatcher = UnconfinedTestDispatcher()
 
     @get:Rule
     val temporaryFolder = TemporaryFolder()
@@ -65,7 +67,7 @@ class DayEditorMedicationVitalsTest {
         database.openHelper.writableDatabase
         cycleRepository = CycleTrackingRepository(database)
         pregnancyRepository = PregnancyTrackingRepository(database, PregnancyTimerPreferencesRepository(context))
-        loggingPreferencesHandle = LoggingPreferencesTestHandle.open(temporaryFolder)
+        loggingPreferencesHandle = LoggingPreferencesTestHandle.open(temporaryFolder, loggingPreferencesDispatcher)
         viewModel = createViewModel(context)
     }
 
@@ -73,13 +75,11 @@ class DayEditorMedicationVitalsTest {
     fun tearDown() {
         viewModelStore.clear()
         testDispatcher.scheduler.advanceUntilIdle()
+        loggingPreferencesDispatcher.scheduler.advanceUntilIdle()
         ShadowLooper.runUiThreadTasksIncludingDelayedTasks()
         ShadowLooper.idleMainLooper()
         database.close()
-        loggingPreferencesHandle.closeAndCancelScope {
-            testDispatcher.scheduler.advanceUntilIdle()
-            ShadowLooper.idleMainLooper()
-        }
+        loggingPreferencesHandle.closeAndCancelScope()
     }
 
     @Test

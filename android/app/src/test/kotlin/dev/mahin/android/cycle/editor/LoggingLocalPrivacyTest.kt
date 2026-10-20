@@ -18,6 +18,7 @@ import dev.mahin.core.sync.SyncOutbox
 import dev.mahin.domain.subscription.EntitlementTier
 import java.time.LocalDate
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -30,6 +31,8 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
 class LoggingLocalPrivacyTest {
+    private val dataStoreDispatcher = UnconfinedTestDispatcher()
+
     @get:Rule
     val temporaryFolder = TemporaryFolder()
 
@@ -49,7 +52,7 @@ class LoggingLocalPrivacyTest {
                 .build()
         cycleRepository = CycleTrackingRepository(database)
         customSymptomTagRepository = CustomSymptomTagRepository(database)
-        loggingPreferencesHandle = LoggingPreferencesTestHandle.open(temporaryFolder)
+        loggingPreferencesHandle = LoggingPreferencesTestHandle.open(temporaryFolder, dataStoreDispatcher)
         loggingPreferencesRepository = loggingPreferencesHandle.repository
     }
 

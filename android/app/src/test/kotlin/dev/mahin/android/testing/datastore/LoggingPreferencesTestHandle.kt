@@ -6,24 +6,26 @@ import androidx.datastore.preferences.core.emptyPreferences
 import dev.mahin.core.datastore.LoggingPreferencesRepository
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.TestDispatcher
 import org.junit.rules.TemporaryFolder
 
 /**
  * Per-test [LoggingPreferencesRepository] backed by an isolated on-disk DataStore (not
  * [androidx.datastore.preferences.preferencesDataStore] on [android.content.Context]).
  *
+ * The factory [scope] uses [testDispatcher] so reads/writes are drained with
+ * [TestDispatcher.scheduler.advanceUntilIdle] before the JUnit [TemporaryFolder] is deleted.
  * Cancel [scope] only from [closeAndCancelScope] after [androidx.lifecycle.ViewModelStore.clear]
- * and draining [Dispatchers.Main] (see Day Editor harness [drainCoroutineWork]); the factory
- * [scope] uses [Dispatchers.IO] so DataStore I/O does not deadlock [kotlinx.coroutines.test.runTest].
+ * and draining the main/test schedulers.
  */
 class LoggingPreferencesTestHandle private constructor(
     val repository: LoggingPreferencesRepository,
     private val scope: CoroutineScope,
+    private val testDispatcher: TestDispatcher,
     private val dataStoreRoot: File,
 ) : AutoCloseable {
     override fun close() {
@@ -32,14 +34,10 @@ class LoggingPreferencesTestHandle private constructor(
     }
 
     /** Call only after every ViewModel using [repository] has been cleared. */
-    fun closeAndCancelScope(drain: () -> Unit = {}) {
+    fun closeAndCancelScope() {
         scope.cancel()
-        var spins = 0
-        while (scope.coroutineContext.job.isActive && spins < 256) {
-            drain()
-            spins++
-        }
-        runBlocking {
+        runBlocking(testDispatcher) {
+            testDispatcher.scheduler.advanceUntilIdle()
             scope.coroutineContext.job.join()
         }
     }
@@ -47,17 +45,18 @@ class LoggingPreferencesTestHandle private constructor(
     companion object {
         fun open(
             temporaryFolder: TemporaryFolder,
-            scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
+            testDispatcher: TestDispatcher,
         ): LoggingPreferencesTestHandle =
             openInDirectory(
                 temporaryFolder.newFolder("logging-prefs-${System.nanoTime()}"),
-                scope,
+                testDispatcher,
             )
 
         fun openInDirectory(
             root: File,
-            scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
+            testDispatcher: TestDispatcher,
         ): LoggingPreferencesTestHandle {
+            val scope = CoroutineScope(SupervisorJob() + testDispatcher)
             val dataStore =
                 PreferenceDataStoreFactory.create(
                     corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
@@ -67,6 +66,7 @@ class LoggingPreferencesTestHandle private constructor(
             return LoggingPreferencesTestHandle(
                 repository = LoggingPreferencesRepository.createForTests(dataStore),
                 scope = scope,
+                testDispatcher = testDispatcher,
                 dataStoreRoot = root,
             )
         }

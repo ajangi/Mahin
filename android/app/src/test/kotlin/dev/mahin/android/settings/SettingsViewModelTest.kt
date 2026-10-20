@@ -42,6 +42,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.withTimeout
 import org.junit.After
@@ -61,6 +62,7 @@ import org.robolectric.shadows.ShadowLooper
 @Config(sdk = [33])
 class SettingsViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
+    private val loggingPreferencesDispatcher = UnconfinedTestDispatcher()
     private val mainDispatcherRule =
         MainDispatcherRule(
             dispatcher = testDispatcher,
@@ -91,7 +93,7 @@ class SettingsViewModelTest {
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
-        loggingPreferencesHandle = LoggingPreferencesTestHandle.open(temporaryFolder)
+        loggingPreferencesHandle = LoggingPreferencesTestHandle.open(temporaryFolder, loggingPreferencesDispatcher)
         database =
             Room
                 .inMemoryDatabaseBuilder(context, MahinDatabase::class.java)
@@ -108,17 +110,18 @@ class SettingsViewModelTest {
     fun tearDown() {
         releaseViewModels()
         idle()
+        loggingPreferencesHandle.closeAndCancelScope()
         runBlocking(Dispatchers.IO) {
             withTimeout(5_000) {
                 SubscriptionPreferencesRepository(context).clear()
             }
         }
         database.close()
-        loggingPreferencesHandle.closeAndCancelScope { idle() }
     }
 
     private fun idle() {
         testDispatcher.scheduler.advanceUntilIdle()
+        loggingPreferencesDispatcher.scheduler.advanceUntilIdle()
         ShadowLooper.idleMainLooper()
     }
 
